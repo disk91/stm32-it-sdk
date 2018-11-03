@@ -7,17 +7,17 @@ Most is done to preserve code size.
 Made for being compiled with open-source environment GCC / AC6
 
 * Supported functions
-..* Low Power switch with regular auto-wakeup / LPUART / GPIO Wake-up
-..* RTC
-..* Logger
-..* EEprom for configuration backup
-..* Task Scheduler
-..* State Machine 
-..* Watchdog 
+  * Low Power switch with regular auto-wakeup / LPUART / GPIO Wake-up
+  * RTC
+  * Logger
+  * EEprom for configuration backup
+  * Task Scheduler
+  * State Machine 
+  * Watchdog 
 
 * Supported / tested platforms
-..* STM32L011
-..* STM32L053
+  * STM32L011
+  * STM32L053
 
 The second objective is to be able to port this SDK to different patform
 to make it a portable SDK. The SDK have a it-sdk directory where everything needs to be portable. stm32l-sdk contains all the subfunctions specific to this platform.
@@ -28,17 +28,17 @@ to make it a portable SDK. The SDK have a it-sdk directory where everything need
 * watchdog : configure IWDG with LSI 37KHz, IWDG_WINDOW 4095, IWDG_PRESCALER IWDG_PRESCALER_256
 * rtc timer : TIM21 is enable with clock source internal
 * lowPower : 
-..* LPUART1 (Async 9600 - 8/N/1) WakeUp => clock mode need to be HSI, max speed 9600
-..* RTC WakeUp => Activate ClkSource, Calendar, Internal WakeUp, Clk config : LSI, RTC/NVIC => Interrupt activated
-..* GPIO WakeUp => Activate the GPIO as ExtInterrupt, set with Pull & Trigger en Fall/Rise, activate NVIC EXI1_15
+  * LPUART1 (Async 9600 - 8/N/1) WakeUp => clock mode need to be HSI, max speed 9600
+  * RTC WakeUp => Activate ClkSource, Calendar, Internal WakeUp, Clk config : LSI, RTC/NVIC => Interrupt activated
+  * GPIO WakeUp => Activate the GPIO as ExtInterrupt, set with Pull & Trigger en Fall/Rise, activate NVIC EXI1_15
 * adc : Select an adc like for temperature to get the needed headers
 
 When generating the Project
 * Code generator:
-..* select Generate peripheral initalization as par of .c/.h
-..* Set all free pins as analog
+  * select Generate peripheral initalization as par of .c/.h
+  * Set all free pins as analog
 * Advanced Settings:
-..* Check Not Generated Function Call for ADC
+  * Check Not Generated Function Call for ADC
 
 
 # Import the SDK (this repository)
@@ -57,10 +57,10 @@ When generating the Project
 # Modify the Cube Mx skeleton
 Things to not forget once a cubeMx project has been created
 * Gpio.c
-...=> remove the line with the default setting for GPIOs
+   => remove the line with the default setting for GPIOs
   
 * Main.c
-...=> includes
+   => includes
 ```C
   /* USER CODE BEGIN Includes */
 	#include <it_sdk/config.h>
@@ -68,7 +68,7 @@ Things to not forget once a cubeMx project has been created
 	#include <it_sdk/logger/logger.h>
   /* USER CODE END Includes */
 ```  
-...=> main
+   => main
 ```C
     MX_IWDG_Init();
   	/* USER CODE BEGIN 2 */
@@ -86,7 +86,7 @@ Things to not forget once a cubeMx project has been created
   	/* USER CODE END 3 */
 ```
 
-...=> error handler
+   => error handler
 ```C
   void _Error_Handler(char *file, int line)
   {
