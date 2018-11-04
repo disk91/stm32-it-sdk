@@ -1,8 +1,8 @@
 /* ==========================================================
- * misc_wrapper.c - 
+ * spi.h - stm32L0x1 spi header
  * Project : IngeniousThings SDK
  * ----------------------------------------------------------
- * Created on: 15 sept. 2018
+ * Created on: 4 nov. 2018
  *     Author: Paul Pinault aka Disk91
  * ----------------------------------------------------------
  * Copyright (C) 2018  IngeniousThings and Disk91
@@ -20,30 +20,42 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  * ----------------------------------------------------------
- * Wrapper for different usage
+ * 
  *
  * ==========================================================
  */
+#ifndef STM32L_SDK_SPI_SPI_H_
+#define STM32L_SDK_SPI_SPI_H_
 
-#include <it_sdk/config.h>
-#if ITSDK_PLATFORM == __PLATFORM_STM32L0x1 || ITSDK_PLATFORM == __PLATFORM_STM32L0x3
+#define __SPI_HANDLER_TYPE		SPI_HandleTypeDef
+#define STM32_SPI_TIMEOUT		1000
 
-#include <it_sdk/wrappers.h>
-#include "stm32l0xx_hal.h"
+typedef enum
+{
+  SPI_OK       = 0x00U,
+  SPI_ERROR    = 0x01U,
+  SPI_BUSY     = 0x02U,
+  SPI_TIMEOUT  = 0x03U
+} _SPI_Status;
 
-/**
- * Reset the device
- */
-void itsdk_reset() {
-	NVIC_SystemReset();
-}
+_SPI_Status spi_readRegister(
+		SPI_HandleTypeDef * spi,
+		uint8_t	* toTransmit,
+		uint8_t * toReceive,
+		uint8_t   sizeToTransmit
+);
 
-/**
- * Delay in ms
- */
-void itsdk_delayMs(uint32_t ms) {
-	HAL_Delay(ms);
-}
+_SPI_Status spi_write_byte(
+		SPI_HandleTypeDef * spi,
+		uint8_t Value
+);
 
+void spi_wait4TransactionEnd(
+		SPI_HandleTypeDef * spi
+);
 
-#endif
+void spi_reset(
+		SPI_HandleTypeDef * spi
+);
+
+#endif /* STM32L_SDK_SPI_SPI_H_ */

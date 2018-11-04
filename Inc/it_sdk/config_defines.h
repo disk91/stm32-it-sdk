@@ -72,8 +72,14 @@
 /**
  * ADC configuration
  */
-#define __ADC_NONE					0x00			// with ADC
+#define __ADC_NONE					0x00			// No ADC
 #define __ADC_ENABLED				0x01			// with ADC
+
+/**
+ * SPI configuration
+ */
+#define __SPI_NONE					0x00			// No SPI
+#define __SPI_ENABLED				0x01			// with SPI
 
 /**
  * GPIO to keep activated on low power mode
@@ -95,6 +101,26 @@
 #define __LP_GPIO_13			GPIO_PIN_13
 #define __LP_GPIO_14			GPIO_PIN_14
 #define __LP_GPIO_15			GPIO_PIN_15
+
+
+/**
+ * GPIO BANKS
+ */
+#define __BANK_A				0
+#define __BANK_B				1
+#define __BANK_C				2
+#define __BANK_D				3
+#define __BANK_E				4
+#define __BANK_F				5
+#define __BANK_H				6
+
+
+/**
+ * Supported SIGFOX Interface
+ */
+#define	__SIGFOX_S2LP			0
+#define __SIGFOX_WISOL10		1
+
 
 
 #endif /* IT_SDK_CONFIG_DEFINES_H_ */

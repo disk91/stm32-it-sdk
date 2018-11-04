@@ -1,8 +1,8 @@
 /* ==========================================================
- * misc_wrapper.c - 
+ * spi.c - SPI Peripheral
  * Project : IngeniousThings SDK
  * ----------------------------------------------------------
- * Created on: 15 sept. 2018
+ * Created on: 4 nov. 2018
  *     Author: Paul Pinault aka Disk91
  * ----------------------------------------------------------
  * Copyright (C) 2018  IngeniousThings and Disk91
@@ -20,30 +20,56 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  * ----------------------------------------------------------
- * Wrapper for different usage
  *
  * ==========================================================
  */
-
 #include <it_sdk/config.h>
-#if ITSDK_PLATFORM == __PLATFORM_STM32L0x1 || ITSDK_PLATFORM == __PLATFORM_STM32L0x3
 
-#include <it_sdk/wrappers.h>
-#include "stm32l0xx_hal.h"
+#if ITSDK_WITH_SPI == __SPI_ENABLED
+#include <stm32l_sdk/spi/spi.h>
+#include "spi.h"
+
 
 /**
- * Reset the device
+ * Read the given SPI
  */
-void itsdk_reset() {
-	NVIC_SystemReset();
+_SPI_Status spi_readRegister(
+		SPI_HandleTypeDef * spi,
+		uint8_t	* toTransmit,
+		uint8_t * toReceive,
+		uint8_t   sizeToTransmit
+) {
+
+	return (_SPI_Status)HAL_SPI_TransmitReceive(
+			spi,
+			toTransmit,
+			toReceive,
+			sizeToTransmit,
+			STM32_SPI_TIMEOUT
+	);
+
 }
 
-/**
- * Delay in ms
- */
-void itsdk_delayMs(uint32_t ms) {
-	HAL_Delay(ms);
+_SPI_Status spi_write_byte(
+		SPI_HandleTypeDef * spi,
+		uint8_t Value
+) {
+  spi_wait4TransactionEnd(spi);
+  return (_SPI_Status)HAL_SPI_Transmit(spi, (uint8_t*) &Value, 1, STM32_SPI_TIMEOUT);
+}
+
+void spi_wait4TransactionEnd(
+		SPI_HandleTypeDef * spi
+) {
+	while (__HAL_SPI_GET_FLAG(spi, SPI_FLAG_TXE) == RESET);
+}
+
+void spi_reset(
+		SPI_HandleTypeDef * spi
+){
+	  HAL_SPI_DeInit(spi);
+	  HAL_SPI_Init(spi);
 }
 
 
-#endif
+#endif // __SPI_ENABLED

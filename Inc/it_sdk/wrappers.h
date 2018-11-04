@@ -59,8 +59,20 @@ int16_t adc_getTemperature();
 uint16_t adc_getVdd();
 uint16_t adc_getValue(uint32_t pin);
 
+// gpio
+void gpio_set(uint8_t bank, uint16_t id);
+void gpio_reset(uint8_t bank, uint16_t id);
+void gpio_change(uint8_t bank, uint16_t id, uint8_t val);
+void gpio_toggle(uint8_t bank, uint16_t id);
+uint8_t gpio_read(uint8_t bank, uint16_t id);
+void gpio_interruptEnable(uint8_t bank, uint16_t id);
+void gpio_interruptDisable(uint8_t bank, uint16_t id);
+void gpio_interruptPriority(uint8_t bank, uint16_t id, uint8_t nPreemption, uint8_t nSubpriority);
+
 // misc_wrapper
 void itsdk_reset();
+void itsdk_delayMs(uint32_t ms);
+
 
 
 #endif /* STM32L_SDK_WRAPPERS_H_ */

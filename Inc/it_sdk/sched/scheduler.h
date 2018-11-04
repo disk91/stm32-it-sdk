@@ -24,6 +24,10 @@
  *
  * ==========================================================
  */
+
+#ifndef IT_SDK_SCHEDULER_H_
+#define IT_SDK_SCHEDULER_H_
+
 #include <it_sdk/config.h>
 #include <it_sdk/itsdk.h>
 
@@ -60,3 +64,4 @@ void itdf_sched_haltSched(uint8_t schedId);
 void itdf_sched_runSched(uint8_t schedId);
 
 
+#endif 	// IT_SDK_SCHEDULER_H_

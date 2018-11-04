@@ -1,8 +1,8 @@
 /* ==========================================================
- * misc_wrapper.c - 
+ * sigfox.c - Abstraction layer for sigfox libraries
  * Project : IngeniousThings SDK
  * ----------------------------------------------------------
- * Created on: 15 sept. 2018
+ * Created on: 04 nov. 2018
  *     Author: Paul Pinault aka Disk91
  * ----------------------------------------------------------
  * Copyright (C) 2018  IngeniousThings and Disk91
@@ -20,30 +20,33 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  * ----------------------------------------------------------
- * Wrapper for different usage
+ * 
  *
  * ==========================================================
  */
+#include <stdbool.h>
 
 #include <it_sdk/config.h>
-#if ITSDK_PLATFORM == __PLATFORM_STM32L0x1 || ITSDK_PLATFORM == __PLATFORM_STM32L0x3
+#include <it_sdk/itsdk.h>
+#include <it_sdk/sigfox/sigfox.h>
 
-#include <it_sdk/wrappers.h>
-#include "stm32l0xx_hal.h"
+#ifdef ITSDK_WITH_SIGFOX_LIB
 
-/**
- * Reset the device
- */
-void itsdk_reset() {
-	NVIC_SystemReset();
+uint8_t itsdk_sigfox_setup() {
+
+	return 0;
 }
 
-/**
- * Delay in ms
- */
-void itsdk_delayMs(uint32_t ms) {
-	HAL_Delay(ms);
+uint8_t itsdk_sigfox_sendFrame(char * buf, uint8_t len, uint8_t repeat, uint16_t speed, uint8_t power, bool ack) {
+
+	return 0;
+}
+
+uint8_t itsdk_sigfox_sendBit(char bitValue,  uint8_t repeat, uint16_t speed, uint8_t power, bool ack) {
+
+	return 0;
 }
 
 
-#endif
+#endif // ITSDK_WITH_SIGFOX_LIB
+
