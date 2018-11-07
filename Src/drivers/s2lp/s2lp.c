@@ -33,150 +33,124 @@
 #include <it_sdk/itsdk.h>
 #include <it_sdk/sigfox/sigfox.h>
 #include <drivers/s2lp/s2lp_spi.h>
+#include <drivers/s2lp/s2lp.h>
+#include <it_sdk/logger/logger.h>
+#include <drivers/s2lp/st_rf_api.h>
+
+
+void s2lp_shutdown() {
+	gpio_set(ITSDK_S2LP_SDN_BANK,ITSDK_S2LP_SDN_PIN);
+}
+
+void s2lp_wakeup() {
+	gpio_reset(ITSDK_S2LP_SDN_BANK,ITSDK_S2LP_SDN_PIN);
+}
+
+void s2lp_hwInit() {
+	s2lp_spi_setCsHigh();		// disable CS
+	s2lp_shutdown();			// The S2LP have a bug before V3 : when not shutdown it force value on SPI
+								// and jam the other devices even when CS is not activ
+
+}
 
 
 void s2lp_init() {
 	S2LP_SPI_StatusBytes status;
 	uint8_t tmp;
+	s2lp_wakeup();
 	do {
+		log_info("Try to connect to S2LP\r\n");
 	    // Delay for state transition
 	    for(volatile uint8_t i=0; i!=0xFF; i++);
 
 	    // Reads the MC_STATUS register
-	    status = s2lp_spi_readRegisters(&ITSDK_S2LP_SPI,0x8E, 1, &tmp);
+	    status = s2lp_spi_readRegisters(&ITSDK_S2LP_SPI,S2LP_REG_MC_STATE0, 1, &tmp);
+	    log_info("...Returned 0x%X\r\n",status);
 	} while(status.MC_STATE!=MC_STATE_READY);
+	// Return 0 when ready
+	log_info("S2LP connection success returned value 0x%0X\r\n",tmp);
+
+	// Get the version
+    s2lp_spi_readRegisters(&ITSDK_S2LP_SPI,S2LP_REG_DEVICE_INFO0, 1, &tmp);
+    log_info("S2LP version 0x%0X\r\n",tmp);
+    if(tmp==S2LP_VERSION_2_0 || tmp==S2LP_VERSION_2_1) {
+    	// Sounds like a bug on the SPI ...
+    	// preventing conflict when accessing the eeprom
+    	s2lp_shutdown();
+    }
 
 }
 
-/*
-void S2LPManagementIdentificationRFBoard(void)
-{
-  uint8_t tmp;
-  StatusBytes status;
+void s2lp_loadConfigFromEeprom(
+		s2lp_eprom_config_t * eeprom_cnf,
+		s2lp_eprom_offset_t * eeprom_offset,
+		s2lp_config_t * cnf
+) {
 
-  do{
-    // Delay for state transition
-    for(volatile uint8_t i=0; i!=0xFF; i++);
+   switch(eeprom_cnf->xtalFreq) {
+   case 0: cnf->xtalFreq = 24000000;
+     break;
+   case 1: cnf->xtalFreq = 25000000;
+     break;
+   case 2: cnf->xtalFreq = 26000000;
+     break;
+   case 3: cnf->xtalFreq = 48000000;
+     break;
+   case 4: cnf->xtalFreq = 50000000;
+     break;
+   case 5: cnf->xtalFreq = 52000000;
+     break;
+   case 0xff:
+     // XTAL frequency is custom
+     for(uint8_t i=0;i<4;i++){
+       ((uint8_t*)&cnf->xtalFreq)[i]=((uint8_t*)&eeprom_cnf->customFreq)[3-i];
+     }
+     break;
+   default:
+	   log_warn("S2LP - Config - Freq not recognized\r\n");
+	   cnf->xtalFreq = 50000000;
+     break;
+   }
 
-    // Reads the MC_STATUS register
-    status = RadioSpiReadRegisters(0x8E, 1, &tmp);
-  }while(status.MC_STATE!=MC_STATE_READY);
+   cnf->tcxo = eeprom_cnf->tcxo;
+   cnf->band = eeprom_cnf->band;
 
-  RadioSpiReadRegisters(0xF1, 1, &tmp);
+   cnf->range = S2LP_RANGE_EXT_NONE;
+   if (eeprom_cnf->range == 2 ) cnf->range = S2LP_RANGE_SKYWORKS_868;
 
 
-  s_S2LPCut=(S2LPCutType)tmp;
-
-  if((s_S2LPCut==S2LP_CUT_2_0) || (s_S2LPCut==S2LP_CUT_2_1))
-  {
-    RadioEnterShutdown();
-  }
-
-  RadioSetHasEeprom(EepromIdentification());
-
-  if(!RadioGetHasEeprom()) // EEPROM is not present
-  {
-    RadioExitShutdown();
-    if(S2LPManagementComputeXtalFrequency()==0)
-    {
-      // if it fails force it to 50MHz
-      S2LPRadioSetXtalFrequency(50000000);
-    }
-  }
-  else  // EEPROM found
-  {
-    //read the memory and set the variable
-    uint8_t tmpBuffer[32];
-    EepromRead(0x0000, 32, tmpBuffer);
-    uint32_t xtal;
-    float foffset=0;
-    if(tmpBuffer[0]==0 || tmpBuffer[0]==0xFF) {
-      // this one happens in production where the E2PROM is here but blank
-      S2LPManagementEnableTcxo();
-      if((s_S2LPCut==S2LP_CUT_2_0) || (s_S2LPCut==S2LP_CUT_2_1))
-      {
-      RadioExitShutdown();
-      }
-      S2LPManagementComputeXtalFrequency();
-      return;
-    }
-    switch(tmpBuffer[1]) {
-    case 0:
-      xtal = 24000000;
-      S2LPRadioSetXtalFrequency(xtal);
-      break;
-    case 1:
-      xtal = 25000000;
-      S2LPRadioSetXtalFrequency(xtal);
-      break;
-    case 2:
-      xtal = 26000000;
-      S2LPRadioSetXtalFrequency(xtal);
-      break;
-    case 3:
-      xtal = 48000000;
-      S2LPRadioSetXtalFrequency(xtal);
-      break;
-    case 4:
-      xtal = 50000000;
-      S2LPRadioSetXtalFrequency(xtal);
-      break;
-    case 5:
-      xtal = 52000000;
-      S2LPRadioSetXtalFrequency(xtal);
-      break;
-    case 0xff:
-      // XTAL freqeuncy is custom
-      for(uint8_t i=0;i<4;i++)
-      {
-        ((uint8_t*)&xtal)[i]=tmpBuffer[30-i];
-      }
-      S2LPRadioSetXtalFrequency(xtal);
-      break;
-    default:
-      S2LPManagementComputeXtalFrequency();
-      break;
-    }
-
-    // TCXO field
-    if(tmpBuffer[31]==1)
-    {
-      S2LPManagementSetTcxo(1);
-    }
-
-    S2LPManagementSetBand(tmpBuffer[3]);
-
-    RangeExtType range=RANGE_EXT_NONE;
-    if(tmpBuffer[5]==2)
-    {
-      range = RANGE_EXT_SKYWORKS_868;
-    }
-    S2LPManagementSetRangeExtender(range);
-
-    EepromRead(0x0021,4,tmpBuffer);
-
-    if(*(uint32_t*)tmpBuffer != 0xffffffff)
-    {
-      for(uint8_t i=0;i<4;i++)
-      {
-        ((uint8_t*)&foffset)[i]=tmpBuffer[3-i];
+   if(*(uint32_t*)eeprom_offset->offset != 0xffffffff) {
+      for(uint8_t i=0;i<4;i++) {
+        ((uint8_t*)&cnf->offset)[i]=eeprom_offset->offset[3-i];
       }
 
-      if(foffset<-100000 || foffset>100000)
-      {
-        foffset=0;
+      if(cnf->offset < -100000 || cnf->offset > 100000) {
+    	  cnf->offset=0;
       }
-    }
-    S2LPManagementSetOffset((int32_t)foffset);
-  }
-
-  if((s_S2LPCut==S2LP_CUT_2_0) || (s_S2LPCut==S2LP_CUT_2_1))
-  {
-    RadioExitShutdown();
+  } else {
+	  cnf->offset=0;
   }
 
 }
- */
+
+
+void s2lp_loadConfigFromHeaders(
+		s2lp_config_t * cnf
+) {
+	cnf->band =  ITSDK_S2LP_CNF_BAND;
+	cnf->offset = ITSDK_S2LP_CNF_OFFSET;
+	cnf->range = ITSDK_S2LP_CNF_RANGE;
+	cnf->tcxo = ITSDK_S2LP_CNF_TCX0;
+	cnf->xtalFreq = ITSDK_S2LP_CNF_FREQ;
+}
+
+
+void s2lp_applyConfig(
+	s2lp_config_t * cnf
+){
+	  ST_RF_API_set_freq_offset(cnf->offset);
+	  ST_RF_API_set_tcxo(cnf->tcxo);
+}
 
 
 

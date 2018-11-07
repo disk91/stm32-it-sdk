@@ -340,6 +340,11 @@ uint16_t adc_getValue(uint32_t pin) {
 	}
 #elif ITSDK_DEVICE == __DEVICE_STM32L053R8
 	switch (pin) {
+	case 14:		// PA0
+		GPIO_InitStruct.Pin = 0;
+		GPIO_TypeDefStruct = GPIOA;
+		channel = ADC_CHANNEL_0;
+		break;
 	case 15:		// PA1
 		GPIO_InitStruct.Pin = 1;
 		GPIO_TypeDefStruct = GPIOA;

@@ -122,5 +122,11 @@
 #define __SIGFOX_WISOL10		1
 
 
+/**
+ * Drivers S2LP Config
+ */
+
+#define __S2LP_WITH_TCXO		1
+#define __S2LP_W_O_TCXO			0
 
 #endif /* IT_SDK_CONFIG_DEFINES_H_ */

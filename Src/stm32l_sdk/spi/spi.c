@@ -33,6 +33,22 @@
 /**
  * Read the given SPI
  */
+_SPI_Status spi_rwRegister(
+		SPI_HandleTypeDef * spi,
+		uint8_t	* toTransmit,
+		uint8_t * toReceive,
+		uint8_t   sizeToTransmit
+) {
+	return (_SPI_Status)HAL_SPI_TransmitReceive(
+				spi,
+				toTransmit,
+				toReceive,
+				sizeToTransmit,
+				STM32_SPI_TIMEOUT
+		);
+}
+
+
 _SPI_Status spi_readRegister(
 		SPI_HandleTypeDef * spi,
 		uint8_t	* toTransmit,

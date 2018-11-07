@@ -28,7 +28,7 @@
 #define STM32L_SDK_SPI_SPI_H_
 
 #define __SPI_HANDLER_TYPE		SPI_HandleTypeDef
-#define STM32_SPI_TIMEOUT		1000
+#define STM32_SPI_TIMEOUT		100					// sounds like milliseconds
 
 typedef enum
 {
@@ -37,6 +37,13 @@ typedef enum
   SPI_BUSY     = 0x02U,
   SPI_TIMEOUT  = 0x03U
 } _SPI_Status;
+
+_SPI_Status spi_rwRegister(
+		SPI_HandleTypeDef * spi,
+		uint8_t	* toTransmit,
+		uint8_t * toReceive,
+		uint8_t   sizeToTransmit
+);
 
 _SPI_Status spi_readRegister(
 		SPI_HandleTypeDef * spi,
