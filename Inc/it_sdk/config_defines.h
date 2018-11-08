@@ -121,6 +121,11 @@
 #define	__SIGFOX_S2LP			0
 #define __SIGFOX_WISOL10		1
 
+/**
+ * NVM source for Sigfox lib
+ */
+#define __SFX_NVM_LOCALEPROM	0					// MCU internal EEPROM
+#define __SFX_NVM_M95640		1					// External EEPROM type M95640
 
 /**
  * Drivers S2LP Config

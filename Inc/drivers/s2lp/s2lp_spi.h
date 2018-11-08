@@ -241,6 +241,13 @@ S2LP_SPI_StatusBytes s2lp_spi_readRegisters(
         uint8_t* pcBuffer
 );
 
+S2LP_SPI_StatusBytes s2lp_spi_accessRaw(
+		__SPI_HANDLER_TYPE * spi,
+		uint8_t*  pInBuffer,
+        uint8_t*  pOutBuffer,
+        uint8_t   cNbBytes
+);
+
 void s2lp_spi_setCsLow();
 void s2lp_spi_setCsHigh();
 

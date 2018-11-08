@@ -66,6 +66,88 @@ IRQn_Type getIrqFromBankPin(uint8_t bankId, uint16_t id) {
 }
 
 
+
+
+void gpio_configure(uint8_t bank, uint16_t id, itsdk_gpio_type_t type ) {
+	GPIO_InitTypeDef GPIO_InitStruct;
+
+	switch ( bank ) {
+	case __BANK_A:
+		  __GPIOA_CLK_ENABLE();
+		  break;
+	case __BANK_B:
+		  __GPIOB_CLK_ENABLE();
+		  break;
+	case __BANK_C:
+		  __GPIOC_CLK_ENABLE();
+		  break;
+	case __BANK_D:
+		  __GPIOD_CLK_ENABLE();
+		  break;
+	case __BANK_H:
+		  __GPIOH_CLK_ENABLE();
+		  break;
+	}
+
+	GPIO_InitStruct.Pin = id;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+
+	switch (type) {
+
+	case GPIO_OUTPUT_PP:
+		GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+		GPIO_InitStruct.Pull = GPIO_NOPULL;
+		break;
+
+	case GPIO_OUTPUT_PULLUP:
+		GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+		GPIO_InitStruct.Pull = GPIO_PULLUP;
+		break;
+
+	case GPIO_OUTPUT_PULLDOWN:
+		GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+		GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+		break;
+
+	case GPIO_OUTPUT_OD:
+		GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+		GPIO_InitStruct.Pull = GPIO_NOPULL;
+		break;
+
+	case GPIO_INPUT:
+		GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+		GPIO_InitStruct.Pull = GPIO_NOPULL;
+		break;
+	case GPIO_INTERRUPT_RISING:
+	    GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+	    GPIO_InitStruct.Pull = GPIO_NOPULL;
+		break;
+
+	case GPIO_INTERRUPT_FALLING:
+	    GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+	    GPIO_InitStruct.Pull = GPIO_NOPULL;
+		break;
+
+	case GPIO_INTERRUPT_ANY:
+	    GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+	    GPIO_InitStruct.Pull = GPIO_NOPULL;
+		break;
+
+	case GPIO_ANALOG:
+	    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+	    GPIO_InitStruct.Pull = GPIO_NOPULL;
+		break;
+
+	case GPIO_OFF:
+	    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+	    GPIO_InitStruct.Pull = GPIO_NOPULL;
+		break;
+	}
+
+	HAL_GPIO_Init(getPortFromBankId(bank), &GPIO_InitStruct);
+
+}
+
 void gpio_set(uint8_t bank, uint16_t id) {
 	HAL_GPIO_WritePin(getPortFromBankId(bank), id,GPIO_PIN_SET);
 }
@@ -99,6 +181,9 @@ void gpio_interruptPriority(uint8_t bank, uint16_t id, uint8_t nPreemption, uint
 	HAL_NVIC_SetPriority(getIrqFromBankPin(bank,id), nPreemption, nSubpriority);
 }
 
+void gpio_interruptClear(uint8_t bank, uint16_t id) {
+	__HAL_GPIO_EXTI_CLEAR_IT(id);
+}
 
 
 #endif

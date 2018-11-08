@@ -74,8 +74,8 @@ S2LP_SPI_StatusBytes s2lp_spi_accessRegisters(
   S2LP_SPI_StatusBytes *pStatus=(S2LP_SPI_StatusBytes *)&status;
 
   // Disable S2LP Interrupt
-  gpio_interruptPriority(ITSDK_S2LP_INT_BANK, ITSDK_S2LP_INT_PIN, 4, 4);
-  gpio_interruptDisable(ITSDK_S2LP_INT_BANK, ITSDK_S2LP_INT_PIN);
+  gpio_interruptPriority(ITSDK_S2LP_GPIO3_BANK, ITSDK_S2LP_GPIO3_PIN, 4, 4);
+  gpio_interruptDisable(ITSDK_S2LP_GPIO3_BANK, ITSDK_S2LP_GPIO3_PIN);
 
   s2lp_spi_setCsLow();
   itsdk_delayMs(S2LP_SPI_DELAY);
@@ -122,14 +122,50 @@ S2LP_SPI_StatusBytes s2lp_spi_accessRegisters(
   s2lp_spi_setCsHigh();
 
   // Re-enable S2LP Interrupt
-  gpio_interruptPriority(ITSDK_S2LP_INT_BANK, ITSDK_S2LP_INT_PIN, 4, 4);
-  gpio_interruptEnable(ITSDK_S2LP_INT_BANK, ITSDK_S2LP_INT_PIN);
+  gpio_interruptPriority(ITSDK_S2LP_GPIO3_BANK, ITSDK_S2LP_GPIO3_PIN, 4, 4);
+  gpio_interruptEnable(ITSDK_S2LP_GPIO3_BANK, ITSDK_S2LP_GPIO3_PIN);
 
   return *pStatus;
 
 }
 
+S2LP_SPI_StatusBytes s2lp_spi_accessRaw(
+		__SPI_HANDLER_TYPE * spi,
+		uint8_t*  pInBuffer,
+        uint8_t*  pOutBuffer,
+        uint8_t   cNbBytes
+) {
+  S2LP_SPI_StatusBytes status = {0};
+  uint8_t rx_buff[20];
 
+  uint8_t* pOutBuffer_=pOutBuffer;
+  if (pOutBuffer==NULL) pOutBuffer_=rx_buff;
+
+  // Disable S2LP Interrupt
+  s2lp_spi_setCsLow();
+  gpio_interruptPriority(ITSDK_S2LP_GPIO3_BANK, ITSDK_S2LP_GPIO3_PIN, 4, 4);
+  gpio_interruptDisable(ITSDK_S2LP_GPIO3_BANK, ITSDK_S2LP_GPIO3_PIN);
+
+  spi_rwRegister(
+		  spi,
+		  pInBuffer,
+		  pOutBuffer_,
+		  cNbBytes
+  );
+
+  // To be sure to don't rise the Chip Select before the end of last sending
+  spi_wait4TransactionEnd(spi);
+
+  // Puts the SPI chip select high to end the transaction
+  s2lp_spi_setCsHigh();
+
+  // Re-enable S2LP Interrupt
+  gpio_interruptPriority(ITSDK_S2LP_GPIO3_BANK, ITSDK_S2LP_GPIO3_PIN, 4, 4);
+  gpio_interruptEnable(ITSDK_S2LP_GPIO3_BANK, ITSDK_S2LP_GPIO3_PIN);
+
+  return status;
+
+}
 // Largely inspired by STMicroelectronics source code << COPYRIGHT(c) 2018 STMicroelectronics >>
 
 

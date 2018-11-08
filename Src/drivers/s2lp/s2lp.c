@@ -36,6 +36,7 @@
 #include <drivers/s2lp/s2lp.h>
 #include <it_sdk/logger/logger.h>
 #include <drivers/s2lp/st_rf_api.h>
+#include <drivers/sigfox/sigfox_retriever.h>
 
 
 void s2lp_shutdown() {
@@ -130,6 +131,19 @@ void s2lp_loadConfigFromEeprom(
   } else {
 	  cnf->offset=0;
   }
+
+  uint32_t id = 0;
+  uint8_t pac[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+  uint8_t rcz = 0;
+  retr_error_t retr_err=enc_utils_retrieve_data(&id, pac, &rcz);
+
+  log_info("id : 0x%X\r\n",id);
+  log_info("pac : ");
+  for ( int i = 0 ; i < 9 ; i++ ) {
+	  log_info("0x%X, ",pac[i]);
+  }
+  log_info("\r\nrcz : %d\r\n",rcz);
+
 
 }
 

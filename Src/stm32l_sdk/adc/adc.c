@@ -350,6 +350,11 @@ uint16_t adc_getValue(uint32_t pin) {
 		GPIO_TypeDefStruct = GPIOA;
 		channel = ADC_CHANNEL_1;
 		break;
+	case 27:		// PB1
+		GPIO_InitStruct.Pin = 1;
+		GPIO_TypeDefStruct = GPIOB;
+		channel = ADC_CHANNEL_9;
+		break;
 	case 0:
 		channel = ADC_CHSELR_CHSEL17;
 		break;

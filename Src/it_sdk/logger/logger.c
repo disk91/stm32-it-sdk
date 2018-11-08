@@ -178,7 +178,7 @@ void log_warn(char *format, ...) {
 
     if ( __log.logConf & LOGGER_CONFIG_FILE_MASK & LOGGER_CONFIG_WARN_LVL_MASK ) {
         // @ TODO logfile_printf("%lu [warn] ",time_get_ms());
-        logfile_print(fmtBuffer);
+        //logfile_print(fmtBuffer);
     }
   }
 #endif

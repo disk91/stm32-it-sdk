@@ -60,6 +60,19 @@ uint16_t adc_getVdd();
 uint16_t adc_getValue(uint32_t pin);
 
 // gpio
+typedef enum {
+	GPIO_OUTPUT_PP = 0,
+	GPIO_OUTPUT_PULLUP,
+	GPIO_OUTPUT_PULLDOWN,
+	GPIO_OUTPUT_OD,
+	GPIO_INPUT,
+	GPIO_INTERRUPT_RISING,
+	GPIO_INTERRUPT_FALLING,
+	GPIO_INTERRUPT_ANY,
+	GPIO_ANALOG,
+	GPIO_OFF
+} itsdk_gpio_type_t;
+void gpio_configure(uint8_t bank, uint16_t id, itsdk_gpio_type_t type );
 void gpio_set(uint8_t bank, uint16_t id);
 void gpio_reset(uint8_t bank, uint16_t id);
 void gpio_change(uint8_t bank, uint16_t id, uint8_t val);
@@ -68,6 +81,7 @@ uint8_t gpio_read(uint8_t bank, uint16_t id);
 void gpio_interruptEnable(uint8_t bank, uint16_t id);
 void gpio_interruptDisable(uint8_t bank, uint16_t id);
 void gpio_interruptPriority(uint8_t bank, uint16_t id, uint8_t nPreemption, uint8_t nSubpriority);
+void gpio_interruptClear(uint8_t bank, uint16_t id);
 
 // misc_wrapper
 void itsdk_reset();

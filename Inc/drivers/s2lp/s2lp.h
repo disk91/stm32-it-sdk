@@ -59,7 +59,7 @@ typedef struct s2lp_config_s {
 	uint8_t		tcxo;				// 1 when TCXO is present
 	uint8_t		range;
 	uint8_t		band;
-	uint32_t	offset;
+	int32_t		offset;
 }  __attribute__ ((__packed__)) s2lp_config_t;
 
 

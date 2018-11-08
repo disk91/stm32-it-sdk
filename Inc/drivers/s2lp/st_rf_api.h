@@ -10,6 +10,11 @@
  * This file defines the manufacturer's RF functions to be implemented
  * for library usage.
  */
+#ifndef IT_SDK_DRIVERS_S2LP_RF_H_
+#define IT_SDK_DRIVERS_S2LP_RF_H_
+
+#include <drivers/sigfox/sigfox_types.h>
+
 
 #define ST_RF_ERR_API_ERROR                   (sfx_u8)(0x01) /*!< Error on ST_RF_API */
 
@@ -218,3 +223,5 @@ sfx_u8 ST_RF_API_StopRxTx(void);
  *******************************************************************/
 
 sfx_s16 ST_RF_API_GetRSSI(void);
+
+#endif // IT_SDK_DRIVERS_S2LP_RF_H_
