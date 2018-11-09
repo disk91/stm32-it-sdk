@@ -48,7 +48,7 @@ void wdg_setupWithMaxMs(uint32_t ms) {
 	if ( ms > 28000 || ms < 10 ) {
 		_ERROR_HANDLER((__FILE__, __LINE__));
 	}
-
+  #if ITSDK_WDG_MS >0
 	int32_t uwLsiFreq;
 	#if ITSDK_WITH_CLK_ADJUST > 0
 	 uwLsiFreq = rtc_getRealRtcFrequency();
@@ -67,7 +67,13 @@ void wdg_setupWithMaxMs(uint32_t ms) {
 		/* Initialization Error */
 		_ERROR_HANDLER((__FILE__, __LINE__));
 	}
-
+	// To enable IWDG freeze during debug session
+	//__HAL_DBGMCU_FREEZE_IWDG();
+  #else
+	#ifdef IWDG
+      #error "Watchdog disabled you need to disable it also in CubeMx"
+	#endif
+  #endif
 }
 
 

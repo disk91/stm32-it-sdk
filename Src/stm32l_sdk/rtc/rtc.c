@@ -36,20 +36,50 @@
  * Configure the RTC source clock for running LowPower
  */
 void rtc_configure4LowPower(uint16_t ms) {
-
 	rtc_prepareSleepTime();
-    uint32_t _time = (((uint32_t)ms) * 2314) / 1000;
-    HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, _time, RTC_WAKEUPCLOCK_RTCCLK_DIV16);
+	rtc_runRtcUntil(ms);
 }
 
 /**
  * Deactivate the WakeUpTimer for not having the IRQ looping
  */
 void rtc_disable4LowPower() {
-    HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
+	rtc_disableWakeUp();
     rtc_updateTimeAfterSleepTime();
 }
 
+
+/**
+ * Run Rtc for a given time in ticks
+ * Max is 16s
+ */
+void rtc_runRtcUntil(uint16_t ms) {
+    uint32_t _time = (((uint32_t)ms) * 2314) / 1000;
+    HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, _time, RTC_WAKEUPCLOCK_RTCCLK_DIV16);
+}
+
+/*
+ * Convert a duration in ticks
+ */
+uint32_t rtc_getTicksFromDuration(uint32_t ms) {
+    return (ms * 2314) / 1000;
+}
+
+int32_t rtc_getMsFromTicks(uint32_t ticks) {
+	return (ticks * 1000) / 2314;
+}
+
+/**
+ * Run the RTC for a given number of tics
+ */
+void rtc_runRtcUntilTicks(uint16_t ticks) {
+    HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, ticks, RTC_WAKEUPCLOCK_RTCCLK_DIV16);
+}
+
+
+void rtc_disableWakeUp() {
+	HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
+}
 
 /**
  * Get the current timestamp in uS (this is not considering any specific date stuff...)
@@ -111,6 +141,68 @@ void rtc_updateTimeAfterSleepTime() {
 
 
 /**
+ * RCT Interrupt handler allowing to chain different function
+ */
+rtc_irq_chain_t __rtc_irq_chain = { NULL, NULL };
+void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc)
+{
+	rtc_irq_chain_t * c = &__rtc_irq_chain;
+	while ( c != NULL ) {
+		void (*p)(RTC_HandleTypeDef *h) = c->irq_func;
+		if ( p != NULL ) {
+			p(hrtc);
+		}
+		c = c->next;
+	}
+}
+
+/**
+ * Add an action to the chain, the action **must be** static
+ */
+void rtc_registerIrqAction(rtc_irq_chain_t * chain) {
+	rtc_irq_chain_t * c = &__rtc_irq_chain;
+	while ( c->next != NULL && c->irq_func != chain->irq_func ) {
+	  c = c->next;
+	}
+	if ( c->irq_func != chain->irq_func ) {
+		// the Action is not already existing
+		c->next=chain;
+		chain->next = NULL;
+	}
+
+}
+
+/**
+ * Remove an action to the chain, the action **must be** static
+ */
+void rtc_removeIrqAction(rtc_irq_chain_t * chain) {
+	rtc_irq_chain_t * c = &__rtc_irq_chain;
+	while ( c != NULL && c->next != chain ) {
+	  c = c->next;
+	}
+	if ( c != NULL ) {
+		c->next = c->next->next;
+	}
+}
+
+/**
+ * Search for an existing action
+ */
+bool rtc_existAction(rtc_irq_chain_t * chain) {
+	rtc_irq_chain_t * c = &__rtc_irq_chain;
+	while ( c != NULL && c->next != chain ) {
+	  c = c->next;
+	}
+	if ( c != NULL ) {
+		return true;
+	}
+	return false;
+}
+
+
+
+
+/**
   * Measure the LSI frequency to adjust the RTC and other peripheral working with LSI
   */
 
@@ -160,44 +252,4 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 
 #endif
 
-
-/**
- * Init RTC, This function is called by HAL_RTC_Init by HAL Framework
- * This code needs to be in Src/rtc.c file
- */
-/*
-void HAL_RTC_MspInit(RTC_HandleTypeDef *hrtc)
-{
-  // Enable RTC Clock
-  __HAL_RCC_RTC_ENABLE();
-
-  // Configure the NVIC for RTC Alarm
-  HAL_NVIC_SetPriority(RTC_IRQn, 0x0, 0);
-  HAL_NVIC_EnableIRQ(RTC_IRQn);
-}
-*/
-
-/**
- * DeInit RTC, This function is called by HAL_RTC_DeInit by HAL Framework
- * This code needs to be in Src/rtc.c file
- *
- */
-/*
-void HAL_RTC_MspDeInit(RTC_HandleTypeDef *hrtc)
-{
-  __HAL_RCC_RTC_DISABLE();
-}
-*/
-
-/**
- * RTC IRQ_Handler - referenced in startup/startup_stm32l011xx.s file
- * This code needs to be in Src/stm32l0xx_it.c
- * Added when selecting RTC Internal wakeup + NVIC RTC Interrupt activation
- */
-/*
-void RTC_IRQHandler(void)
-{
-  HAL_RTCEx_WakeUpTimerIRQHandler(&hrtc);
-}
-*/
 

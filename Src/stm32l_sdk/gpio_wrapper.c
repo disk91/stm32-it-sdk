@@ -27,6 +27,7 @@
  * ==========================================================
  */
 #include <string.h>
+#include <stdbool.h>
 #include <it_sdk/config.h>
 #if ITSDK_PLATFORM == __PLATFORM_STM32L0x1 || ITSDK_PLATFORM == __PLATFORM_STM32L0x3
 
@@ -183,6 +184,66 @@ void gpio_interruptPriority(uint8_t bank, uint16_t id, uint8_t nPreemption, uint
 
 void gpio_interruptClear(uint8_t bank, uint16_t id) {
 	__HAL_GPIO_EXTI_CLEAR_IT(id);
+}
+
+
+/**
+ * RCT Interrupt handler allowing to chain different function
+ */
+gpio_irq_chain_t __gpio_irq_chain = { NULL, NULL };
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+	gpio_irq_chain_t * c = &__gpio_irq_chain;
+	while ( c != NULL ) {
+		void (*p)(uint16_t p) = c->irq_func;
+		if ( p != NULL ) {
+			p(GPIO_Pin);
+		}
+		c = c->next;
+	}
+    __HAL_GPIO_EXTI_CLEAR_IT(GPIO_Pin);
+}
+
+/**
+ * Add an action to the chain, the action **must be** static
+ */
+void gpio_registerIrqAction(gpio_irq_chain_t * chain) {
+	gpio_irq_chain_t * c = &__gpio_irq_chain;
+	while ( c->next != NULL && c->irq_func != chain->irq_func ) {
+	  c = c->next;
+	}
+	if ( c->irq_func != chain->irq_func ) {
+		// the Action is not already existing
+		c->next=chain;
+		chain->next = NULL;
+	}
+}
+
+/**
+ * Remove an action to the chain, the action **must be** static
+ */
+void gpio_removeIrqAction(gpio_irq_chain_t * chain) {
+	gpio_irq_chain_t * c = &__gpio_irq_chain;
+	while ( c != NULL && c->next != chain ) {
+	  c = c->next;
+	}
+	if ( c != NULL ) {
+		c->next = c->next->next;
+	}
+}
+
+/**
+ * Search for an existing action
+ */
+bool gpio_existAction(gpio_irq_chain_t * chain) {
+	gpio_irq_chain_t * c = &__gpio_irq_chain;
+	while ( c != NULL && c->next != chain ) {
+	  c = c->next;
+	}
+	if ( c != NULL ) {
+		return true;
+	}
+	return false;
 }
 
 

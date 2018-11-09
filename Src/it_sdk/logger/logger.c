@@ -144,7 +144,7 @@ void log_error(char *format, ...) {
 
     if ( __log.logConf & LOGGER_CONFIG_FILE_MASK & LOGGER_CONFIG_ERROR_LVL_MASK ) {
       // @ TODO logfile_printf("%lu [error] ",time_get_ms());
-      logfile_print(fmtBuffer);
+      //logfile_print(fmtBuffer);
     }
 
   }

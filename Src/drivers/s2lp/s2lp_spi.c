@@ -136,10 +136,15 @@ S2LP_SPI_StatusBytes s2lp_spi_accessRaw(
         uint8_t   cNbBytes
 ) {
   S2LP_SPI_StatusBytes status = {0};
-  uint8_t rx_buff[20];
+  uint8_t rx_buff[100];
 
   uint8_t* pOutBuffer_=pOutBuffer;
-  if (pOutBuffer==NULL) pOutBuffer_=rx_buff;
+  if (pOutBuffer==NULL) {
+	  pOutBuffer_=rx_buff;
+	  if (cNbBytes>100) {
+		  log_error("s2lp_spi_accessRaw buffer too small\r\n");
+	  }
+  }
 
   // Disable S2LP Interrupt
   s2lp_spi_setCsLow();

@@ -168,8 +168,8 @@ void eeprom_m95640_access(
   } else {
     cmd[0] = M95640_EEPROM_CMD_WRITE;
   }
-  cmd[1] = (uint8_t)nAddress >> 8;
-  cmd[2] = (uint8_t)nAddress & 0xFF;
+  cmd[1] = (uint8_t)(nAddress >> 8);
+  cmd[2] = (uint8_t)(nAddress & 0xFF);
 
   // Wait the end of a previous write operation
   eeprom_m95640_ensureEndOfWrite(spi,true);

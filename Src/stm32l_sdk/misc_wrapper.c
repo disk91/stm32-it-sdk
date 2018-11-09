@@ -39,6 +39,24 @@ void itsdk_reset() {
 }
 
 /**
+ * Reset Cause
+ */
+itsdk_reset_cause_t itsdk_getResetCause() {
+	if ( RCC->CSR & RCC_CSR_LPWRRSTF ) return RESET_CAUSE_LOWPOWER;
+	if ( RCC->CSR & RCC_CSR_WWDGRSTF ) return RESET_CAUSE_WWDG;
+	if ( RCC->CSR & RCC_CSR_IWDGRSTF ) return RESET_CAUSE_IWDG;
+	if ( RCC->CSR & RCC_CSR_SFTRSTF ) return RESET_CAUSE_SOFTWARE;
+	if ( RCC->CSR & RCC_CSR_PORRSTF ) return RESET_CAUSE_POWER_ON;
+	if ( RCC->CSR & RCC_CSR_PINRSTF ) return RESET_CAUSE_RESET_PIN;
+	if ( RCC->CSR & RCC_CSR_OBLRSTF ) return RESET_CAUSE_LOWPOWER;
+	else return RESET_CAUSE_UNKNONW;
+}
+
+void itsdk_cleanResetCause() {
+	RCC->CSR |= RCC_CSR_RMVF;
+}
+
+/**
  * Delay in ms
  */
 void itsdk_delayMs(uint32_t ms) {

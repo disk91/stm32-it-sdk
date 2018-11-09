@@ -1,8 +1,8 @@
 /* ==========================================================
- * rtc.h - headers for Real Time Clock
+ * sigfox_helper.c - Sigfox helper
  * Project : IngeniousThings SDK
  * ----------------------------------------------------------
- * Created on: 2 sept. 2018
+ * Created on: 09 nov. 2018
  *     Author: Paul Pinault aka Disk91
  * ----------------------------------------------------------
  * Copyright (C) 2018  IngeniousThings and Disk91
@@ -20,41 +20,36 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  * ----------------------------------------------------------
- * 
+ *
  *
  * ==========================================================
  */
-
-#ifndef STM32L_SDK_RTC_RTC_H_
-#define STM32L_SDK_RTC_RTC_H_
-
-#include <stdbool.h>
 #include <it_sdk/config.h>
+#if ITSDK_WITH_SIGFOX_LIB > 0
 
-typedef struct s_rtc_irq_chain {
-	void (*irq_func)(RTC_HandleTypeDef *h);
-	struct s_rtc_irq_chain * next;
-} rtc_irq_chain_t;
-void rtc_registerIrqAction(rtc_irq_chain_t * chain);
-void rtc_removeIrqAction(rtc_irq_chain_t * chain);
-bool rtc_existAction(rtc_irq_chain_t * chain);
+#include <it_sdk/itsdk.h>
+#include <drivers/s2lp/s2lp.h>
+#include <drivers/sigfox/sigfox_api.h>
+#include <drivers/sigfox/sigfox_helper.h>
+#include <it_sdk/logger/logger.h>
 
-void rtc_configure4LowPower(uint16_t ms);
-void rtc_disable4LowPower();
-uint64_t rtc_getTimestampMs();
-void rtc_prepareSleepTime();
-void rtc_updateTimeAfterSleepTime();
+/**
+ * Init the sigfox library according to the configuration
+ * passed as parameter.
+ * return true when success.
+ */
+bool sigfox_init(s2lp_config_t * conf) {
 
-void rtc_runRtcUntil(uint16_t ms);
-void rtc_runRtcUntilTicks(uint16_t ticks);
-uint32_t rtc_getTicksFromDuration(uint32_t ms);
-int32_t rtc_getMsFromTicks(uint32_t ticks);
-void rtc_disableWakeUp();
+	switch ( conf->rcz ) {
+	case 1:
+		SIGFOX_API_open(&(sfx_rc_t)RC1);
+		break;
+	}
 
-#if ITSDK_WITH_CLK_ADJUST > 0
-uint32_t rtc_getRealRtcFrequency();
-#endif
+	return true;
+}
 
-extern bool __enable_systick;
 
-#endif /* STM32L_SDK_RTC_RTC_H_ */
+
+#endif // ITSDK_WITH_SIGFOX_LIB test
+

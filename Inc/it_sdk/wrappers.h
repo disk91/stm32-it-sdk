@@ -72,6 +72,12 @@ typedef enum {
 	GPIO_ANALOG,
 	GPIO_OFF
 } itsdk_gpio_type_t;
+
+typedef struct s_gpio_irq_chain {
+	void (*irq_func)(uint16_t GPIO_Pin);
+	struct s_gpio_irq_chain * next;
+} gpio_irq_chain_t;
+
 void gpio_configure(uint8_t bank, uint16_t id, itsdk_gpio_type_t type );
 void gpio_set(uint8_t bank, uint16_t id);
 void gpio_reset(uint8_t bank, uint16_t id);
@@ -82,11 +88,28 @@ void gpio_interruptEnable(uint8_t bank, uint16_t id);
 void gpio_interruptDisable(uint8_t bank, uint16_t id);
 void gpio_interruptPriority(uint8_t bank, uint16_t id, uint8_t nPreemption, uint8_t nSubpriority);
 void gpio_interruptClear(uint8_t bank, uint16_t id);
+void gpio_registerIrqAction(gpio_irq_chain_t * chain);
+void gpio_removeIrqAction(gpio_irq_chain_t * chain);
+bool gpio_existAction(gpio_irq_chain_t * chain);
 
 // misc_wrapper
 void itsdk_reset();
 void itsdk_delayMs(uint32_t ms);
 
+// Reset Cause
+typedef enum {
+	RESET_CAUSE_BOR = 0,		// under voltage			0
+	RESET_CAUSE_RESET_PIN,		// hardware reset pin		1
+	RESET_CAUSE_POWER_ON,		// power on					2
+	RESET_CAUSE_SOFTWARE,		// software reset			3
+	RESET_CAUSE_IWDG,			// Independent Watchdog		4
+	RESET_CAUSE_WWDG,			// Window Watchdog			5
+	RESET_CAUSE_LOWPOWER,		// Low-Power reset Flag		6
 
+	RESET_CAUSE_UNKNONW
+} itsdk_reset_cause_t;
+
+void itsdk_cleanResetCause();
+itsdk_reset_cause_t itsdk_getResetCause();
 
 #endif /* STM32L_SDK_WRAPPERS_H_ */

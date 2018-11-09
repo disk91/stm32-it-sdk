@@ -36,8 +36,12 @@
 #include <drivers/s2lp/s2lp.h>
 #include <it_sdk/logger/logger.h>
 #include <drivers/s2lp/st_rf_api.h>
+#include <drivers/s2lp/st_lib_api.h>
 #include <drivers/sigfox/sigfox_retriever.h>
 
+#if ITSDK_SIGFOX_NVM_SOURCE	== __SFX_NVM_M95640
+	#include <drivers/eeprom/m95640/m95640.h>
+#endif
 
 void s2lp_shutdown() {
 	gpio_set(ITSDK_S2LP_SDN_BANK,ITSDK_S2LP_SDN_PIN);
@@ -60,16 +64,13 @@ void s2lp_init() {
 	uint8_t tmp;
 	s2lp_wakeup();
 	do {
-		log_info("Try to connect to S2LP\r\n");
 	    // Delay for state transition
 	    for(volatile uint8_t i=0; i!=0xFF; i++);
 
 	    // Reads the MC_STATUS register
 	    status = s2lp_spi_readRegisters(&ITSDK_S2LP_SPI,S2LP_REG_MC_STATE0, 1, &tmp);
-	    log_info("...Returned 0x%X\r\n",status);
 	} while(status.MC_STATE!=MC_STATE_READY);
 	// Return 0 when ready
-	log_info("S2LP connection success returned value 0x%0X\r\n",tmp);
 
 	// Get the version
     s2lp_spi_readRegisters(&ITSDK_S2LP_SPI,S2LP_REG_DEVICE_INFO0, 1, &tmp);
@@ -132,41 +133,104 @@ void s2lp_loadConfigFromEeprom(
 	  cnf->offset=0;
   }
 
-  uint32_t id = 0;
-  uint8_t pac[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-  uint8_t rcz = 0;
-  retr_error_t retr_err=enc_utils_retrieve_data(&id, pac, &rcz);
-
-  log_info("id : 0x%X\r\n",id);
-  log_info("pac : ");
-  for ( int i = 0 ; i < 9 ; i++ ) {
-	  log_info("0x%X, ",pac[i]);
-  }
-  log_info("\r\nrcz : %d\r\n",rcz);
-
-
 }
 
 
-void s2lp_loadConfigFromHeaders(
-		s2lp_config_t * cnf
+
+/**
+ * Load the configuration according to the source setting in the configuration file
+ */
+void s2lp_loadConfiguration(
+		s2lp_config_t * s2lpConf
 ) {
-	cnf->band =  ITSDK_S2LP_CNF_BAND;
-	cnf->offset = ITSDK_S2LP_CNF_OFFSET;
-	cnf->range = ITSDK_S2LP_CNF_RANGE;
-	cnf->tcxo = ITSDK_S2LP_CNF_TCX0;
-	cnf->xtalFreq = ITSDK_S2LP_CNF_FREQ;
+
+	#if ITSDK_SIGFOX_NVM_SOURCE	== __SFX_NVM_M95640
+		s2lp_eprom_config_t eepromConf1;
+		eeprom_m95640_read(&ITSDK_DRIVERS_M95640_SPI,0x0000, 32, (uint8_t *)&eepromConf1);
+
+		s2lp_eprom_offset_t eepromConf2;
+		eeprom_m95640_read(&ITSDK_DRIVERS_M95640_SPI,0x0021, 4, (uint8_t *)&eepromConf2);
+
+		s2lp_loadConfigFromEeprom(
+				&eepromConf1,
+				&eepromConf2,
+				s2lpConf
+		);
+
+		// Not clear why => when passing &(s2lpConf->id) it crash...
+		uint32_t id;
+		uint8_t rcz;
+		enc_utils_retrieve_data(&id, s2lpConf->pac, &rcz);
+		s2lpConf->id = id;
+		s2lpConf->rcz = rcz;
+
+		s2lpConf->low_power_flag = ITSDK_SIGFOX_LOWPOWER;
+		s2lpConf->payload_encryption = ITSDK_SIGFOX_ENCRYPTED;
+
+	#elif ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_LOCALEPROM
+		#error "__SFX_NVM_LOCALEPROM Not yet implemented"
+	#elif ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_HEADERS
+		int i;
+		uint8_t pac[8] 		= ITSDK_SIGFOX_PAC;
+		uint8_t key[16] 	= IDTSK_SIGFOX_KEY;
+		uint8_t aux[16] 	= IDTSK_SIGFOX_AUX;
+
+		s2lpConf->band 		= ITSDK_S2LP_CNF_BAND;
+		s2lpConf->offset 	= ITSDK_S2LP_CNF_OFFSET;
+		s2lpConf->range 	= ITSDK_S2LP_CNF_RANGE;
+		s2lpConf->tcxo 		= ITSDK_S2LP_CNF_TCX0;
+		s2lpConf->xtalFreq 	= ITSDK_S2LP_CNF_FREQ;
+		s2lpConf->id		= ITSDK_SIGFOX_ID;
+		s2lpConf->rcz		= ITDSK_SIGFOX_RCZ;
+		for ( i =  0 ; i < 8 ; i++ ) s2lpConf->pac[i] = pac[i];
+		for ( i =  0 ; i < 16 ; i++ ) {
+			s2lpConf->key[i] = key[i];
+			s2lpConf->aux[i] = aux[i];
+		}
+		s2lpConf->low_power_flag = ITSDK_SIGFOX_LOWPOWER;
+		s2lpConf->payload_encryption = ITSDK_SIGFOX_ENCRYPTED;
+
+		#warning "__SFX_NVM_HEADERS Not to be used in production"
+	#endif
+
+	s2lp_applyConfig(s2lpConf);
+}
+
+void s2lp_printConfig(
+		s2lp_config_t * s2lpConf
+) {
+	int i;
+	log_info("------- Sigfox/S2LP configuration ----- \r\n");
+	log_info("band: %d\r\n",s2lpConf->band);
+	log_info("offset: %d\r\n",s2lpConf->offset);
+	log_info("rssiOffset: %d\r\n",s2lpConf->rssiOffset);
+	log_info("range: %d\r\n",s2lpConf->range);
+	log_info("tcxo: %d\r\n",s2lpConf->tcxo);
+	log_info("xtalFreq: %d\r\n",s2lpConf->xtalFreq);
+	log_info("id: 0x%X\r\n",s2lpConf->id);
+	log_info("rcz: %d\r\n",s2lpConf->rcz);
+	log_info("pac: [ ");
+	for ( i = 0 ; i < 8 ; i++ ) log_info("%02X",s2lpConf->pac[i]);
+	log_info(" ]\r\n");
+
+	log_info("key: [ ");
+	for ( i = 0 ; i < 16 ; i++ ) log_info("%02X",s2lpConf->key[i]);
+	log_info(" ]\r\n");
+
+	log_info("aux: [ ");
+	for ( i = 0 ; i < 16 ; i++ ) log_info("%02X",s2lpConf->aux[i]);
+	log_info(" ]\r\n");
+	log_info("\r\n");
 }
 
 
 void s2lp_applyConfig(
 	s2lp_config_t * cnf
 ){
-	  ST_RF_API_set_freq_offset(cnf->offset);
-	  ST_RF_API_set_tcxo(cnf->tcxo);
+	itsdk_sigfox_configInit(cnf);
+	ST_RF_API_set_freq_offset(cnf->offset);
+	ST_RF_API_set_tcxo(cnf->tcxo);
 }
-
-
 
 
 #endif // ITSDK_SIGFOX_LIB test

@@ -52,15 +52,10 @@
 
 #include <drivers/sigfox/sigfox_types.h>
 #include <drivers/sigfox/sigfox_api.h>
+#include <drivers/s2lp/s2lp.h>
 
 #define MCU_API_VER		"v2.3.5"
-
-typedef struct s_sigfox_configuration {
-	sfx_bool	payload_encryption;
-	sfx_u8		low_power_flag;
-} sigfox_configuration_t;
-
-extern sigfox_configuration_t	itsdk_sigfox_config;
+void itsdk_sigfox_configInit(s2lp_config_t * cnf);
 
 /* ---------------------------------------------------------------- */
 /* Make ST Code cleaner										        */
@@ -364,5 +359,33 @@ sfx_u8 MCU_API_get_device_id_and_payload_encryption_flag(sfx_u8 dev_id[ID_LENGTH
  * \retval MCU_ERR_API_GET_PAC:                  Error when getting initial PAC
  *******************************************************************/
 sfx_u8 MCU_API_get_initial_pac(sfx_u8 initial_pac[PAC_LENGTH]);
+
+
+
+typedef enum
+{
+  NVM_RW_OK = 0,
+  NVM_WRITE_ERROR,
+  NVM_READ_ERROR,
+  NVM_WRITE_RECORD_ERROR,
+  NVM_READ_RECORD_ERROR,
+  NVM_WRITE_HEADER_ERROR,
+  NVM_NO_RECORDS
+} NVM_RW_RESULTS;
+
+typedef struct
+{
+  uint32_t id;
+  uint32_t rcz;
+  uint8_t  pac[8];
+  uint8_t  key[16];
+  uint8_t  aux[16];
+  int32_t freqOffset;
+  int32_t rssiOffset;
+  uint32_t checkSum;
+} NVM_BoardDataType;
+
+NVM_RW_RESULTS NVM_ReadBoardData(NVM_BoardDataType *data);
+NVM_RW_RESULTS NVM_Read(uint32_t nAddress, uint8_t cNbBytes, uint8_t* pcBuffer);
 
 #endif //  IT_SDK_DRIVERS_S2LP_MCU_API_H_

@@ -126,6 +126,7 @@
  */
 #define __SFX_NVM_LOCALEPROM	0					// MCU internal EEPROM
 #define __SFX_NVM_M95640		1					// External EEPROM type M95640
+#define __SFX_NVM_HEADERS		2					// Configuration stored in the #define
 
 /**
  * Drivers S2LP Config
