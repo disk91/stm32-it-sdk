@@ -168,6 +168,7 @@ void eeprom_m95640_access(
   } else {
     cmd[0] = M95640_EEPROM_CMD_WRITE;
   }
+
   cmd[1] = (uint8_t)(nAddress >> 8);
   cmd[2] = (uint8_t)(nAddress & 0xFF);
 
@@ -191,20 +192,33 @@ void eeprom_m95640_access(
     );
 
   // Read the registers according to the number of bytes
-  uint8_t * src = ( access==M95640_READ_DATA )?dummy:pcBuffer;
-  uint8_t * dst = ( access==M95640_READ_DATA )?pcBuffer:dummy;
   for (int index = 0; index < cNbBytes; index++) {
-		  spi_readRegister(
+	  if ( access==M95640_READ_DATA ) {
+		  spi_rwRegister(
 		 	  spi,
-		 	  src,
-		 	  &(dst)[index],
+			  dummy,
+		 	  &(pcBuffer)[index],
 		 	  1
 		  );
+	  } else {
+		  spi_rwRegister(
+		 	  spi,
+			  &(pcBuffer)[index],
+			  dummy,
+		 	  1
+		  );
+	  }
   }
 
   /* Put the SPI chip select high to end the transaction */
   eeprom_m95640_chipUnSelected();
-
+/*
+  log_info("Rd/Wr from Eeprom (m95640.c)[%d] @ 0x%X : [ ",cNbBytes,nAddress);
+  for (int i=0; i< cNbBytes ; i++) {
+	log_info("%02X ",pcBuffer[i]);
+  }
+  log_info("]\r\n");
+*/
 }
 
 

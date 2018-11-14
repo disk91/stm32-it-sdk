@@ -49,13 +49,16 @@
  */
 #ifndef IT_SDK_DRIVERS_S2LP_MCU_API_H_
 #define IT_SDK_DRIVERS_S2LP_MCU_API_H_
-
+#include <stdbool.h>
 #include <drivers/sigfox/sigfox_types.h>
 #include <drivers/sigfox/sigfox_api.h>
 #include <drivers/s2lp/s2lp.h>
 
 #define MCU_API_VER		"v2.3.5"
 void itsdk_sigfox_configInit(s2lp_config_t * cnf);
+bool enc_retreive_key(int32_t deviceId, uint8_t * pac, uint8_t * key);
+void enc_protect_key();
+void enc_unprotect_key();
 
 /* ---------------------------------------------------------------- */
 /* Make ST Code cleaner										        */
@@ -387,5 +390,8 @@ typedef struct
 
 NVM_RW_RESULTS NVM_ReadBoardData(NVM_BoardDataType *data);
 NVM_RW_RESULTS NVM_Read(uint32_t nAddress, uint8_t cNbBytes, uint8_t* pcBuffer);
+
+void enc_utils_retrieve_key(uint8_t * key);
+
 
 #endif //  IT_SDK_DRIVERS_S2LP_MCU_API_H_

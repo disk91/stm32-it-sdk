@@ -52,7 +52,7 @@ void itsdk_time_add_us(uint32_t us) {
  * Set current time in ms
  */
 void itsdk_time_set_ms(uint64_t ms) {
-	uint64_t n = ms * 1000;
+	uint64_t n = ms * 1000L;
 	if ( n < __timeus  ) {
 		__time_has_overrun=1;
 		__time_overrun_cnt++;

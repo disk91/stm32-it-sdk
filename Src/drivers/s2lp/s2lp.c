@@ -38,6 +38,7 @@
 #include <drivers/s2lp/st_rf_api.h>
 #include <drivers/s2lp/st_lib_api.h>
 #include <drivers/sigfox/sigfox_retriever.h>
+#include <drivers/sigfox/sigfox_helper.h>
 
 #if ITSDK_SIGFOX_NVM_SOURCE	== __SFX_NVM_M95640
 	#include <drivers/eeprom/m95640/m95640.h>
@@ -139,6 +140,18 @@ void s2lp_loadConfigFromEeprom(
 
 /**
  * Load the configuration according to the source setting in the configuration file
+ * ----------------------------------------------------------------------------------
+ * enc_utils_retrieve_data
+ *   use 3 zone in the nvram
+ *      - a 32B block starting at 0x200 with following content
+ *        [ DEVICEID LSByte first - 4B ] [ PAC MSByte first - 8B ] [ ? 4b ] [ RCZ 4b ] [ Unknown 19B ]
+ *      - a 8B block starting at 0x6 with following content
+ *        [ ?? - 4B ]  [ ?? - 4B ]
+ *      - a 4B block starting at 0x1F0 - this is a checksum for two previous blocs ( checksum of the uint32_t values )
+ *  The function creates an internal structure containing the ID and PAC but it also retrieve the device key
+ *  The function copy the ID, PAC and RCZ values into the given pointers.
+ *  The function verify the checksum validity, the device ID compliance (not 0x00...0 | 0xFF...F)
+ *
  */
 void s2lp_loadConfiguration(
 		s2lp_config_t * s2lpConf
@@ -151,6 +164,7 @@ void s2lp_loadConfiguration(
 		s2lp_eprom_offset_t eepromConf2;
 		eeprom_m95640_read(&ITSDK_DRIVERS_M95640_SPI,0x0021, 4, (uint8_t *)&eepromConf2);
 
+		// S2lp_hw config
 		s2lp_loadConfigFromEeprom(
 				&eepromConf1,
 				&eepromConf2,
@@ -158,11 +172,22 @@ void s2lp_loadConfiguration(
 		);
 
 		// Not clear why => when passing &(s2lpConf->id) it crash...
+		// retrieve_data also extract the SigfoxID key and store it in RAM for internal use.
 		uint32_t id;
 		uint8_t rcz;
 		enc_utils_retrieve_data(&id, s2lpConf->pac, &rcz);
 		s2lpConf->id = id;
 		s2lpConf->rcz = rcz;
+
+		// Clean the key and aux not provided with this NVM source
+		for (int i= 0 ; i < 16 ; i++) {
+			s2lpConf->key[i]=0xFF;
+			s2lpConf->aux[i]=0xFF;
+		}
+
+		// Search for the private key in the memory to fill the structure
+		enc_retreive_key(s2lpConf->id, s2lpConf->pac, s2lpConf->key);
+		//sigfox_cifferKey(s2lpConf);
 
 		s2lpConf->low_power_flag = ITSDK_SIGFOX_LOWPOWER;
 		s2lpConf->payload_encryption = ITSDK_SIGFOX_ENCRYPTED;
@@ -187,6 +212,7 @@ void s2lp_loadConfiguration(
 			s2lpConf->key[i] = key[i];
 			s2lpConf->aux[i] = aux[i];
 		}
+		sigfox_cifferKey(s2lpConf);
 		s2lpConf->low_power_flag = ITSDK_SIGFOX_LOWPOWER;
 		s2lpConf->payload_encryption = ITSDK_SIGFOX_ENCRYPTED;
 

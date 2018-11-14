@@ -50,6 +50,20 @@ bool sigfox_init(s2lp_config_t * conf) {
 }
 
 
+/**
+ * Protect the private key in memory
+ *  - basic Xor ... better than nothing
+ */
+void sigfox_cifferKey(s2lp_config_t * conf) {
+	 uint32_t key = ITSDK_SIGFOX_PROTECT_KEY;
+	 uint32_t * pk = (uint32_t *)(conf->key);
+	 for ( int i = 0  ; i < 4 ; i++,pk++ ) *pk ^= key;
+}
+void sigfox_unCifferKey(s2lp_config_t * conf) {
+	sigfox_cifferKey(conf);
+}
+
+
 
 #endif // ITSDK_WITH_SIGFOX_LIB test
 

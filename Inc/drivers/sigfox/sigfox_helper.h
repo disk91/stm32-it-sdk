@@ -33,6 +33,7 @@
 #include <drivers/s2lp/s2lp.h>
 
 bool sigfox_init(s2lp_config_t * conf);
-
+void sigfox_cifferKey(s2lp_config_t * conf);
+void sigfox_unCifferKey(s2lp_config_t * conf);
 
 #endif /* IT_SDK_DRIVERS_SIGFOX_HELPER_H_ */

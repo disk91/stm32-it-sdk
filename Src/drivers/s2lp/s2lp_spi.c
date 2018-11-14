@@ -32,6 +32,7 @@
 #if ITSDK_SIGFOX_LIB == __SIGFOX_S2LP
 
 #include <it_sdk/itsdk.h>
+#include <it_sdk/logger/logger.h>
 #include <it_sdk/sigfox/sigfox.h>
 #include <it_sdk/wrappers.h>
 

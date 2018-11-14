@@ -53,6 +53,7 @@
 	#include <drivers/eeprom/m95640/m95640.h>
 #endif
 #include <it_sdk/wrappers.h>
+#include <string.h>
 
 
 s2lp_config_t *	_s2lp_sigfox_config;
@@ -220,21 +221,30 @@ sfx_u8 MCU_API_aes_128_cbc_encrypt(sfx_u8 *encrypted_data,
 				   sfx_u8 key[16],
 				   sfx_credentials_use_key_t use_key)
 {
-	log_info(">> MCU_API_aes_128_cbc_encrypt\r\n");
+  log_info(">> MCU_API_aes_128_cbc_encrypt\r\n");
   /* Let the retriever encrypts the requested buffer using the ID_KEY_RETRIEVER function.
   The retriever knows the KEY of this node. */
-  
+
+  log_info("data_to_encrypt : [ ");
+  for ( int i = 0 ; i < aes_block_len ; i++ ) log_info("%02X",data_to_encrypt[i]);
+  log_info(" ]\r\n");
+
   enc_utils_encrypt(encrypted_data, data_to_encrypt, aes_block_len, key, use_key);
+  log_info("encrypted_data : [ ");
+  for ( int i = 0 ; i < aes_block_len ; i++ ) log_info("%02X",encrypted_data[i]);
+  log_info(" ]\r\n");
   
   
+
   return SFX_ERR_NONE;
 }
 
-/*
-* @brief  Get NVM memory.
-* @param  read_data : Pointer to the buffer    
-* @retval None
-*/
+
+/**
+ * Read the Sigfox NVM block. It contains SeqId and other data updated by
+ * the sigfox lib. This block is a structure defined as an enum... (wahou!)
+ * with the block size as the last value of the enum.
+ */
 sfx_u8 MCU_API_get_nv_mem(sfx_u8 read_data[SFX_NVMEM_BLOCK_SIZE])
 {		
 	log_info(">> MCU_API_get_nv_mem\r\n");
@@ -247,11 +257,6 @@ sfx_u8 MCU_API_get_nv_mem(sfx_u8 read_data[SFX_NVMEM_BLOCK_SIZE])
 			(uint8_t *)read_data
 	);
 
-	log_info("Read from Eeprom (mcu_api.c):");
-	for (int i=0; i< SFX_NVMEM_BLOCK_SIZE ; i++) {
-		log_info("0x%X, ",read_data[i]);
-	}
-	log_info("\r\n");
 	return 0;	// success
 
 #elif ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_LOCALEPROM
@@ -260,11 +265,10 @@ sfx_u8 MCU_API_get_nv_mem(sfx_u8 read_data[SFX_NVMEM_BLOCK_SIZE])
 
 }
 
-/*
-* @brief  Set NVM memory.
-* @param  data_to_write : Pointer to the buffer to write   
-* @retval None
-*/
+/**
+ * This function is used to write back the sigfox block once modified.
+ * see the read function for getting more about it.
+ */
 sfx_u8 MCU_API_set_nv_mem(sfx_u8 data_to_write[SFX_NVMEM_BLOCK_SIZE])
 {
 
@@ -929,5 +933,108 @@ sfx_u8 MCU_API_timer_stop_carrier_sense(void)
 
 }
 
+/* **********************************************************************************************************
+ * Eprom not documented extension
+ * Not to be used in normal operations
+ * **********************************************************************************************************
+ */
 
+/**
+ * extract the key from the eeprom
+ */
+void enc_utils_retrieve_key(uint8_t * key) {
+
+	uint8_t	raw[32];
+
+#if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_M95640
+
+	eeprom_m95640_read(
+			&ITSDK_DRIVERS_M95640_SPI,
+			ITSDK_SIGFOX_NVM_IDBASEADDR,
+			32,
+			raw
+	);
+
+	for ( int i = 0 ; i < 16 ; i++ ) {
+		key[i]=raw[16+i];
+	}
+
+	// Clean the stack
+	for ( int i = 0 ; i < 32 ; i++ ) {
+		raw[i] = 0;
+	}
+
+#elif ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_LOCALEPROM
+	#error "__SFX_NVM_LOCALEPROM - not yet implemented"
+#else
+	#error "NVM Storage - not yet implemented"
+#endif
+
+
+
+}
+
+/**
+ * Some hack of the ST IDRetriever library to extract and set a better protection to
+ * the Sigfox secret key stored in clear in the RAM after
+ * Basically the strcuture created have the following format
+ *
+ * struct s_internal {
+ *	uint8_t 	unk0[4];			// 0		- 00 00 00 07
+ *	uint8_t 	unk1;				// 4		- 0x07
+ *	uint8_t		unk2[3];			// 5		- 00 00 00
+ *	uint8_t		pac[8];				// 8 		- 36 61 3F 89 44 0B D6 47
+ *	uint32_t	deviceID;			// 16		-
+ *	uint8_t		unk3[16];			// 20		- 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *	uint8_t		private_key[16];	// 36       - XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX XX
+ *  ...
+ * }
+ */
+
+uint8_t * __keyPtr = 0;
+uint32_t enc_search4key(int32_t deviceId, uint8_t * pac) {
+	 uint8_t * ramPtr = (uint8_t *)0x20000010;	// start at 16 as we search for deviceID
+
+	 int i;
+	 for( i = 16 ; i < ITSDK_RAM_SIZE ; i++ ) {
+		 // search for deviceId
+		 if ( *((uint32_t *)ramPtr) == deviceId ) {
+			 // search for pac at -8 bytes
+			 int j = 0;
+			 while ( j < 8 ) {
+				 if ( *(ramPtr-8+j) != pac[j] ) break;
+				 j++;
+			 }
+			 // found !
+			 if ( j == 8 ) break;
+		 }
+		 ramPtr+=4;	// stm32 only support 32b aligned memory access apparently
+	 }
+	 __keyPtr = ( i < ITSDK_RAM_SIZE )?ramPtr+20:(uint8_t)0;
+	 return (uint32_t)__keyPtr;
+}
+
+ bool enc_retreive_key(int32_t deviceId, uint8_t * pac, uint8_t * key) {
+	 if ( __keyPtr == 0 ) enc_search4key(deviceId, pac);
+	 if ( __keyPtr != 0 ) {
+		 memcpy(key,__keyPtr,16);
+		 return true;
+	 }
+	 return false;
+ }
+
+ /**
+  * Protect the private key from being retreived from the memory in clear
+  */
+ void enc_protect_key() {
+	 if ( __keyPtr == 0 ) return;
+	 uint32_t key = ITSDK_SIGFOX_PROTECT_KEY;
+	 uint32_t * pk = (uint32_t *)__keyPtr;
+
+	 for ( int i = 0  ; i < 4 ; i++,pk++ ) *pk ^= key;
+ }
+
+ void enc_unprotect_key() {
+	 enc_protect_key();
+ }
 

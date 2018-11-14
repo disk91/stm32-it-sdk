@@ -85,7 +85,12 @@ void rtc_disableWakeUp() {
  * Get the current timestamp in uS (this is not considering any specific date stuff...)
  * This function costs a lot a flash byte ... not to be used with small devices
  */
+#ifndef __WE_HAVE_A_LOT_OF_FLASH
+uint32_t days = 0;			// day index since the begining
+uint32_t lastTick = 0;		// time in ms in the day
+#endif
 uint64_t rtc_getTimestampMs() {
+#ifdef __WE_HAVE_A_LOT_OF_FLASH
 	RTC_DateTypeDef _date;
 	RTC_TimeTypeDef _time;
 	struct tm currTime;
@@ -103,13 +108,30 @@ uint64_t rtc_getTimestampMs() {
 	timestamp = mktime(&currTime);
 	uint64_t ms = (timestamp*1000) + ((1000*(uint32_t)(_time.SecondFraction-_time.SubSeconds))/_time.SecondFraction+1);
 	return ms;
+#else
+	RTC_TimeTypeDef _time;
+	uint32_t ms;
+	HAL_RTC_GetTime(&hrtc, &_time, RTC_FORMAT_BIN);
+	ms  = (uint32_t)_time.Hours*3600*1000;
+	ms += (uint32_t)_time.Minutes*60*1000;
+	ms += (uint32_t)_time.Seconds*1000;
+	ms += ((1000*(uint32_t)(_time.SecondFraction-_time.SubSeconds))/_time.SecondFraction+1);
+
+	if ( ms < lastTick ) {
+		// day has changed
+		days++;
+	}
+	lastTick = ms;
+	return ( uint64_t )(days*3600000L*24L)+ms;
+
+#endif
 }
 
 
 /**
- * Reset RTC to 00:00:00.00 for measuring sleep duration
+ * Reset RTC to 00:00:00.00 at startup
  */
-void rtc_prepareSleepTime() {
+void rtc_resetTime() {
 	RTC_TimeTypeDef _time;
 	_time.Hours 		 = 0x0;
 	_time.Minutes 		 = 0x0;
@@ -121,10 +143,24 @@ void rtc_prepareSleepTime() {
 	__enable_systick=false;
 }
 
+
+/**
+ * Call before any sleep in case there is something to prepare with RTC
+ * or others.
+ */
+void rtc_prepareSleepTime() {
+	__enable_systick=false;
+}
+
+
+
 /**
  * Get the sleep duration based on RTC counter
  */
 void rtc_updateTimeAfterSleepTime() {
+
+	itsdk_time_set_ms(rtc_getTimestampMs());
+/*
 	RTC_TimeTypeDef _time;
 	RTC_DateTypeDef _date;
 	uint32_t	ms;
@@ -136,6 +172,7 @@ void rtc_updateTimeAfterSleepTime() {
 	ms += (uint32_t)_time.Seconds*1000;
 	ms += ((1000*(uint32_t)(_time.SecondFraction-_time.SubSeconds))/_time.SecondFraction+1);
 	itsdk_time_add_us(ms*1000);
+*/
 	__enable_systick=true;
 }
 
