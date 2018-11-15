@@ -57,6 +57,7 @@
 #include <it_sdk/itsdk.h>
 #include <it_sdk/lowpower/lowpower.h>
 #include <it_sdk/sched/scheduler.h>
+#include <it_sdk/time/time.h>
 
 /**
  * The setup function is called on every MCU Reset but not on wakeup from sleep
@@ -65,6 +66,7 @@
  */
 void itsdk_setup() {
 
+	itsdk_time_reset();
 	#if ITSDK_WDG_MS > 0
 	  wdg_setupWithMaxMs(ITSDK_WDG_MS);
 	#endif

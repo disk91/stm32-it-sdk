@@ -51,6 +51,8 @@ uint32_t rtc_getTicksFromDuration(uint32_t ms);
 int32_t rtc_getMsFromTicks(uint32_t ticks);
 void rtc_disableWakeUp();
 
+void rtc_resetTime();
+
 #if ITSDK_WITH_CLK_ADJUST > 0
 uint32_t rtc_getRealRtcFrequency();
 #endif

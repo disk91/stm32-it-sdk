@@ -26,6 +26,7 @@
  */
 #include <it_sdk/config.h>
 #include <it_sdk/time/time.h>
+#include <it_sdk/logger/logger.h>
 #include <stm32l_sdk/rtc/rtc.h>
 #include "time.h"
 #if ITSDK_WITH_CLK_ADJUST > 0
@@ -110,8 +111,10 @@ uint64_t rtc_getTimestampMs() {
 	return ms;
 #else
 	RTC_TimeTypeDef _time;
+	RTC_DateTypeDef _date;
 	uint32_t ms;
 	HAL_RTC_GetTime(&hrtc, &_time, RTC_FORMAT_BIN);
+	HAL_RTC_GetDate(&hrtc, &_date, RTC_FORMAT_BIN);
 	ms  = (uint32_t)_time.Hours*3600*1000;
 	ms += (uint32_t)_time.Minutes*60*1000;
 	ms += (uint32_t)_time.Seconds*1000;
@@ -132,6 +135,13 @@ uint64_t rtc_getTimestampMs() {
  * Reset RTC to 00:00:00.00 at startup
  */
 void rtc_resetTime() {
+	log_info("Reset Time\r\n");
+	RTC_DateTypeDef _date;
+	_date.Year = 0;
+	_date.Month = 1;
+	_date.Date = 1;
+	HAL_RTC_SetDate(&hrtc,&_date,RTC_FORMAT_BIN);
+
 	RTC_TimeTypeDef _time;
 	_time.Hours 		 = 0x0;
 	_time.Minutes 		 = 0x0;
@@ -140,7 +150,7 @@ void rtc_resetTime() {
 	_time.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
 	_time.StoreOperation = RTC_STOREOPERATION_RESET;
 	HAL_RTC_SetTime(&hrtc, &_time, RTC_FORMAT_BIN);
-	__enable_systick=false;
+	lastTick = 0;
 }
 
 
