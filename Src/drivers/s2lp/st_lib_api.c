@@ -1,45 +1,36 @@
-/**
-* @file    mcu_api.c
-* @author  STM32ODE Team, NOIDA
-* @version 1.0.0
-* @date    24-September-2018
-* @brief   This is a ST-SigFox demo that shows how to use the sigfox protocol to 
-*          send a message to the base stations each time the push button 
-*          is pressed.The data sent is a number representing the number of times 
-*	   the button has been pressed from the boot.        
-******************************************************************************
-* @attention
-*
-* <h2><center>&copy; COPYRIGHT(c) 2018 STMicroelectronics</center></h2>
-*
-* Redistribution and use in source and binary forms, with or without modification,
-* are permitted provided that the following conditions are met:
-*   1. Redistributions of source code must retain the above copyright notice,
-*      this list of conditions and the following disclaimer.
-*   2. Redistributions in binary form must reproduce the above copyright notice,
-*      this list of conditions and the following disclaimer in the documentation
-*      and/or other materials provided with the distribution.
-*   3. Neither the name of STMicroelectronics nor the names of its contributors
-*      may be used to endorse or promote products derived from this software
-*      without specific prior written permission.
-*
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-* DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-* FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-* DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-* SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-* CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-* OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-* OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*
-******************************************************************************
-*/
+/* ==========================================================
+ * st_lib_api.c - S2LP (STm SubGhz transceiver) API interface
+ * Project : IngeniousThings SDK
+ * ----------------------------------------------------------
+ * Created on: 04 nov. 2018
+ *     Author: Paul Pinault aka Disk91
+ * ----------------------------------------------------------
+ * Copyright (C) 2018 and Disk91
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU LESSER General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Lesser Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ * ----------------------------------------------------------
+ *
+ * Some peaces of that code directly comes from ST Libraries
+ * and identified with << COPYRIGHT(c) 2018 STMicroelectronics >>
+ *
+ * ==========================================================
+ */
 
 /* Includes ------------------------------------------------------------------*/
 #include <it_sdk/config.h>
 #include <it_sdk/logger/logger.h>
+#include <it_sdk/lowpower/lowpower.h>
 #include <stm32l_sdk/rtc/rtc.h>
 #include <drivers/sigfox/sigfox_types.h>
 #include <drivers/sigfox/sigfox_api.h>
@@ -531,6 +522,7 @@ void __GPIO_IRQHandler(uint16_t GPIO_Pin) {
 	  //log_info(">> GpioIRQ\r\n");
 	  if (ST_RF_API_Get_Continuous_TX_Flag()==0) {
 		// Most of the Irq are delayed during Tx
+		  log_info(":");
 	   	__pendingIrqDelayed=1;
 	  } else {
 	    ST_RF_API_S2LP_IRQ_CB(); // If the CBPSK is implemented trigger TX State Machine
@@ -605,15 +597,19 @@ void ST_MCU_API_GpioIRQ(sfx_u8 pin, sfx_u8 new_state, sfx_u8 trigger)
 void ST_MCU_API_WaitForInterrupt(void)
 {
 	//log_info(">> ST_MCU_API_WaitForInterrupt\r\n");
-	//log_info("!");
+	log_info("!");
 	if(__pendingIrqDelayed) {
 	   ST_RF_API_S2LP_IRQ_CB();
 	   __pendingIrqDelayed=0;
 	} else {
-		// @TODO ... remove this
-#warning remove
-		//wdg_refresh();
-	  // itsdk_delayMs(10);
+	  #if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_GPIO ) > 0
+		 lowPower_switch();
+	  #endif
+// watchdog refresh as we prefer to reboot if longuer than WDG if IRQ fireing issue
+//	  #if ITSDK_WDG_MS > 0
+//		wdg_refresh();
+//	  #endif
+
 	}
 
 //
