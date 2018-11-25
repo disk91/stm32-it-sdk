@@ -1,11 +1,11 @@
 /* ==========================================================
  * rtc.c -  Real Time Clock Peripheral
- * Project : IngeniousThings SDK
+ * Project : Disk91 SDK
  * ----------------------------------------------------------
  * Created on: 2 sept. 2018
  *     Author: Paul Pinault aka Disk91
  * ----------------------------------------------------------
- * Copyright (C) 2018  IngeniousThings and Disk91
+ * Copyright (C) 2018 Disk91
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU LESSER General Public License as published by
@@ -27,6 +27,7 @@
 #include <it_sdk/config.h>
 #include <it_sdk/time/time.h>
 #include <it_sdk/logger/logger.h>
+#include <it_sdk/lowpower/lowpower.h>
 #include <stm32l_sdk/rtc/rtc.h>
 #include "time.h"
 #if ITSDK_WITH_CLK_ADJUST > 0
@@ -55,8 +56,7 @@ void rtc_disable4LowPower() {
  * Max is 16s
  */
 void rtc_runRtcUntil(uint16_t ms) {
-    uint32_t _time = (((uint32_t)ms) * 2314) / 1000;
-    HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, _time, RTC_WAKEUPCLOCK_RTCCLK_DIV16);
+    rtc_runRtcUntilTicks(rtc_getTicksFromDuration((uint32_t)ms));
 }
 
 /*
@@ -73,7 +73,7 @@ int32_t rtc_getMsFromTicks(uint32_t ticks) {
 /**
  * Run the RTC for a given number of tics
  */
-void rtc_runRtcUntilTicks(uint16_t ticks) {
+void rtc_runRtcUntilTicks(uint32_t ticks) {
     HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, ticks, RTC_WAKEUPCLOCK_RTCCLK_DIV16);
 }
 
@@ -160,6 +160,10 @@ void rtc_resetTime() {
  */
 void rtc_prepareSleepTime() {
 	__enable_systick=false;
+	HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
+	HAL_PWR_DisableWakeUpPin( PWR_WAKEUP_PIN1 );
+	HAL_PWR_DisableWakeUpPin( PWR_WAKEUP_PIN2 );
+	__HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
 }
 
 
@@ -170,19 +174,6 @@ void rtc_prepareSleepTime() {
 void rtc_updateTimeAfterSleepTime() {
 
 	itsdk_time_set_ms(rtc_getTimestampMs());
-/*
-	RTC_TimeTypeDef _time;
-	RTC_DateTypeDef _date;
-	uint32_t	ms;
-	HAL_RTC_GetTime(&hrtc, &_time, RTC_FORMAT_BIN);
-	HAL_RTC_GetDate(&hrtc, &_date, RTC_FORMAT_BIN);	// unlock date after time read
-
-	ms  = 0; // (uint32_t)_time.Hours*3600*1000; -- we should never sleep more than 1 hour ...
-	ms += (uint32_t)_time.Minutes*60*1000;
-	ms += (uint32_t)_time.Seconds*1000;
-	ms += ((1000*(uint32_t)(_time.SecondFraction-_time.SubSeconds))/_time.SecondFraction+1);
-	itsdk_time_add_us(ms*1000);
-*/
 	__enable_systick=true;
 }
 
@@ -201,6 +192,8 @@ void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc)
 		}
 		c = c->next;
 	}
+	__HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
+	__lowPower_wakeup_reason=LOWPWR_WAKEUP_RTC;
 }
 
 /**

@@ -1,6 +1,6 @@
 /* ==========================================================
  * wrappers.h - 
- * Project : IngeniousThings SDK
+ * Project : Disk91 SDK
  * ----------------------------------------------------------
  * Created on: 12 sept. 2018
  *     Author: Paul Pinault aka Disk91
@@ -66,8 +66,12 @@ typedef enum {
 	GPIO_OUTPUT_PULLDOWN,
 	GPIO_OUTPUT_OD,
 	GPIO_INPUT,
+	GPIO_INPUT_PULLUP,
+	GPIO_INPUT_PULLDOWN,
 	GPIO_INTERRUPT_RISING,
+	GPIO_INTERRUPT_RISING_PULLDWN,
 	GPIO_INTERRUPT_FALLING,
+	GPIO_INTERRUPT_FALLING_PULLUP,
 	GPIO_INTERRUPT_ANY,
 	GPIO_ANALOG,
 	GPIO_OFF

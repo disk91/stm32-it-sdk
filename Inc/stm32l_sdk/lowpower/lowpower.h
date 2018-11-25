@@ -1,6 +1,6 @@
 /* ==========================================================
  * lowpower.h - stm32L0x1 low power header
- * Project : IngeniousThings SDK
+ * Project : Disk91 SDK
  * ----------------------------------------------------------
  * Created on: 2 sept. 2018
  *     Author: Paul Pinault aka Disk91

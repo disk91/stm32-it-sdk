@@ -1,11 +1,11 @@
 /* ==========================================================
  * uart_wrapper.c - wrapper function for uarts
- * Project : IngeniousThings SDK
+ * Project : Disk91 SDK
  * ----------------------------------------------------------
  * Created on: 12 sept. 2018
  *     Author: Paul Pinault aka Disk91
  * ----------------------------------------------------------
- * Copyright (C) 2018  IngeniousThings and Disk91
+ * Copyright (C) 2018 Disk91
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU LESSER General Public License as published by
@@ -119,14 +119,35 @@ void gpio_configure(uint8_t bank, uint16_t id, itsdk_gpio_type_t type ) {
 		GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
 		GPIO_InitStruct.Pull = GPIO_NOPULL;
 		break;
+
+	case GPIO_INPUT_PULLUP:
+		GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+		GPIO_InitStruct.Pull = GPIO_PULLUP;
+		break;
+
+	case GPIO_INPUT_PULLDOWN:
+		GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+		GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+		break;
+
 	case GPIO_INTERRUPT_RISING:
 	    GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
 	    GPIO_InitStruct.Pull = GPIO_NOPULL;
 		break;
 
+	case GPIO_INTERRUPT_RISING_PULLDWN:
+	    GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+	    GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+		break;
+
 	case GPIO_INTERRUPT_FALLING:
 	    GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
 	    GPIO_InitStruct.Pull = GPIO_NOPULL;
+		break;
+
+	case GPIO_INTERRUPT_FALLING_PULLUP:
+	    GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+	    GPIO_InitStruct.Pull = GPIO_PULLUP;
 		break;
 
 	case GPIO_INTERRUPT_ANY:

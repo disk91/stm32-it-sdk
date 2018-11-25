@@ -1,6 +1,6 @@
 /* ==========================================================
  * lowpower.h - header to manage lowpower
- * Project : IngeniousThings SDK
+ * Project : Disk91 SDK
  * ----------------------------------------------------------
  * Created on: 2 sept. 2018
  *     Author: Paul Pinault aka Disk91
@@ -27,6 +27,14 @@
 
 #ifndef IT_SDK_LOWPOWER_LOWPOWER_H_
 #define IT_SDK_LOWPOWER_LOWPOWER_H_
+
+typedef enum {
+	LOWPWR_WAKEUP_RTC = 0,
+	LOWPWR_WAKEUP_GPIO,
+	LOWPWR_WAKEUP_SYSTICK,
+	LOWPWR_WAKEUP_UNDEF = 255,
+} lowPower_wu_reason_t;
+extern lowPower_wu_reason_t __lowPower_wakeup_reason;
 
 void lowPower_switch();
 

@@ -1,6 +1,6 @@
 /* ==========================================================
  * s2lp_spi.h - Header for S2LP spi part
- * Project : IngeniousThings SDK
+ * Project : Disk91 SDK
  * ----------------------------------------------------------
  * Created on: 4 Nov. 2018
  *     Author: Paul Pinault aka Disk91

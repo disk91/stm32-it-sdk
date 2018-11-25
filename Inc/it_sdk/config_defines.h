@@ -1,6 +1,6 @@
 /* ==========================================================
  * config_defines.h - All the possible configuration settings
- * Project : IngeniousThings SDK
+ * Project : Disk91 SDK
  * ----------------------------------------------------------
  * Created on: 2 sept. 2018
  *     Author: Paul Pinault aka Disk91
@@ -114,6 +114,30 @@
 #define __BANK_F				5
 #define __BANK_H				6
 
+
+/**
+ * LOG MODULE DEFINES
+ */
+#define __LOG_MOD_STIMER		0x00000001			// software timer module
+#define __LOG_MOD_LOWSIGFOX		0x00000002			// sigfox low level driver whatever it is
+#define __LOG_MOD_SIGFOX		0x00000004			// sigfox abstraction layer
+
+#define __LOG_MOD_CUSTOM1		0x00010000			// User level logging
+#define __LOG_MOD_CUSTOM2		0x00020000			// User level logging
+#define __LOG_MOD_CUSTOM3		0x00040000			// User level logging
+#define __LOG_MOD_CUSTOM4		0x00080000			// User level logging
+#define __LOG_MOD_CUSTOM5		0x00100000			// User level logging
+#define __LOG_MOD_CUSTOM6		0x00200000			// User level logging
+#define __LOG_MOD_CUSTOM7		0x00400000			// User level logging
+#define __LOG_MOD_CUSTOM8		0x00800000			// User level logging
+#define __LOG_MOD_CUSTOM9		0x01000000			// User level logging
+#define __LOG_MOD_CUSTOMA		0x02000000			// User level logging
+#define __LOG_MOD_CUSTOMB		0x04000000			// User level logging
+#define __LOG_MOD_CUSTOMC		0x08000000			// User level logging
+#define __LOG_MOD_CUSTOMD		0x10000000			// User level logging
+#define __LOG_MOD_CUSTOME		0x20000000			// User level logging
+#define __LOG_MOD_CUSTOMF		0x40000000			// User level logging
+#define __LOG_MOD_RESERVED		0x80000000			// Reserved Level
 
 /**
  * Supported SIGFOX Interface

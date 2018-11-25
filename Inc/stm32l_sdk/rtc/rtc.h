@@ -1,6 +1,6 @@
 /* ==========================================================
  * rtc.h - headers for Real Time Clock
- * Project : IngeniousThings SDK
+ * Project : Disk91 SDK
  * ----------------------------------------------------------
  * Created on: 2 sept. 2018
  *     Author: Paul Pinault aka Disk91
@@ -46,7 +46,7 @@ void rtc_prepareSleepTime();
 void rtc_updateTimeAfterSleepTime();
 
 void rtc_runRtcUntil(uint16_t ms);
-void rtc_runRtcUntilTicks(uint16_t ticks);
+void rtc_runRtcUntilTicks(uint32_t ticks);
 uint32_t rtc_getTicksFromDuration(uint32_t ms);
 int32_t rtc_getMsFromTicks(uint32_t ticks);
 void rtc_disableWakeUp();

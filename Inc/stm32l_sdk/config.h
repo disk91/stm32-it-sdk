@@ -1,6 +1,6 @@
 /* ==========================================================
  * config.h - STM32L specific configuration file
- * Project : IngeniousThings SDK
+ * Project : Disk91 SDK
  * ----------------------------------------------------------
  * Created on: 6 sept. 2018
  *     Author: Paul Pinault aka Disk91

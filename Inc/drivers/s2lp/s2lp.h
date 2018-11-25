@@ -1,6 +1,6 @@
 /* ==========================================================
  * s2lp.h - Prototypes for S2LP drivers
- * Project : IngeniousThings SDK
+ * Project : Disk91 SDK
  * ----------------------------------------------------------
  * Created on: 5 nov. 2018
  *     Author: Paul Pinault aka Disk91

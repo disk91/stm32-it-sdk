@@ -1,6 +1,6 @@
 /* ==========================================================
  * m95640p.c - Driver for SPI EEPROM M95640
- * Project : IngeniousThings SDK
+ * Project : Disk91 SDK
  * ----------------------------------------------------------
  * Created on: 04 nov. 2018
  *     Author: Paul Pinault aka Disk91

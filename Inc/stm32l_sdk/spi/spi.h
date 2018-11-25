@@ -1,6 +1,6 @@
 /* ==========================================================
  * spi.h - stm32L0x1 spi header
- * Project : IngeniousThings SDK
+ * Project : Disk91 SDK
  * ----------------------------------------------------------
  * Created on: 4 nov. 2018
  *     Author: Paul Pinault aka Disk91

@@ -1,6 +1,6 @@
 /* ==========================================================
  * s2lp.c - S2LP (STm SubGhz transceiver) driver for sigfox
- * Project : IngeniousThings SDK
+ * Project : Disk91 SDK
  * ----------------------------------------------------------
  * Created on: 04 nov. 2018
  *     Author: Paul Pinault aka Disk91

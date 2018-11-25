@@ -1,12 +1,12 @@
 /* ==========================================================
  * s2lp_spi.c - S2LP (STm SubGhz transceiver) driver for sigfox
  *              SPI interface
- * Project : IngeniousThings SDK
+ * Project : Disk91 SDK
  * ----------------------------------------------------------
  * Created on: 04 nov. 2018
  *     Author: Paul Pinault aka Disk91
  * ----------------------------------------------------------
- * Copyright (C) 2018  Disk91
+ * Copyright (C) 2018 Disk91
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU LESSER General Public License as published by

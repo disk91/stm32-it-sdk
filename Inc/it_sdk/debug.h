@@ -1,6 +1,6 @@
 /* ==========================================================
  * debug.h - Debug macro per library
- * Project : IngeniousThings SDK
+ * Project : Disk91 SDK
  * ----------------------------------------------------------
  * Created on: 15 sept. 2018
  *     Author: Paul Pinault aka Disk91

@@ -50,6 +50,7 @@
 #ifndef IT_SDK_DRIVERS_S2LP_MCU_API_H_
 #define IT_SDK_DRIVERS_S2LP_MCU_API_H_
 #include <stdbool.h>
+#include <it_sdk/config.h>
 #include <drivers/sigfox/sigfox_types.h>
 #include <drivers/sigfox/sigfox_api.h>
 #include <drivers/s2lp/s2lp.h>
@@ -59,6 +60,25 @@ void itsdk_sigfox_configInit(s2lp_config_t * cnf);
 bool enc_retreive_key(int32_t deviceId, uint8_t * pac, uint8_t * key);
 void enc_protect_key();
 void enc_unprotect_key();
+
+/* ----------------------------------------------------------------
+ * Logging
+ */
+
+#if (ITSDK_LOGGER_MODULE & __LOG_MOD_LOWSIGFOX) > 0
+#define LOG_INFO_S2LP(x)		log_info x
+#define LOG_WARN_S2LP(x) 		log_warn x
+#define LOG_ERROR_S2LP(x)		log_error x
+#define LOG_DEBUG_S2LP(x)		log_debug x
+#else
+#define LOG_INFO_S2LP(x)
+#define LOG_WARN_S2LP(x)
+#define LOG_ERROR_S2LP(x)
+#define LOG_DEBUG_S2LP(x)
+#endif
+
+
+
 
 /* ---------------------------------------------------------------- */
 /* Make ST Code cleaner										        */

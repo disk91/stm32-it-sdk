@@ -1,6 +1,6 @@
 /* ==========================================================
  * sigfox_helper.h - Prototypes for Sigfox helper functions
- * Project : IngeniousThings SDK
+ * Project : Disk91 SDK
  * ----------------------------------------------------------
  * Created on: 9 nov. 2018
  *     Author: Paul Pinault aka Disk91

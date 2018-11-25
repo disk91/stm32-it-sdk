@@ -1,6 +1,6 @@
 /* ==========================================================
  * st_lib_api.c - S2LP (STm SubGhz transceiver) API interface
- * Project : IngeniousThings SDK
+ * Project : Disk91 SDK
  * ----------------------------------------------------------
  * Created on: 04 nov. 2018
  *     Author: Paul Pinault aka Disk91
@@ -30,6 +30,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include <it_sdk/config.h>
 #include <it_sdk/logger/logger.h>
+#include <it_sdk/time/timer.h>
 #include <it_sdk/lowpower/lowpower.h>
 #include <stm32l_sdk/rtc/rtc.h>
 #include <drivers/sigfox/sigfox_types.h>
@@ -56,67 +57,17 @@ void itsdk_sigfox_configInit(s2lp_config_t * cnf) {
 
 // Reset the system clock to default
 void ST_MCU_API_SetSysClock(void) {
-	log_info(">> ST_MCU_API_SetSysClock\r\n");
+	LOG_DEBUG_S2LP((">> ST_MCU_API_SetSysClock\r\n"));
 	SystemClock_Config();
 }
 
 
 
-
-/*
-* @brief  Do the Timer calibration.
-* @param  None
-* @retval None
-*/
-//void ST_MCU_API_TimerCalibration(uint16_t duration_ms)
-//{
-//  TIM_HandleTypeDef  Tim2_Handler={.Instance=TIM2};
-//  uint16_t c;
-//  Configure_RTC_Clock();
-//  notify_end=1;
-//  __HAL_RTC_WAKEUPTIMER_CLEAR_FLAG(&RtcHandler, RTC_FLAG_WUTF);
-//  __HAL_RTC_CLEAR_FLAG(RTC_EXTI_LINE_WAKEUPTIMER_EVENT);
-//
-//  next_rtc_wakeup=0;
-//
-//  RadioTimersTimConfig(&Tim2_Handler,16000-1,65535-1);
-//  __HAL_TIM_DISABLE_IT(&Tim2_Handler, TIM_IT_UPDATE);
-//  HAL_NVIC_DisableIRQ(TIM2_IRQn);
-//  HAL_TIM_Base_Start(&Tim2_Handler);
-//
-//  HAL_RTCEx_SetWakeUpTimer_IT(&RtcHandler,rtc_presc*duration_ms/1000,RTC_WAKEUPCLOCK_RTCCLK_DIV16);
-//  while(!rtc_irq);
-//  c=Tim2_Handler.Instance->CNT;
-//  rtc_irq=0;
-//  HAL_TIM_Base_Stop(&Tim2_Handler);
-//
-//  rtc_presc=duration_ms*rtc_presc/c;
-//}
-
-
-
-
-/*
-* @brief  Timer Interrupt handler.
-* @param  None
-* @retval None
-*/
-//void TIM2_IRQHandler(void)
-//{
-//  if(__HAL_TIM_GET_IT_SOURCE(&Tim2_Handler, TIM_IT_UPDATE) !=RESET)
-//  {
-//    ST_RF_API_Timer_Channel_Clear_CB();
-//
-//    __HAL_TIM_CLEAR_IT(&Tim2_Handler, TIM_IT_UPDATE);
-//    RadioTimersState(&Tim2_Handler, DISABLE);
-//  }
-//}
-
 /*
  *  Delay in Ms
  */
 static void priv_ST_MCU_API_delay(uint32_t delay_ms) {
-	//log_info(">> priv_ST_MCU_API_delay\r\n");
+	LOG_DEBUG_S2LP((">> priv_ST_MCU_API_delay\r\n"));
 	itsdk_delayMs(delay_ms);
 }
 
@@ -127,9 +78,9 @@ sfx_u8 MCU_API_malloc(sfx_u16 size, sfx_u8 **returned_pointer)
 {
   static sfx_u8 mem[ITSDK_SIGFOX_MEM_SIZE];
   
-  log_error("Sigfox lib mem req: %dB\r\n",size);
+  LOG_INFO_S2LP(("Sigfox lib mem req: %dB\r\n",size));
   if(size>ITSDK_SIGFOX_MEM_SIZE) {
-	  log_error("Requesting more memory than maximum allowable\r\n");
+	  LOG_ERROR_S2LP(("Requesting more memory than maximum allowable\r\n"));
 	  return MCU_ERR_API_MALLOC;
   } else {
     (*returned_pointer)=mem;
@@ -142,6 +93,7 @@ sfx_u8 MCU_API_malloc(sfx_u16 size, sfx_u8 **returned_pointer)
  */
 sfx_u8 MCU_API_free(sfx_u8 *ptr)
 {
+  LOG_DEBUG_S2LP((">> MCU_API_free\r\n"));
   return SFX_ERR_NONE;
 }
 
@@ -156,7 +108,8 @@ sfx_u8 MCU_API_get_voltage_temperature(sfx_u16 *voltage_idle,
 				       sfx_u16 *voltage_tx,
 				       sfx_s16 *temperature)
 {
-	log_info(">> MCU_API_get_voltage_temperature\r\n");
+
+  LOG_INFO_S2LP((">> MCU_API_get_voltage_temperature\r\n"));
 
   /* get the idle voltage of the complete device
   get the temperature of the device
@@ -176,7 +129,7 @@ sfx_u8 MCU_API_get_voltage_temperature(sfx_u16 *voltage_idle,
 */
 sfx_u8 MCU_API_delay(sfx_delay_t delay_type)
 {
-	log_info(">> MCU_API_delay %d\r\n",delay_type);
+  LOG_DEBUG_S2LP((">> MCU_API_delay %d\r\n",delay_type));
   switch(delay_type)
   {
   case SFX_DLY_INTER_FRAME_TRX:
@@ -212,7 +165,7 @@ sfx_u8 MCU_API_aes_128_cbc_encrypt(sfx_u8 *encrypted_data,
 				   sfx_u8 key[16],
 				   sfx_credentials_use_key_t use_key)
 {
-  log_info(">> MCU_API_aes_128_cbc_encrypt\r\n");
+  LOG_DEBUG_S2LP((">> MCU_API_aes_128_cbc_encrypt\r\n"));
   /* Let the retriever encrypts the requested buffer using the ID_KEY_RETRIEVER function.
   The retriever knows the KEY of this node. */
 
@@ -238,7 +191,7 @@ sfx_u8 MCU_API_aes_128_cbc_encrypt(sfx_u8 *encrypted_data,
  */
 sfx_u8 MCU_API_get_nv_mem(sfx_u8 read_data[SFX_NVMEM_BLOCK_SIZE])
 {		
-	log_info(">> MCU_API_get_nv_mem\r\n");
+	LOG_DEBUG_S2LP((">> MCU_API_get_nv_mem\r\n"));
 #if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_M95640
 
 	eeprom_m95640_read(
@@ -265,11 +218,11 @@ sfx_u8 MCU_API_set_nv_mem(sfx_u8 data_to_write[SFX_NVMEM_BLOCK_SIZE])
 
 #if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_M95640
 
-	log_info("Write into Eeprom (mcu_api.c):");
+	LOG_DEBUG_S2LP((">> MCU_API_set_nv_mem :"));
 	for (int i=0; i< SFX_NVMEM_BLOCK_SIZE ; i++) {
-		log_info("0x%X, ",data_to_write[i]);
+		LOG_DEBUG_S2LP(("0x%X, ",data_to_write[i]));
 	}
-	log_info("\r\n");
+	LOG_DEBUG_S2LP(("\r\n"));
 
 	eeprom_m95640_write(
 			&ITSDK_DRIVERS_M95640_SPI,
@@ -300,7 +253,7 @@ sfx_u8 MCU_API_set_nv_mem(sfx_u8 data_to_write[SFX_NVMEM_BLOCK_SIZE])
 */
 sfx_u8 MCU_API_report_test_result(sfx_bool status, sfx_s16 rssi)
 {    
-	log_info(">> MCU_API_report_test_result\r\n");
+  LOG_INFO_S2LP((">> MCU_API_report_test_result\r\n"));
   //ST_MANUF_report_CB(status, rssi);
   /* use this function to : print output result : status and rssi on uart if you have one or any link is available on device
    or use a gpio to indicate at least the status
@@ -317,7 +270,7 @@ sfx_u8 MCU_API_report_test_result(sfx_bool status, sfx_s16 rssi)
 */
 sfx_u8 MCU_API_get_version(sfx_u8 **version, sfx_u8 *size)
 {  
-	log_info(">> MCU_API_get_version\r\n");
+  LOG_DEBUG_S2LP((">> MCU_API_get_version\r\n"));
   static uint8_t _libVersion[] = MCU_API_VER;
   (*size) = sizeof(_libVersion);
   (*version) = (sfx_u8*)_libVersion;
@@ -336,7 +289,7 @@ sfx_u8 MCU_API_get_device_id_and_payload_encryption_flag(\
   sfx_u8 dev_id[ID_LENGTH],
   sfx_bool *payload_encryption_enabled)
 {
-	log_info(">> MCU_API_get_device_id_and_payload_encryption_flag\r\n");
+	LOG_DEBUG_S2LP((">> MCU_API_get_device_id_and_payload_encryption_flag\r\n"));
 #if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_M95640
 
 	// from Sigfox Retriever library
@@ -363,7 +316,7 @@ sfx_u8 MCU_API_get_device_id_and_payload_encryption_flag(\
 */
 sfx_u8 MCU_API_get_initial_pac(sfx_u8 initial_pac[PAC_LENGTH])
 {
-	log_info(">> MCU_API_get_initial_pac\r\n");
+	LOG_DEBUG_S2LP((">> MCU_API_get_initial_pac\r\n"));
 #if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_M95640
 
 	// from Sigfox Retriever library
@@ -386,7 +339,7 @@ sfx_u8 MCU_API_get_initial_pac(sfx_u8 initial_pac[PAC_LENGTH])
  * Change the low_power flag configuration
  */
 void ST_MCU_API_LowPower(sfx_u8 low_power_flag) {
-	log_info(">> ST_MCU_API_LowPower\r\n");
+	LOG_DEBUG_S2LP((">> ST_MCU_API_LowPower\r\n"));
 	_s2lp_sigfox_config->low_power_flag=low_power_flag;
 }
 
@@ -399,7 +352,7 @@ void ST_MCU_API_LowPower(sfx_u8 low_power_flag) {
 */
 void ST_MCU_API_Shutdown(sfx_u8 value)
 {
-	log_info(">> ST_MCU_API_Shutdown %d\r\n",value);
+  LOG_DEBUG_S2LP((">> ST_MCU_API_Shutdown %d\r\n",value));
   if(value==ST_TRUE) {
 	 s2lp_shutdown();
 #if defined(FOR_ARIB) || defined(FOR_ALL)
@@ -414,6 +367,9 @@ void ST_MCU_API_Shutdown(sfx_u8 value)
 #endif
      s2lp_wakeup();
   }
+  // It seems like a 10ms delay is a good idea to have the library
+  // correctly working
+  priv_ST_MCU_API_delay(10);
 }
 
 /*
@@ -429,7 +385,7 @@ void ST_MCU_API_SpiRaw(uint8_t n_bytes,
                        uint8_t* out_buffer, 
                        uint8_t can_return_bef_tx)
 {
-	//log_info(">> ST_MCU_API_SpiRaw %d 0x%X\r\n",n_bytes,in_buffer[0]);
+	//LOG_DEBUG_S2LP((">> ST_MCU_API_SpiRaw %d 0x%X\r\n",n_bytes,in_buffer[0]));
 	s2lp_spi_accessRaw(
 			&ITSDK_S2LP_SPI,
 			in_buffer,
@@ -447,7 +403,7 @@ void ST_MCU_API_SpiRaw(uint8_t n_bytes,
 */
 void ST_MCU_API_SetEncryptionPayload(uint8_t ePayload)
 {
-	log_info(">> ST_MCU_API_SetEncryptionPayload\r\n");
+	LOG_DEBUG_S2LP((">> ST_MCU_API_SetEncryptionPayload\r\n"));
 	_s2lp_sigfox_config->payload_encryption = ePayload;
 }
 
@@ -462,7 +418,7 @@ void ST_MCU_API_SetEncryptionPayload(uint8_t ePayload)
  */
 
 void EepromRead(uint16_t nAddress, uint8_t cNbBytes, uint8_t* pcBuffer) {
-	log_info(">> EepromRead\r\n");
+	LOG_DEBUG_S2LP((">> EepromRead\r\n"));
 	#if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_M95640
 
 	eeprom_m95640_read(
@@ -488,14 +444,14 @@ void EepromRead(uint16_t nAddress, uint8_t cNbBytes, uint8_t* pcBuffer) {
 
 NVM_RW_RESULTS NVM_ReadBoardData(NVM_BoardDataType *data)
 {
-	log_info(">> NVM_ReadBoardData\r\n");
+	LOG_DEBUG_S2LP((">> NVM_ReadBoardData\r\n"));
     return NVM_READ_ERROR;
 }
 
 NVM_RW_RESULTS NVM_Read(uint32_t nAddress, uint8_t cNbBytes, uint8_t* pcBuffer)
 {
   NVM_RW_RESULTS tRet = NVM_RW_OK;
-  log_info(">> NVM_Read\r\n");
+  LOG_DEBUG_S2LP((">> NVM_Read\r\n"));
   EepromRead(nAddress, cNbBytes, pcBuffer);
 
   return tRet;
@@ -503,7 +459,7 @@ NVM_RW_RESULTS NVM_Read(uint32_t nAddress, uint8_t cNbBytes, uint8_t* pcBuffer)
 
 
 /* ****************************************************************************************************
- * GPIO / INTERRUPT FUNCTIONS BASED ON RTC
+ * GPIO / INTERRUPT FUNCTIONS
  * ****************************************************************************************************
  */
 
@@ -519,16 +475,12 @@ volatile uint8_t __pendingIrqDelayed=0;
 void __GPIO_IRQHandler(uint16_t GPIO_Pin) {
 
   if(GPIO_Pin==ITSDK_S2LP_GPIO3_PIN) {
-	  //log_info(">> GpioIRQ\r\n");
 	  if (ST_RF_API_Get_Continuous_TX_Flag()==0) {
 		// Most of the Irq are delayed during Tx
-		  log_info(":");
 	   	__pendingIrqDelayed=1;
 	  } else {
 	    ST_RF_API_S2LP_IRQ_CB(); // If the CBPSK is implemented trigger TX State Machine
 	  }
-  } else {
-	  log_info(">> GpioIRQ Other\r\n");
   }
 
 }
@@ -543,13 +495,10 @@ void __GPIO_IRQHandler(uint16_t GPIO_Pin) {
  */
 void ST_MCU_API_GpioIRQ(sfx_u8 pin, sfx_u8 new_state, sfx_u8 trigger)
 {
-  log_info(">> ST_MCU_API_GpioIRQ\r\n");
-  gpio_registerIrqAction(&__sfx_gpio_irq);	// Install the action as the irq can be activated outside this code
+  LOG_DEBUG_S2LP((">> ST_MCU_API_GpioIRQ %d %d %d \r\n",pin,new_state,trigger));
 
   uint16_t gpioPin;
   uint8_t  gpioBank;
-
-  log_info("    S2LP Configuring Gpio %d as %d,%d\r\n",pin,new_state,trigger);
 
   switch(pin)
   {
@@ -575,16 +524,18 @@ void ST_MCU_API_GpioIRQ(sfx_u8 pin, sfx_u8 new_state, sfx_u8 trigger)
   gpio_interruptClear(gpioBank, gpioPin);
 
   if(new_state) {
+    gpio_registerIrqAction(&__sfx_gpio_irq);	// Install the action as the irq can be activated outside this code
 	if ( trigger ) {
-		gpio_configure(gpioBank,gpioPin, GPIO_INTERRUPT_RISING );
+		gpio_configure(gpioBank,gpioPin, GPIO_INTERRUPT_RISING_PULLDWN );
 	} else {
-		gpio_configure(gpioBank,gpioPin, GPIO_INTERRUPT_FALLING );
+		gpio_configure(gpioBank,gpioPin, GPIO_INTERRUPT_FALLING_PULLUP );
 	}
 	gpio_interruptPriority(gpioBank,gpioPin,IRQ_PRIORITY, 0x00);
 	gpio_interruptEnable(gpioBank,gpioPin);
   } else {
+	gpio_removeIrqAction(&__sfx_gpio_irq);
+	gpio_configure(gpioBank,gpioPin, GPIO_INPUT_PULLDOWN );
 	gpio_interruptDisable(gpioBank,gpioPin);
-	gpio_configure(gpioBank,gpioPin, GPIO_INPUT );
   }
 }
 
@@ -592,12 +543,13 @@ void ST_MCU_API_GpioIRQ(sfx_u8 pin, sfx_u8 new_state, sfx_u8 trigger)
  * This function is called with a loop until the interrupt is detected
  * Eventually we can have a switch to low_power mode during this period
  * or just return.
+ * This function is also called during the downlink processing, waiting for
+ * the end of the timer.
  * The interrupt flag can be fired externally and need to be proceed here
  */
 void ST_MCU_API_WaitForInterrupt(void)
 {
-	//log_info(">> ST_MCU_API_WaitForInterrupt\r\n");
-	log_info("!");
+	LOG_INFO_S2LP(("+"));
 	if(__pendingIrqDelayed) {
 	   ST_RF_API_S2LP_IRQ_CB();
 	   __pendingIrqDelayed=0;
@@ -605,43 +557,11 @@ void ST_MCU_API_WaitForInterrupt(void)
 	  #if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_GPIO ) > 0
 		 lowPower_switch();
 	  #endif
-// watchdog refresh as we prefer to reboot if longuer than WDG if IRQ fireing issue
-//	  #if ITSDK_WDG_MS > 0
-//		wdg_refresh();
-//	  #endif
-
+	  itsdk_stimer_run();
+	  #if ITSDK_WDG_MS > 0
+	  	wdg_refresh();
+	  #endif
 	}
-
-//
-//	// Low power mode is manage outside of the driver
-//	// (by the way, there is no reason to have a drive to decide a such action
-//
-//	// @TODO
-//	// The ST_RF_API_S2LP_IRQ_CB(); should be called from the IRQ handler
-//	// The S2LP Irq should wake up the MCU
-//	log_info("Request Entering Low Power Mode\r\n");
-//
-//
-//#ifndef DEBUG
-//  if(low_power && (!carrier_sense_tim_started || rtc_in_use_for_cs))
-//  {
-//    setGpioLowPower();
-//
-//    HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON,PWR_STOPENTRY_WFI);
-//
-//    ST_MCU_API_SetSysClock();
-//
-//    setGpioRestore();
-//  }
-//#endif
-//
-//
-//  Traitement en cas d'irq car dans un cas particulier on veux que l'irq soit traitée plus tard...
-//  if(s2lp_irq_raised)
-//  {
-//    ST_RF_API_S2LP_IRQ_CB();
-//    s2lp_irq_raised=0;
-//  }
 }
 
 
@@ -651,67 +571,11 @@ void ST_MCU_API_WaitForInterrupt(void)
  */
 
 /**
- * RTC Interrupt Handler
+ * Timer end handler
  */
-void __RTC_IRQHandler(RTC_HandleTypeDef *h);
-uint32_t __st_lib_rtc_loops_pending = 0;
-rtc_irq_chain_t __sfx_rtc_irq = {
-		__RTC_IRQHandler,
-		NULL
-};
-void __RTC_IRQHandler(RTC_HandleTypeDef *h) {
-
-  rtc_disableWakeUp();
-  if (__st_lib_rtc_loops_pending == 0 ) {
-	  // Global timer is finished
-	  ST_RF_API_Timer_CB(TIMER_STOP);
-	  log_info("Finished RTC\r\n");
-  } else {
-	  // We need to run the timer up to the next 100ms slot
-	  __st_lib_rtc_loops_pending--;
-	  rtc_runRtcUntilTicks(rtc_getTicksFromDuration(1000));
-  }
-//
-//  if (__st_lib_rtc_loops_cs_pending == 0 ) {
-//	  // Global timer is finished
-//	  ST_RF_API_Timer_Channel_Clear_CB();
-//	  __st_lib_rtc_loops_cs_pending=-1;
-//	  log_info("Finished CS\r\n");
-//  } else {
-//	  // We need to run the timer up to the next 100ms slot
-//	  __st_lib_rtc_loops_cs_pending--;
-//  }
-//
-//  if (__st_lib_rtc_loops_pending >= 0 || __st_lib_rtc_loops_cs_pending >= 0 ) {
-//	  rtc_runRtcUntilTicks(__RTC_TICKS_PER_LOOP);
-//  }
-
-/*
-  HAL_RTCEx_DeactivateWakeUpTimer(h);
-
-  if(next_rtc_wakeup==0)
-  {
-    rtc_irq=1;
-    rtc_in_use=0;
-    if(notify_end)
-    {
-      if(rtc_in_use_for_cs)
-      {
-	rtc_in_use_for_cs=0;
-	ST_RF_API_Timer_Channel_Clear_CB();
-      }
-      else
-      {
+void __TIMER_Handler(uint32_t v) {
+	LOG_INFO_S2LP((">> __TIMER_Handler (END)\r\n"));
 	ST_RF_API_Timer_CB(TIMER_STOP);
-      }
-    }
-  }
-  else
-  {
-    MCU_API_timer_start(next_rtc_wakeup);
-    n_intermediate_tim_irq++;
-  }
-  */
 }
 
 
@@ -723,29 +587,16 @@ void __RTC_IRQHandler(RTC_HandleTypeDef *h) {
  */
 sfx_u8 MCU_API_timer_start(sfx_u32 time_duration_in_s)
 {
-	log_info(">> MCU_API_timer_start %d\r\n",time_duration_in_s);
+	LOG_INFO_S2LP((">> MCU_API_timer_start %d\r\n",time_duration_in_s));
 
-	ST_RF_API_Timer_CB(TIMER_START); // Notify the STM Layer
-
-	// Register the interrupt handler
-	rtc_registerIrqAction(&__sfx_rtc_irq);
-
-	// Determine the number of cycles
-	uint32_t totalTicks = rtc_getTicksFromDuration(time_duration_in_s*1000);
-	__st_lib_rtc_loops_pending = ( totalTicks / rtc_getTicksFromDuration(1000) );
-
-	// Determine the subdivision time to add
-	totalTicks -=  (__st_lib_rtc_loops_pending * rtc_getTicksFromDuration(1000) );
-
-	// Start timer - assuming as > 1s no risk to have __st_lib_rtc_loops_pending = 0
-	// Run for the sub cycle time part
-	if ( totalTicks == 0 ) {
-		__st_lib_rtc_loops_pending--;
-		totalTicks = rtc_getTicksFromDuration(1000);
+	ST_RF_API_Timer_CB(TIMER_START);
+	if (   itsdk_stimer_register(
+				(time_duration_in_s)*1000-500,
+				__TIMER_Handler,
+				0
+			) != TIMER_INIT_SUCCESS ) {
+		_Error_Handler(__FILE__, __LINE__);
 	}
-	rtc_runRtcUntilTicks(totalTicks);
-
-
 	return SFX_ERR_NONE;
 }
 
@@ -755,32 +606,33 @@ sfx_u8 MCU_API_timer_start(sfx_u32 time_duration_in_s)
  */
 sfx_u8 MCU_API_timer_stop(void)
 {
-	log_info(">> MCU_API_timer_stop \r\n");
-	rtc_disableWakeUp();
-	__st_lib_rtc_loops_pending=0;
-	rtc_removeIrqAction(&__sfx_rtc_irq);
+	LOG_INFO_S2LP((">> MCU_API_timer_stop \r\n"));
+
+	itsdk_stimer_stop(
+			__TIMER_Handler,
+			0
+	);
 	return SFX_ERR_NONE;
 }
 
 /**
- * Not really clear, it seems this function is
- * called during a timer, potentially it is active scrutation
- * for timer end... intially it calls a function to go low power
- * ... so let see later how to works.
+ * This function is called for waiting the end of the running timer
+ * during this time we call the WaitForInterrupt function to switch
+ * the device in low power mode.
  */
 sfx_u8 MCU_API_timer_wait_for_end(void)
 {
-	log_info(">> MCU_API_timer_wait_for_end \r\n");
+	LOG_INFO_S2LP((">> MCU_API_timer_wait_for_end \r\n"));
+
+	while ( itsdk_stimer_isRunning(
+				__TIMER_Handler,
+				0
+			)
+		  ) {
+		ST_MCU_API_WaitForInterrupt();
+	}
+
 	return SFX_ERR_NONE;
-
-
-//  while(!rtc_irq)/*(!(next_rtc_wakeup==0 || rtc_irq==1)) */
-//  {
-//    ST_MCU_API_WaitForInterrupt();
-//  }
-//  rtc_irq=0;
-//  PRINTF("MCU_API_timer_wait_for_end OUT\n\r");
-//  return SFX_ERR_NONE;
 }
 
 
@@ -793,6 +645,7 @@ sfx_u8 MCU_API_timer_wait_for_end(void)
  * ****************************************************************************************************
  */
 
+uint32_t __st_lib_rtc_loops_pending = 0;
 
 void __RTC_IRQHandler2(RTC_HandleTypeDef *h);
 rtc_irq_chain_t __sfx_rtc_irq2 = {
@@ -822,6 +675,7 @@ sfx_u8 MCU_API_timer_start_carrier_sense(sfx_u16 time_duration_in_ms)
 {
 	log_info(">> MCU_API_timer_stop_carrier_sense %d \r\n",time_duration_in_ms);
 
+	/*
 	if (! rtc_existAction(&__sfx_rtc_irq) ) {
 
 		// RTC timer is available
@@ -847,7 +701,7 @@ sfx_u8 MCU_API_timer_start_carrier_sense(sfx_u16 time_duration_in_ms)
 		itsdk_delayMs(time_duration_in_ms);
 		ST_RF_API_Timer_Channel_Clear_CB();
 	}
-
+*/
 
 //  uint32_t rtc_wup_tick, next_rtc_wakeup_tick;
 //
@@ -941,6 +795,7 @@ sfx_u8 MCU_API_timer_stop_carrier_sense(void)
 void enc_utils_retrieve_key(uint8_t * key) {
 
 	uint8_t	raw[32];
+	LOG_INFO_S2LP((">> enc_utils_retrieve_key \r\n"));
 
 #if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_M95640
 
@@ -989,7 +844,9 @@ void enc_utils_retrieve_key(uint8_t * key) {
 
 uint8_t * __keyPtr = 0;
 uint32_t enc_search4key(int32_t deviceId, uint8_t * pac) {
-	 uint8_t * ramPtr = (uint8_t *)0x20000010;	// start at 16 as we search for deviceID
+	LOG_DEBUG_S2LP((">> enc_search4key \r\n"));
+
+	uint8_t * ramPtr = (uint8_t *)0x20000010;	// start at 16 as we search for deviceID
 
 	 int i;
 	 for( i = 16 ; i < ITSDK_RAM_SIZE ; i++ ) {
@@ -1011,6 +868,7 @@ uint32_t enc_search4key(int32_t deviceId, uint8_t * pac) {
 }
 
  bool enc_retreive_key(int32_t deviceId, uint8_t * pac, uint8_t * key) {
+	 LOG_DEBUG_S2LP((">> enc_retreive_key \r\n"));
 	 if ( __keyPtr == 0 ) enc_search4key(deviceId, pac);
 	 if ( __keyPtr != 0 ) {
 		 memcpy(key,__keyPtr,16);
@@ -1023,6 +881,7 @@ uint32_t enc_search4key(int32_t deviceId, uint8_t * pac) {
   * Protect the private key from being retreived from the memory in clear
   */
  void enc_protect_key() {
+	 LOG_DEBUG_S2LP((">> enc_protect_key \r\n"));
 	 if ( __keyPtr == 0 ) return;
 	 uint32_t key = ITSDK_SIGFOX_PROTECT_KEY;
 	 uint32_t * pk = (uint32_t *)__keyPtr;
@@ -1031,6 +890,7 @@ uint32_t enc_search4key(int32_t deviceId, uint8_t * pac) {
  }
 
  void enc_unprotect_key() {
+	 LOG_DEBUG_S2LP((">> enc_unprotect_key \r\n"));
 	 enc_protect_key();
  }
 

@@ -1,11 +1,11 @@
 /* ==========================================================
  * lowpower.c - lowPower implementation for stm32L0x1
- * Project : IngeniousThings SDK
+ * Project : Disk91 SDK
  * ----------------------------------------------------------
  * Created on: 2 sept. 2018
  *     Author: Paul Pinault aka Disk91
  * ----------------------------------------------------------
- * Copyright (C) 2018  Disk91
+ * Copyright (C) 2018 Disk91
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU LESSER General Public License as published by
@@ -31,6 +31,7 @@
 #include <stm32l_sdk/lowpower/lowpower.h>
 #include <stm32l_sdk/rtc/rtc.h>
 #include <it_sdk/config.h>
+#include <it_sdk/lowpower/lowpower.h>
 #include <it_sdk/logger/logger.h>
 #include <it_sdk/wrappers.h>
 #include "stm32l0xx_hal.h"
@@ -45,6 +46,7 @@
 
 #endif
 
+
 /**
  * Setup the STM32L Low Power mode
  */
@@ -54,13 +56,13 @@ void stm32l_lowPowerSetup() {
 		// -------------------------------------------------------------
 		// Configure the STM32L0x1 for switching to low power stop mode
 		// -------------------------------------------------------------
+		HAL_SuspendTick();
 		#if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_RTC )
 			rtc_configure4LowPower(ITSDK_LOWPOWER_RTC_MS);		// Setup RTC wake Up
 		#endif
 	    __HAL_RCC_PWR_CLK_ENABLE();				// Enable Power Control clock
  	    HAL_PWREx_EnableUltraLowPower();		// Ultra low power mode
  	    HAL_PWREx_EnableFastWakeUp();			// Fast wake-up for ultra low power mode
- 	    _stm32l_disableGpios();					// Disable GPIOs based on configuration
 
 		#if ( ITSDK_WITH_UART & __UART_LPUART1 ) > 0
 	        // make sure that no UART transfer is on-going
@@ -88,12 +90,15 @@ void stm32l_lowPowerSetup() {
 		 	HAL_UARTEx_EnableStopMode(&hlpuart1);
 		#endif
 
+		_stm32l_disableGpios();					// Disable GPIOs based on configuration
+
 		#if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_GPIO ) > 0
 		  // Register interrupt handler
 		  gpio_registerIrqAction(&__lowpwer_gpio_irq);	// Install the action as the irq can be activated outside this code
 		#endif
 
  	    // Switch to STOPMode
+		__lowPower_wakeup_reason=LOWPWR_WAKEUP_UNDEF;
  	    HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
 	}
 
@@ -125,7 +130,14 @@ void stm32l_lowPowerResume() {
 			HAL_UART_MspInit(&huart2);
 			MX_USART2_UART_Init();
 		#endif
+		HAL_ResumeTick();
 	}
+//  useful line of code to identify the wakeup cause when needed...
+//	if (__lowPower_wakeup_reason != LOWPWR_WAKEUP_UNDEF ) {
+//		log_info("-%d-",__lowPower_wakeup_reason);
+//	} else {
+//		log_info("|");
+//	}
 
 }
 
@@ -217,12 +229,17 @@ void _stm32l_disableGpios() {
 
 }
 
+/**
+ * IRQ Handler
+ */
+
 #if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_GPIO ) > 0
 
 void __LP_GPIO_IRQHandler(uint16_t GPIO_Pin) {
 
   /* Clear Wake Up Flag */
   __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
+  __lowPower_wakeup_reason=LOWPWR_WAKEUP_GPIO;
 
 }
 

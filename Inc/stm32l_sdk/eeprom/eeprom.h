@@ -1,6 +1,6 @@
 /* ==========================================================
  * eeprom.h - Manage EEPROM (NVM)
- * Project : IngeniousThings SDK
+ * Project : Disk91 SDK
  * ----------------------------------------------------------
  * Created on: 16 sept. 2018
  *     Author: Paul Pinault aka Disk91
