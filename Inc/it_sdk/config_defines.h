@@ -82,6 +82,12 @@
 #define __SPI_ENABLED				0x01			// with SPI
 
 /**
+ * TIMER configuration
+ */
+#define __TIMER_NONE				0x00			// No hw timer code
+#define __TIMER_ENABLED				0x01			// with hw timer code
+
+/**
  * GPIO to keep activated on low power mode
  */
 #define __LP_GPIO_NONE			0x0000

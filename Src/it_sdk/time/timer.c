@@ -34,6 +34,54 @@
 #include <it_sdk/time/timer.h>
 #include <it_sdk/logger/logger.h>
 
+#if ITSDK_PLATFORM == __PLATFORM_STM32L0x1 || ITSDK_PLATFORM == __PLATFORM_STM32L0x3
+   #include <stm32l_sdk/timer/timer.h>
+#endif
+
+/**
+ * ===============================================================================
+ *                         HARDWARE TIMER
+ * ===============================================================================
+ */
+
+#if ITSDK_WITH_HW_TIMER > 0
+
+/**
+ * Run the timer for the given time. Sync mode, return only after timer execution
+ * At end the callback_func is called with value as parameter. If NULL the function
+ * just return.
+ */
+itsdk_timer_return_t itsdk_hwtimer_sync_run(
+		uint32_t ms,
+		void (*callback_func)(uint32_t value),
+		uint32_t value
+) {
+
+	#if ITSDK_PLATFORM == __PLATFORM_STM32L0x1 || ITSDK_PLATFORM == __PLATFORM_STM32L0x3
+		return stm32l_hwtimer_sync_run(ms,callback_func,value);
+	#else
+		#error "platform not supported"
+	#endif
+
+}
+
+
+#endif
+
+#define ITSDK_WITH_HW_TIMER			__TIMER_ENABLED							// Use Hardware Timer
+#define ITSDK_HW_TIMER1_HANDLE		htim21									// Timer handler to be used as primary timer
+#define ITSDK_HW_TIMER1_FREQ		16000000								// Primary timer base frequency
+
+
+
+
+/**
+ * ===============================================================================
+ *                          SOFTWARE TIMER
+ * ===============================================================================
+ */
+
+
 #if ITSDK_TIMER_SLOTS > 0
 
 itsdk_stimer_slot_t	__stimer_slots[ITSDK_TIMER_SLOTS] = {0};
@@ -42,7 +90,7 @@ itsdk_stimer_slot_t	__stimer_slots[ITSDK_TIMER_SLOTS] = {0};
  * Register a new timer in the timer list
  * The list size is defined by ITSDK_TIMER_SLOTS
  */
-itsdk_stimer_return_t itsdk_stimer_register(
+itsdk_timer_return_t itsdk_stimer_register(
 		uint32_t ms,
 		void (*callback_func)(uint32_t value),
 		uint32_t value
@@ -78,7 +126,7 @@ itsdk_stimer_return_t itsdk_stimer_register(
  * Stop a running timer
  * identified by function pointer & value
  */
-itsdk_stimer_return_t itsdk_stimer_stop(
+itsdk_timer_return_t itsdk_stimer_stop(
 		void (*callback_func)(uint32_t value),
 		uint32_t value
 ) {

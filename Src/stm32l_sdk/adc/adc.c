@@ -261,36 +261,13 @@ int16_t adc_getTemperature() {
 	uint32_t v = __getAdcValue(ADC_CHANNEL_TEMPSENSOR);
 #endif
 
+	log_info("adc:%d\r\n",v);
+
 	int32_t temperature = 100 * (CAL2_TEMP - CAL1_TEMP)*(((v * VDD_CALIB) / VDD_APPLI) - *CAL1_VALUE);
 	temperature /= (*CAL2_VALUE - *CAL1_VALUE);
     temperature = temperature + (100*CAL1_TEMP);
     return (int16_t)temperature;
 
-
-	  /*
-	  // Configure for the selected ADC regular channel to be converted.
-	  sConfig.Channel = ADC_CHANNEL_VREFINT;
-	  if (HAL_ADC_ConfigChannel(&hadc, &sConfig) != HAL_OK)
-	  {
-	    _Error_Handler(__FILE__, __LINE__);
-	  }
-	  */
-	  /*
-	  sConfig.Channel = ADC_CHANNEL_4;
-	   sConfig.Rank = ADC_RANK_CHANNEL_NUMBER;
-	   if (HAL_ADC_ConfigChannel(&hadc, &sConfig) != HAL_OK)
-	   {
-	     _Error_Handler(__FILE__, __LINE__);
-	   }
-	   */
-
-	  /*Configure GPIO pins : PA4 PA10 */
-	  /*
-	  GPIO_InitStruct.Pin = GPIO_PIN_4|GPIO_PIN_10;
-	  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-	  GPIO_InitStruct.Pull = GPIO_NOPULL;
-	  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-	  */
 }
 
 /**

@@ -1,8 +1,8 @@
 /* ==========================================================
- * config.h - STM32L specific configuration file
+ * timer.h - stm32L0x1 timer header
  * Project : Disk91 SDK
  * ----------------------------------------------------------
- * Created on: 6 sept. 2018
+ * Created on: 26 nov. 2018
  *     Author: Paul Pinault aka Disk91
  * ----------------------------------------------------------
  * Copyright (C) 2018 Disk91
@@ -24,34 +24,16 @@
  *
  * ==========================================================
  */
-
-#ifndef STM32L_SDK_CONFIG_H_
-#define STM32L_SDK_CONFIG_H_
+#ifndef STM32L_SDK_TIMER_TIMER_H_
+#define STM32L_SDK_TIMER_TIMER_H_
 
 #include <it_sdk/config.h>
-#include "stm32l0xx_hal.h"
+#include <it_sdk/time/timer.h>
 
-// Fix the poor quality of generated code...
-void SystemClock_Config(void);
+itsdk_timer_return_t stm32l_hwtimer_sync_run(
+		uint32_t ms,								// time to wait
+		void (*callback_func)(uint32_t value),		// function to call at end (NULL for no call)
+		uint32_t value								// value to pass to called function
+);
 
-#include <gpio.h>
-
-// LPUART1 stuff
-#if (ITSDK_WITH_UART & __UART_LPUART1) > 0
-	#include <usart.h>
-#endif
-
-// RTC Stuff
-#if  ( ITSDK_WITH_RTC & __RTC_ENABLED ) > 0
-	#include <rtc.h>
-#endif
-
-// TIMER Stuff
-#if ( ITSDK_WITH_HW_TIMER & __TIMER_ENABLED ) > 0
-    #include <tim.h>
-#endif
-
-
-
-
-#endif /* STM32L_SDK_CONFIG_H_ */
+#endif /* STM32L_SDK_TIMER_TIMER_H_ */

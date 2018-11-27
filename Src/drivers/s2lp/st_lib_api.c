@@ -99,11 +99,14 @@ sfx_u8 MCU_API_free(sfx_u8 *ptr)
 
 /*
 * @brief  get voltage temperature.
-* @param  voltage_idle : Idle voltage
-* @param  voltage_tx   : Volatge temperature
+* @param  voltage_idle : Idle voltage in mV
+* @param  voltage_tx   : Volatge in mV
 * @param  temperature  : temperature
 * @retval None
 */
+
+uint16_t	__s2lp_voltageInTx = 0;
+uint8_t		__s2lp_voltageInTxPending = 0;
 sfx_u8 MCU_API_get_voltage_temperature(sfx_u16 *voltage_idle,
 				       sfx_u16 *voltage_tx,
 				       sfx_s16 *temperature)
@@ -111,14 +114,15 @@ sfx_u8 MCU_API_get_voltage_temperature(sfx_u16 *voltage_idle,
 
   LOG_INFO_S2LP((">> MCU_API_get_voltage_temperature\r\n"));
 
-  /* get the idle voltage of the complete device
-  get the temperature of the device
-  if those values are not available : set it to 0x0000
-  return the voltage_idle in 1/10 volt on 16bits and 1/10 degrees for the temperature */
-  (*voltage_idle)=adc_getVdd()/100;
-  (*voltage_tx)=adc_getVdd()/100;
+  // get the idle voltage of the complete device
+  // get the temperature of the device
+  // if those values are not available : set it to 0x0000
+  // return the voltage_idle in 1/1000 volt on 16bits and 1/10 degrees for the temperature */
+  (*voltage_idle)=adc_getVdd();
+  (*voltage_tx)=(__s2lp_voltageInTx!=0)?__s2lp_voltageInTx:adc_getVdd();
   (*temperature)=adc_getTemperature()/10;
   
+  log_info("volt : %d, temp : %d\r\n",(int)*voltage_tx,(int)*temperature);
   return SFX_ERR_NONE;
 }
 
@@ -129,7 +133,7 @@ sfx_u8 MCU_API_get_voltage_temperature(sfx_u16 *voltage_idle,
 */
 sfx_u8 MCU_API_delay(sfx_delay_t delay_type)
 {
-  LOG_DEBUG_S2LP((">> MCU_API_delay %d\r\n",delay_type));
+  LOG_INFO_S2LP((">> MCU_API_delay %d\r\n",delay_type));
   switch(delay_type)
   {
   case SFX_DLY_INTER_FRAME_TRX:
@@ -178,7 +182,9 @@ sfx_u8 MCU_API_aes_128_cbc_encrypt(sfx_u8 *encrypted_data,
   for ( int i = 0 ; i < aes_block_len ; i++ ) log_info("%02X",encrypted_data[i]);
   log_info(" ]\r\n");
   
-  
+  // This is for being ready to measure the voltage during transmission
+  // as this function is called before the first transmission..
+  __s2lp_voltageInTxPending=70;
 
   return SFX_ERR_NONE;
 }
@@ -285,10 +291,10 @@ sfx_u8 MCU_API_get_version(sfx_u8 **version, sfx_u8 *size)
 * @param  payload_encryption_enabled    : Flag 
 * @retval sfx_u8  : status
 */
-sfx_u8 MCU_API_get_device_id_and_payload_encryption_flag(\
+sfx_u8 MCU_API_get_device_id_and_payload_encryption_flag(
   sfx_u8 dev_id[ID_LENGTH],
-  sfx_bool *payload_encryption_enabled)
-{
+  sfx_bool *payload_encryption_enabled
+){
 	LOG_DEBUG_S2LP((">> MCU_API_get_device_id_and_payload_encryption_flag\r\n"));
 #if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_M95640
 
@@ -495,7 +501,7 @@ void __GPIO_IRQHandler(uint16_t GPIO_Pin) {
  */
 void ST_MCU_API_GpioIRQ(sfx_u8 pin, sfx_u8 new_state, sfx_u8 trigger)
 {
-  LOG_DEBUG_S2LP((">> ST_MCU_API_GpioIRQ %d %d %d \r\n",pin,new_state,trigger));
+  LOG_INFO_S2LP((">> ST_MCU_API_GpioIRQ %d %d %d \r\n",pin,new_state,trigger));
 
   uint16_t gpioPin;
   uint8_t  gpioBank;
@@ -554,6 +560,19 @@ void ST_MCU_API_WaitForInterrupt(void)
 	   ST_RF_API_S2LP_IRQ_CB();
 	   __pendingIrqDelayed=0;
 	} else {
+	  // special code for measuring the voltage during transmission
+	  // it is measured during the first frame (n=1) this is
+	  // initialized from the MCU_API_aes_128_cbc_encrypt called before
+	  // the transmission start.
+	  // we are waiting for 50 loops here for being in the middle of the transmission
+	  if ( __s2lp_voltageInTxPending > 0 ) {
+		  __s2lp_voltageInTxPending--;
+		  if (__s2lp_voltageInTxPending==0) {
+			  __s2lp_voltageInTx=adc_getVdd();
+			  log_info("_");
+		  }
+	  }
+	  // other actions
 	  #if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_GPIO ) > 0
 		 lowPower_switch();
 	  #endif

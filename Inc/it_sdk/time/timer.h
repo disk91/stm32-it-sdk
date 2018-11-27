@@ -29,13 +29,30 @@
 
 #include <stdbool.h>
 
+
 typedef enum {
 	TIMER_INIT_SUCCESS=0,
 	TIMER_TOO_SHORT,				// requested duration too short for this type of timer
+	TIMER_TOO_LONG,					// requested duration too long for this type of timer
 	TIMER_LIST_FULL,				// None of the timer slot is available
 	TIMER_NOT_FOUND					// Given timer not found when trying to remove it
 
-} itsdk_stimer_return_t;
+} itsdk_timer_return_t;
+
+// =====================================================================================
+// HW TIMERS
+// =====================================================================================
+
+itsdk_timer_return_t itsdk_hwtimer_sync_run(
+		uint32_t ms,
+		void (*callback_func)(uint32_t value),
+		uint32_t value
+);
+
+// =====================================================================================
+// SOFT TIMERS
+// =====================================================================================
+
 
 typedef struct s_itsdk_stimer_slot {
 	bool			inUse;								// This structure is in use
@@ -44,13 +61,13 @@ typedef struct s_itsdk_stimer_slot {
 	uint32_t		customValue;
 } itsdk_stimer_slot_t;
 
-itsdk_stimer_return_t itsdk_stimer_register(
+itsdk_timer_return_t itsdk_stimer_register(
 		uint32_t ms,									// timer duration
 		void (*callback_func)(uint32_t value),			// callback function
 		uint32_t value									// value to pass to callback function
 );
 
-itsdk_stimer_return_t itsdk_stimer_stop(
+itsdk_timer_return_t itsdk_stimer_stop(
 		void (*callback_func)(uint32_t value),
 		uint32_t value
 );

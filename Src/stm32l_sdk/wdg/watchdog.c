@@ -32,7 +32,7 @@
  * ==========================================================
  */
 #include <it_sdk/config.h>
-#if ITSDK_PLATFORM == __PLATFORM_STM32L0x1
+#if ITSDK_PLATFORM == __PLATFORM_STM32L0x1 || ITSDK_PLATFORM == __PLATFORM_STM32L0x3
 #include <it_sdk/wrappers.h>
 #include <it_sdk/debug.h>
 #include <stm32l_sdk/rtc/rtc.h>
@@ -50,11 +50,7 @@ void wdg_setupWithMaxMs(uint32_t ms) {
 	}
   #if ITSDK_WDG_MS >0
 	int32_t uwLsiFreq;
-	#if ITSDK_WITH_CLK_ADJUST > 0
-	 uwLsiFreq = rtc_getRealRtcFrequency();
-	#else
-	 uwLsiFreq = 37000;
-	#endif
+	uwLsiFreq = (ITSDK_WDG_CLKFREQ * rtc_getClockAdjustement())/1000;
 
 	hiwdg.Instance = IWDG;
 	hiwdg.Init.Prescaler = IWDG_PRESCALER_256;

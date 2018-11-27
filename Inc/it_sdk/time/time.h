@@ -31,5 +31,6 @@ void itsdk_time_add_us(uint32_t us);
 void itsdk_time_set_ms(uint64_t ms);
 uint64_t itsdk_time_get_ms();
 void itsdk_time_reset();
+void itsdk_time_init();
 
 #endif /* IT_SDK_TIME_TIME_H_ */

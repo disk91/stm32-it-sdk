@@ -42,6 +42,7 @@ bool rtc_existAction(rtc_irq_chain_t * chain);
 void rtc_configure4LowPower(uint16_t ms);
 void rtc_disable4LowPower();
 uint64_t rtc_getTimestampMs();
+uint64_t rtc_getTimestampMsRaw(bool adjust);
 void rtc_prepareSleepTime();
 void rtc_updateTimeAfterSleepTime();
 
@@ -52,6 +53,10 @@ int32_t rtc_getMsFromTicks(uint32_t ticks);
 void rtc_disableWakeUp();
 
 void rtc_resetTime();
+
+uint32_t rtc_calcClockRatio();
+void rtc_adjustTime();
+uint32_t rtc_getClockAdjustement();
 
 #if ITSDK_WITH_CLK_ADJUST > 0
 uint32_t rtc_getRealRtcFrequency();

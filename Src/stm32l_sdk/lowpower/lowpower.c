@@ -116,7 +116,7 @@ void stm32l_lowPowerResume() {
 		#if  ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_RTC ) > 0
 			rtc_disable4LowPower();
 		#endif
-		MX_GPIO_Init();
+		stm32l_lowPowerRestoreGpioConfig();
 		#if ( ITSDK_WITH_UART & __UART_LPUART1 ) > 0
 			// Reinit LPUart
 			HAL_UART_MspInit(&hlpuart1);
@@ -139,6 +139,16 @@ void stm32l_lowPowerResume() {
 //		log_info("|");
 //	}
 
+}
+
+/**
+ * Restore the GPIO Configuration after waking up
+ * Basically call the MX_GPIO_Init(); function
+ * this can be overided in the main program when the
+ * gpio is dynamically modified in the code.
+ */
+__weak void stm32l_lowPowerRestoreGpioConfig() {
+	MX_GPIO_Init();
 }
 
 /**

@@ -31,7 +31,7 @@
 // Public functions
 void stm32l_lowPowerSetup();
 void stm32l_lowPowerResume();
-
+void stm32l_lowPowerRestoreGpioConfig();
 
 // Private functions
 void _stm32l_disableGpios();

@@ -80,6 +80,16 @@ void itsdk_time_reset() {
 		#error "platform not supported"
 	#endif
 	__timeus = 0;
+}
 
-
+/**
+ * Init time functions
+ */
+void itsdk_time_init() {
+#if ITSDK_PLATFORM == __PLATFORM_STM32L0x1 || ITSDK_PLATFORM == __PLATFORM_STM32L0x3
+	rtc_resetTime();
+	rtc_adjustTime();
+#else
+	#error "platform not supported"
+#endif
 }
