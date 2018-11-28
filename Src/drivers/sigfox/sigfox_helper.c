@@ -44,6 +44,23 @@ bool sigfox_init(s2lp_config_t * conf) {
 	case 1:
 		SIGFOX_API_open(&(sfx_rc_t)RC1);
 		break;
+	case 2:
+		SIGFOX_API_open(&(sfx_rc_t)RC2);
+		// In FCC we can choose the macro channel to use by a 86 bits bitmask
+	    //  In this case we use the first 9 macro channels
+		sfx_u32 config_words1[3]={1,0,0};
+		SIGFOX_API_set_std_config(config_words1,1);
+		break;
+	case 3:
+		SIGFOX_API_open(&(sfx_rc_t)RC3C);
+		sfx_u32 config_words2[3]=RC3C_CONFIG;
+		SIGFOX_API_set_std_config(config_words2,0);
+		break;
+	case 4:
+		SIGFOX_API_open(&(sfx_rc_t)RC4);
+		sfx_u32 config_words3[3]={0,0x40000000,0};
+		SIGFOX_API_set_std_config(config_words3,1);
+		break;
 	}
 
 	return true;
