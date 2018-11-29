@@ -50,6 +50,8 @@ bool sigfox_init(s2lp_config_t * conf) {
 	    //  In this case we use the first 9 macro channels
 		sfx_u32 config_words1[3]={1,0,0};
 		SIGFOX_API_set_std_config(config_words1,1);
+		log_error("RCZ2 implementation is actually not working");
+	    _Error_Handler(__FILE__, __LINE__);
 		break;
 	case 3:
 		SIGFOX_API_open(&(sfx_rc_t)RC3C);
@@ -60,6 +62,8 @@ bool sigfox_init(s2lp_config_t * conf) {
 		SIGFOX_API_open(&(sfx_rc_t)RC4);
 		sfx_u32 config_words3[3]={0,0x40000000,0};
 		SIGFOX_API_set_std_config(config_words3,1);
+		log_error("RCZ4 implementation is actually not working");
+	    _Error_Handler(__FILE__, __LINE__);
 		break;
 	}
 
@@ -73,7 +77,7 @@ bool sigfox_init(s2lp_config_t * conf) {
  */
 void sigfox_cifferKey(s2lp_config_t * conf) {
 	 uint32_t key = ITSDK_SIGFOX_PROTECT_KEY;
-	 uint32_t * pk = (uint32_t *)(conf->key);
+	 uint32_t * pk = (uint32_t *)(&conf->key[0]);
 	 for ( int i = 0  ; i < 4 ; i++,pk++ ) *pk ^= key;
 }
 void sigfox_unCifferKey(s2lp_config_t * conf) {

@@ -59,13 +59,13 @@ typedef struct s2lp_config_s {
 	uint8_t		tcxo;				// 1 when TCXO is present
 	uint8_t		range;
 	uint8_t		band;
+	uint8_t 	rcz;				// sigfox RCZ
 	int32_t		offset;
 	int32_t 	rssiOffset;
 
 	uint32_t 	id;					// sigfox ID
-	uint8_t 	rcz;				// sigfox RCZ
 	uint8_t  	pac[8];				// sigfox initial Pac
-	uint8_t  	key[16];			// sigfox Key
+	uint8_t  	key[16];			// sigfox Key (this must be aligned on 32b block)
 	uint8_t  	aux[16];			// sigfox Aux
 
 	uint8_t		low_power_flag;		// switch to low power during S2LP processing

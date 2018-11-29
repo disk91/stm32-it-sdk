@@ -75,7 +75,7 @@ void s2lp_init() {
 
 	// Get the version
     s2lp_spi_readRegisters(&ITSDK_S2LP_SPI,S2LP_REG_DEVICE_INFO0, 1, &tmp);
-    log_info("S2LP version 0x%0X\r\n",tmp);
+    log_debug("S2LP version 0x%0X\r\n",tmp);
     if(tmp==S2LP_VERSION_2_0 || tmp==S2LP_VERSION_2_1) {
     	// Sounds like a bug on the SPI ...
     	// preventing conflict when accessing the eeprom
@@ -187,7 +187,7 @@ void s2lp_loadConfiguration(
 
 		// Search for the private key in the memory to fill the structure
 		enc_retreive_key(s2lpConf->id, s2lpConf->pac, s2lpConf->key);
-		//sigfox_cifferKey(s2lpConf);
+		sigfox_cifferKey(s2lpConf);
 
 		s2lpConf->low_power_flag = ITSDK_SIGFOX_LOWPOWER;
 		s2lpConf->payload_encryption = ITSDK_SIGFOX_ENCRYPTED;
@@ -239,9 +239,11 @@ void s2lp_printConfig(
 	for ( i = 0 ; i < 8 ; i++ ) log_info("%02X",s2lpConf->pac[i]);
 	log_info(" ]\r\n");
 
+	sigfox_unCifferKey(s2lpConf);
 	log_info("key: [ ");
 	for ( i = 0 ; i < 16 ; i++ ) log_info("%02X",s2lpConf->key[i]);
 	log_info(" ]\r\n");
+	sigfox_cifferKey(s2lpConf);
 
 	log_info("aux: [ ");
 	for ( i = 0 ; i < 16 ; i++ ) log_info("%02X",s2lpConf->aux[i]);
@@ -256,6 +258,16 @@ void s2lp_applyConfig(
 	itsdk_sigfox_configInit(cnf);
 	ST_RF_API_set_freq_offset(cnf->offset);
 	ST_RF_API_set_tcxo(cnf->tcxo);
+	if ( cnf->range ) {
+		ST_RF_API_set_pa(1);
+		ST_RF_API_gpio_tx_rx_pin(0);
+		ST_RF_API_gpio_rx_pin(1);
+		ST_RF_API_gpio_tx_pin(2);
+		ST_RF_API_set_rssi_offset(-16);
+	} else {
+		ST_RF_API_set_pa(0);
+		ST_RF_API_set_rssi_offset(0);
+	}
 }
 
 

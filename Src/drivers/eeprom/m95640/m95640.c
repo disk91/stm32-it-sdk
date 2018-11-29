@@ -47,7 +47,7 @@ void eeprom_m95640_hwInit() {
 bool eeprom_m95640_init(__SPI_HANDLER_TYPE * spi) {
 	uint8_t status;
 
-	log_info("M95640 Init\r\n");
+	log_debug("M95640 Init\r\n");
 
 	// Check the eeprom status and change configuration SRWD bit to ensure
 	// the eeprom is present and ready for next steps
@@ -56,7 +56,7 @@ bool eeprom_m95640_init(__SPI_HANDLER_TYPE * spi) {
  	    // if it is EEPROM_STATUS_SRWD, ok the EEPROM is present and ready to work
 	    status=1;
 	} else {
-		log_info(" > Enable Write & SRWD \r\n");
+		log_debug(" > Enable Write & SRWD \r\n");
 	    eeprom_m95640_enableWrite(spi, true);
 	    itsdk_delayMs(50);
 
@@ -72,14 +72,14 @@ bool eeprom_m95640_init(__SPI_HANDLER_TYPE * spi) {
 	        status=1;
 	    } else {
 	        // else no EEPROM is present
-			log_info(" > Not Found \r\n");
+	    	log_debug(" > Not Found \r\n");
 	        status = 0;
 	    }
 	}
 
 
     if ( status == 1 ) {
-		log_info(" > Found \r\n");
+    	log_debug(" > Found \r\n");
 
     	return true;
     }

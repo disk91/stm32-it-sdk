@@ -78,7 +78,7 @@ sfx_u8 MCU_API_malloc(sfx_u16 size, sfx_u8 **returned_pointer)
 {
   static sfx_u8 mem[ITSDK_SIGFOX_MEM_SIZE];
   
-  LOG_INFO_S2LP(("Sigfox lib mem req: %dB\r\n",size));
+  LOG_DEBUG_S2LP(("Sigfox lib mem req: %dB\r\n",size));
   if(size>ITSDK_SIGFOX_MEM_SIZE) {
 	  LOG_ERROR_S2LP(("Requesting more memory than maximum allowable\r\n"));
 	  return MCU_ERR_API_MALLOC;
@@ -112,7 +112,7 @@ sfx_u8 MCU_API_get_voltage_temperature(sfx_u16 *voltage_idle,
 				       sfx_s16 *temperature)
 {
 
-  LOG_INFO_S2LP((">> MCU_API_get_voltage_temperature\r\n"));
+	LOG_DEBUG_S2LP((">> MCU_API_get_voltage_temperature\r\n"));
 
   // get the idle voltage of the complete device
   // get the temperature of the device
@@ -122,7 +122,6 @@ sfx_u8 MCU_API_get_voltage_temperature(sfx_u16 *voltage_idle,
   (*voltage_tx)=(__s2lp_voltageInTx!=0)?__s2lp_voltageInTx:adc_getVdd();
   (*temperature)=adc_getTemperature()/10;
   
-  log_info("volt : %d, temp : %d\r\n",(int)*voltage_tx,(int)*temperature);
   return SFX_ERR_NONE;
 }
 
@@ -133,7 +132,7 @@ sfx_u8 MCU_API_get_voltage_temperature(sfx_u16 *voltage_idle,
 */
 sfx_u8 MCU_API_delay(sfx_delay_t delay_type)
 {
-  LOG_INFO_S2LP((">> MCU_API_delay %d\r\n",delay_type));
+  LOG_DEBUG_S2LP((">> MCU_API_delay %d\r\n",delay_type));
   switch(delay_type)
   {
   case SFX_DLY_INTER_FRAME_TRX:
@@ -259,7 +258,7 @@ sfx_u8 MCU_API_set_nv_mem(sfx_u8 data_to_write[SFX_NVMEM_BLOCK_SIZE])
 */
 sfx_u8 MCU_API_report_test_result(sfx_bool status, sfx_s16 rssi)
 {    
-  LOG_INFO_S2LP((">> MCU_API_report_test_result\r\n"));
+	LOG_DEBUG_S2LP((">> MCU_API_report_test_result\r\n"));
   //ST_MANUF_report_CB(status, rssi);
   /* use this function to : print output result : status and rssi on uart if you have one or any link is available on device
    or use a gpio to indicate at least the status
@@ -302,11 +301,11 @@ sfx_u8 MCU_API_get_device_id_and_payload_encryption_flag(
 	enc_utils_get_id(dev_id);
    (*payload_encryption_enabled) = _s2lp_sigfox_config->payload_encryption;
 
-	log_info("Read ID from Eeprom via retriever (mcu_api.c):");
-	for (int i=0; i< ID_LENGTH ; i++) {
-		log_info("0x%X, ",dev_id[i]);
-	}
-	log_info("\r\n");
+//	log_info("Read ID from Eeprom via retriever (mcu_api.c): [ ");
+//	for (int i=0; i< ID_LENGTH ; i++) {
+//		log_info("%X ",dev_id[i]);
+//	}
+//	log_info("]\r\n");
 	return SFX_ERR_NONE;
 
 #elif ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_LOCALEPROM
@@ -501,7 +500,7 @@ void __GPIO_IRQHandler(uint16_t GPIO_Pin) {
  */
 void ST_MCU_API_GpioIRQ(sfx_u8 pin, sfx_u8 new_state, sfx_u8 trigger)
 {
-  LOG_INFO_S2LP((">> ST_MCU_API_GpioIRQ %d %d %d \r\n",pin,new_state,trigger));
+  LOG_DEBUG_S2LP((">> ST_MCU_API_GpioIRQ %d %d %d \r\n",pin,new_state,trigger));
 
   uint16_t gpioPin;
   uint8_t  gpioBank;
@@ -555,7 +554,7 @@ void ST_MCU_API_GpioIRQ(sfx_u8 pin, sfx_u8 new_state, sfx_u8 trigger)
  */
 void ST_MCU_API_WaitForInterrupt(void)
 {
-	LOG_INFO_S2LP(("+"));
+	LOG_DEBUG_S2LP(("+"));
 	if(__pendingIrqDelayed) {
 	   ST_RF_API_S2LP_IRQ_CB();
 	   __pendingIrqDelayed=0;
@@ -569,7 +568,7 @@ void ST_MCU_API_WaitForInterrupt(void)
 		  __s2lp_voltageInTxPending--;
 		  if (__s2lp_voltageInTxPending==0) {
 			  __s2lp_voltageInTx=adc_getVdd();
-			  log_info("_");
+			  LOG_DEBUG_S2LP(("_"));
 		  }
 	  }
 	  // other actions
@@ -593,7 +592,7 @@ void ST_MCU_API_WaitForInterrupt(void)
  * Timer end handler
  */
 void __TIMER_Handler(uint32_t v) {
-	LOG_INFO_S2LP((">> __TIMER_Handler (END)\r\n"));
+	LOG_DEBUG_S2LP((">> __TIMER_Handler (END)\r\n"));
 	ST_RF_API_Timer_CB(TIMER_STOP);
 }
 
@@ -606,7 +605,7 @@ void __TIMER_Handler(uint32_t v) {
  */
 sfx_u8 MCU_API_timer_start(sfx_u32 time_duration_in_s)
 {
-	LOG_INFO_S2LP((">> MCU_API_timer_start %d\r\n",time_duration_in_s));
+	LOG_DEBUG_S2LP((">> MCU_API_timer_start %d\r\n",time_duration_in_s));
 
 	ST_RF_API_Timer_CB(TIMER_START);
 	if (   itsdk_stimer_register(
@@ -625,7 +624,7 @@ sfx_u8 MCU_API_timer_start(sfx_u32 time_duration_in_s)
  */
 sfx_u8 MCU_API_timer_stop(void)
 {
-	LOG_INFO_S2LP((">> MCU_API_timer_stop \r\n"));
+	LOG_DEBUG_S2LP((">> MCU_API_timer_stop \r\n"));
 
 	itsdk_stimer_stop(
 			__TIMER_Handler,
@@ -641,7 +640,7 @@ sfx_u8 MCU_API_timer_stop(void)
  */
 sfx_u8 MCU_API_timer_wait_for_end(void)
 {
-	LOG_INFO_S2LP((">> MCU_API_timer_wait_for_end \r\n"));
+	LOG_DEBUG_S2LP((">> MCU_API_timer_wait_for_end \r\n"));
 
 	while ( itsdk_stimer_isRunning(
 				__TIMER_Handler,
@@ -655,118 +654,32 @@ sfx_u8 MCU_API_timer_wait_for_end(void)
 }
 
 
-
-
-
-
-/* ****************************************************************************************************
- * TIMER FUNCTIONS BASED ON RTC
- * ****************************************************************************************************
+/**
+ * Timer2 end handler
  */
-
-uint32_t __st_lib_rtc_loops_pending = 0;
-
-void __RTC_IRQHandler2(RTC_HandleTypeDef *h);
-rtc_irq_chain_t __sfx_rtc_irq2 = {
-		__RTC_IRQHandler2,
-		NULL
-};
-void __RTC_IRQHandler2(RTC_HandleTypeDef *h) {
-
-  rtc_disableWakeUp();
-  if (__st_lib_rtc_loops_pending == 0 ) {
-	  // Global timer is finished
-	  ST_RF_API_Timer_Channel_Clear_CB();
-	  log_info("Finished RTC\r\n");
-  } else {
-	  // We need to run the timer up to the next 100ms slot
-	  __st_lib_rtc_loops_pending--;
-	  rtc_runRtcUntilTicks(rtc_getTicksFromDuration(1000));
-  }
-
+void __TIMER2_Handler(uint32_t v) {
+	LOG_DEBUG_S2LP((">> __TIMER2_Handler (END)\r\n"));
+	ST_RF_API_Timer_Channel_Clear_CB();
 }
 
 /**
  * Start a timer for carrier sense in MS
  * Use the RTC Timer if available
+ * The duration are 5000ms and 8000ms
  */
 sfx_u8 MCU_API_timer_start_carrier_sense(sfx_u16 time_duration_in_ms)
 {
-	log_info(">> MCU_API_timer_stop_carrier_sense %d \r\n",time_duration_in_ms);
+	LOG_DEBUG_S2LP((">> MCU_API_timer_stop_carrier_sense %d \r\n",time_duration_in_ms));
 
-	/*
-	if (! rtc_existAction(&__sfx_rtc_irq) ) {
-
-		// RTC timer is available
-		// Register the interrupt handler
-		rtc_registerIrqAction(&__sfx_rtc_irq2);
-
-		// Determine the number of cycles
-		uint32_t totalTicks = rtc_getTicksFromDuration(time_duration_in_ms);
-		__st_lib_rtc_loops_pending = ( totalTicks / rtc_getTicksFromDuration(1000) );
-
-		// Determine the subdivision time to add
-		totalTicks -=  (__st_lib_rtc_loops_pending * rtc_getTicksFromDuration(1000) );
-
-		// Start timer - assuming as > 1s no risk to have __st_lib_rtc_loops_pending = 0
-		// Run for the sub cycle time part
-		if ( totalTicks == 0 ) {
-			__st_lib_rtc_loops_pending--;
-			totalTicks = rtc_getTicksFromDuration(1000);
+	ST_RF_API_Timer_CB(TIMER_START);
+	if (   itsdk_stimer_register(
+			time_duration_in_ms,
+			__TIMER2_Handler,
+			0
+		) != TIMER_INIT_SUCCESS ) {
+			_Error_Handler(__FILE__, __LINE__);
 		}
-		rtc_runRtcUntilTicks(totalTicks);
-	} else {
-		log_warn(">> MCU_API_timer_stop_carrier_sense - RTC in use \r\n");
-		itsdk_delayMs(time_duration_in_ms);
-		ST_RF_API_Timer_Channel_Clear_CB();
-	}
-*/
-
-//  uint32_t rtc_wup_tick, next_rtc_wakeup_tick;
-//
-//  log_info(">> MCU_API_timer_stop_carrier_sense %d \r\n",time_duration_in_ms);
-//
-//  PRINTF("MCU_API_timer_start_carrier_sense IN (rtc_in_use=%d)\n\r",rtc_in_use);
-//
-//  carrier_sense_tim_started=1;
-//
-//  if(rtc_in_use)
-//  {
-//    uint32_t n = ((uint32_t)time_duration_in_ms*16000);
-//    uint16_t a,b;
-//    RadioTimersFindFactors(n,&a,&b);
-//    RadioTimersTimConfig(&Tim2_Handler,a-1,b-1);
-//    RadioTimersState(&Tim2_Handler, ENABLE);
-//  }
-//  else
-//  {
-//    Configure_RTC_Clock();
-//    notify_end = 1;
-//    __HAL_RTC_WAKEUPTIMER_CLEAR_FLAG(&RtcHandler, RTC_FLAG_WUTF);
-//    __HAL_RTC_CLEAR_FLAG(RTC_EXTI_LINE_WAKEUPTIMER_EVENT);
-//    n_intermediate_tim_irq=0;
-//    rtc_in_use=1;
-//    rtc_in_use_for_cs=1;
-//    /*rtc_wup_tick = time_duration_in_ms/1000*rtc_presc; */
-//    rtc_wup_tick = (time_duration_in_ms*rtc_presc)/1000;
-//    if(rtc_wup_tick>65535) /* Mapped register is 16bit */
-//    {
-//      next_rtc_wakeup_tick=rtc_wup_tick-65535;
-//      rtc_wup_tick=65535;
-//    }
-//    else
-//    {
-//      next_rtc_wakeup_tick=0;
-//    }
-//
-//    /*next_rtc_wakeup = next_rtc_wakeup_tick/rtc_presc*1000; */
-//    next_rtc_wakeup = (next_rtc_wakeup_tick*1000)/rtc_presc;
-//    HAL_RTCEx_SetWakeUpTimer_IT(&RtcHandler, rtc_wup_tick, RTC_WAKEUPCLOCK_RTCCLK_DIV16);
-//  }
-//
-//  PRINTF("MCU_API_timer_start_carrier_sense OUT\n\r");
-//
-  return SFX_ERR_NONE;
+	return SFX_ERR_NONE;
 }
 
 /*
@@ -776,30 +689,13 @@ sfx_u8 MCU_API_timer_start_carrier_sense(sfx_u16 time_duration_in_ms)
 */
 sfx_u8 MCU_API_timer_stop_carrier_sense(void)
 {
-	log_info(">> MCU_API_timer_stop_carrier_sense \r\n");
-	rtc_disableWakeUp();
-	__st_lib_rtc_loops_pending=0;
-	rtc_removeIrqAction(&__sfx_rtc_irq2);
+	LOG_DEBUG_S2LP((">> MCU_API_timer_stop_carrier_sense \r\n"));
+
+	itsdk_stimer_stop(
+			__TIMER2_Handler,
+			0
+	);
 	return SFX_ERR_NONE;
-
-//	log_info(">> MCU_API_timer_stop_carrier_sense \r\n");
-//
-//  if(rtc_in_use_for_cs)
-//  {
-//    HAL_RTCEx_DeactivateWakeUpTimer(&RtcHandler);
-//    rtc_in_use=0;
-//    rtc_in_use_for_cs=0;
-//  }
-//  else
-//  {
-//    RadioTimersState(&Tim2_Handler, DISABLE);
-//  }
-//  carrier_sense_tim_started=0;
-//
-//  PRINTF("MCU_API_timer_stop_carrier_sense OUT\n\r");
-//
-  return SFX_ERR_NONE;
-
 }
 
 /* **********************************************************************************************************
@@ -814,7 +710,7 @@ sfx_u8 MCU_API_timer_stop_carrier_sense(void)
 void enc_utils_retrieve_key(uint8_t * key) {
 
 	uint8_t	raw[32];
-	LOG_INFO_S2LP((">> enc_utils_retrieve_key \r\n"));
+	LOG_DEBUG_S2LP((">> enc_utils_retrieve_key \r\n"));
 
 #if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_M95640
 
