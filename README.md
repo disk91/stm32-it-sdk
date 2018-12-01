@@ -22,9 +22,9 @@ Made for being compiled with open-source environment GCC / AC6
 
 * Supported drivers
   * eeprom
-   * m95640
+     * m95640
   * sigfox
-   * s2lp
+     * s2lp
 
 The second objective is to be able to port this SDK to different patform
 to make it a portable SDK. The SDK have a it-sdk directory where everything needs to be portable. stm32l-sdk contains all the subfunctions specific to this platform.

@@ -67,6 +67,7 @@ typedef struct s2lp_config_s {
 	uint8_t  	pac[8];				// sigfox initial Pac
 	uint8_t  	key[16];			// sigfox Key (this must be aligned on 32b block)
 	uint8_t  	aux[16];			// sigfox Aux
+	uint16_t	seqId;				// last sent seqId
 
 	uint8_t		low_power_flag;		// switch to low power during S2LP processing
 	uint8_t		payload_encryption; // encrypt the payload

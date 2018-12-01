@@ -34,14 +34,117 @@
 
 #ifdef ITSDK_WITH_SIGFOX_LIB
 
+
+typedef enum {
+	SIGFOX_INIT_SUCESS = 0,
+	SIGFOX_INIT_FAILED,
+	SIGFOX_INIT_NOCHANGE,
+	SIGFOX_INIT_PARAMSERR
+} itsdk_sigfox_init_t;
+
+typedef enum {
+	SIGFOX_TRANSMIT_SUCESS = 0,				// Uplink success
+	SIGFOX_TXRX_NO_DOWNLINK,				// Uplink / Downlink success, backend did not report downlink value
+	SIGFOX_TXRX_DOWLINK_RECEIVED,			// Uplink / Downlink success, backend retruned downlink value
+	SIGFOX_ERROR_PARAMS,					// Wrong parameters used when calling the function
+	SIGFOX_TXRX_ERROR,						// Underlaying sigfox stack returned an error
+} itdsk_sigfox_txrx_t;
+
+typedef enum {
+	SIGFOX_SPEED_DEFAULT = 0,
+	SIGFOX_SPEED_100 = 100,
+	SIGFOX_SPEED_600 = 600
+} itdsk_sigfox_speed_t;
+
+typedef enum
+{
+    SIGFOX_OOB_SERVICE = 0,
+    SIGFOX_OOB_RC_SYNC
+} itdsk_sigfox_oob_t;
+
+typedef enum {								// Encryption mode are cumulative
+	SIGFOX_ENCRYPT_NONE = 0,				// Clear text payload
+	SIGFOX_ENCRYPT_SIGFOX = 1,				// Sigfox native encryption
+	SIGFOX_ENCRYPT_AESCBC = 2,				// Software AESCBC (like sigfox) encryption
+	SIGFOX_ENCRYPT_SPECK = 4				// Speck enryption
+} itdsk_sigfox_encrypt_t;
+
+typedef uint32_t itsdk_sigfox_device_is_t;
+
+
+typedef struct {
+	bool		initialized;
+	uint8_t		rcz;
+	uint8_t		default_power;
+	uint16_t	default_speed;
+} itsdk_sigfox_state;
+
+#define SIGFOX_POWER_DEFAULT	-1
+
 // --------------------------------------------------------------------
 // Public Functions
 // --------------------------------------------------------------------
 
-uint8_t itsdk_sigfox_setup();
-uint8_t itsdk_sigfox_sendFrame(char * buf, uint8_t len, uint8_t repeat, uint16_t speed, uint8_t power, bool ack);
-uint8_t itsdk_sigfox_sendBit(char bitValue,  uint8_t repeat, uint16_t speed, uint8_t power, bool ack);
+itsdk_sigfox_init_t itsdk_sigfox_setup();
+itsdk_sigfox_init_t itsdk_sigfox_setTxPower(uint8_t power);
+itsdk_sigfox_init_t itsdk_sigfox_setTxSpeed(itdsk_sigfox_speed_t speed);
+itsdk_sigfox_init_t itsdk_sigfox_getDeviceId(itsdk_sigfox_device_is_t * devId);
+itsdk_sigfox_init_t itsdk_sigfox_getInitialPac(uint8_t * pac);
+itsdk_sigfox_init_t itsdk_sigfox_getLastRssi(int16_t * rssi);
+itsdk_sigfox_init_t itsdk_sigfox_switchPublicKey();
+itsdk_sigfox_init_t itsdk_sigfox_switchPrivateKey();
+itsdk_sigfox_init_t itsdk_sigfox_setRcSyncPeriod(uint16_t numOfFrame);
+itsdk_sigfox_init_t itsdk_sigfox_getLastSeqId(int16_t * seqId);
+itsdk_sigfox_init_t itsdk_sigfox_getNextSeqId(int16_t * seqId);
 
+itdsk_sigfox_txrx_t itsdk_sigfox_sendFrame(
+		uint8_t * buf,
+		uint8_t len,
+		uint8_t repeat,
+		itdsk_sigfox_speed_t speed,
+		int8_t power,
+		itdsk_sigfox_encrypt_t encrypt,
+		bool ack,
+		uint8_t * dwn
+);
+
+itdsk_sigfox_txrx_t itsdk_sigfox_sendBit(
+		bool bitValue,
+		uint8_t repeat,
+		itdsk_sigfox_speed_t speed,
+		int8_t power,
+		bool ack,
+		uint8_t * dwn
+);
+
+itdsk_sigfox_txrx_t itsdk_sigfox_sendOob(
+		itdsk_sigfox_oob_t oobType,
+		itdsk_sigfox_speed_t speed,
+		int8_t power
+);
+
+itsdk_sigfox_init_t itsdk_sigfox_continuousModeStart(
+		uint32_t				frequency,
+		itdsk_sigfox_speed_t 	speed,
+		int8_t 					power
+);
+itsdk_sigfox_init_t itsdk_sigfox_continuousModeStop();
+
+// --------------------------------------------------------------------
+// Logging
+// --------------------------------------------------------------------
+
+#if (ITSDK_LOGGER_MODULE & __LOG_MOD_SIGFOX) > 0
+#define LOG_INFO_SIGFOX(x)		log_info x
+#define LOG_WARN_SIGFOX(x) 		log_warn x
+#define LOG_ERROR_SIGFOX(x)		log_error x
+#define LOG_DEBUG_SIGFOX(x)		log_debug x
+#else
+#define LOG_INFO_SIGFOX(x)
+#define LOG_WARN_SIGFOX(x)
+#define LOG_ERROR_SIGFOX(x)
+#define LOG_DEBUG_SIGFOX(x)
+#endif
 
 #endif //ITSDK_WITH_SIGFOX_LIB
 

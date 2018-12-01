@@ -32,8 +32,37 @@
 #include <stdbool.h>
 #include <drivers/s2lp/s2lp.h>
 
-bool sigfox_init(s2lp_config_t * conf);
-void sigfox_cifferKey(s2lp_config_t * conf);
-void sigfox_unCifferKey(s2lp_config_t * conf);
+bool s2lp_sigfox_init(s2lp_config_t * conf);
+void s2lp_sigfox_cifferKey(s2lp_config_t * conf);
+void s2lp_sigfox_unCifferKey(s2lp_config_t * conf);
+
+bool s2lp_sigfox_retreive_key(int32_t deviceId, uint8_t * pac, uint8_t * key);
+void enc_protect_key();
+void enc_unprotect_key();
+void itsdk_sigfox_configInit(s2lp_config_t * cnf);
+int16_t s2lp_sigfox_getLastRssiLevel();
+
+extern s2lp_config_t *	_s2lp_sigfox_config;
+
+#define S2LP_UNKNOWN_RSSI	0x0F00;
+
+/* ----------------------------------------------------------------
+ * Logging
+ */
+
+#if (ITSDK_LOGGER_MODULE & __LOG_MOD_LOWSIGFOX) > 0
+#define LOG_INFO_S2LP(x)		log_info x
+#define LOG_WARN_S2LP(x) 		log_warn x
+#define LOG_ERROR_S2LP(x)		log_error x
+#define LOG_DEBUG_S2LP(x)		log_debug x
+#else
+#define LOG_INFO_S2LP(x)
+#define LOG_WARN_S2LP(x)
+#define LOG_ERROR_S2LP(x)
+#define LOG_DEBUG_S2LP(x)
+#endif
+
+
+
 
 #endif /* IT_SDK_DRIVERS_SIGFOX_HELPER_H_ */

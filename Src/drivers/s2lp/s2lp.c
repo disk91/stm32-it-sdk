@@ -37,8 +37,8 @@
 #include <it_sdk/logger/logger.h>
 #include <drivers/s2lp/st_rf_api.h>
 #include <drivers/s2lp/st_lib_api.h>
-#include <drivers/sigfox/sigfox_retriever.h>
-#include <drivers/sigfox/sigfox_helper.h>
+#include <drivers/s2lp/sigfox_retriever.h>
+#include <drivers/s2lp/sigfox_helper.h>
 
 #if ITSDK_SIGFOX_NVM_SOURCE	== __SFX_NVM_M95640
 	#include <drivers/eeprom/m95640/m95640.h>
@@ -186,8 +186,8 @@ void s2lp_loadConfiguration(
 		}
 
 		// Search for the private key in the memory to fill the structure
-		enc_retreive_key(s2lpConf->id, s2lpConf->pac, s2lpConf->key);
-		sigfox_cifferKey(s2lpConf);
+		s2lp_sigfox_retreive_key(s2lpConf->id, s2lpConf->pac, s2lpConf->key);
+		s2lp_sigfox_cifferKey(s2lpConf);
 
 		s2lpConf->low_power_flag = ITSDK_SIGFOX_LOWPOWER;
 		s2lpConf->payload_encryption = ITSDK_SIGFOX_ENCRYPTED;
@@ -219,6 +219,11 @@ void s2lp_loadConfiguration(
 		#warning "__SFX_NVM_HEADERS Not to be used in production"
 	#endif
 
+	// Init the seqId by reading the memory
+	uint8_t tmp[SFX_NVMEM_BLOCK_SIZE];
+	MCU_API_get_nv_mem(tmp);
+	s2lpConf->seqId = (uint16_t)tmp[SFX_NVMEM_SEQ_NUM] + (((uint16_t)tmp[SFX_NVMEM_SEQ_NUM+1]) << 8);
+
 	s2lp_applyConfig(s2lpConf);
 }
 
@@ -239,16 +244,30 @@ void s2lp_printConfig(
 	for ( i = 0 ; i < 8 ; i++ ) log_info("%02X",s2lpConf->pac[i]);
 	log_info(" ]\r\n");
 
-	sigfox_unCifferKey(s2lpConf);
+	s2lp_sigfox_unCifferKey(s2lpConf);
 	log_info("key: [ ");
 	for ( i = 0 ; i < 16 ; i++ ) log_info("%02X",s2lpConf->key[i]);
 	log_info(" ]\r\n");
-	sigfox_cifferKey(s2lpConf);
+	s2lp_sigfox_cifferKey(s2lpConf);
 
 	log_info("aux: [ ");
 	for ( i = 0 ; i < 16 ; i++ ) log_info("%02X",s2lpConf->aux[i]);
 	log_info(" ]\r\n");
 	log_info("\r\n");
+
+	uint8_t * versionStr;
+	uint8_t sz;
+	SIGFOX_API_get_version(&versionStr,&sz,VERSION_SIGFOX);
+	log_info("Sigfox version : %s\r\n",versionStr);
+	SIGFOX_API_get_version(&versionStr,&sz,VERSION_MCU);
+	log_info("MCU version : %s\r\n",versionStr);
+	SIGFOX_API_get_version(&versionStr,&sz,VERSION_RF);
+	log_info("RF version : %s\r\n",versionStr);
+	SIGFOX_API_get_version(&versionStr,&sz,VERSION_MONARCH);
+	log_info("MONARCH version : %s\r\n",versionStr);
+	SIGFOX_API_get_version(&versionStr,&sz,VERSION_DEVICE_CONFIG);
+	log_info("Config version : %s\r\n",versionStr);
+
 }
 
 

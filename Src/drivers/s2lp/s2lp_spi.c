@@ -188,57 +188,6 @@ S2LP_SPI_StatusBytes s2lp_spi_writeRegisters(
         uint8_t* pcBuffer
 ) {
 	return s2lp_spi_accessRegisters(spi,cRegAddress,cNbBytes,pcBuffer,S2LP_WRITE_REGISTER);
-	/*
-  uint8_t v=0;
-  uint8_t r=0;
-  uint16_t status = 0x0000;
-  S2LP_SPI_StatusBytes *pStatus=(S2LP_SPI_StatusBytes *)&status;
-
-  // Disable S2LP Interrupt
-  gpio_interruptPriority(ITSDK_S2LP_INT_BANK, ITSDK_S2LP_INT_PIN, 4, 4);
-  gpio_interruptDisable(ITSDK_S2LP_INT_BANK, ITSDK_S2LP_INT_PIN);
-
-  s2lp_spi_setCsLow();
-  itsdk_delayMs(S2LP_SPI_DELAY);
-
-  // Write the aHeader bytes and read the S2-LP status bytes
-  v = WRITE_HEADER;
-  spi_readRegister(
-		  spi,
-          (uint8_t *)&v,
-          (uint8_t *)&(r),
-		  1
-  );
-  status = r << 8;
-
-  // Write the aHeader bytes and read the S2-LP status bytes
-  v = cRegAddress;
-  spi_readRegister(
-		  spi,
-          (uint8_t *)&v,
-          (uint8_t *)&(r),
-		  1
-  );
-  status+=r;
-
-  // Writes the registers according to the number of bytes
-  for (int index = 0; index < cNbBytes; index++) {
-	  spi_write_byte(spi,pcBuffer[index]);
-  }
-
-  // To be sure to don't rise the Chip Select before the end of last sending
-  spi_wait4TransactionEnd(spi);
-
-  // Puts the SPI chip select high to end the transaction
-  s2lp_spi_setCsHigh();
-
-  // Re-enable S2LP Interrupt
-  gpio_interruptPriority(ITSDK_S2LP_INT_BANK, ITSDK_S2LP_INT_PIN, 4, 4);
-  gpio_interruptEnable(ITSDK_S2LP_INT_BANK, ITSDK_S2LP_INT_PIN);
-
-  return *pStatus;
-  */
-
 }
 
 S2LP_SPI_StatusBytes s2lp_spi_readRegisters(
@@ -248,69 +197,7 @@ S2LP_SPI_StatusBytes s2lp_spi_readRegisters(
         uint8_t* pcBuffer
 ) {
 	return s2lp_spi_accessRegisters(spi,cRegAddress,cNbBytes,pcBuffer,S2LP_READ_REGISTER);
-	/*
-	  uint8_t v=0;
-	  uint8_t r=0;
-	  uint16_t status = 0x0000;
-	  S2LP_SPI_StatusBytes *pStatus=(S2LP_SPI_StatusBytes *)&status;
-
-	  // Disable S2LP Interrupt
-	  gpio_interruptPriority(ITSDK_S2LP_INT_BANK, ITSDK_S2LP_INT_PIN, 4, 4);
-	  gpio_interruptDisable(ITSDK_S2LP_INT_BANK, ITSDK_S2LP_INT_PIN);
-
-	  s2lp_spi_setCsLow();
-	  itsdk_delayMs(S2LP_SPI_DELAY);
-
-	  // Write the aHeader bytes and read the S2-LP status bytes
-	  v = READ_HEADER;
-	  spi_readRegister(
-			  spi,
-	          (uint8_t *)&v,
-	          (uint8_t *)&(r),
-			  1
-	  );
-	  status = r << 8;
-
-	  // Write the aHeader bytes and read the S2-LP status bytes
-	  v = cRegAddress;
-	  spi_readRegister(
-			  spi,
-	          (uint8_t *)&v,
-	          (uint8_t *)&(r),
-			  1
-	  );
-	  status+=r;
-
-	  // Read the registers according to the number of bytes
-	  uint8_t dummy = 0xFF;
-	  for (int index = 0; index < cNbBytes; index++) {
-		  spi_readRegister(
-				  spi,
-				  (uint8_t *)&dummy,
-				  (uint8_t *)&(pcBuffer)[index],
-				  1
-		  );
-	  }
-
-	  // To be sure to don't rise the Chip Select before the end of last sending
-	  spi_wait4TransactionEnd(spi);
-
-	  // Puts the SPI chip select high to end the transaction
-	  s2lp_spi_setCsHigh();
-
-	  // Re-enable S2LP Interrupt
-	  gpio_interruptPriority(ITSDK_S2LP_INT_BANK, ITSDK_S2LP_INT_PIN, 4, 4);
-	  gpio_interruptEnable(ITSDK_S2LP_INT_BANK, ITSDK_S2LP_INT_PIN);
-
-	  return *pStatus;
-	  */
-
 }
-
-// End of >> COPYRIGHT(c) 2018 STMicroelectronics <<
-
-
-
 
 
 
