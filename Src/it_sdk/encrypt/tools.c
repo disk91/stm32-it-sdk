@@ -1,5 +1,5 @@
 /* ==========================================================
- * encrypt.h - Encryption headers
+ * tools.c - Encryption common tools
  * Project : Disk91 SDK
  * ----------------------------------------------------------
  * Created on: 02 dec. 2018
@@ -20,16 +20,37 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  * ----------------------------------------------------------
- * 
  *
  * ==========================================================
  */
 
-#ifndef IT_SDK_ENCRYPT_H_
-#define IT_SDK_ENCRYPT_H_
-
+#include <it_sdk/config.h>
+#include <it_sdk/itsdk.h>
 #include <it_sdk/logger/logger.h>
-void itsdk_encrypt_cifferKey(uint8_t * key, int len);
-void itsdk_encrypt_unCifferKey(uint8_t * key, int len);
 
-#endif /* IT_SDK_ENCRYPT_H_ */
+/**
+ * Protect inMemory key with a simple XOR with a hardcoded
+ * 32b value. Not good at all but always better than clear
+ * text key in memory.
+ */
+void itsdk_encrypt_cifferKey(uint8_t * key, int len) {
+
+	if ( (len & 3 ) > 0 ) itsdk_error_handler(__FILE__,__LINE__);
+	for ( int i = 0 ; i < len ; i+=4 ) {
+		key[i]   ^= (ITSDK_PROTECT_KEY & 0xFF000000) >> 24;
+		key[i+1] ^= (ITSDK_PROTECT_KEY & 0x00FF0000) >> 16;
+		key[i+2] ^= (ITSDK_PROTECT_KEY & 0x0000FF00) >> 8;
+		key[i+3] ^= (ITSDK_PROTECT_KEY & 0x000000FF);
+	}
+}
+
+/**
+ * Un protect inMemory key.
+ */
+void itsdk_encrypt_unCifferKey(uint8_t * key, int len) {
+	itsdk_encrypt_cifferKey(key,len);
+}
+
+
+
+

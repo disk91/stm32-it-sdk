@@ -30,7 +30,7 @@
  *   - 24B Shared key (hardcoded in firmware - shared with all devices)
  * - The 128B secret key used for EAS CTR encryption is hardcoded
  *   In the firmware / eventually the Sigfox key can be reused but
- *   this is reducing the security level. This key must be choosen to
+ *   this is reducing the security level. This key must be chosen to
  *   be uniq per device.
  *
  * ==========================================================
@@ -46,13 +46,20 @@
 
 /**
  * Encrypt a 128B block of Data with the given key
- * The key is protected by the ITSDK_SIGFOX_PROTECT_KEY
+ * The key is protected by the ITSDK_PROTECT_KEY
  */
 void itsdk_aes_cbc_encrypt_128B(
 		uint8_t	* clearData,			// 128B Data to be encrypted
 		uint8_t * encryptedData,		// 128B Can be the same as clearData
-		uint8_t * key					// 128B key
+		uint32_t  deviceId,				// 32b device ID
+		uint16_t  seqId,				// 16b sequenceId (incremented for each of the frame)
+		uint8_t   nonce,				// 8b  value you can update dynamically from backend
+		uint32_t  sharedKey,			// 24b hardcoded value (hidden with ITSDK_PROTECT_KEY)
+		uint8_t * masterKey				// 128B key used for encryption (hidden with ITSDK_PROTECT_KEY)
 ) {
+
+
+
 
 	//enc_utils_encrypt(encrypted_data, data_to_encrypt, aes_block_len, key, use_key);
 }
@@ -60,6 +67,7 @@ void itsdk_aes_cbc_encrypt_128B(
 #else
   #error "No AES library available for supporting AES-CTR encryption"
 #endif
+
 
 
 

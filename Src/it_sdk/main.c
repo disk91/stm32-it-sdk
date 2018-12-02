@@ -59,6 +59,7 @@
 #include <it_sdk/sched/scheduler.h>
 #include <it_sdk/time/time.h>
 #include <it_sdk/time/timer.h>
+#include <it_sdk/logger/logger.h>
 
 /**
  * The setup function is called on every MCU Reset but not on wakeup from sleep

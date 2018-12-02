@@ -33,6 +33,7 @@
 #include <drivers/sigfox/sigfox_api.h>
 #include <drivers/s2lp/sigfox_helper.h>
 #include <it_sdk/logger/logger.h>
+#include <it_sdk/encrypt/encrypt.h>
 #include <string.h>
 
 s2lp_config_t *	_s2lp_sigfox_config;
@@ -89,12 +90,16 @@ bool s2lp_sigfox_init(s2lp_config_t * conf) {
  *  - basic Xor ... better than nothing
  */
 void s2lp_sigfox_cifferKey(s2lp_config_t * conf) {
-	 uint32_t key = ITSDK_SIGFOX_PROTECT_KEY;
-	 uint32_t * pk = (uint32_t *)(&conf->key[0]);
-	 for ( int i = 0  ; i < 4 ; i++,pk++ ) *pk ^= key;
+	itsdk_encrypt_cifferKey(&conf->key[0],16);
+
+//	 uint32_t key = ITSDK_PROTECT_KEY;
+//	 uint32_t * pk = (uint32_t *)(&conf->key[0]);
+//	 for ( int i = 0  ; i < 4 ; i++,pk++ ) *pk ^= key;
 }
 void s2lp_sigfox_unCifferKey(s2lp_config_t * conf) {
-	s2lp_sigfox_cifferKey(conf);
+	itsdk_encrypt_unCifferKey(&conf->key[0],16);
+
+//	s2lp_sigfox_cifferKey(conf);
 }
 
 /**
