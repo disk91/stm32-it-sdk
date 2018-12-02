@@ -71,6 +71,8 @@ typedef struct s2lp_config_s {
 
 	uint8_t		low_power_flag;		// switch to low power during S2LP processing
 	uint8_t		payload_encryption; // encrypt the payload
+	uint8_t		lastReadRssi;		// Last RSSI read from S2LP (can be an invalid message) rssi = value -146
+	uint8_t		lastReceptionRssi;  // Last RSSI corresponding to a valid downlink rssi = value - 146
 
 }  s2lp_config_t;
 

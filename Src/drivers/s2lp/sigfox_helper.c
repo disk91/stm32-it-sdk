@@ -153,28 +153,19 @@ bool s2lp_sigfox_retreive_key(int32_t deviceId, uint8_t * pac, uint8_t * key) {
 	 return false;
  }
 
+
+/**
+ * A valid frame has been received, the last Rssi is a valid Rssi
+ */
+void s2lp_sigfox_retreive_rssi() {
+	_s2lp_sigfox_config->lastReceptionRssi = _s2lp_sigfox_config->lastReadRssi;
+}
+
 /**
  * Get from S2LP the Last RSSI level after frame sync
  */
 int16_t s2lp_sigfox_getLastRssiLevel() {
-
-	uint8_t outBuf[1];
-	s2lp_spi_readRegisters(
-			&ITSDK_S2LP_SPI,
-			S2LP_REG_RSSI_LEVEL,
-	        1,
-			outBuf
-	);
-	int16_t rssi = S2LP_UNKNOWN_RSSI;
-	if ( outBuf[1] != 0xFF ) {
-		// the register contains rssi with 0 = -146
-		// -12 is not clear but looks like what we have compared to what is returned...
-		rssi = (int16_t)outBuf[1] - 146;
-		log_info("Rssi raw %d \r\n",(int)rssi);
-		rssi -= 12;
-	}
-	return rssi;
-
+	return (int16_t)(_s2lp_sigfox_config->lastReceptionRssi) - 146;
 }
 
 #endif // ITSDK_WITH_SIGFOX_LIB test

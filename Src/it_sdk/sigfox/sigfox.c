@@ -133,7 +133,12 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendFrame(
 		result = SIGFOX_TXRX_NO_DOWNLINK;
 		break;
 	case SFX_ERR_NONE:
-		result = (ack)?SIGFOX_TXRX_DOWLINK_RECEIVED:SIGFOX_TRANSMIT_SUCESS;
+		if ( ack ) {
+			s2lp_sigfox_retreive_rssi();
+			result = SIGFOX_TXRX_DOWLINK_RECEIVED;
+		} else {
+			result = SIGFOX_TRANSMIT_SUCESS;
+		}
 		break;
 	default:
 		result = SIGFOX_TXRX_ERROR;
@@ -185,7 +190,12 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendBit(
 			result = SIGFOX_TXRX_NO_DOWNLINK;
 			break;
 		case SFX_ERR_NONE:
-			result = (ack)?SIGFOX_TXRX_DOWLINK_RECEIVED:SIGFOX_TRANSMIT_SUCESS;
+			if ( ack ) {
+				s2lp_sigfox_retreive_rssi();
+				result = SIGFOX_TXRX_DOWLINK_RECEIVED;
+			} else {
+				result = SIGFOX_TRANSMIT_SUCESS;
+			}
 			break;
 		default:
 			result = SIGFOX_TXRX_ERROR;

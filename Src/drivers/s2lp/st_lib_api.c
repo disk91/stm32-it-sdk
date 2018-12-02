@@ -398,7 +398,11 @@ void ST_MCU_API_SpiRaw(uint8_t n_bytes,
 			out_buffer,
 			n_bytes
 	);
-
+	// Hack to get the Reception RSSI and have the same value
+	// as the one returned to sigfox
+	if ( in_buffer[1] == 0xA2 ) {
+		_s2lp_sigfox_config->lastReadRssi = out_buffer[2];
+	}
 }
 
 

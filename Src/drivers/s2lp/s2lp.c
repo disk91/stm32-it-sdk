@@ -223,6 +223,8 @@ void s2lp_loadConfiguration(
 	uint8_t tmp[SFX_NVMEM_BLOCK_SIZE];
 	MCU_API_get_nv_mem(tmp);
 	s2lpConf->seqId = (uint16_t)tmp[SFX_NVMEM_SEQ_NUM] + (((uint16_t)tmp[SFX_NVMEM_SEQ_NUM+1]) << 8);
+	s2lpConf->lastReadRssi = S2LP_UNKNOWN_RSSI;
+	s2lpConf->lastReceptionRssi = S2LP_UNKNOWN_RSSI;
 
 	s2lp_applyConfig(s2lpConf);
 }
