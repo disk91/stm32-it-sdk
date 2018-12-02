@@ -105,7 +105,16 @@ void itsdk_loop() {
 	lowPower_switch();
 }
 
-
+/**
+ * Error Handler for ItSdk internal
+ * (The STM32 prototype is not stable over FW version)
+ */
+void itsdk_error_handler(char * file, int line) {
+  #if ITSDK_LOGGER_CONF > 0
+   log_debug("Error : %s (%d)\r\n",file,line);
+  #endif
+   while(1);
+}
 
 
 

@@ -62,11 +62,11 @@ typedef enum
     SIGFOX_OOB_RC_SYNC
 } itdsk_sigfox_oob_t;
 
-typedef enum {								// Encryption mode are cumulative
-	SIGFOX_ENCRYPT_NONE = 0,				// Clear text payload
-	SIGFOX_ENCRYPT_SIGFOX = 1,				// Sigfox native encryption
-	SIGFOX_ENCRYPT_AESCBC = 2,				// Software AESCBC (like sigfox) encryption
-	SIGFOX_ENCRYPT_SPECK = 4				// Speck enryption
+typedef enum {												// Encryption mode are cumulative
+	SIGFOX_ENCRYPT_NONE = __SIGFOX_ENCRYPT_NONE,			// Clear text payload
+	SIGFOX_ENCRYPT_SIGFOX = __SIGFOX_ENCRYPT_SIGFOX,		// Sigfox native encryption
+	SIGFOX_ENCRYPT_AESCTR = __SIGFOX_ENCRYPT_AESCTR,		// Software AES-CTR (like sigfox) encryption
+	SIGFOX_ENCRYPT_SPECK = __SIGFOX_ENCRYPT_SPECK			// SPECK32 encryption
 } itdsk_sigfox_encrypt_t;
 
 typedef uint32_t itsdk_sigfox_device_is_t;

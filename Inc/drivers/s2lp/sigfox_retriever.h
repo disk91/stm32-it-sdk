@@ -42,6 +42,8 @@ typedef enum {
   KEY_ENC_NONE = 0x03
 } KEY_ENC_MODES;
 
+#ifndef UID_BASE
+
 #ifdef STM32L152xE
 #define UID_BASE	((uint32_t)0x1FF800D0U)
 #endif
@@ -61,6 +63,8 @@ typedef enum {
 #if (defined(BLUENRG2_DEVICE) || defined(BLUENRG1_DEVICE))
 #define UID_BASE 0x100007F4 //First 6 byte + 55AA
 #endif
+
+#endif // UID_BASE
 
 /*!
  * \defgroup ST_SIGFOX_RETRIEVER

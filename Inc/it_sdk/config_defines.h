@@ -165,4 +165,12 @@
 #define __S2LP_WITH_TCXO		1
 #define __S2LP_W_O_TCXO			0
 
+/**
+ * Encryption type - Encryption are cumulative.
+ */
+#define __SIGFOX_ENCRYPT_NONE	0					// No Encryption
+#define	__SIGFOX_ENCRYPT_SIGFOX 1					// Sigfox payload encryption
+#define	__SIGFOX_ENCRYPT_AESCTR 2					// Custom AES-CTR encryption
+#define	__SIGFOX_ENCRYPT_SPECK  4					// Speck encryption
+
 #endif /* IT_SDK_CONFIG_DEFINES_H_ */

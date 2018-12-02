@@ -29,6 +29,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include <it_sdk/config.h>
+#include <it_sdk/itsdk.h>
 #include <it_sdk/logger/logger.h>
 #include <it_sdk/time/timer.h>
 #include <it_sdk/lowpower/lowpower.h>
@@ -618,7 +619,7 @@ sfx_u8 MCU_API_timer_start(sfx_u32 time_duration_in_s)
 				__TIMER_Handler,
 				0
 			) != TIMER_INIT_SUCCESS ) {
-		_Error_Handler(__FILE__, __LINE__);
+		itsdk_error_handler(__FILE__, __LINE__);
 	}
 	return SFX_ERR_NONE;
 }
@@ -682,7 +683,7 @@ sfx_u8 MCU_API_timer_start_carrier_sense(sfx_u16 time_duration_in_ms)
 			__TIMER2_Handler,
 			0
 		) != TIMER_INIT_SUCCESS ) {
-			_Error_Handler(__FILE__, __LINE__);
+			itsdk_error_handler(__FILE__, __LINE__);
 		}
 	return SFX_ERR_NONE;
 }

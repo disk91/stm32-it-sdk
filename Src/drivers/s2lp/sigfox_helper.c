@@ -58,7 +58,7 @@ bool s2lp_sigfox_init(s2lp_config_t * conf) {
 		sfx_u32 config_words1[3]={1,0,0};
 		SIGFOX_API_set_std_config(config_words1,1);
 		log_error("RCZ2 implementation is actually not working");
-	    _Error_Handler(__FILE__, __LINE__);
+		itsdk_error_handler(__FILE__, __LINE__);
 		break;
 	case 3:
 		SIGFOX_API_open(&(sfx_rc_t)RC3C);
@@ -70,11 +70,11 @@ bool s2lp_sigfox_init(s2lp_config_t * conf) {
 		sfx_u32 config_words3[3]={0,0x40000000,0};
 		SIGFOX_API_set_std_config(config_words3,1);
 		log_error("RCZ4 implementation is actually not working");
-	    _Error_Handler(__FILE__, __LINE__);
+		itsdk_error_handler(__FILE__, __LINE__);
 		break;
 	case 5:
 		log_error("RCZ5 implementation is actually supported");
-	    _Error_Handler(__FILE__, __LINE__);
+		itsdk_error_handler(__FILE__, __LINE__);
 		break;
 
 	}

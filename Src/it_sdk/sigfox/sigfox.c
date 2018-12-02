@@ -86,7 +86,7 @@ itsdk_sigfox_init_t itsdk_sigfox_setup() {
 		break;
 	default:
 		LOG_WARN_SIGFOX(("RCZ5 implementation is actually supported"));
-		_Error_Handler(__FILE__, __LINE__);
+		itsdk_error_handler(__FILE__, __LINE__);
 	}
 
 	__sigfox_state.initialized = true;
@@ -235,7 +235,7 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendOob(
 			break;
 		default:
 			LOG_ERROR_SIGFOX(("sendOob - unsupported type"));
-			_Error_Handler(__FILE__, __LINE__);
+			itsdk_error_handler(__FILE__, __LINE__);
 		}
 		switch (ret&0xFF) {
 		case SFX_ERR_NONE:

@@ -1,8 +1,8 @@
 /* ==========================================================
- * debug.h - Debug macro per library
+ * encrypt.h - Encryption headers
  * Project : Disk91 SDK
  * ----------------------------------------------------------
- * Created on: 15 sept. 2018
+ * Created on: 02 dec. 2018
  *     Author: Paul Pinault aka Disk91
  * ----------------------------------------------------------
  * Copyright (C) 2018 Disk91
@@ -25,41 +25,10 @@
  * ==========================================================
  */
 
-#ifndef IT_SDK_DEBUG_H_
-#define IT_SDK_DEBUG_H_
+#ifndef IT_SDK_ENCRYPT_H_
+#define IT_SDK_ENCRYPT_H_
 
-#include <it_sdk/itsdk.h>
 #include <it_sdk/logger/logger.h>
 
-#define ITSDK_DEBUG_ERROR	1
-#define ITSDK_DEBUG_SCHED	0
-#define ITSDK_DEBUG_STATEM	0
-#define ITSDK_DEBUG_EEPROM	0
 
-#if ITSDK_DEBUG_ERROR > 0
-#define _ERROR_HANDLER(x)	itsdk_error_handler x
-#else
-#define _ERROR_HANDLER(x)
-#endif
-
-
-#if ITSDK_DEBUG_SCHED > 0
-#define _LOG_SCHED(x)	log_debug x
-#else
-#define _LOG_SCHED(x)
-#endif
-
-#if ITSDK_DEBUG_STATEM > 0
-#define _LOG_STATEM(x)	log_debug x
-#else
-#define _LOG_STATEM(x)
-#endif
-
-#if ITSDK_DEBUG_EEPROM > 0
-#define _LOG_EEPROM(x)	log_debug x
-#else
-#define _LOG_EEPROM(x)
-#endif
-
-
-#endif /* IT_SDK_DEBUG_H_ */
+#endif /* IT_SDK_ENCRYPT_H_ */
