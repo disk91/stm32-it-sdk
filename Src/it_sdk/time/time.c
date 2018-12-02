@@ -1,11 +1,11 @@
 /* ==========================================================
  * time.c - Functions about counting time
- * Project : IngeniousThings SDK
+ * Project : Disk91 SDK
  * ----------------------------------------------------------
  * Created on: 12 sept. 2018
  *     Author: Paul Pinault aka Disk91
  * ----------------------------------------------------------
- * Copyright (C) 2018  IngeniousThings and Disk91
+ * Copyright (C) 2018 Disk91
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU LESSER General Public License as published by
@@ -27,6 +27,9 @@
 #include <it_sdk/config.h>
 #include <it_sdk/itsdk.h>
 #include <it_sdk/time/time.h>
+#if ITSDK_PLATFORM == __PLATFORM_STM32L0x1 || ITSDK_PLATFORM == __PLATFORM_STM32L0x3
+	#include <stm32l_sdk/rtc/rtc.h>
+#endif
 
 uint64_t __timeus = 0;
 uint8_t  __time_has_overrun = 0;
@@ -52,7 +55,7 @@ void itsdk_time_add_us(uint32_t us) {
  * Set current time in ms
  */
 void itsdk_time_set_ms(uint64_t ms) {
-	uint64_t n = ms * 1000;
+	uint64_t n = ms * 1000L;
 	if ( n < __timeus  ) {
 		__time_has_overrun=1;
 		__time_overrun_cnt++;
@@ -67,5 +70,26 @@ uint64_t itsdk_time_get_ms() {
 	return __timeus / 1000;
 }
 
+/**
+ * Reset the time to 0
+ */
+void itsdk_time_reset() {
+	#if ITSDK_PLATFORM == __PLATFORM_STM32L0x1 || ITSDK_PLATFORM == __PLATFORM_STM32L0x3
+		rtc_resetTime();
+	#else
+		#error "platform not supported"
+	#endif
+	__timeus = 0;
+}
 
-
+/**
+ * Init time functions
+ */
+void itsdk_time_init() {
+#if ITSDK_PLATFORM == __PLATFORM_STM32L0x1 || ITSDK_PLATFORM == __PLATFORM_STM32L0x3
+	rtc_resetTime();
+	rtc_adjustTime();
+#else
+	#error "platform not supported"
+#endif
+}

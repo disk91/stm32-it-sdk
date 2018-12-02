@@ -1,11 +1,11 @@
 /* ==========================================================
  * misc_wrapper.c - 
- * Project : IngeniousThings SDK
+ * Project : Disk91 SDK
  * ----------------------------------------------------------
  * Created on: 15 sept. 2018
  *     Author: Paul Pinault aka Disk91
  * ----------------------------------------------------------
- * Copyright (C) 2018  IngeniousThings and Disk91
+ * Copyright (C) 2018 Disk91
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU LESSER General Public License as published by
@@ -26,7 +26,7 @@
  */
 
 #include <it_sdk/config.h>
-#if ITSDK_PLATFORM == __PLATFORM_STM32L0x1
+#if ITSDK_PLATFORM == __PLATFORM_STM32L0x1 || ITSDK_PLATFORM == __PLATFORM_STM32L0x3
 
 #include <it_sdk/wrappers.h>
 #include "stm32l0xx_hal.h"
@@ -37,5 +37,31 @@
 void itsdk_reset() {
 	NVIC_SystemReset();
 }
+
+/**
+ * Reset Cause
+ */
+itsdk_reset_cause_t itsdk_getResetCause() {
+	if ( RCC->CSR & RCC_CSR_LPWRRSTF ) return RESET_CAUSE_LOWPOWER;
+	if ( RCC->CSR & RCC_CSR_WWDGRSTF ) return RESET_CAUSE_WWDG;
+	if ( RCC->CSR & RCC_CSR_IWDGRSTF ) return RESET_CAUSE_IWDG;
+	if ( RCC->CSR & RCC_CSR_SFTRSTF ) return RESET_CAUSE_SOFTWARE;
+	if ( RCC->CSR & RCC_CSR_PORRSTF ) return RESET_CAUSE_POWER_ON;
+	if ( RCC->CSR & RCC_CSR_PINRSTF ) return RESET_CAUSE_RESET_PIN;
+	if ( RCC->CSR & RCC_CSR_OBLRSTF ) return RESET_CAUSE_LOWPOWER;
+	else return RESET_CAUSE_UNKNONW;
+}
+
+void itsdk_cleanResetCause() {
+	RCC->CSR |= RCC_CSR_RMVF;
+}
+
+/**
+ * Delay in ms
+ */
+void itsdk_delayMs(uint32_t ms) {
+	HAL_Delay(ms);
+}
+
 
 #endif

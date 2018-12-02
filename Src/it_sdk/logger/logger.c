@@ -1,11 +1,11 @@
 /* ==========================================================
  * logger.c - Helper for easy logging
- * Project : IngeniousThings SDK
+ * Project : Disk91 SDK
  * ----------------------------------------------------------
  * Created on: 12 sept. 2018
  *     Author: Paul Pinault aka Disk91
  * ----------------------------------------------------------
- * Copyright (C) 2018  IngeniousThings and Disk91
+ * Copyright (C) 2018 Disk91
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU LESSER General Public License as published by
@@ -144,7 +144,7 @@ void log_error(char *format, ...) {
 
     if ( __log.logConf & LOGGER_CONFIG_FILE_MASK & LOGGER_CONFIG_ERROR_LVL_MASK ) {
       // @ TODO logfile_printf("%lu [error] ",time_get_ms());
-      logfile_print(fmtBuffer);
+      //logfile_print(fmtBuffer);
     }
 
   }
@@ -178,7 +178,7 @@ void log_warn(char *format, ...) {
 
     if ( __log.logConf & LOGGER_CONFIG_FILE_MASK & LOGGER_CONFIG_WARN_LVL_MASK ) {
         // @ TODO logfile_printf("%lu [warn] ",time_get_ms());
-        logfile_print(fmtBuffer);
+        //logfile_print(fmtBuffer);
     }
   }
 #endif

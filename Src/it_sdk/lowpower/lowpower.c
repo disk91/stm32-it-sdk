@@ -1,11 +1,11 @@
 /* ==========================================================
  * lowpower.c - Lowpower sdk functions
- * Project : IngeniousThings SDK
+ * Project : Disk91 SDK
  * ----------------------------------------------------------
  * Created on: 2 sept. 2018
  *     Author: Paul Pinault aka Disk91
  * ----------------------------------------------------------
- * Copyright (C) 2018  IngeniousThings and Disk91
+ * Copyright (C) 2018 Disk91
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU LESSER General Public License as published by
@@ -32,6 +32,7 @@
 	#include <stm32l_sdk/rtc/rtc.h>
 #endif
 
+lowPower_wu_reason_t __lowPower_wakeup_reason = LOWPWR_WAKEUP_UNDEF;
 
 /**
  * Switch to low power mode selected for the expected platform

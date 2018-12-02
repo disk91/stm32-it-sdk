@@ -8,16 +8,23 @@ Made for being compiled with open-source environment GCC / AC6
 
 * Supported functions
   * Low Power switch with regular auto-wakeup / LPUART / GPIO Wake-up
-  * RTC
+  * RTC with calibration
   * Logger
   * EEprom for configuration backup
   * Task Scheduler
   * State Machine 
   * Watchdog 
+  * Timers
 
 * Supported / tested platforms
   * STM32L011
   * STM32L053
+
+* Supported drivers
+  * eeprom
+     * m95640
+  * sigfox
+     * s2lp
 
 The second objective is to be able to port this SDK to different patform
 to make it a portable SDK. The SDK have a it-sdk directory where everything needs to be portable. stm32l-sdk contains all the subfunctions specific to this platform.
@@ -51,7 +58,9 @@ When generating the Project
 # Configure the SDK
 
 1. Copy the *ItSdk/Inc/it_sdk/config.h.template* file into *Core/Inc/it_sdk/config.h*
-2. Edit this file and fill the different settings according to your environment and your choices.
+2. Copy the *ItSdk/Inc/it_sdk/configDrivers.h.template* file into *Core/Inc/it_sdk/configDrivers.h* [needed when using some of the drivers]
+3. Copy the *ItSdk/Inc/it_sdk/configSigfox.h.template* file into *Core/Inc/it_sdk/configSigfox.h* [needed when using sigfox drivers]
+4. Edit these files and fill the different settings according to your environment and your choices.
 
 
 # Modify the Cube Mx skeleton
@@ -103,11 +112,11 @@ Things to not forget once a cubeMx project has been created
 ```
   
 Other modifications (need to be done on every CubeMx project regeneration):
-  - Cube Mx is setting/resetting the Gpio state on init. You need to manually comment the line in *gpio.c* to avoid the pin to be modified on MCU wake-up
+  - GPIO - Cube Mx is setting/resetting the Gpio state on init. You need to manually comment the line in *gpio.c* to avoid the pin to be modified on MCU wake-up. The other solution is to let the gpio init as-is and add a function *void stm32l_lowPowerRestoreGpioConfig()* containing the gpio reconfiguration after wakeup.
 
-  - To support ADC: remove generaed adc.c/h and remove adc references in main.c
+  - ADC - if you choose to not use ADC_OPTIMIZED_CODE_FOR_SIZE : remove generated adc.c/h and remove adc references in main.c 
   
 # License 
 
-This code and ItSdk are under GPLv3. You can use it freely, you can modify, redistribute but *you must* to publish your source code. Other licenses can be obtained by contacting me on [disk91.com](https://www.disk91.com)
+This code and ItSdk are under GPLv3. You can use it freely, you can modify, redistribute but *you must* publish your source code. Other licenses can be obtained by contacting me on [disk91.com](https://www.disk91.com)
   

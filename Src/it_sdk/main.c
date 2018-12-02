@@ -1,11 +1,11 @@
 /* ==========================================================
  * main.c - Main Library Starting point
- * Project : IngeniousThings SDK
+ * Project : Disk91 SDK
  * ----------------------------------------------------------
  * Created on: 2 sept. 2018
  *     Author: Paul Pinault aka Disk91
  * ----------------------------------------------------------
- * Copyright (C) 2018  IngeniousThings and Disk91
+ * Copyright (C) 2018 Disk91
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU LESSER General Public License as published by
@@ -21,7 +21,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  * ----------------------------------------------------------
  * 
- * This file is the main entry point for the IngeniousThing SDK
+ * This file is the main entry point for the Disk91 SDK
  * The project using the SDK must in its main function have the
  * Following content:
  * main() {
@@ -57,6 +57,8 @@
 #include <it_sdk/itsdk.h>
 #include <it_sdk/lowpower/lowpower.h>
 #include <it_sdk/sched/scheduler.h>
+#include <it_sdk/time/time.h>
+#include <it_sdk/time/timer.h>
 
 /**
  * The setup function is called on every MCU Reset but not on wakeup from sleep
@@ -65,6 +67,7 @@
  */
 void itsdk_setup() {
 
+	itsdk_time_init();
 	#if ITSDK_WDG_MS > 0
 	  wdg_setupWithMaxMs(ITSDK_WDG_MS);
 	#endif
@@ -94,6 +97,9 @@ void itsdk_loop() {
 	#endif
 	#if ITSDK_SHEDULER_TASKS > 0
 	   itdt_sched_execute();
+	#endif
+	#if ITSDK_TIMER_SLOTS > 0
+	   itsdk_stimer_run();
 	#endif
 	project_loop();
 	lowPower_switch();

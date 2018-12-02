@@ -1,11 +1,11 @@
 /* ==========================================================
  * config_defines.h - All the possible configuration settings
- * Project : IngeniousThings SDK
+ * Project : Disk91 SDK
  * ----------------------------------------------------------
  * Created on: 2 sept. 2018
  *     Author: Paul Pinault aka Disk91
  * ----------------------------------------------------------
- * Copyright (C) 2018  IngeniousThings and Disk91
+ * Copyright (C) 2018 Disk91
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU LESSER General Public License as published by
@@ -72,8 +72,20 @@
 /**
  * ADC configuration
  */
-#define __ADC_NONE					0x00			// with ADC
+#define __ADC_NONE					0x00			// No ADC
 #define __ADC_ENABLED				0x01			// with ADC
+
+/**
+ * SPI configuration
+ */
+#define __SPI_NONE					0x00			// No SPI
+#define __SPI_ENABLED				0x01			// with SPI
+
+/**
+ * TIMER configuration
+ */
+#define __TIMER_NONE				0x00			// No hw timer code
+#define __TIMER_ENABLED				0x01			// with hw timer code
 
 /**
  * GPIO to keep activated on low power mode
@@ -96,5 +108,61 @@
 #define __LP_GPIO_14			GPIO_PIN_14
 #define __LP_GPIO_15			GPIO_PIN_15
 
+
+/**
+ * GPIO BANKS
+ */
+#define __BANK_A				0
+#define __BANK_B				1
+#define __BANK_C				2
+#define __BANK_D				3
+#define __BANK_E				4
+#define __BANK_F				5
+#define __BANK_H				6
+
+
+/**
+ * LOG MODULE DEFINES
+ */
+#define __LOG_MOD_STIMER		0x00000001			// software timer module
+#define __LOG_MOD_LOWSIGFOX		0x00000002			// sigfox low level driver whatever it is
+#define __LOG_MOD_SIGFOX		0x00000004			// sigfox abstraction layer
+
+#define __LOG_MOD_CUSTOM1		0x00010000			// User level logging
+#define __LOG_MOD_CUSTOM2		0x00020000			// User level logging
+#define __LOG_MOD_CUSTOM3		0x00040000			// User level logging
+#define __LOG_MOD_CUSTOM4		0x00080000			// User level logging
+#define __LOG_MOD_CUSTOM5		0x00100000			// User level logging
+#define __LOG_MOD_CUSTOM6		0x00200000			// User level logging
+#define __LOG_MOD_CUSTOM7		0x00400000			// User level logging
+#define __LOG_MOD_CUSTOM8		0x00800000			// User level logging
+#define __LOG_MOD_CUSTOM9		0x01000000			// User level logging
+#define __LOG_MOD_CUSTOMA		0x02000000			// User level logging
+#define __LOG_MOD_CUSTOMB		0x04000000			// User level logging
+#define __LOG_MOD_CUSTOMC		0x08000000			// User level logging
+#define __LOG_MOD_CUSTOMD		0x10000000			// User level logging
+#define __LOG_MOD_CUSTOME		0x20000000			// User level logging
+#define __LOG_MOD_CUSTOMF		0x40000000			// User level logging
+#define __LOG_MOD_RESERVED		0x80000000			// Reserved Level
+
+/**
+ * Supported SIGFOX Interface
+ */
+#define	__SIGFOX_S2LP			0
+#define __SIGFOX_WISOL10		1
+
+/**
+ * NVM source for Sigfox lib
+ */
+#define __SFX_NVM_LOCALEPROM	0					// MCU internal EEPROM
+#define __SFX_NVM_M95640		1					// External EEPROM type M95640
+#define __SFX_NVM_HEADERS		2					// Configuration stored in the #define
+
+/**
+ * Drivers S2LP Config
+ */
+
+#define __S2LP_WITH_TCXO		1
+#define __S2LP_W_O_TCXO			0
 
 #endif /* IT_SDK_CONFIG_DEFINES_H_ */

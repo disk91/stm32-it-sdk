@@ -1,11 +1,11 @@
 /* ==========================================================
  * rtc.c -  Real Time Clock Peripheral
- * Project : IngeniousThings SDK
+ * Project : Disk91 SDK
  * ----------------------------------------------------------
  * Created on: 2 sept. 2018
  *     Author: Paul Pinault aka Disk91
  * ----------------------------------------------------------
- * Copyright (C) 2018  IngeniousThings and Disk91
+ * Copyright (C) 2018 Disk91
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU LESSER General Public License as published by
@@ -26,36 +26,83 @@
  */
 #include <it_sdk/config.h>
 #include <it_sdk/time/time.h>
+#include <it_sdk/logger/logger.h>
+#include <it_sdk/lowpower/lowpower.h>
 #include <stm32l_sdk/rtc/rtc.h>
 #include "time.h"
 #if ITSDK_WITH_CLK_ADJUST > 0
-#include "tim.h"
+#include <it_sdk/time/timer.h>
 #endif
+
 
 /**
  * Configure the RTC source clock for running LowPower
  */
 void rtc_configure4LowPower(uint16_t ms) {
-
 	rtc_prepareSleepTime();
-    uint32_t _time = (((uint32_t)ms) * 2314) / 1000;
-    HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, _time, RTC_WAKEUPCLOCK_RTCCLK_DIV16);
+	rtc_runRtcUntil(ms);
 }
 
 /**
  * Deactivate the WakeUpTimer for not having the IRQ looping
  */
 void rtc_disable4LowPower() {
-    HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
+	rtc_disableWakeUp();
     rtc_updateTimeAfterSleepTime();
 }
 
 
 /**
+ * Run Rtc for a given time in ticks
+ * Max is 16s
+ */
+void rtc_runRtcUntil(uint16_t ms) {
+    rtc_runRtcUntilTicks(rtc_getTicksFromDuration((uint32_t)ms));
+}
+
+/*
+ * Convert a duration in ticks
+ */
+uint32_t rtc_getTicksFromDuration(uint32_t ms) {
+    return (ms * 2314) / 1000;
+}
+
+int32_t rtc_getMsFromTicks(uint32_t ticks) {
+	return (ticks * 1000) / 2314;
+}
+
+/**
+ * Run the RTC for a given number of tics
+ */
+void rtc_runRtcUntilTicks(uint32_t ticks) {
+    HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, ticks, RTC_WAKEUPCLOCK_RTCCLK_DIV16);
+}
+
+
+void rtc_disableWakeUp() {
+	HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
+}
+
+/**
  * Get the current timestamp in uS (this is not considering any specific date stuff...)
  * This function costs a lot a flash byte ... not to be used with small devices
  */
+#if ITSDK_WITH_CLK_ADJUST > 0
+uint8_t		__rtc_init=0;								// clock ratio is already initialized
+uint64_t 	__rtc_offset;								// time offset for current ratio
+uint32_t	__rtc_currentRatio;							// default clock ratio
+#endif
+
+#ifndef __WE_HAVE_A_LOT_OF_FLASH
+uint32_t __rtc_days = 0;			// day index since the begining
+uint32_t __rtc_lastTick = 0;		// time in ms in the day
+#endif
 uint64_t rtc_getTimestampMs() {
+	return rtc_getTimestampMsRaw(true);
+}
+
+uint64_t rtc_getTimestampMsRaw(bool adjust) {
+#ifdef __WE_HAVE_A_LOT_OF_FLASH
 	RTC_DateTypeDef _date;
 	RTC_TimeTypeDef _time;
 	struct tm currTime;
@@ -72,14 +119,47 @@ uint64_t rtc_getTimestampMs() {
 
 	timestamp = mktime(&currTime);
 	uint64_t ms = (timestamp*1000) + ((1000*(uint32_t)(_time.SecondFraction-_time.SubSeconds))/_time.SecondFraction+1);
+#else
+	RTC_TimeTypeDef _time;
+	RTC_DateTypeDef _date;
+	uint32_t ms;
+	HAL_RTC_GetTime(&hrtc, &_time, RTC_FORMAT_BIN);
+	HAL_RTC_GetDate(&hrtc, &_date, RTC_FORMAT_BIN);
+	ms  = (uint32_t)_time.Hours*3600*1000;
+	ms += (uint32_t)_time.Minutes*60*1000;
+	ms += (uint32_t)_time.Seconds*1000;
+	ms += ((1000*(uint32_t)(_time.SecondFraction-_time.SubSeconds))/_time.SecondFraction+1);
+
+	if ( ms < __rtc_lastTick ) {
+		// day has changed
+		__rtc_days++;
+	}
+	__rtc_lastTick = ms;
+	ms = ( uint64_t )(__rtc_days*3600000L*24L)+ms;
+#endif
+	// apply the RTC clock correction and add previous offset
+	#if ITSDK_WITH_CLK_ADJUST > 0
+		if (adjust && __rtc_init > 0) {
+			ms = (ms * __rtc_currentRatio) / 1000;
+			ms += __rtc_offset;
+		}
+	#else
+		ms = (adjust)?(ms * ITSDK_CLK_CORRECTION) / 1000:ms;
+	#endif
 	return ms;
 }
 
 
 /**
- * Reset RTC to 00:00:00.00 for measuring sleep duration
+ * Reset RTC to 00:00:00.00 at startup
  */
-void rtc_prepareSleepTime() {
+void rtc_resetTime() {
+	RTC_DateTypeDef _date;
+	_date.Year = 0;
+	_date.Month = 1;
+	_date.Date = 1;
+	HAL_RTC_SetDate(&hrtc,&_date,RTC_FORMAT_BIN);
+
 	RTC_TimeTypeDef _time;
 	_time.Hours 		 = 0x0;
 	_time.Minutes 		 = 0x0;
@@ -88,116 +168,164 @@ void rtc_prepareSleepTime() {
 	_time.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
 	_time.StoreOperation = RTC_STOREOPERATION_RESET;
 	HAL_RTC_SetTime(&hrtc, &_time, RTC_FORMAT_BIN);
-	__enable_systick=false;
+	__rtc_lastTick = 0;
 }
+
+
+/**
+ * Call before any sleep in case there is something to prepare with RTC
+ * or others.
+ */
+void rtc_prepareSleepTime() {
+	__enable_systick=false;
+
+//	HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
+//	HAL_PWR_DisableWakeUpPin( PWR_WAKEUP_PIN1 );
+//	HAL_PWR_DisableWakeUpPin( PWR_WAKEUP_PIN2 );
+
+	__HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
+}
+
+
 
 /**
  * Get the sleep duration based on RTC counter
  */
 void rtc_updateTimeAfterSleepTime() {
-	RTC_TimeTypeDef _time;
-	RTC_DateTypeDef _date;
-	uint32_t	ms;
-	HAL_RTC_GetTime(&hrtc, &_time, RTC_FORMAT_BIN);
-	HAL_RTC_GetDate(&hrtc, &_date, RTC_FORMAT_BIN);	// unlock date after time read
 
-	ms  = 0; // (uint32_t)_time.Hours*3600*1000; -- we should never sleep more than 1 hour ...
-	ms += (uint32_t)_time.Minutes*60*1000;
-	ms += (uint32_t)_time.Seconds*1000;
-	ms += ((1000*(uint32_t)(_time.SecondFraction-_time.SubSeconds))/_time.SecondFraction+1);
-	itsdk_time_add_us(ms*1000);
+	itsdk_time_set_ms(rtc_getTimestampMs());
 	__enable_systick=true;
 }
 
 
 /**
-  * Measure the LSI frequency to adjust the RTC and other peripheral working with LSI
-  */
+ * RCT Interrupt handler allowing to chain different function
+ */
+rtc_irq_chain_t __rtc_irq_chain = { NULL, NULL };
+void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc)
+{
+	rtc_irq_chain_t * c = &__rtc_irq_chain;
+	while ( c != NULL ) {
+		void (*p)(RTC_HandleTypeDef *h) = c->irq_func;
+		if ( p != NULL ) {
+			p(hrtc);
+		}
+		c = c->next;
+	}
+	__HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
+	__lowPower_wakeup_reason=LOWPWR_WAKEUP_RTC;
+}
 
+/**
+ * Add an action to the chain, the action **must be** static
+ */
+void rtc_registerIrqAction(rtc_irq_chain_t * chain) {
+	rtc_irq_chain_t * c = &__rtc_irq_chain;
+	while ( c->next != NULL && c->irq_func != chain->irq_func ) {
+	  c = c->next;
+	}
+	if ( c->irq_func != chain->irq_func ) {
+		// the Action is not already existing
+		c->next=chain;
+		chain->next = NULL;
+	}
+
+}
+
+/**
+ * Remove an action to the chain, the action **must be** static
+ */
+void rtc_removeIrqAction(rtc_irq_chain_t * chain) {
+	rtc_irq_chain_t * c = &__rtc_irq_chain;
+	while ( c != NULL && c->next != chain ) {
+	  c = c->next;
+	}
+	if ( c != NULL ) {
+		c->next = c->next->next;
+	}
+}
+
+/**
+ * Search for an existing action
+ */
+bool rtc_existAction(rtc_irq_chain_t * chain) {
+	rtc_irq_chain_t * c = &__rtc_irq_chain;
+	while ( c != NULL && c->next != chain ) {
+	  c = c->next;
+	}
+	if ( c != NULL ) {
+		return true;
+	}
+	return false;
+}
+
+
+
+/** ========================================================================
+ * Adjust the RTC frequency based on LSI (Timer) clock
+ */
+
+/**
+ * Return the last computed ratio
+ */
+uint32_t rtc_getClockAdjustement() {
+#if ITSDK_WITH_CLK_ADJUST > 0
+	if (__rtc_init > 0) {
+		return __rtc_currentRatio;
+	} else {
+		return rtc_calcClockRatio();
+	}
+#else
+	return ITSDK_CLK_CORRECTION;
+#endif
+}
+
+/**
+ * Manage rtc clock adjustement / (re)evaluate the clock ratio
+ * Can be called at anytime to reajust
+ */
+void rtc_adjustTime() {
+#if ITSDK_WITH_CLK_ADJUST > 0
+	uint32_t newRatio=rtc_calcClockRatio();
+	if (__rtc_init > 0) {
+		__rtc_offset = rtc_getTimestampMs();
+		rtc_resetTime();
+	} else {
+		__rtc_offset=0;
+	}
+	__rtc_init=1;
+	__rtc_currentRatio=newRatio;
+#endif
+}
+
+
+/**
+ * Return the corrected clockRatio => realClock = (calcClockRatio * seenClock)/1000
+ */
+uint32_t rtc_calcClockRatio() {
 #if ITSDK_WITH_CLK_ADJUST > 0
 
-uint16_t __tmpCC4[2] = {0, 0};
-__IO uint32_t __uwLsiFreq = 0;
-__IO uint32_t __uwCaptureNumber = 0;
+	// timer test
+	uint64_t start = rtc_getTimestampMsRaw(false);
+	itsdk_hwtimer_sync_run(
+			200,
+			NULL,
+			0
+	);
+	uint64_t stop = rtc_getTimestampMsRaw(false);
+	uint64_t ratio = (1000*200)/(stop-start);
 
-uint32_t rtc_getRealRtcFrequency()
-{
-  htim21.Instance = TIM21;
-  htim21.Init.Prescaler         = 0;
-  htim21.Init.CounterMode       = TIM_COUNTERMODE_UP;
-  htim21.Init.Period            = 0xFFFF;
-  htim21.Init.ClockDivision     = 0;
-  HAL_TIM_IC_Init(&htim21);
+	// Protection against value too bad, sounds like a problem
+	if ( ratio > 1400 || ratio < 600 ) {
+		log_error("rtc_calcClockRatio ratio looks invalid %d\r\n",(uint32_t)ratio);
+		ratio = 1000;
+	}
 
-  HAL_TIMEx_RemapConfig(&htim21, TIM21_TI1_LSI);
-  TIM_IC_InitTypeDef    TIMInput_Config;
-  TIMInput_Config.ICPolarity  = TIM_ICPOLARITY_RISING;
-  TIMInput_Config.ICSelection = TIM_ICSELECTION_DIRECTTI;
-  TIMInput_Config.ICPrescaler = TIM_ICPSC_DIV8;
-  TIMInput_Config.ICFilter    = 0;
-  HAL_TIM_IC_ConfigChannel(&htim21, &TIMInput_Config, TIM_CHANNEL_1);
-  HAL_TIM_IC_Start_IT(&htim21, TIM_CHANNEL_1);
-  while(__uwCaptureNumber != 2) { }
+	return (uint32_t)ratio;
 
-  HAL_TIM_IC_Stop_IT(&htim21, TIM_CHANNEL_1);
-  HAL_TIM_IC_DeInit(&htim21);
-
-  return __uwLsiFreq;
-}
-
-void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
-{
-  uint32_t lsiperiod = 0;
-
-  __tmpCC4[__uwCaptureNumber++] = HAL_TIM_ReadCapturedValue(&htim21, TIM_CHANNEL_1);
-  if (__uwCaptureNumber >= 2)
-  {
-    lsiperiod = (uint16_t)(0xFFFF - __tmpCC4[0] + __tmpCC4[1] + 1);
-    __uwLsiFreq = (uint32_t) SystemCoreClock / lsiperiod;
-    __uwLsiFreq *= 8;
-  }
-}
-
+#else
+	return ITSDK_CLK_CORRECTION;
 #endif
-
-
-/**
- * Init RTC, This function is called by HAL_RTC_Init by HAL Framework
- * This code needs to be in Src/rtc.c file
- */
-/*
-void HAL_RTC_MspInit(RTC_HandleTypeDef *hrtc)
-{
-  // Enable RTC Clock
-  __HAL_RCC_RTC_ENABLE();
-
-  // Configure the NVIC for RTC Alarm
-  HAL_NVIC_SetPriority(RTC_IRQn, 0x0, 0);
-  HAL_NVIC_EnableIRQ(RTC_IRQn);
 }
-*/
 
-/**
- * DeInit RTC, This function is called by HAL_RTC_DeInit by HAL Framework
- * This code needs to be in Src/rtc.c file
- *
- */
-/*
-void HAL_RTC_MspDeInit(RTC_HandleTypeDef *hrtc)
-{
-  __HAL_RCC_RTC_DISABLE();
-}
-*/
-
-/**
- * RTC IRQ_Handler - referenced in startup/startup_stm32l011xx.s file
- * This code needs to be in Src/stm32l0xx_it.c
- * Added when selecting RTC Internal wakeup + NVIC RTC Interrupt activation
- */
-/*
-void RTC_IRQHandler(void)
-{
-  HAL_RTCEx_WakeUpTimerIRQHandler(&hrtc);
-}
-*/
 

@@ -1,11 +1,11 @@
 /* ==========================================================
  * scheduler.h - Manage recurrent tasks
- * Project : IngeniousThings SDK
+ * Project : Disk91 SDK
  * ----------------------------------------------------------
  * Created on: 15 sept. 2018
  *     Author: Paul Pinault aka Disk91
  * ----------------------------------------------------------
- * Copyright (C) 2018  IngeniousThings and Disk91
+ * Copyright (C) 2018 Disk91
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU LESSER General Public License as published by
@@ -24,6 +24,10 @@
  *
  * ==========================================================
  */
+
+#ifndef IT_SDK_SCHEDULER_H_
+#define IT_SDK_SCHEDULER_H_
+
 #include <it_sdk/config.h>
 #include <it_sdk/itsdk.h>
 
@@ -60,3 +64,4 @@ void itdf_sched_haltSched(uint8_t schedId);
 void itdf_sched_runSched(uint8_t schedId);
 
 
+#endif 	// IT_SDK_SCHEDULER_H_

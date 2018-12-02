@@ -1,11 +1,11 @@
 /* ==========================================================
  * logger.h - 
- * Project : IngeniousThings SDK
+ * Project : Disk91 SDK
  * ----------------------------------------------------------
  * Created on: 12 sept. 2018
  *     Author: Paul Pinault aka Disk91
  * ----------------------------------------------------------
- * Copyright (C) 2018  IngeniousThings and Disk91
+ * Copyright (C) 2018 Disk91
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU LESSER General Public License as published by
@@ -62,9 +62,9 @@ typedef struct __s_log {
 	  bool   	logDebug:1;      // Debug log level reported somewhere
 	  bool   	onSerial1:1;     // Some logs are reported on Serial Line
 	  bool   	onSerial2:1;     // Some logs are reported on Serial1 Line
-	  bool   	onDebug:1; 	   // Some logs are reported on SoftwareSerial Line
+	  bool   	onDebug:1; 	   	 // Some logs are reported on SoftwareSerial Line
 	  bool   	onFile:1;        // Some logs are reported on Falsh file
-	  uint16_t  logConf;  	   // Detailed log level
+	  uint16_t  logConf;  	   	 // Detailed log level
 } __t_log;
 
 

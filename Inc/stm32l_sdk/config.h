@@ -1,11 +1,11 @@
 /* ==========================================================
  * config.h - STM32L specific configuration file
- * Project : IngeniousThings SDK
+ * Project : Disk91 SDK
  * ----------------------------------------------------------
  * Created on: 6 sept. 2018
  *     Author: Paul Pinault aka Disk91
  * ----------------------------------------------------------
- * Copyright (C) 2018  IngeniousThings and Disk91
+ * Copyright (C) 2018 Disk91
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU LESSER General Public License as published by
@@ -46,7 +46,10 @@ void SystemClock_Config(void);
 	#include <rtc.h>
 #endif
 
-
+// TIMER Stuff
+#if ( ITSDK_WITH_HW_TIMER & __TIMER_ENABLED ) > 0
+    #include <tim.h>
+#endif
 
 
 

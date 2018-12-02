@@ -1,11 +1,11 @@
 /* ==========================================================
  * systick.c - Manage time with systicks
- * Project : IngeniousThings SDK
+ * Project : Disk91 SDK
  * ----------------------------------------------------------
  * Created on: 12 sept. 2018
  *     Author: Paul Pinault aka Disk91
  * ----------------------------------------------------------
- * Copyright (C) 2018  IngeniousThings and Disk91
+ * Copyright (C) 2018 Disk91
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU LESSER General Public License as published by
@@ -28,6 +28,7 @@
  */
 #include <it_sdk/itsdk.h>
 #include <it_sdk/time/time.h>
+#include <it_sdk/lowpower/lowpower.h>
 
 bool __enable_systick = true;
 
@@ -37,4 +38,5 @@ bool __enable_systick = true;
 void HAL_SYSTICK_Callback(void) {
 	// add 1ms to the global counter
 	if (__enable_systick) itsdk_time_add_us(1000);
+	__lowPower_wakeup_reason = LOWPWR_WAKEUP_SYSTICK;
 }

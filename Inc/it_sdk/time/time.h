@@ -1,11 +1,11 @@
 /* ==========================================================
  * time.h - 
- * Project : IngeniousThings SDK
+ * Project : Disk91 SDK
  * ----------------------------------------------------------
  * Created on: 12 sept. 2018
  *     Author: Paul Pinault aka Disk91
  * ----------------------------------------------------------
- * Copyright (C) 2018  IngeniousThings and Disk91
+ * Copyright (C) 2018 Disk91
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU LESSER General Public License as published by
@@ -30,5 +30,7 @@
 void itsdk_time_add_us(uint32_t us);
 void itsdk_time_set_ms(uint64_t ms);
 uint64_t itsdk_time_get_ms();
+void itsdk_time_reset();
+void itsdk_time_init();
 
 #endif /* IT_SDK_TIME_TIME_H_ */

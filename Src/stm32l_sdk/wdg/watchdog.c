@@ -1,11 +1,11 @@
 /* ==========================================================
  * watchdog.c - Manage watchdog functions
- * Project : IngeniousThings SDK
+ * Project : Disk91 SDK
  * ----------------------------------------------------------
  * Created on: 16 sept. 2018
  *     Author: Paul Pinault aka Disk91
  * ----------------------------------------------------------
- * Copyright (C) 2018  IngeniousThings and Disk91
+ * Copyright (C) 2018 Disk91
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU LESSER General Public License as published by
@@ -32,7 +32,7 @@
  * ==========================================================
  */
 #include <it_sdk/config.h>
-#if ITSDK_PLATFORM == __PLATFORM_STM32L0x1
+#if ITSDK_PLATFORM == __PLATFORM_STM32L0x1 || ITSDK_PLATFORM == __PLATFORM_STM32L0x3
 #include <it_sdk/wrappers.h>
 #include <it_sdk/debug.h>
 #include <stm32l_sdk/rtc/rtc.h>
@@ -48,13 +48,9 @@ void wdg_setupWithMaxMs(uint32_t ms) {
 	if ( ms > 28000 || ms < 10 ) {
 		_ERROR_HANDLER((__FILE__, __LINE__));
 	}
-
+  #if ITSDK_WDG_MS >0
 	int32_t uwLsiFreq;
-	#if ITSDK_WITH_CLK_ADJUST > 0
-	 uwLsiFreq = rtc_getRealRtcFrequency();
-	#else
-	 uwLsiFreq = 37000;
-	#endif
+	uwLsiFreq = (ITSDK_WDG_CLKFREQ * rtc_getClockAdjustement())/1000;
 
 	hiwdg.Instance = IWDG;
 	hiwdg.Init.Prescaler = IWDG_PRESCALER_256;
@@ -67,7 +63,13 @@ void wdg_setupWithMaxMs(uint32_t ms) {
 		/* Initialization Error */
 		_ERROR_HANDLER((__FILE__, __LINE__));
 	}
-
+	// To enable IWDG freeze during debug session
+	//__HAL_DBGMCU_FREEZE_IWDG();
+  #else
+	#ifdef IWDG
+      #error "Watchdog disabled you need to disable it also in CubeMx"
+	#endif
+  #endif
 }
 
 
