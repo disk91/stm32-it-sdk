@@ -25,6 +25,7 @@
  * ==========================================================
  */
 #include <stdbool.h>
+#include <string.h>
 
 #include <it_sdk/config.h>
 #include <it_sdk/itsdk.h>
@@ -34,11 +35,15 @@
 #ifdef ITSDK_WITH_SIGFOX_LIB
 
 #if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
-#include <drivers/s2lp/s2lp.h>
-#include <drivers/s2lp/sigfox_helper.h>
-#include <drivers/s2lp/st_rf_api.h>
-#include <drivers/eeprom/m95640/m95640.h>
-#include <drivers/sigfox/sigfox_api.h>
+	#include <drivers/s2lp/s2lp.h>
+	#include <drivers/s2lp/sigfox_helper.h>
+	#include <drivers/s2lp/st_rf_api.h>
+	#include <drivers/eeprom/m95640/m95640.h>
+	#include <drivers/sigfox/sigfox_api.h>
+#endif
+
+#if (ITSDK_SIGFOX_ENCRYPTION & __SIGFOX_ENCRYPT_AESCTR) > 0
+	#include <it_sdk/encrypt/encrypt.h>
 #endif
 
 #if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
@@ -122,6 +127,34 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendFrame(
 	if ( speed == SIGFOX_SPEED_DEFAULT ) speed = __sigfox_state.default_speed;
 	if ( ack && dwn == NULL) return SIGFOX_ERROR_PARAMS;
 
+	// encrypt the frame
+	#if (ITSDK_SIGFOX_ENCRYPTION & __SIGFOX_ENCRYPT_AESCTR) > 0
+		if ( (encrypt & SIGFOX_ENCRYPT_AESCTR) > 0 ) {
+			uint32_t devId;
+			itsdk_sigfox_getDeviceId(&devId);
+			uint16_t seqId;
+			itsdk_sigfox_getNextSeqId(&seqId);
+			uint8_t nonce;
+			itsdk_sigfox_eas_getNonce(&nonce);
+			uint32_t sharedKey;
+			itsdk_sigfox_eas_getSharedKey(&sharedKey);
+			uint8_t masterKey[16];
+			itsdk_sigfox_eas_getMasterKey(masterKey);
+
+			itsdk_aes_crt_encrypt_128B(
+					buf,							// Data to be encrypted
+					buf,							// Can be the same as clearData
+					len,							// Size of data to be encrypted
+					devId,							// 32b device ID
+					seqId,							// 16b sequenceId (incremented for each of the frame)
+					nonce,							// 8b  value you can update dynamically from backend
+					sharedKey,						// 24b hardcoded value (hidden with ITSDK_PROTECT_KEY)
+					masterKey						// 128B key used for encryption (hidden with ITSDK_PROTECT_KEY)
+			);
+		}
+	#endif
+
+	// Transmit the frame
 	itsdk_sigfox_setTxPower(power);
 	itsdk_sigfox_setTxSpeed(speed);
 
@@ -330,7 +363,7 @@ itsdk_sigfox_init_t itsdk_sigfox_getLastRssi(int16_t * rssi) {
 /**
  * Return the last used seqId
  */
-itsdk_sigfox_init_t itsdk_sigfox_getLastSeqId(int16_t * seqId) {
+itsdk_sigfox_init_t itsdk_sigfox_getLastSeqId(uint16_t * seqId) {
 	#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
 		*seqId = _s2lp_sigfox_config->seqId;
 	#endif
@@ -341,7 +374,7 @@ itsdk_sigfox_init_t itsdk_sigfox_getLastSeqId(int16_t * seqId) {
 /**
  * Return the next used seqId
  */
-itsdk_sigfox_init_t itsdk_sigfox_getNextSeqId(int16_t * seqId) {
+itsdk_sigfox_init_t itsdk_sigfox_getNextSeqId(uint16_t * seqId) {
 	#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
 		*seqId = (_s2lp_sigfox_config->seqId+1) & 0x0FFF;
 	#endif
@@ -430,6 +463,41 @@ itsdk_sigfox_init_t itsdk_sigfox_setRcSyncPeriod(uint16_t numOfFrame) {
 
 	return SIGFOX_INIT_SUCESS;
 
+}
+
+
+/**
+ * Return default nonce, this function is overloaded in the main program
+ * to return a dynamic value
+ */
+__weak  itsdk_sigfox_init_t itsdk_sigfox_eas_getNonce(uint8_t * nonce) {
+	*nonce = ITSDK_SIGFOX_INITALNONCE;
+	return SIGFOX_INIT_SUCESS;
+}
+
+/**
+ * Return default sharedKey, this function is overloaded in the main program
+ * to return a dynamic value
+ */
+__weak  itsdk_sigfox_init_t itsdk_sigfox_eas_getSharedKey(uint32_t * sharedKey) {
+	*sharedKey = ITSDK_SIGFOX_SHAREDKEY;
+	return SIGFOX_INIT_SUCESS;
+}
+
+
+/**
+ * Return default masterKey (protected by ITSDK_PROTECT_KEY), this function is overloaded in the main program
+ * to return a dynamic value when needed
+ */
+__weak  itsdk_sigfox_init_t itsdk_sigfox_eas_getMasterKey(uint8_t * masterKey) {
+#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
+	bcopy((void *)_s2lp_sigfox_config->key,(void *)masterKey,16);
+#else
+	uint8_t tmp[16] = ITSDK_SIGFOX_KEY;
+	itsdk_encrypt_cifferKey(tmp,16);
+	bcopy((void *)tmp,(void *)sharedKey,16);
+#endif
+	return SIGFOX_INIT_SUCESS;
 }
 
 

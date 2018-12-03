@@ -28,8 +28,18 @@
 #ifndef IT_SDK_ENCRYPT_H_
 #define IT_SDK_ENCRYPT_H_
 
-#include <it_sdk/logger/logger.h>
 void itsdk_encrypt_cifferKey(uint8_t * key, int len);
 void itsdk_encrypt_unCifferKey(uint8_t * key, int len);
+
+void itsdk_aes_crt_encrypt_128B(
+		uint8_t	* clearData,			// Data to be encrypted
+		uint8_t * encryptedData,		// Can be the same as clearData
+		uint8_t   dataLen,				// Size of data to be encrypted
+		uint32_t  deviceId,				// 32b device ID
+		uint16_t  seqId,				// 16b sequenceId (incremented for each of the frame)
+		uint8_t   nonce,				// 8b  value you can update dynamically from backend
+		uint32_t  sharedKey,			// 24b hardcoded value (hidden with ITSDK_PROTECT_KEY)
+		uint8_t * masterKey				// 128B key used for encryption (hidden with ITSDK_PROTECT_KEY)
+);
 
 #endif /* IT_SDK_ENCRYPT_H_ */

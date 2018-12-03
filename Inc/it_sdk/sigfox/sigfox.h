@@ -94,8 +94,8 @@ itsdk_sigfox_init_t itsdk_sigfox_getLastRssi(int16_t * rssi);
 itsdk_sigfox_init_t itsdk_sigfox_switchPublicKey();
 itsdk_sigfox_init_t itsdk_sigfox_switchPrivateKey();
 itsdk_sigfox_init_t itsdk_sigfox_setRcSyncPeriod(uint16_t numOfFrame);
-itsdk_sigfox_init_t itsdk_sigfox_getLastSeqId(int16_t * seqId);
-itsdk_sigfox_init_t itsdk_sigfox_getNextSeqId(int16_t * seqId);
+itsdk_sigfox_init_t itsdk_sigfox_getLastSeqId(uint16_t * seqId);
+itsdk_sigfox_init_t itsdk_sigfox_getNextSeqId(uint16_t * seqId);
 
 itdsk_sigfox_txrx_t itsdk_sigfox_sendFrame(
 		uint8_t * buf,
@@ -129,6 +129,13 @@ itsdk_sigfox_init_t itsdk_sigfox_continuousModeStart(
 		int8_t 					power
 );
 itsdk_sigfox_init_t itsdk_sigfox_continuousModeStop();
+
+// --------------------------------------------------------------------
+// Function to be overloaded in the main program
+// --------------------------------------------------------------------
+itsdk_sigfox_init_t itsdk_sigfox_eas_getNonce(uint8_t * nonce);
+itsdk_sigfox_init_t itsdk_sigfox_eas_getSharedKey(uint32_t * sharedKey);
+itsdk_sigfox_init_t itsdk_sigfox_eas_getMasterKey(uint8_t * masterKey);
 
 // --------------------------------------------------------------------
 // Logging

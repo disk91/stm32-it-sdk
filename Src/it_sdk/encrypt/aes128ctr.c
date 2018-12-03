@@ -35,22 +35,27 @@
  *
  * ==========================================================
  */
-
+#include <string.h>
 #include <it_sdk/config.h>
 
 #if ( ITSDK_SIGFOX_ENCRYPTION & __SIGFOX_ENCRYPT_AESCTR ) > 0
 #include <it_sdk/itsdk.h>
+#include <it_sdk/encrypt/encrypt.h>
 #include <it_sdk/logger/logger.h>
 
 #if ITSDK_SIGFOX_LIB == __SIGFOX_S2LP
+	#include <drivers/s2lp/sigfox_retriever.h>
+	#include <drivers/sigfox/sigfox_api.h>
+#endif
 
 /**
  * Encrypt a 128B block of Data with the given key
  * The key is protected by the ITSDK_PROTECT_KEY
  */
-void itsdk_aes_cbc_encrypt_128B(
-		uint8_t	* clearData,			// 128B Data to be encrypted
-		uint8_t * encryptedData,		// 128B Can be the same as clearData
+void itsdk_aes_crt_encrypt_128B(
+		uint8_t	* clearData,			// Data to be encrypted
+		uint8_t * encryptedData,		// Can be the same as clearData
+		uint8_t   dataLen,				// Size of data to be encrypted
 		uint32_t  deviceId,				// 32b device ID
 		uint16_t  seqId,				// 16b sequenceId (incremented for each of the frame)
 		uint8_t   nonce,				// 8b  value you can update dynamically from backend
@@ -58,17 +63,44 @@ void itsdk_aes_cbc_encrypt_128B(
 		uint8_t * masterKey				// 128B key used for encryption (hidden with ITSDK_PROTECT_KEY)
 ) {
 
+	// Compose the 128b ctr element
+	uint8_t ctr[16];
+	ctr[0] = (seqId & 0xFF00) >> 8;
+	ctr[1] = (seqId & 0xFF);
+	ctr[2] = (deviceId & 0xFF000000 ) >> 24;
+	ctr[3] = (deviceId & 0x00FF0000 ) >> 16;
+	ctr[4] = (deviceId & 0x0000FF00 ) >> 8;
+	ctr[5] = (deviceId & 0x000000FF );
+	ctr[6] = ctr[0];
+	ctr[7] = ctr[1];
+	ctr[8] = ctr[2];
+	ctr[9] = ctr[3];
+	ctr[10] = ctr[4];
+	ctr[11] = ctr[5];
+	ctr[12] = nonce;
+	ctr[13] = (((sharedKey ^ ITSDK_PROTECT_KEY) & 0x00FF0000 ) >> 16);
+	ctr[14] = (((sharedKey ^ ITSDK_PROTECT_KEY) & 0x0000FF00 ) >> 8);
+	ctr[15] = (((sharedKey ^ ITSDK_PROTECT_KEY) & 0x000000FF ));
 
+	uint8_t aesResult[16];
+	itsdk_encrypt_unCifferKey(masterKey,16);
 
-
-	//enc_utils_encrypt(encrypted_data, data_to_encrypt, aes_block_len, key, use_key);
-}
-
+#if ITSDK_SIGFOX_LIB == __SIGFOX_S2LP
+	enc_utils_encrypt(aesResult, ctr, 16, masterKey, CREDENTIALS_KEY_IN_ARGUMENT);
 #else
-  #error "No AES library available for supporting AES-CTR encryption"
+	#error "No AES library available for supporting AES-CTR encryption"
 #endif
 
+	itsdk_encrypt_cifferKey(masterKey,16);
+	bzero(ctr,16);
 
+	// switch the clearData bits according to the computed value
+	for ( int i = 0,k=0 ; i < dataLen ; i++, k=(k+1) & 0xF) {
+		encryptedData[i] = clearData[i] ^ aesResult[k];
+	}
+
+	bzero(aesResult,16);
+}
 
 
 
