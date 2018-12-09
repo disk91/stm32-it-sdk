@@ -29,12 +29,20 @@
 #include <it_sdk/itsdk.h>
 #include <it_sdk/time/time.h>
 #include <it_sdk/lowpower/lowpower.h>
+#include <stm32l0xx_hal.h>
 
 bool __enable_systick = true;
 
 /**
  * Action to be executed on Systick
+ * The name vary depending on the Firwmare version ... ST, you make me crazy !
  */
+void HAL_IncTick(void) {
+	// add 1ms to the global counter
+	if (__enable_systick) itsdk_time_add_us(1000);
+	uwTick++;
+	__lowPower_wakeup_reason = LOWPWR_WAKEUP_SYSTICK;
+}
 void HAL_SYSTICK_Callback(void) {
 	// add 1ms to the global counter
 	if (__enable_systick) itsdk_time_add_us(1000);

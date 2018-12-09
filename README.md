@@ -1,4 +1,4 @@
-# Disk91 STM32 SDK
+# Disk91 IoT_SDK for STM32
 
 This project is a low level SDK for STM32 for making IoT devices.
 It implements different usefull function is (I hope) a cleaner code than the usual ST SDK components. This SDK try to be fully configurable with header files.
@@ -15,6 +15,9 @@ Made for being compiled with open-source environment GCC / AC6
   * State Machine 
   * Watchdog 
   * Timers
+  
+* Communication protocols interface
+  * Sigfox ( clear-text, AES128-CTR )
 
 * Supported / tested platforms
   * STM32L011
@@ -118,5 +121,10 @@ Other modifications (need to be done on every CubeMx project regeneration):
   
 # License 
 
-This code and ItSdk are under GPLv3. You can use it freely, you can modify, redistribute but *you must* publish your source code. Other licenses can be obtained by contacting me on [disk91.com](https://www.disk91.com)
-  
+This code and ItSdk are under GPLv3. You can use it freely, you can modify, redistribute but *you must* publish your source code. 
+
+When included into a commercial product you have the following obligations:
+- The commercial product must include as part of the documentation (Website + paper) and written on the packaging the following sentence  **build thanks to Disk91 IoT_SDK**  
+- The commercial product documentation (Website + paper) a link to the Disk91 IoT_SDK github repository and a link with all the modified and added source code the product includes (following the GPLv3 licence)
+
+Other licenses can be obtained by contacting me on [disk91.com](https://www.disk91.com). Non public licence allows you to be released from the previously described obligations.  

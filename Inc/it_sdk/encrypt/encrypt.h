@@ -28,6 +28,8 @@
 #ifndef IT_SDK_ENCRYPT_H_
 #define IT_SDK_ENCRYPT_H_
 
+#define ITSDK_ENCRYPT_MAX_FRAME_SIZE	12		// max size for a frame to be encrypted (related to buffer size)
+
 void itsdk_encrypt_cifferKey(uint8_t * key, int len);
 void itsdk_encrypt_unCifferKey(uint8_t * key, int len);
 
@@ -40,6 +42,13 @@ void itsdk_aes_crt_encrypt_128B(
 		uint8_t   nonce,				// 8b  value you can update dynamically from backend
 		uint32_t  sharedKey,			// 24b hardcoded value (hidden with ITSDK_PROTECT_KEY)
 		uint8_t * masterKey				// 128B key used for encryption (hidden with ITSDK_PROTECT_KEY)
+);
+
+void itsdk_speck_encrypt(
+		uint8_t	* clearData,			// Data to be encrypted
+		uint8_t * encryptedData,		// Can be the same as clearData
+		uint8_t   dataLen,				// Size of data to be encrypted
+		uint64_t  masterKey				// 64B key used for encryption (hidden with ITSDK_PROTECT_KEY)
 );
 
 #endif /* IT_SDK_ENCRYPT_H_ */

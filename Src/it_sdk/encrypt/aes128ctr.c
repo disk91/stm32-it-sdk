@@ -32,7 +32,12 @@
  *   In the firmware / eventually the Sigfox key can be reused but
  *   this is reducing the security level. This key must be chosen to
  *   be uniq per device.
+ * - The Iv is set to 0
  *
+ * Rq : the use of the AES128-CBC encryption provided by S2LP stack
+ * could save some flash but I was not able yet to determine the IV
+ * used for this encryption and the result are not coherent with a
+ * standard EAS128 encryption.
  * ==========================================================
  */
 #include <string.h>
@@ -43,10 +48,14 @@
 #include <it_sdk/encrypt/encrypt.h>
 #include <it_sdk/logger/logger.h>
 
-#if ITSDK_SIGFOX_LIB == __SIGFOX_S2LP
+#if false && ITSDK_SIGFOX_LIB == __SIGFOX_S2LP
 	#include <drivers/s2lp/sigfox_retriever.h>
 	#include <drivers/sigfox/sigfox_api.h>
+#else
+	#include <it_sdk/encrypt/tiny-AES-c/aes.h>
 #endif
+
+#include <it_sdk/time/time.h>
 
 /**
  * Encrypt a 128B block of Data with the given key
@@ -85,10 +94,37 @@ void itsdk_aes_crt_encrypt_128B(
 	uint8_t aesResult[16];
 	itsdk_encrypt_unCifferKey(masterKey,16);
 
-#if ITSDK_SIGFOX_LIB == __SIGFOX_S2LP
+//	log_info("ctr : [ ");
+//	for ( int i = 0 ; i < 16 ; i++ ) log_info("%02X ",ctr[i]);
+//	log_info("]\r\n");
+//
+//	log_info("masterK : [ ");
+//	for ( int i = 0 ; i < 16 ; i++ ) log_info("%02X ",masterKey[i]);
+//	log_info("]\r\n");
+
+#if false && ITSDK_SIGFOX_LIB == __SIGFOX_S2LP
 	enc_utils_encrypt(aesResult, ctr, 16, masterKey, CREDENTIALS_KEY_IN_ARGUMENT);
+//	log_info("enc1 : [ ");
+//	for ( int i = 0 ; i < 16 ; i++ ) log_info("%02X ",aesResult[i]);
+//	log_info("]\r\n");
+
 #else
-	#error "No AES library available for supporting AES-CTR encryption"
+	{
+		// The AES library is about 1.2Kb flash & 176B Ram (in stack)
+		// encryption init time is 0ms / encryption time is 2ms
+		struct AES_ctx ctx;
+		memcpy(aesResult,ctr,16);
+		bzero(ctx.Iv,16);
+//		uint8_t Iv[16]= {0x01,0x23,0x45,0x67,0x89,0xAB,0xCD,0xEF,0x01,0x23,0x45,0x67,0x89,0xAB,0xCD,0xEF };
+//		memcpy(ctx.Iv,Iv,16);
+		tiny_AES_init_ctx(&ctx,masterKey);
+		tiny_AES_CBC_encrypt_buffer(&ctx, aesResult, 16);
+
+//		log_info("enc2 : [ ");
+//		for ( int i = 0 ; i < 16 ; i++ ) log_info("%02X ",aesResult[i]);
+//		log_info("\r\n");
+
+	}
 #endif
 
 	itsdk_encrypt_cifferKey(masterKey,16);

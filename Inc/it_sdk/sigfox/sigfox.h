@@ -136,7 +136,7 @@ itsdk_sigfox_init_t itsdk_sigfox_continuousModeStop();
 itsdk_sigfox_init_t itsdk_sigfox_eas_getNonce(uint8_t * nonce);
 itsdk_sigfox_init_t itsdk_sigfox_eas_getSharedKey(uint32_t * sharedKey);
 itsdk_sigfox_init_t itsdk_sigfox_eas_getMasterKey(uint8_t * masterKey);
-
+itsdk_sigfox_init_t itsdk_sigfox_speck_getMasterKey(uint64_t * masterKey);
 // --------------------------------------------------------------------
 // Logging
 // --------------------------------------------------------------------

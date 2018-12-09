@@ -128,6 +128,19 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendFrame(
 	if ( ack && dwn == NULL) return SIGFOX_ERROR_PARAMS;
 
 	// encrypt the frame
+	#if ( ITSDK_SIGFOX_ENCRYPTION & __SIGFOX_ENCRYPT_SPECK ) > 0
+		if ( (encrypt & SIGFOX_ENCRYPT_SPECK) > 0 ) {
+			uint64_t masterKey;
+			itsdk_sigfox_speck_getMasterKey(&masterKey);
+			itsdk_speck_encrypt(
+					buf,
+					buf,
+					len,
+					masterKey
+			);
+
+		}
+	#endif
 	#if (ITSDK_SIGFOX_ENCRYPTION & __SIGFOX_ENCRYPT_AESCTR) > 0
 		if ( (encrypt & SIGFOX_ENCRYPT_AESCTR) > 0 ) {
 			uint32_t devId;
@@ -500,6 +513,14 @@ __weak  itsdk_sigfox_init_t itsdk_sigfox_eas_getMasterKey(uint8_t * masterKey) {
 	return SIGFOX_INIT_SUCESS;
 }
 
+/**
+ * Return default speck Key ( protected by ITSDK_PROTECT_KEY), this function is overloaded in the main program
+ * ro return a dynamic value when needed
+ */
+__weak  itsdk_sigfox_init_t itsdk_sigfox_speck_getMasterKey(uint64_t * masterKey) {
+	*masterKey = ITSDK_SIGFOX_SPECKKEY;
+	return SIGFOX_INIT_SUCESS;
+}
 
 #endif // ITSDK_WITH_SIGFOX_LIB
 
