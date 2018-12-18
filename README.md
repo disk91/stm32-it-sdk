@@ -17,7 +17,7 @@ Made for being compiled with open-source environment GCC / AC6
   * Timers
   
 * Communication protocols interface
-  * Sigfox ( clear-text, AES128-CTR )
+  * Sigfox ( clear-text, AES128-CTR, SPECK32 )
 
 * Supported / tested platforms
   * STM32L011
