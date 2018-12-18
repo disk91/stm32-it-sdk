@@ -138,7 +138,6 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendFrame(
 					len,
 					masterKey
 			);
-
 		}
 	#endif
 	#if (ITSDK_SIGFOX_ENCRYPTION & __SIGFOX_ENCRYPT_AESCTR) > 0
@@ -436,10 +435,10 @@ itsdk_sigfox_init_t itsdk_sigfox_continuousModeStart(
 	#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
 		switch (speed) {
 		case SIGFOX_SPEED_100:
-			SIGFOX_API_start_continuous_transmission ( frequency, SFX_DBPSK_100BPS);
+			SIGFOX_API_start_continuous_transmission (frequency, SFX_DBPSK_100BPS);
 			break;
 		case SIGFOX_SPEED_600:
-			SIGFOX_API_start_continuous_transmission ( frequency, SFX_DBPSK_600BPS);
+			SIGFOX_API_start_continuous_transmission (frequency, SFX_DBPSK_600BPS);
 			break;
 		default:
 			return SIGFOX_INIT_PARAMSERR;
@@ -484,7 +483,7 @@ itsdk_sigfox_init_t itsdk_sigfox_setRcSyncPeriod(uint16_t numOfFrame) {
  * to return a dynamic value
  */
 __weak  itsdk_sigfox_init_t itsdk_sigfox_eas_getNonce(uint8_t * nonce) {
-	*nonce = ITSDK_SIGFOX_INITALNONCE;
+	*nonce = ITSDK_SIGFOX_AES_INITALNONCE;
 	return SIGFOX_INIT_SUCESS;
 }
 
@@ -493,7 +492,7 @@ __weak  itsdk_sigfox_init_t itsdk_sigfox_eas_getNonce(uint8_t * nonce) {
  * to return a dynamic value
  */
 __weak  itsdk_sigfox_init_t itsdk_sigfox_eas_getSharedKey(uint32_t * sharedKey) {
-	*sharedKey = ITSDK_SIGFOX_SHAREDKEY;
+	*sharedKey = ITSDK_SIGFOX_AES_SHAREDKEY;
 	return SIGFOX_INIT_SUCESS;
 }
 

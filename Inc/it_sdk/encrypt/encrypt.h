@@ -33,6 +33,14 @@
 void itsdk_encrypt_cifferKey(uint8_t * key, int len);
 void itsdk_encrypt_unCifferKey(uint8_t * key, int len);
 
+// uint64_t ciffer/unciffer function
+#define itsdk_encrypt_cifferKey64(v) ( \
+		(uint64_t)(v) ^ (  ((uint64_t)ITSDK_PROTECT_KEY  | ((uint64_t)ITSDK_PROTECT_KEY << 32) ) ) \
+)
+
+#define itsdk_encrypt_unCifferKey64(v) itsdk_encrypt_cifferKey64(v)
+
+
 void itsdk_aes_crt_encrypt_128B(
 		uint8_t	* clearData,			// Data to be encrypted
 		uint8_t * encryptedData,		// Can be the same as clearData

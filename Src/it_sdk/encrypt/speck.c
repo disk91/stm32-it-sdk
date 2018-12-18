@@ -1,5 +1,5 @@
 /* ==========================================================
- * speck.c - SPECK encrytion library
+ * speck.c - SPECK encryption library
  * Project : Disk91 SDK
  * ----------------------------------------------------------
  * Created on: 09 dec. 2018
@@ -62,49 +62,29 @@ void itsdk_speck_encrypt(
 		itsdk_error_handler(__FILE__, __LINE__);
 	}
 
-	// => ca match pas va faloir revoir le ciffer / unciffer avec des uint64_t
-	// => pas pareil que sur des uint8_t
-	// @TODO
+	uint64_t _masterKey = itsdk_encrypt_unCifferKey64(masterKey);
+	uint8_t __masterKey[8];
+	__masterKey[0] = ((_masterKey & 0xFF00000000000000 ) >> 56);
+	__masterKey[1] = ((_masterKey & 0x00FF000000000000 ) >> 48);
+	__masterKey[2] = ((_masterKey & 0x0000FF0000000000 ) >> 40);
+	__masterKey[3] = ((_masterKey & 0x000000FF00000000 ) >> 32);
+	__masterKey[4] = ((_masterKey & 0x00000000FF000000 ) >> 24);
+	__masterKey[5] = ((_masterKey & 0x0000000000FF0000 ) >> 16);
+	__masterKey[6] = ((_masterKey & 0x000000000000FF00 ) >>  8);
+	__masterKey[7] = ((_masterKey & 0x00000000000000FF )      );
+	_masterKey ^= _masterKey;
 
-	uint64_t _masterKey = masterKey;
-	itsdk_encrypt_unCifferKey(&_masterKey,8);
 
-	log_info("masterK : [ ");
-	for ( int i = 0 ; i < 8 ; i++ ) log_info("%02X ",((uint8_t*)(&_masterKey))[i]);
-	log_info("]\r\n");
-
-	// The SPECK library is about 2.4Kb flash & 800B Ram (in stack)
-	// Optimization will be possible as the current library supports all SPECK size when we use only one.
+	// The SPECK library is about 260b flash & 92B Ram (in stack)
 	// encryption init time is 3ms / encryption time is < 1ms for 4B
+	memcpy(encryptedData,clearData,dataLen);
+	speck32_encrypt(__masterKey, encryptedData, dataLen);
+	bzero(__masterKey,8);
 
-	SimSpk_Cipher speck_cfg;
-	if ( Speck_Init(
-			&speck_cfg,
-			cfg_64_32,				// 32b block / 64b kay
-			0,						// mode -  not used in the function
-			(void *)&_masterKey,
-			NULL,					// Iv - not used in the function
-			NULL					// Counter - not used in the funciton
-			) ) {
-		LOG_ERROR_SIGFOX(("Speck Encryption init failed"));
-		itsdk_error_handler(__FILE__, __LINE__);
-	}
-	uint8_t _encryptedData[ITSDK_ENCRYPT_MAX_FRAME_SIZE];
-	for ( int i = 0 ; i < dataLen ; i+= 4) {
-		Speck_Encrypt_32(
-				speck_cfg.round_limit,
-				speck_cfg.key_schedule,
-				&clearData[i],
-				&_encryptedData[i]
-		);
-	}
-	memcpy(encryptedData,_encryptedData,dataLen);
+//	log_info("enc-speck 2: [ ");
+//	for ( int i = 0 ; i < dataLen ; i++ ) log_info("%02X ",encryptedData[i]);
+//	log_info("]\r\n");
 
-	log_info("enc-speck : [ ");
-	for ( int i = 0 ; i < dataLen ; i++ ) log_info("%02X ",encryptedData[i]);
-	log_info("]\r\n");
-
-	_masterKey = 0;
 
 }
 
