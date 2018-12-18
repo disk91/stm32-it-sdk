@@ -31,6 +31,7 @@
 #include <it_sdk/config.h>
 #if ITSDK_PLATFORM == __PLATFORM_STM32L0x1 || ITSDK_PLATFORM == __PLATFORM_STM32L0x3
 
+#include <it_sdk/itsdk.h>
 #include <it_sdk/wrappers.h>
 #include "stm32l0xx_hal.h"
 
@@ -46,7 +47,7 @@ GPIO_TypeDef * getPortFromBankId(uint8_t bankId) {
 	case __BANK_D: return GPIOD;
 	case __BANK_H: return GPIOH;
 	default:
-		_Error_Handler(__FILE__, __LINE__);
+		itsdk_error_handler(__FILE__, __LINE__);
 	}
 	return NULL;
 }

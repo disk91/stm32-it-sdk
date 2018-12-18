@@ -1,8 +1,8 @@
 /* ==========================================================
- * systick.c - Manage time with systicks
+ * tools.c - Encryption common tools
  * Project : Disk91 SDK
  * ----------------------------------------------------------
- * Created on: 12 sept. 2018
+ * Created on: 02 dec. 2018
  *     Author: Paul Pinault aka Disk91
  * ----------------------------------------------------------
  * Copyright (C) 2018 Disk91
@@ -20,31 +20,37 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  * ----------------------------------------------------------
- * 
- * The systick timer is configured by default to be updated
- * every ms.
  *
  * ==========================================================
  */
-#include <it_sdk/itsdk.h>
-#include <it_sdk/time/time.h>
-#include <it_sdk/lowpower/lowpower.h>
-#include <stm32l0xx_hal.h>
 
-bool __enable_systick = true;
+#include <it_sdk/config.h>
+#include <it_sdk/itsdk.h>
+#include <it_sdk/logger/logger.h>
 
 /**
- * Action to be executed on Systick
- * The name vary depending on the Firwmare version ... ST, you make me crazy !
+ * Protect inMemory key with a simple XOR with a hardcoded
+ * 32b value. Not good at all but always better than clear
+ * text key in memory.
  */
-void HAL_IncTick(void) {
-	// add 1ms to the global counter
-	if (__enable_systick) itsdk_time_add_us(1000);
-	uwTick++;
-	__lowPower_wakeup_reason = LOWPWR_WAKEUP_SYSTICK;
+void itsdk_encrypt_cifferKey(uint8_t * key, int len) {
+
+	if ( (len & 3 ) > 0 ) itsdk_error_handler(__FILE__,__LINE__);
+	for ( int i = 0 ; i < len ; i+=4 ) {
+		key[i]   ^= (ITSDK_PROTECT_KEY & 0xFF000000) >> 24;
+		key[i+1] ^= (ITSDK_PROTECT_KEY & 0x00FF0000) >> 16;
+		key[i+2] ^= (ITSDK_PROTECT_KEY & 0x0000FF00) >> 8;
+		key[i+3] ^= (ITSDK_PROTECT_KEY & 0x000000FF);
+	}
 }
-void HAL_SYSTICK_Callback(void) {
-	// add 1ms to the global counter
-	if (__enable_systick) itsdk_time_add_us(1000);
-	__lowPower_wakeup_reason = LOWPWR_WAKEUP_SYSTICK;
+
+/**
+ * Un protect inMemory key.
+ */
+void itsdk_encrypt_unCifferKey(uint8_t * key, int len) {
+	itsdk_encrypt_cifferKey(key,len);
 }
+
+
+
+

@@ -42,6 +42,7 @@ void project_loop();
 void itsdk_setup();
 void itsdk_loop();
 void itsdk_restart();
+void itsdk_error_handler(char * file, int line);
 
 // ------------------------------------------------------------------------
 // Tool.c
@@ -57,5 +58,6 @@ uint32_t itdt_convertHexChar8Int(char * v);
 int16_t itdt_convertDecChar4Int(char * v);
 void itdt_convertHexStr2IntTab(char * hexstr,uint8_t * tab, int len);
 void itdt_macToString(char * str, uint8_t * mac);
+
 
 #endif /* IT_SDK_ITSDK_H_ */

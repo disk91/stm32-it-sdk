@@ -62,11 +62,11 @@ typedef enum
     SIGFOX_OOB_RC_SYNC
 } itdsk_sigfox_oob_t;
 
-typedef enum {								// Encryption mode are cumulative
-	SIGFOX_ENCRYPT_NONE = 0,				// Clear text payload
-	SIGFOX_ENCRYPT_SIGFOX = 1,				// Sigfox native encryption
-	SIGFOX_ENCRYPT_AESCBC = 2,				// Software AESCBC (like sigfox) encryption
-	SIGFOX_ENCRYPT_SPECK = 4				// Speck enryption
+typedef enum {												// Encryption mode are cumulative
+	SIGFOX_ENCRYPT_NONE = __SIGFOX_ENCRYPT_NONE,			// Clear text payload
+	SIGFOX_ENCRYPT_SIGFOX = __SIGFOX_ENCRYPT_SIGFOX,		// Sigfox native encryption
+	SIGFOX_ENCRYPT_AESCTR = __SIGFOX_ENCRYPT_AESCTR,		// Software AES-CTR (like sigfox) encryption
+	SIGFOX_ENCRYPT_SPECK = __SIGFOX_ENCRYPT_SPECK			// SPECK32 encryption
 } itdsk_sigfox_encrypt_t;
 
 typedef uint32_t itsdk_sigfox_device_is_t;
@@ -94,8 +94,8 @@ itsdk_sigfox_init_t itsdk_sigfox_getLastRssi(int16_t * rssi);
 itsdk_sigfox_init_t itsdk_sigfox_switchPublicKey();
 itsdk_sigfox_init_t itsdk_sigfox_switchPrivateKey();
 itsdk_sigfox_init_t itsdk_sigfox_setRcSyncPeriod(uint16_t numOfFrame);
-itsdk_sigfox_init_t itsdk_sigfox_getLastSeqId(int16_t * seqId);
-itsdk_sigfox_init_t itsdk_sigfox_getNextSeqId(int16_t * seqId);
+itsdk_sigfox_init_t itsdk_sigfox_getLastSeqId(uint16_t * seqId);
+itsdk_sigfox_init_t itsdk_sigfox_getNextSeqId(uint16_t * seqId);
 
 itdsk_sigfox_txrx_t itsdk_sigfox_sendFrame(
 		uint8_t * buf,
@@ -130,6 +130,13 @@ itsdk_sigfox_init_t itsdk_sigfox_continuousModeStart(
 );
 itsdk_sigfox_init_t itsdk_sigfox_continuousModeStop();
 
+// --------------------------------------------------------------------
+// Function to be overloaded in the main program
+// --------------------------------------------------------------------
+itsdk_sigfox_init_t itsdk_sigfox_eas_getNonce(uint8_t * nonce);
+itsdk_sigfox_init_t itsdk_sigfox_eas_getSharedKey(uint32_t * sharedKey);
+itsdk_sigfox_init_t itsdk_sigfox_eas_getMasterKey(uint8_t * masterKey);
+itsdk_sigfox_init_t itsdk_sigfox_speck_getMasterKey(uint64_t * masterKey);
 // --------------------------------------------------------------------
 // Logging
 // --------------------------------------------------------------------

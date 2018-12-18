@@ -28,6 +28,7 @@
 #ifndef IT_SDK_DEBUG_H_
 #define IT_SDK_DEBUG_H_
 
+#include <it_sdk/itsdk.h>
 #include <it_sdk/logger/logger.h>
 
 #define ITSDK_DEBUG_ERROR	1
@@ -36,7 +37,7 @@
 #define ITSDK_DEBUG_EEPROM	0
 
 #if ITSDK_DEBUG_ERROR > 0
-#define _ERROR_HANDLER(x)	_Error_Handler x
+#define _ERROR_HANDLER(x)	itsdk_error_handler x
 #else
 #define _ERROR_HANDLER(x)
 #endif

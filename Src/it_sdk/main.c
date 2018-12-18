@@ -59,6 +59,7 @@
 #include <it_sdk/sched/scheduler.h>
 #include <it_sdk/time/time.h>
 #include <it_sdk/time/timer.h>
+#include <it_sdk/logger/logger.h>
 
 /**
  * The setup function is called on every MCU Reset but not on wakeup from sleep
@@ -105,7 +106,16 @@ void itsdk_loop() {
 	lowPower_switch();
 }
 
-
+/**
+ * Error Handler for ItSdk internal
+ * (The STM32 prototype is not stable over FW version)
+ */
+void itsdk_error_handler(char * file, int line) {
+  #if ITSDK_LOGGER_CONF > 0
+   log_debug("Error : %s (%d)\r\n",file,line);
+  #endif
+   while(1);
+}
 
 
 

@@ -29,6 +29,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include <it_sdk/config.h>
+#include <it_sdk/itsdk.h>
 #include <it_sdk/logger/logger.h>
 #include <it_sdk/time/timer.h>
 #include <it_sdk/lowpower/lowpower.h>
@@ -170,14 +171,14 @@ sfx_u8 MCU_API_aes_128_cbc_encrypt(sfx_u8 *encrypted_data,
   /* Let the retriever encrypts the requested buffer using the ID_KEY_RETRIEVER function.
   The retriever knows the KEY of this node. */
 
-  log_info("data_to_encrypt : [ ");
-  for ( int i = 0 ; i < aes_block_len ; i++ ) log_info("%02X",data_to_encrypt[i]);
-  log_info(" ]\r\n");
+//  log_info("data_to_encrypt : [ ");
+//  for ( int i = 0 ; i < aes_block_len ; i++ ) log_info("%02X",data_to_encrypt[i]);
+//  log_info(" ]\r\n");
 
   enc_utils_encrypt(encrypted_data, data_to_encrypt, aes_block_len, key, use_key);
-  log_info("encrypted_data : [ ");
-  for ( int i = 0 ; i < aes_block_len ; i++ ) log_info("%02X",encrypted_data[i]);
-  log_info(" ]\r\n");
+//  log_info("encrypted_data : [ ");
+//  for ( int i = 0 ; i < aes_block_len ; i++ ) log_info("%02X",encrypted_data[i]);
+//  log_info(" ]\r\n");
   
   // This is for being ready to measure the voltage during transmission
   // as this function is called before the first transmission..
@@ -618,7 +619,7 @@ sfx_u8 MCU_API_timer_start(sfx_u32 time_duration_in_s)
 				__TIMER_Handler,
 				0
 			) != TIMER_INIT_SUCCESS ) {
-		_Error_Handler(__FILE__, __LINE__);
+		itsdk_error_handler(__FILE__, __LINE__);
 	}
 	return SFX_ERR_NONE;
 }
@@ -682,7 +683,7 @@ sfx_u8 MCU_API_timer_start_carrier_sense(sfx_u16 time_duration_in_ms)
 			__TIMER2_Handler,
 			0
 		) != TIMER_INIT_SUCCESS ) {
-			_Error_Handler(__FILE__, __LINE__);
+			itsdk_error_handler(__FILE__, __LINE__);
 		}
 	return SFX_ERR_NONE;
 }
