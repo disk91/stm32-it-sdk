@@ -147,11 +147,11 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendFrame(
 			uint16_t seqId;
 			itsdk_sigfox_getNextSeqId(&seqId);
 			uint8_t nonce;
-			itsdk_sigfox_eas_getNonce(&nonce);
+			itsdk_sigfox_aes_getNonce(&nonce);
 			uint32_t sharedKey;
-			itsdk_sigfox_eas_getSharedKey(&sharedKey);
+			itsdk_sigfox_aes_getSharedKey(&sharedKey);
 			uint8_t masterKey[16];
-			itsdk_sigfox_eas_getMasterKey(masterKey);
+			itsdk_sigfox_aes_getMasterKey(masterKey);
 
 			itsdk_aes_crt_encrypt_128B(
 					buf,							// Data to be encrypted
@@ -479,10 +479,26 @@ itsdk_sigfox_init_t itsdk_sigfox_setRcSyncPeriod(uint16_t numOfFrame) {
 
 
 /**
+ * Get the Sigfox lib version in use
+ * A string is returned terminated by \0
+ */
+itsdk_sigfox_init_t itsdk_sigfox_getSigfoxLibVersion(uint8_t ** version){
+#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
+	sfx_u8 __size;
+	SIGFOX_API_get_version(version, &__size, VERSION_SIGFOX);
+#endif
+	return SIGFOX_INIT_SUCESS;
+}
+
+// ===================================================================================
+// Overloadable functions
+// ===================================================================================
+
+/**
  * Return default nonce, this function is overloaded in the main program
  * to return a dynamic value
  */
-__weak  itsdk_sigfox_init_t itsdk_sigfox_eas_getNonce(uint8_t * nonce) {
+__weak  itsdk_sigfox_init_t itsdk_sigfox_aes_getNonce(uint8_t * nonce) {
 	*nonce = ITSDK_SIGFOX_AES_INITALNONCE;
 	return SIGFOX_INIT_SUCESS;
 }
@@ -491,7 +507,7 @@ __weak  itsdk_sigfox_init_t itsdk_sigfox_eas_getNonce(uint8_t * nonce) {
  * Return default sharedKey, this function is overloaded in the main program
  * to return a dynamic value
  */
-__weak  itsdk_sigfox_init_t itsdk_sigfox_eas_getSharedKey(uint32_t * sharedKey) {
+__weak  itsdk_sigfox_init_t itsdk_sigfox_aes_getSharedKey(uint32_t * sharedKey) {
 	*sharedKey = ITSDK_SIGFOX_AES_SHAREDKEY;
 	return SIGFOX_INIT_SUCESS;
 }
@@ -501,7 +517,7 @@ __weak  itsdk_sigfox_init_t itsdk_sigfox_eas_getSharedKey(uint32_t * sharedKey) 
  * Return default masterKey (protected by ITSDK_PROTECT_KEY), this function is overloaded in the main program
  * to return a dynamic value when needed
  */
-__weak  itsdk_sigfox_init_t itsdk_sigfox_eas_getMasterKey(uint8_t * masterKey) {
+__weak  itsdk_sigfox_init_t itsdk_sigfox_aes_getMasterKey(uint8_t * masterKey) {
 #if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
 	bcopy((void *)_s2lp_sigfox_config->key,(void *)masterKey,16);
 #else

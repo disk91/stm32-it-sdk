@@ -171,14 +171,19 @@ sfx_u8 MCU_API_aes_128_cbc_encrypt(sfx_u8 *encrypted_data,
   /* Let the retriever encrypts the requested buffer using the ID_KEY_RETRIEVER function.
   The retriever knows the KEY of this node. */
 
-//  log_info("data_to_encrypt : [ ");
-//  for ( int i = 0 ; i < aes_block_len ; i++ ) log_info("%02X",data_to_encrypt[i]);
-//  log_info(" ]\r\n");
+  log_info("data_to_encrypt : [ ");
+  for ( int i = 0 ; i < aes_block_len ; i++ ) log_info("%02X",data_to_encrypt[i]);
+  log_info(" ]\r\n");
+
+  log_info("with key : [ ");
+  for ( int i = 0 ; i < 16 ; i++ ) log_info("%02X",(use_key==CREDENTIALS_KEY_IN_ARGUMENT)?key[i]:0);
+  log_info(" ]\r\n");
+
 
   enc_utils_encrypt(encrypted_data, data_to_encrypt, aes_block_len, key, use_key);
-//  log_info("encrypted_data : [ ");
-//  for ( int i = 0 ; i < aes_block_len ; i++ ) log_info("%02X",encrypted_data[i]);
-//  log_info(" ]\r\n");
+  log_info("encrypted_data : [ ");
+  for ( int i = 0 ; i < aes_block_len ; i++ ) log_info("%02X",encrypted_data[i]);
+  log_info(" ]\r\n");
   
   // This is for being ready to measure the voltage during transmission
   // as this function is called before the first transmission..
