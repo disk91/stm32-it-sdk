@@ -99,6 +99,10 @@
 #define ITSDK_SIGFOX_LIB			__SIGFOX_S2LP							// Type of Sigfox module
 
 
+#define ITSDK_PROTECT_KEY			0xA7459BC3 	 	/* CHANGE ME */			// A random value used to protect the SIGFOX (and others) KEY in memory (better than nothing)
+
+
+
 #if ITSDK_PLATFORM == __PLATFORM_STM32L0x1  || ITSDK_PLATFORM == __PLATFORM_STM32L0x3
 	#include <stm32l_sdk/config.h>
 	#include "stm32l0xx_hal.h"
