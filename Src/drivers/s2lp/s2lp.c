@@ -190,7 +190,7 @@ void s2lp_loadConfiguration(
 		s2lp_sigfox_cifferKey(s2lpConf);
 
 		s2lpConf->low_power_flag = ITSDK_SIGFOX_LOWPOWER;
-		s2lpConf->payload_encryption = ITSDK_SIGFOX_ENCRYPTED;
+		s2lpConf->payload_encryption = (( ITSDK_SIGFOX_ENCRYPTION & __SIGFOX_ENCRYPT_SIGFOX) > 0)?1:0;
 
 	#elif ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_LOCALEPROM
 		#error "__SFX_NVM_LOCALEPROM Not yet implemented"

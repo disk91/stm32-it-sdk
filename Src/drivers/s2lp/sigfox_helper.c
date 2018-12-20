@@ -91,15 +91,9 @@ bool s2lp_sigfox_init(s2lp_config_t * conf) {
  */
 void s2lp_sigfox_cifferKey(s2lp_config_t * conf) {
 	itsdk_encrypt_cifferKey(&conf->key[0],16);
-
-//	 uint32_t key = ITSDK_PROTECT_KEY;
-//	 uint32_t * pk = (uint32_t *)(&conf->key[0]);
-//	 for ( int i = 0  ; i < 4 ; i++,pk++ ) *pk ^= key;
 }
 void s2lp_sigfox_unCifferKey(s2lp_config_t * conf) {
 	itsdk_encrypt_unCifferKey(&conf->key[0],16);
-
-//	s2lp_sigfox_cifferKey(conf);
 }
 
 /**
