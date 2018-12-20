@@ -103,6 +103,7 @@ void itsdk_aes_crt_encrypt_128B(
 //	log_info("]\r\n");
 
 #if false && ITSDK_SIGFOX_LIB == __SIGFOX_S2LP
+	// The STM32 EAS encryption lib seems to work strangely...
 	enc_utils_encrypt(aesResult, ctr, 16, masterKey, CREDENTIALS_KEY_IN_ARGUMENT);
 //	log_info("enc1 : [ ");
 //	for ( int i = 0 ; i < 16 ; i++ ) log_info("%02X ",aesResult[i]);
