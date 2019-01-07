@@ -29,14 +29,14 @@
  */
 
 #include <it_sdk/config.h>
-#if ITSDK_SIGFOX_LIB == __SIGFOX_S2LP
+#if ITSDK_WITH_SIGFOX_LIB > 0 && ITSDK_SIGFOX_LIB == __SIGFOX_S2LP
 
 #include <it_sdk/itsdk.h>
 #include <it_sdk/logger/logger.h>
 #include <it_sdk/sigfox/sigfox.h>
 #include <it_sdk/wrappers.h>
 
-#if ITSDK_PLATFORM == __PLATFORM_STM32L0x3 || ITSDK_PLATFORM == __PLATFORM_STM32L0x1
+#if ITSDK_PLATFORM == __PLATFORM_STM32L0
 #include <stm32l_sdk/spi/spi.h>
 #else
 #error NOT A SUPPORTED PLATFORM FOR S2LP

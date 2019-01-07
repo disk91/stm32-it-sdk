@@ -27,7 +27,7 @@
  * ==========================================================
  */
 #include <it_sdk/config.h>
-#if ITSDK_PLATFORM == __PLATFORM_STM32L0x1
+#if ITSDK_PLATFORM == __PLATFORM_STM32L0
 #include <it_sdk/itsdk.h>
 #include <it_sdk/debug.h>
 #include "stm32l0xx_hal.h"
@@ -43,7 +43,7 @@ ADC_HandleTypeDef hadc;
 #define CAL2_VALUE          ((uint16_t*)((uint32_t)0x1FF8007E))
 #define CAL1_TEMP			30
 #define CAL1_VALUE          ((uint16_t*)((uint32_t)0x1FF8007A))
-#elif ITSDK_DEVICE == __DEVICE_STM32L053R8
+#elif ITSDK_DEVICE == __DEVICE_STM32L053R8 || ITSDK_DEVICE == __DEVICE_STM32L072XX
 #define CAL2_TEMP			130
 #define CAL2_VALUE          ((uint16_t*)((uint32_t)0x1FF8007E))
 #define CAL1_TEMP			30
@@ -313,6 +313,16 @@ uint16_t adc_getValue(uint32_t pin) {
 		GPIO_TypeDefStruct = GPIOB;
 		channel = ADC_CHANNEL_9;
 		break;
+	case 0:
+		channel = ADC_CHSELR_CHSEL17;
+		break;
+	default:
+		 _ERROR_HANDLER((__FILE__, __LINE__));
+		 while(1);
+	}
+#elif  ITSDK_DEVICE == __DEVICE_STM32L072XX
+#warning "We may define the pin association with ADC properly for this MCU"
+	switch (pin) {
 	case 0:
 		channel = ADC_CHSELR_CHSEL17;
 		break;

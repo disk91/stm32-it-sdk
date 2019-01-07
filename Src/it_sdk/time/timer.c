@@ -34,7 +34,7 @@
 #include <it_sdk/time/timer.h>
 #include <it_sdk/logger/logger.h>
 
-#if ITSDK_PLATFORM == __PLATFORM_STM32L0x1 || ITSDK_PLATFORM == __PLATFORM_STM32L0x3
+#if ITSDK_PLATFORM == __PLATFORM_STM32L0
    #include <stm32l_sdk/timer/timer.h>
 #endif
 
@@ -57,7 +57,7 @@ itsdk_timer_return_t itsdk_hwtimer_sync_run(
 		uint32_t value
 ) {
 
-	#if ITSDK_PLATFORM == __PLATFORM_STM32L0x1 || ITSDK_PLATFORM == __PLATFORM_STM32L0x3
+	#if ITSDK_PLATFORM == __PLATFORM_STM32L0
 		return stm32l_hwtimer_sync_run(ms,callback_func,value);
 	#else
 		#error "platform not supported"

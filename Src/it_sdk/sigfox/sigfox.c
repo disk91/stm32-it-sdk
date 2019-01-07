@@ -32,7 +32,7 @@
 #include <it_sdk/sigfox/sigfox.h>
 #include <it_sdk/logger/logger.h>
 
-#ifdef ITSDK_WITH_SIGFOX_LIB
+#if ITSDK_WITH_SIGFOX_LIB > 0
 
 #if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
 	#include <drivers/s2lp/s2lp.h>

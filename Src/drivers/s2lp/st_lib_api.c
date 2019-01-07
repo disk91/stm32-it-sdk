@@ -29,6 +29,8 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include <it_sdk/config.h>
+#if ITSDK_WITH_SIGFOX_LIB > 0 && ITSDK_SIGFOX_LIB == __SIGFOX_S2LP
+
 #include <it_sdk/itsdk.h>
 #include <it_sdk/logger/logger.h>
 #include <it_sdk/time/timer.h>
@@ -763,6 +765,8 @@ void enc_utils_retrieve_key(uint8_t * key) {
 #endif
 
 }
+
+#endif // ITSDK_WITH_SIGFOX_LIB > 0
 
 
 

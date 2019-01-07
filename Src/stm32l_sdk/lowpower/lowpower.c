@@ -35,6 +35,8 @@
 #include <it_sdk/logger/logger.h>
 #include <it_sdk/wrappers.h>
 #include "stm32l0xx_hal.h"
+#include "usart.h"
+#include "gpio.h"
 
 
 #if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_GPIO ) > 0

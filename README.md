@@ -55,7 +55,7 @@ When generating the Project
 
 1. Clone this repository into the root of your project.
 2. Add in project properties >> C/C++ General >> Path&Symbol >> Source location the repository ItSdk directory.
-3. Add in project properties >> C/C++ Build >> Tool Settings >> MCU GCC Compiler >> Includes the ItSdk >> Inc directory.
+3. Add in project properties >> C/C++ Build >> Settings >> Tool Settings >> MCU GCC Compiler >> Includes the ItSdk >> Inc directory.
 4. Copy *ItSdk/Src/project_main.c.template* file into Core/Src/project_main.c and make the modification you want to get started. 
 
 # Configure the SDK

@@ -27,7 +27,7 @@
 #include <it_sdk/config.h>
 #include <it_sdk/itsdk.h>
 #include <it_sdk/time/time.h>
-#if ITSDK_PLATFORM == __PLATFORM_STM32L0x1 || ITSDK_PLATFORM == __PLATFORM_STM32L0x3
+#if ITSDK_PLATFORM == __PLATFORM_STM32L0
 	#include <stm32l_sdk/rtc/rtc.h>
 #endif
 
@@ -74,7 +74,7 @@ uint64_t itsdk_time_get_ms() {
  * Reset the time to 0
  */
 void itsdk_time_reset() {
-	#if ITSDK_PLATFORM == __PLATFORM_STM32L0x1 || ITSDK_PLATFORM == __PLATFORM_STM32L0x3
+	#if ITSDK_PLATFORM == __PLATFORM_STM32L0
 		rtc_resetTime();
 	#else
 		#error "platform not supported"
@@ -86,7 +86,7 @@ void itsdk_time_reset() {
  * Init time functions
  */
 void itsdk_time_init() {
-#if ITSDK_PLATFORM == __PLATFORM_STM32L0x1 || ITSDK_PLATFORM == __PLATFORM_STM32L0x3
+#if ITSDK_PLATFORM == __PLATFORM_STM32L0
 	rtc_resetTime();
 	rtc_adjustTime();
 #else

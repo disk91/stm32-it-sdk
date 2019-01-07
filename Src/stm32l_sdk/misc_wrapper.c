@@ -26,7 +26,7 @@
  */
 
 #include <it_sdk/config.h>
-#if ITSDK_PLATFORM == __PLATFORM_STM32L0x1 || ITSDK_PLATFORM == __PLATFORM_STM32L0x3
+#if ITSDK_PLATFORM == __PLATFORM_STM32L0
 
 #include <it_sdk/wrappers.h>
 #include "stm32l0xx_hal.h"

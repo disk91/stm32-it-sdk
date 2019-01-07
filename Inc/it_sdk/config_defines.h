@@ -29,17 +29,23 @@
 #define IT_SDK_CONFIG_DEFINES_H_
 
 /**
+ * Cube MX code generator
+ */
+#define __CUBEMX_VERSIONXXX			499
+#define __CUBEMX_VERSION500			500
+
+/**
  * Supported Hardware Platform
  */
 #define __PLATFORM_EFM32_TD			0
-#define __PLATFORM_STM32L0x1		1
-#define __PLATFORM_STM32L0x3		1
+#define __PLATFORM_STM32L0			1
 #define __PLAFTORM_ESP8266			2
 
 /**
  * Devices
  */
 #define __DEVICE_STM32L011D4		1
+#define __DEVICE_STM32L072XX		2
 #define __DEVICE_STM32L053R8		3
 
 /**
