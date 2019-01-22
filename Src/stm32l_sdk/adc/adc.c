@@ -269,6 +269,19 @@ uint16_t adc_getVdd() {
 	return adc_getValue(0);
 }
 
+/**
+ * Return VBAT in mV
+ * Assuming VBAT have a /2 in front of the ADC
+ */
+uint16_t adc_getVBat() {
+#if ITSDK_VBAT_ADC_PIN >= 0
+	return adc_getValue(ITSDK_VBAT_ADC_PIN)*2;
+#else
+	return adc_getVdd();
+#endif
+}
+
+
 
 /**
  * Return ADC Value for an external PIN or internal

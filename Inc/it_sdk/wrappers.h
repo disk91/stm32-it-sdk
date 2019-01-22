@@ -30,6 +30,7 @@
 
 #include <stdbool.h>
 
+// ================================================
 // Serial wrappers
 void serial1_flush();
 void serial2_flush();
@@ -45,20 +46,25 @@ void serial2_println(char * msg);
 void debug_println(char * msg);
 void logfile_println(char * msg);
 
+// ================================================
 // watchdog
 void wdg_setupWithMaxMs(uint32_t ms);
 void wdg_refresh();
 
+// ================================================
 // eeprom
 bool _eeprom_write(uint8_t bank, uint32_t offset, void * data, int len);
 bool _eeprom_read(uint8_t bank, uint32_t offset, void * data, int len);
 
+// ================================================
 // adc
 #define ADC_TEMPERATURE_ERROR		-500
 int16_t adc_getTemperature();
 uint16_t adc_getVdd();
 uint16_t adc_getValue(uint32_t pin);
+uint16_t adc_getVBat();
 
+// ================================================
 // gpio
 typedef enum {
 	GPIO_OUTPUT_PP = 0,
@@ -96,27 +102,7 @@ void gpio_registerIrqAction(gpio_irq_chain_t * chain);
 void gpio_removeIrqAction(gpio_irq_chain_t * chain);
 bool gpio_existAction(gpio_irq_chain_t * chain);
 
-// misc_wrapper
-void itsdk_reset();
-void itsdk_delayMs(uint32_t ms);
-
-// Reset Cause
-typedef enum {
-	RESET_CAUSE_BOR = 0,		// under voltage			0
-	RESET_CAUSE_RESET_PIN,		// hardware reset pin		1
-	RESET_CAUSE_POWER_ON,		// power on					2
-	RESET_CAUSE_SOFTWARE,		// software reset			3
-	RESET_CAUSE_IWDG,			// Independent Watchdog		4
-	RESET_CAUSE_WWDG,			// Window Watchdog			5
-	RESET_CAUSE_LOWPOWER,		// Low-Power reset Flag		6
-
-	RESET_CAUSE_UNKNONW
-} itsdk_reset_cause_t;
-
-void itsdk_cleanResetCause();
-itsdk_reset_cause_t itsdk_getResetCause();
-
-
+// ================================================
 // spi
 typedef enum
 {
@@ -152,6 +138,32 @@ void spi_wait4TransactionEnd(
 void spi_reset(
 		ITSDK_SPI_HANDLER_TYPE * spi
 );
+
+
+// ================================================
+// Reset Cause
+typedef enum {
+	RESET_CAUSE_BOR = 0,		// under voltage			0
+	RESET_CAUSE_RESET_PIN,		// hardware reset pin		1
+	RESET_CAUSE_POWER_ON,		// power on					2
+	RESET_CAUSE_SOFTWARE,		// software reset			3
+	RESET_CAUSE_IWDG,			// Independent Watchdog		4
+	RESET_CAUSE_WWDG,			// Window Watchdog			5
+	RESET_CAUSE_LOWPOWER,		// Low-Power reset Flag		6
+
+	RESET_CAUSE_UNKNONW
+} itsdk_reset_cause_t;
+
+void itsdk_cleanResetCause();
+itsdk_reset_cause_t itsdk_getResetCause();
+
+// ================================================
+// misc_wrapper
+void itsdk_reset();
+void itsdk_delayMs(uint32_t ms);
+
+uint32_t itsdk_getRandomSeed();								// get a random seed value - can be the same for one given object
+void itsdk_getUniqId(uint8_t * id, int8_t size);			// fill id table with an object ID having the given size
 
 
 #endif /* STM32L_SDK_WRAPPERS_H_ */
