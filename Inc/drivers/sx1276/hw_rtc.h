@@ -39,7 +39,7 @@ Maintainer: Miguel Luis and Gregory Cristian
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "utilities.h"
+//#include "utilities.h"
    
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
@@ -50,80 +50,80 @@ Maintainer: Miguel Luis and Gregory Cristian
 /*!
  * \brief Temperature coefficient of the clock source
  */
-#define RTC_TEMP_COEFFICIENT                            ( -0.035 )
+//#define RTC_TEMP_COEFFICIENT                            ( -0.035 )
 
 /*!
  * \brief Temperature coefficient deviation of the clock source
  */
-#define RTC_TEMP_DEV_COEFFICIENT                        ( 0.0035 )
+//#define RTC_TEMP_DEV_COEFFICIENT                        ( 0.0035 )
 
 /*!
  * \brief Turnover temperature of the clock source
  */
-#define RTC_TEMP_TURNOVER                               ( 25.0 )
+//#define RTC_TEMP_TURNOVER                               ( 25.0 )
 
 /*!
  * \brief Turnover temperature deviation of the clock source
  */
-#define RTC_TEMP_DEV_TURNOVER                           ( 5.0 )
+//#define RTC_TEMP_DEV_TURNOVER                           ( 5.0 )
 /*!
  * @brief Initializes the RTC timer
  * @note The timer is based on the RTC
  * @param none
  * @retval none
  */
-void HW_RTC_Init( void );
+//void HW_RTC_Init( void );
 
 /*!
  * @brief Stop the Alarm
  * @param none
  * @retval none
  */
-void HW_RTC_StopAlarm( void );
+//void HW_RTC_StopAlarm( void );
 
 /*!
  * @brief Return the minimum timeout the RTC is able to handle
  * @param none
  * @retval minimum value for a timeout
  */
-uint32_t HW_RTC_GetMinimumTimeout( void );
+//uint32_t HW_RTC_GetMinimumTimeout( void );
 
 /*!
  * @brief Set the alarm
  * @note The alarm is set at Reference + timeout
  * @param timeout Duration of the Timer in ticks
  */
-void HW_RTC_SetAlarm( uint32_t timeout );
+//void HW_RTC_SetAlarm( uint32_t timeout );
 
 /*!
  * @brief Get the RTC timer elapsed time since the last Reference was set
  * @retval RTC Elapsed time in ticks
  */
-uint32_t HW_RTC_GetTimerElapsedTime( void );
+//uint32_t HW_RTC_GetTimerElapsedTime( void );
 
 /*!
  * @brief Get the RTC timer value
  * @retval none
  */
-uint32_t HW_RTC_GetTimerValue( void );
+//uint32_t HW_RTC_GetTimerValue( void );
 
 /*!
  * @brief Set the RTC timer Reference
  * @retval  Timer Reference Value in  Ticks
  */
-uint32_t HW_RTC_SetTimerContext( void );
+//uint32_t HW_RTC_SetTimerContext( void );
   
 /*!
  * @brief Get the RTC timer Reference
  * @retval Timer Value in  Ticks
  */
-uint32_t HW_RTC_GetTimerContext( void );
+//uint32_t HW_RTC_GetTimerContext( void );
 /*!
  * @brief RTC IRQ Handler on the RTC Alarm
  * @param none
  * @retval none
  */
-void HW_RTC_IrqHandler ( void );
+//void HW_RTC_IrqHandler ( void );
 
 /*!
  * @brief a delay of delay ms by polling RTC
@@ -131,7 +131,7 @@ void HW_RTC_IrqHandler ( void );
  * @param none
  * @retval none
  */
-void HW_RTC_DelayMs( uint32_t delay );
+//void HW_RTC_DelayMs( uint32_t delay );
 
 /*!
  * @brief calculates the wake up time between wake up and mcu start
@@ -139,28 +139,28 @@ void HW_RTC_DelayMs( uint32_t delay );
  * @param none
  * @retval none
  */
-void HW_RTC_setMcuWakeUpTime( void );
+//void HW_RTC_setMcuWakeUpTime( void );
 
 /*!
  * @brief returns the wake up time in us
  * @param none
  * @retval wake up time in ticks
  */
-int16_t HW_RTC_getMcuWakeUpTime( void );
+//int16_t HW_RTC_getMcuWakeUpTime( void );
 
 /*!
  * @brief converts time in ms to time in ticks
  * @param [IN] time in milliseconds
  * @retval returns time in timer ticks
  */
-uint32_t HW_RTC_ms2Tick( TimerTime_t timeMilliSec );
+//uint32_t HW_RTC_ms2Tick( TimerTime_t timeMilliSec );
 
 /*!
  * @brief converts time in ticks to time in ms
  * @param [IN] time in timer ticks
  * @retval returns time in timer milliseconds
  */
-TimerTime_t HW_RTC_Tick2ms( uint32_t tick );
+//TimerTime_t HW_RTC_Tick2ms( uint32_t tick );
 
 /*!
  * \brief Computes the temperature compensation for a period of time on a
@@ -171,7 +171,7 @@ TimerTime_t HW_RTC_Tick2ms( uint32_t tick );
  *
  * \retval Compensated time period
  */
-TimerTime_t RtcTempCompensation( TimerTime_t period, float temperature );
+//TimerTime_t RtcTempCompensation( TimerTime_t period, float temperature );
 
 /*!
  * \brief Get system time
@@ -179,7 +179,7 @@ TimerTime_t RtcTempCompensation( TimerTime_t period, float temperature );
  *               
  * \uint32_t     seconds 
  */
-uint32_t HW_RTC_GetCalendarTime( uint16_t *subSeconds );
+//uint32_t HW_RTC_GetCalendarTime( uint16_t *subSeconds );
 
 /*!
  * \brief Read from backup registers
@@ -187,7 +187,7 @@ uint32_t HW_RTC_GetCalendarTime( uint16_t *subSeconds );
  * \param [IN]  Data 1
  *               
  */
-void HW_RTC_BKUPRead( uint32_t *Data0, uint32_t *Data1);
+//void HW_RTC_BKUPRead( uint32_t *Data0, uint32_t *Data1);
 
 /*!
  * \brief Write in backup registers
@@ -196,7 +196,7 @@ void HW_RTC_BKUPRead( uint32_t *Data0, uint32_t *Data1);
  *               
  */
 
-void HW_RTC_BKUPWrite( uint32_t Data0, uint32_t Data1);
+//void HW_RTC_BKUPWrite( uint32_t Data0, uint32_t Data1);
 
 #ifdef __cplusplus
 }

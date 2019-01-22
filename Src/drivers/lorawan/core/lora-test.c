@@ -37,6 +37,7 @@ Maintainer: Miguel Luis, Gregory Cristian and Wael Guibene
 #include <drivers/lorawan/core/lora.h>
 #include <drivers/lorawan/core/lora-test.h>
 #include <drivers/lorawan/timeServer.h>
+#include <drivers/lorawan/compiled_region.h>
 
 /* Private typedef -----------------------------------------------------------*/
 typedef struct ComplianceTest_s

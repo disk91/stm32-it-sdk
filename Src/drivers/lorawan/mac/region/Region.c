@@ -29,10 +29,12 @@
  * \author    Daniel Jaeckle ( STACKFORCE )
  */
 #include <drivers/lorawan/mac/LoRaMac.h>
+#include <drivers/lorawan/compiled_region.h>
+
 
 // Setup regions
 #ifdef REGION_AS923
-#include "RegionAS923.h"
+#include <drivers/lorawan/mac/region/RegionAS923.h>
 #define AS923_CASE                                 case LORAMAC_REGION_AS923:
 #define AS923_IS_ACTIVE( )                         AS923_CASE { return true; }
 #define AS923_GET_PHY_PARAM( )                     AS923_CASE { return RegionAS923GetPhyParam( getPhy ); }
@@ -86,7 +88,7 @@
 #endif
 
 #ifdef REGION_AU915
-#include "RegionAU915.h"
+#include <drivers/lorawan/mac/region/RegionAU915.h>
 #define AU915_CASE                                 case LORAMAC_REGION_AU915:
 #define AU915_IS_ACTIVE( )                         AU915_CASE { return true; }
 #define AU915_GET_PHY_PARAM( )                     AU915_CASE { return RegionAU915GetPhyParam( getPhy ); }
@@ -140,7 +142,7 @@
 #endif
 
 #ifdef REGION_CN470
-#include "RegionCN470.h"
+#include <drivers/lorawan/mac/region/RegionCN470.h>
 #define CN470_CASE                                 case LORAMAC_REGION_CN470:
 #define CN470_IS_ACTIVE( )                         CN470_CASE { return true; }
 #define CN470_GET_PHY_PARAM( )                     CN470_CASE { return RegionCN470GetPhyParam( getPhy ); }
@@ -194,7 +196,7 @@
 #endif
 
 #ifdef REGION_CN779
-#include "RegionCN779.h"
+#include <drivers/lorawan/mac/region/RegionCN779.h>
 #define CN779_CASE                                 case LORAMAC_REGION_CN779:
 #define CN779_IS_ACTIVE( )                         CN779_CASE { return true; }
 #define CN779_GET_PHY_PARAM( )                     CN779_CASE { return RegionCN779GetPhyParam( getPhy ); }
@@ -248,7 +250,7 @@
 #endif
 
 #ifdef REGION_EU433
-#include "RegionEU433.h"
+#include <drivers/lorawan/mac/region/RegionEU433.h>
 #define EU433_CASE                                 case LORAMAC_REGION_EU433:
 #define EU433_IS_ACTIVE( )                         EU433_CASE { return true; }
 #define EU433_GET_PHY_PARAM( )                     EU433_CASE { return RegionEU433GetPhyParam( getPhy ); }
@@ -302,7 +304,7 @@
 #endif
 
 #ifdef REGION_EU868
-#include "RegionEU868.h"
+#include <drivers/lorawan/mac/region/RegionEU868.h>
 #define EU868_CASE                                 case LORAMAC_REGION_EU868:
 #define EU868_IS_ACTIVE( )                         EU868_CASE { return true; }
 #define EU868_GET_PHY_PARAM( )                     EU868_CASE { return RegionEU868GetPhyParam( getPhy ); }
@@ -356,7 +358,7 @@
 #endif
 
 #ifdef REGION_KR920
-#include "RegionKR920.h"
+#include <drivers/lorawan/mac/region/RegionKR920.h>
 #define KR920_CASE                                 case LORAMAC_REGION_KR920:
 #define KR920_IS_ACTIVE( )                         KR920_CASE { return true; }
 #define KR920_GET_PHY_PARAM( )                     KR920_CASE { return RegionKR920GetPhyParam( getPhy ); }
@@ -410,7 +412,7 @@
 #endif
 
 #ifdef REGION_IN865
-#include "RegionIN865.h"
+#include <drivers/lorawan/mac/region/RegionIN865.h>
 #define IN865_CASE                                 case LORAMAC_REGION_IN865:
 #define IN865_IS_ACTIVE( )                         IN865_CASE { return true; }
 #define IN865_GET_PHY_PARAM( )                     IN865_CASE { return RegionIN865GetPhyParam( getPhy ); }
@@ -464,7 +466,7 @@
 #endif
 
 #ifdef REGION_US915
-#include "RegionUS915.h"
+#include <drivers/lorawan/mac/region/RegionUS915.h>
 #define US915_CASE                                 case LORAMAC_REGION_US915:
 #define US915_IS_ACTIVE( )                         US915_CASE { return true; }
 #define US915_GET_PHY_PARAM( )                     US915_CASE { return RegionUS915GetPhyParam( getPhy ); }
@@ -518,7 +520,7 @@
 #endif
 
 #ifdef REGION_RU864
-#include "RegionRU864.h"
+#include <drivers/lorawan/mac/region/RegionRU864.h>
 #define RU864_CASE                                 case LORAMAC_REGION_RU864:
 #define RU864_IS_ACTIVE( )                         RU864_CASE { return true; }
 #define RU864_GET_PHY_PARAM( )                     RU864_CASE { return RegionRU864GetPhyParam( getPhy ); }

@@ -16,12 +16,17 @@
   ******************************************************************************
   */
 
+#include <it_sdk/itsdk.h>
+#if ITSDK_WITH_LORAWAN_LIB == __ENABLE
+
 /* Includes ------------------------------------------------------------------*/
 #include <drivers/sx1276/hw.h>
 #include <drivers/lorawan/timeServer.h>
 #include <drivers/lorawan/mac/LoRaMac.h>
 #include <drivers/lorawan/core/lora.h>
 #include <drivers/lorawan/core/lora-test.h>
+#include <drivers/lorawan/compiled_region.h>
+
 
 /*!
  *  Select either Device_Time_req or Beacon_Time_Req following LoRaWAN version 
@@ -37,7 +42,7 @@
 
 #if defined( REGION_EU868 )
 
-#include "LoRaMacTest.h"
+#include <drivers/lorawan/mac/LoRaMacTest.h>
 
 /*!
  * LoRaWAN ETSI duty cycle control enable/disable
@@ -56,20 +61,20 @@
 
 #define HEX16(X)  X[0],X[1], X[2],X[3], X[4],X[5], X[6],X[7],X[8],X[9], X[10],X[11], X[12],X[13], X[14],X[15]
 #define HEX8(X)   X[0],X[1], X[2],X[3], X[4],X[5], X[6],X[7]
-static uint8_t DevEui[] = LORAWAN_DEVICE_EUI;
-static uint8_t JoinEui[] = LORAWAN_JOIN_EUI;
-static uint8_t AppKey[] = LORAWAN_APP_KEY;
-static uint8_t NwkKey[] = LORAWAN_NWK_KEY;
+static uint8_t DevEui[] = ITSDK_LORAWAN_DEVEUI;
+static uint8_t JoinEui[] = ITSDK_LORAWAN_APPEUI;
+static uint8_t AppKey[] = ITSDK_LORAWAN_APPKEY;
+static uint8_t NwkKey[] = ITSDK_LORAWAN_NWKKEY;
 
 static MlmeReqJoin_t JoinParameters;
 
-#if( OVER_THE_AIR_ACTIVATION == 0 )
+#if( ITSDK_LORAWAN_ACTIVATION == __LORAWAN_ABP )
 
-static uint8_t FNwkSIntKey[] = LORAWAN_F_NWK_S_INT_KEY;
-static uint8_t SNwkSIntKey[] = LORAWAN_S_NWK_S_INT_KEY;
-static uint8_t NwkSEncKey[] = LORAWAN_NWK_S_ENC_KEY;
-static uint8_t AppSKey[] = LORAWAN_APP_S_KEY;
-static uint32_t DevAddr = LORAWAN_DEVICE_ADDRESS;
+static uint8_t FNwkSIntKey[] = ITSDK_LORAWAN_FNWKSKEY;
+static uint8_t SNwkSIntKey[] = ITSDK_LORAWAN_SNWKSKEY;
+static uint8_t NwkSEncKey[] = ITSDK_LORAWAN_NWKSKEY;
+static uint8_t AppSKey[] = ITSDK_LORAWAN_APPSKEY;
+static uint32_t DevAddr = ITSDK_LORAWAN_DEVADDR;
 #endif
 
 #ifdef LORAMAC_CLASSB_ENABLED
@@ -443,11 +448,11 @@ void LORA_Init (LoRaMainCallback_t *callbacks, LoRaParam_t* LoRaParam )
   /* init the main call backs*/
   LoRaMainCallbacks = callbacks;
   
-#if (STATIC_DEVICE_EUI != 1)
+#if (ITSDK_LORAWAN_DEVEUI_SRC == __LORAWAN_DEVEUI_GENERATED)
   LoRaMainCallbacks->BoardGetUniqueId( DevEui );  
 #endif
   
-#if( OVER_THE_AIR_ACTIVATION != 0 )
+#if( ITSDK_LORAWAN_ACTIVATION == __LORAWAN_OTAA )
 
   PPRINTF( "OTAA\n\r"); 
   PPRINTF( "DevEui= %02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X\n\r", HEX8(DevEui));
@@ -552,7 +557,7 @@ void LORA_Join( void)
   
     JoinParameters = mlmeReq.Req.Join;
 
-#if( OVER_THE_AIR_ACTIVATION != 0 )
+#if( ITSDK_LORAWAN_ACTIVATION == __LORAWAN_OTAA )
     LoRaMacMlmeRequest( &mlmeReq );
 #else
     mibReq.Type = MIB_NET_ID;
@@ -902,5 +907,6 @@ static void TraceBeaconInfo(MlmeIndication_t *mlmeIndication)
 }
 #endif /* LORAMAC_CLASSB_ENABLED */
 
+#endif
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
 

@@ -88,47 +88,47 @@ do {                                                    \
  *
  * \retval value  temperature in degreeCelcius( q7.8 )
  */
-uint16_t HW_GetTemperatureLevel( void );
+//uint16_t HW_GetTemperatureLevel( void );
 /*!
  * \brief Get the current battery level
  *
  * \retval value  battery level ( 0: very low, 254: fully charged )
  */
-uint8_t HW_GetBatteryLevel( void );
+//uint8_t HW_GetBatteryLevel( void );
 /*!
  * \brief Initializes the boards peripherals.
  */
-void HW_Init( void );
+//void HW_Init( void );
 
   /*!
  * \brief De-initializes the target board peripherals to decrease power
  *        consumption.
  */
   
-void HW_DeInit( void );
+//void HW_DeInit( void );
 /*!
  * Returns a pseudo random seed generated using the MCU Unique ID
  *
  * \retval seed Generated pseudo random seed
  */
-uint32_t HW_GetRandomSeed( void );
+//uint32_t HW_GetRandomSeed( void );
 
 /*!
  * \brief Gets the board 64 bits unique ID 
  *
  * \param [IN] id Pointer to an array that will contain the Unique ID
  */
-void HW_GetUniqueId( uint8_t *id );
+//void HW_GetUniqueId( uint8_t *id );
 
   /*!
  * \brief Initializes the HW and enters stope mode
  */
-void HW_EnterStopMode( void);
+//void HW_EnterStopMode( void);
 
 /*!
  * \brief Exits stop mode and Initializes the HW
  */
-void HW_ExitStopMode( void);
+//void HW_ExitStopMode( void);
 
 /**
   * @brief Enters Low Power Sleep Mode
@@ -136,15 +136,15 @@ void HW_ExitStopMode( void);
   * @param none
   * @retval none
   */
-void HW_EnterSleepMode( void);
-
+//void HW_EnterSleepMode( void);
+/*
 typedef enum
   {
     e_LOW_POWER_RTC = (1<<0),
     e_LOW_POWER_GPS = (1<<1),
-    e_LOW_POWER_UART = (1<<2), /* can be used to forbid stop mode in case of uart Xfer*/
+    e_LOW_POWER_UART = (1<<2),
   } e_LOW_POWER_State_Id_t;
-
+*/
 /* ADC */
 
 /*!
@@ -152,14 +152,14 @@ typedef enum
  *
  * \param [IN] scl  ADC input pin name to be used
  */
-void HW_AdcInit(  void );
+//void HW_AdcInit(  void );
 
 /*!
  * \brief DeInitializes the ADC 
  *
  * \param [IN] none
  */
-void HW_AdcDeInit( void );
+//void HW_AdcDeInit( void );
 
 /*!
  * \brief Read the analogue voltage value
@@ -167,7 +167,7 @@ void HW_AdcDeInit( void );
  * \param [IN] Channel to read
  * \retval value    Analogue pin value
  */
-uint16_t HW_AdcReadChannel( uint32_t Channel);
+//uint16_t HW_AdcReadChannel( uint32_t Channel);
 
 /*!
  * \brief Configures the sytem Clock at start-up
@@ -175,14 +175,14 @@ uint16_t HW_AdcReadChannel( uint32_t Channel);
  * \param none
  * \retval none
  */
-void SystemClock_Config( void );
+//void SystemClock_Config( void );
 
 /**
   * @brief  Configure all GPIO's to Analog input to reduce the power consumption
   * @param  None
   * @retval None
   */
-void HW_GpioInit(void);
+//void HW_GpioInit(void);
   
 
 #ifdef __cplusplus
