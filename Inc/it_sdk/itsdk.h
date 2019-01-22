@@ -30,6 +30,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <it_sdk/config.h>
 #include <it_sdk/wrappers.h>
 
 // ------------------------------------------------------------------------

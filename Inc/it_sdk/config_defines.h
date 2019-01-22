@@ -94,6 +94,12 @@
 #define __TIMER_ENABLED				0x01			// with hw timer code
 
 /**
+ * Basic enable / disable
+ */
+#define __DISABLE					0x00
+#define __ENABLE					0x01
+
+/**
  * GPIO to keep activated on low power mode
  */
 #define __LP_GPIO_NONE			0x0000
@@ -133,6 +139,8 @@
 #define __LOG_MOD_STIMER		0x00000001			// software timer module
 #define __LOG_MOD_LOWSIGFOX		0x00000002			// sigfox low level driver whatever it is
 #define __LOG_MOD_SIGFOX		0x00000004			// sigfox abstraction layer
+#define __LOG_MOD_LOWLORADBG	0x00000008			// Lora low level - debug
+#define __LOG_MOD_LOWLORAINF	0x00000010			// Lora low level - info
 
 #define __LOG_MOD_CUSTOM1		0x00010000			// User level logging
 #define __LOG_MOD_CUSTOM2		0x00020000			// User level logging
@@ -154,8 +162,9 @@
 /**
  * Supported SIGFOX Interface
  */
-#define	__SIGFOX_S2LP			0
-#define __SIGFOX_WISOL10		1
+#define __SIGFOX_NONE			0
+#define	__SIGFOX_S2LP			1
+#define __SIGFOX_WISOL10		2
 
 /**
  * NVM source for Sigfox lib
@@ -178,5 +187,12 @@
 #define	__SIGFOX_ENCRYPT_SIGFOX 1					// Sigfox payload encryption
 #define	__SIGFOX_ENCRYPT_AESCTR 2					// Custom AES-CTR encryption
 #define	__SIGFOX_ENCRYPT_SPECK  4					// Speck encryption
+
+
+/**
+ * Supported LoRaWAN Interface
+ */
+#define __LORAWAN_NONE			0					// LoRaWan disabled
+#define __LORAWAN_SX1276		1					// SX1276 like for Murata or RFM95w
 
 #endif /* IT_SDK_CONFIG_DEFINES_H_ */

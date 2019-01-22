@@ -44,7 +44,7 @@ ADC_HandleTypeDef hadc;
 #define CAL1_TEMP			30
 #define CAL1_VALUE          ((uint16_t*)((uint32_t)0x1FF8007A))
 #elif ITSDK_DEVICE == __DEVICE_STM32L053R8 || ITSDK_DEVICE == __DEVICE_STM32L072XX
-#define CAL2_TEMP			130
+#define CAL2_TEMP			110 // 130 selon DS ?
 #define CAL2_VALUE          ((uint16_t*)((uint32_t)0x1FF8007E))
 #define CAL1_TEMP			30
 #define CAL1_VALUE          ((uint16_t*)((uint32_t)0x1FF8007A))

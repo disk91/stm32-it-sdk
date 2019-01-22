@@ -29,7 +29,7 @@
 #define IT_SDK_DRIVERS_S2LP_SPI_H_
 
 #include <it_sdk/config.h>
-#include <stm32l_sdk/spi/spi.h>
+#include <it_sdk/wrappers.h>
 
 #define S2LP_SPI_DELAY		2	// 2 ms delay between chip select & SPI access
 
@@ -228,21 +228,21 @@ typedef s_S2LPStatus S2LP_SPI_StatusBytes;
 
 
 S2LP_SPI_StatusBytes s2lp_spi_writeRegisters(
-		__SPI_HANDLER_TYPE * spi,
+		ITSDK_SPI_HANDLER_TYPE * spi,
 		uint8_t cRegAddress,
         uint8_t cNbBytes,
         uint8_t* pcBuffer
 );
 
 S2LP_SPI_StatusBytes s2lp_spi_readRegisters(
-		__SPI_HANDLER_TYPE * spi,
+		ITSDK_SPI_HANDLER_TYPE * spi,
 		uint8_t cRegAddress,
         uint8_t cNbBytes,
         uint8_t* pcBuffer
 );
 
 S2LP_SPI_StatusBytes s2lp_spi_accessRaw(
-		__SPI_HANDLER_TYPE * spi,
+		ITSDK_SPI_HANDLER_TYPE * spi,
 		uint8_t*  pInBuffer,
         uint8_t*  pOutBuffer,
         uint8_t   cNbBytes

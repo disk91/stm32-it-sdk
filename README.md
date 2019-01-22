@@ -54,7 +54,7 @@ When generating the Project
 # Import the SDK (this repository)
 
 1. Clone this repository into the root of your project.
-2. Add in project properties >> C/C++ General >> Path&Symbol >> Source location the repository ItSdk directory.
+2. Add in project properties >> C/C++ General >> Path&Symbol >> Source location >> the repository ItSdk directory.
 3. Add in project properties >> C/C++ Build >> Settings >> Tool Settings >> MCU GCC Compiler >> Includes the ItSdk >> Inc directory.
 4. Copy *ItSdk/Src/project_main.c.template* file into Core/Src/project_main.c and make the modification you want to get started. 
 
@@ -115,7 +115,7 @@ Things to not forget once a cubeMx project has been created
 ```
   
 Other modifications (need to be done on every CubeMx project regeneration):
-  - GPIO - Cube Mx is setting/resetting the Gpio state on init. You need to manually comment the line in *gpio.c* to avoid the pin to be modified on MCU wake-up. The other solution is to let the gpio init as-is and add a function *void stm32l_lowPowerRestoreGpioConfig()* containing the gpio reconfiguration after wakeup.
+  - GPIO - (in gpio.c) Cube Mx is setting/resetting the Gpio state on init. You need to manually comment the line in *gpio.c* to avoid the pin to be modified on MCU wake-up. The other solution is to let the gpio init as-is and add a function *void stm32l_lowPowerRestoreGpioConfig()* containing the gpio reconfiguration after wakeup.
 
   - ADC - if you choose to not use ADC_OPTIMIZED_CODE_FOR_SIZE : remove generated adc.c/h and remove adc references in main.c 
   

@@ -44,7 +44,7 @@ void eeprom_m95640_hwInit() {
  * Needed initializations
  * Assuming the GPIO & SPI are already configured
  */
-bool eeprom_m95640_init(__SPI_HANDLER_TYPE * spi) {
+bool eeprom_m95640_init(ITSDK_SPI_HANDLER_TYPE * spi) {
 	uint8_t status;
 
 	log_debug("M95640 Init\r\n");
@@ -92,7 +92,7 @@ bool eeprom_m95640_init(__SPI_HANDLER_TYPE * spi) {
  */
 
 void eeprom_m95640_read(
-		__SPI_HANDLER_TYPE * spi,
+		ITSDK_SPI_HANDLER_TYPE * spi,
 		uint16_t nAddress,
 		uint8_t cNbBytes,
 		uint8_t* pcBuffer
@@ -110,7 +110,7 @@ void eeprom_m95640_read(
  * Write cNbBytes at nAddress from the eeprom
  */
 void eeprom_m95640_write(
-		__SPI_HANDLER_TYPE * spi,
+		ITSDK_SPI_HANDLER_TYPE * spi,
 		uint16_t nAddress,
 		uint8_t cNbBytes,
 		uint8_t* pcBuffer
@@ -127,7 +127,7 @@ void eeprom_m95640_write(
 
 
 uint8_t eeprom_m95640_getStatus(
-		__SPI_HANDLER_TYPE * spi,					// spi port to be used
+		ITSDK_SPI_HANDLER_TYPE * spi,					// spi port to be used
 		bool				 withChipSelect			// update the chip select signal when true
 												    // when false, CS must be already activ
 ){
@@ -155,7 +155,7 @@ uint8_t eeprom_m95640_getStatus(
  * Read/Write cNbBytes at nAddress from the eeprom
  */
 void eeprom_m95640_access(
-		__SPI_HANDLER_TYPE * spi,					// spi port to be used
+		ITSDK_SPI_HANDLER_TYPE * spi,					// spi port to be used
 		uint16_t nAddress,							// Address in the eeprom
 		uint8_t cNbBytes,							// Size of the data to be accessed
 		uint8_t* pcBuffer,							// Buffer where data are / where to store
@@ -239,9 +239,9 @@ void eeprom_m95640_chipUnSelected() {
  * Manage Write process
  */
 void eeprom_m95640_ensureEndOfWrite(
-		__SPI_HANDLER_TYPE * spi,					// spi port to be used
-		bool				 withChipSelect			// update the chip select signal when true
-												    // when false, CS must be already activ
+		ITSDK_SPI_HANDLER_TYPE * spi,					// spi port to be used
+		bool				 	 withChipSelect			// update the chip select signal when true
+														// when false, CS must be already activ
 ) {
   uint8_t cmd[1] = { M95640_EEPROM_CMD_RDSR };
   uint8_t dummy[1] = { 0xFF };
@@ -274,9 +274,9 @@ void eeprom_m95640_ensureEndOfWrite(
  * Allow to Write into the eeprom
  */
 void eeprom_m95640_enableWrite(
-		__SPI_HANDLER_TYPE * spi,					// spi port to be used
-		bool				 withChipSelect			// update the chip select signal when true
-												    // when false, CS must be already activ
+		ITSDK_SPI_HANDLER_TYPE * spi,					// spi port to be used
+		bool				 	 withChipSelect			// update the chip select signal when true
+												    	// when false, CS must be already activ
 ){
   uint8_t cmd[1] = { M95640_EEPROM_CMD_WREN };
   uint8_t status[1] = { 0xFF };
@@ -299,9 +299,9 @@ void eeprom_m95640_enableWrite(
  * Status Register Write Protect set to 1 => Write protected
  */
 uint8_t eeprom_m95640_setSRWD(
-		__SPI_HANDLER_TYPE * spi,					// spi port to be used
-		bool				 withChipSelect			// update the chip select signal when true
-												    // when false, CS must be already activ
+		ITSDK_SPI_HANDLER_TYPE * spi,					// spi port to be used
+		bool				     withChipSelect			// update the chip select signal when true
+												    	// when false, CS must be already activ
 ){
   uint8_t cmd[2] = {M95640_EEPROM_CMD_WRSR, M95640_EEPROM_STATUS_SRWD};
   uint8_t status[2] = {0xFF,0xFF};

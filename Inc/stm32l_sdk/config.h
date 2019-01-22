@@ -37,7 +37,7 @@ void SystemClock_Config(void);
 #include <gpio.h>
 
 // LPUART1 stuff
-#if (ITSDK_WITH_UART & __UART_LPUART1) > 0
+#if (ITSDK_WITH_UART & __UART_LPUART1) > 0 || (ITSDK_WITH_UART & __UART_USART2) > 0
 	#include <usart.h>
 #endif
 

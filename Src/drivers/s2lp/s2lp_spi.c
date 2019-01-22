@@ -60,7 +60,7 @@ void s2lp_spi_setCsHigh() {
  * Access the S2LP registers
  */
 S2LP_SPI_StatusBytes s2lp_spi_accessRegisters(
-		__SPI_HANDLER_TYPE * spi,
+		ITSDK_SPI_HANDLER_TYPE * spi,
 		uint8_t  cRegAddress,
         uint8_t  cNbBytes,
         uint8_t* pcBuffer,
@@ -131,7 +131,7 @@ S2LP_SPI_StatusBytes s2lp_spi_accessRegisters(
 }
 
 S2LP_SPI_StatusBytes s2lp_spi_accessRaw(
-		__SPI_HANDLER_TYPE * spi,
+		ITSDK_SPI_HANDLER_TYPE * spi,
 		uint8_t*  pInBuffer,
         uint8_t*  pOutBuffer,
         uint8_t   cNbBytes
@@ -182,7 +182,7 @@ S2LP_SPI_StatusBytes s2lp_spi_accessRaw(
  */
 
 S2LP_SPI_StatusBytes s2lp_spi_writeRegisters(
-		__SPI_HANDLER_TYPE * spi,
+		ITSDK_SPI_HANDLER_TYPE * spi,
 		uint8_t cRegAddress,
         uint8_t cNbBytes,
         uint8_t* pcBuffer
@@ -191,7 +191,7 @@ S2LP_SPI_StatusBytes s2lp_spi_writeRegisters(
 }
 
 S2LP_SPI_StatusBytes s2lp_spi_readRegisters(
-		__SPI_HANDLER_TYPE * spi,
+		ITSDK_SPI_HANDLER_TYPE * spi,
 		uint8_t cRegAddress,
         uint8_t cNbBytes,
         uint8_t* pcBuffer

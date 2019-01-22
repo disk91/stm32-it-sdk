@@ -116,4 +116,42 @@ typedef enum {
 void itsdk_cleanResetCause();
 itsdk_reset_cause_t itsdk_getResetCause();
 
+
+// spi
+typedef enum
+{
+  SPI_OK       = 0x00U,
+  SPI_ERROR    = 0x01U,
+  SPI_BUSY     = 0x02U,
+  SPI_TIMEOUT  = 0x03U
+} _SPI_Status;
+
+_SPI_Status spi_rwRegister(
+		ITSDK_SPI_HANDLER_TYPE * spi,
+		uint8_t	* toTransmit,
+		uint8_t * toReceive,
+		uint8_t   sizeToTransmit
+);
+
+_SPI_Status spi_readRegister(
+		ITSDK_SPI_HANDLER_TYPE * spi,
+		uint8_t	* toTransmit,
+		uint8_t * toReceive,
+		uint8_t   sizeToTransmit
+);
+
+_SPI_Status spi_write_byte(
+		ITSDK_SPI_HANDLER_TYPE * spi,
+		uint8_t Value
+);
+
+void spi_wait4TransactionEnd(
+		ITSDK_SPI_HANDLER_TYPE * spi
+);
+
+void spi_reset(
+		ITSDK_SPI_HANDLER_TYPE * spi
+);
+
+
 #endif /* STM32L_SDK_WRAPPERS_H_ */

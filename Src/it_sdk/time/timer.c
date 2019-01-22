@@ -68,11 +68,6 @@ itsdk_timer_return_t itsdk_hwtimer_sync_run(
 
 #endif
 
-#define ITSDK_WITH_HW_TIMER			__TIMER_ENABLED							// Use Hardware Timer
-#define ITSDK_HW_TIMER1_HANDLE		htim21									// Timer handler to be used as primary timer
-#define ITSDK_HW_TIMER1_FREQ		16000000								// Primary timer base frequency
-
-
 
 
 /**
