@@ -43,6 +43,7 @@
 	void __LP_GPIO_IRQHandler(uint16_t GPIO_Pin);
 	gpio_irq_chain_t __lowpwer_gpio_irq = {
 			__LP_GPIO_IRQHandler,
+			0,
 			NULL
 	};
 

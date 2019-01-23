@@ -502,6 +502,7 @@ NVM_RW_RESULTS NVM_Read(uint32_t nAddress, uint8_t cNbBytes, uint8_t* pcBuffer)
 void __GPIO_IRQHandler(uint16_t GPIO_Pin);
 gpio_irq_chain_t __sfx_gpio_irq = {
 		__GPIO_IRQHandler,
+		0,
 		NULL
 };
 volatile uint8_t __pendingIrqDelayed=0;

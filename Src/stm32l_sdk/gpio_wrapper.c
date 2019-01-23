@@ -52,15 +52,28 @@ GPIO_TypeDef * getPortFromBankId(uint8_t bankId) {
 	return NULL;
 }
 
+/**
+ * Convert the pin vector (every pin is corresponding to a single bit) to a pin number.
+ * Internal
+ */
+uint8_t getPinNumFromPinVector(uint16_t pinId) {
+	uint8_t pinPos=0;
+	if ( ( pinId & 0xFF00 ) != 0) { pinPos |= 0x8; }
+	if ( ( pinId & 0xF0F0 ) != 0) { pinPos |= 0x4; }
+	if ( ( pinId & 0xCCCC ) != 0) { pinPos |= 0x2; }
+	if ( ( pinId & 0xAAAA ) != 0) { pinPos |= 0x1; }
+	return pinPos;
+}
 
 /**
  * Convert a GPIO bank/pin into the corresponding ExtI line
  */
 IRQn_Type getIrqFromBankPin(uint8_t bankId, uint16_t id) {
 
-	if ( id <= 1 ) {
+	uint8_t pinPos = getPinNumFromPinVector(id);
+	if ( pinPos <= 1 ) {
 		return EXTI0_1_IRQn;
-	} else if ( id <= 3 ) {
+	} else if ( pinPos <= 3 ) {
 		return EXTI2_3_IRQn;
 	} else {
 		return EXTI4_15_IRQn;
@@ -211,14 +224,16 @@ void gpio_interruptClear(uint8_t bank, uint16_t id) {
 
 /**
  * RCT Interrupt handler allowing to chain different function
+ * The callback function will be fired when pinMask is matching or
+ * equal to 0.
  */
-gpio_irq_chain_t __gpio_irq_chain = { NULL, NULL };
+gpio_irq_chain_t __gpio_irq_chain = { NULL, 0, NULL };
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 	gpio_irq_chain_t * c = &__gpio_irq_chain;
 	while ( c != NULL ) {
 		void (*p)(uint16_t p) = c->irq_func;
-		if ( p != NULL ) {
+		if ( p != NULL && (c->pinMask==0 || ((c->pinMask & GPIO_Pin) > 0) ) ) {
 			p(GPIO_Pin);
 		}
 		c = c->next;

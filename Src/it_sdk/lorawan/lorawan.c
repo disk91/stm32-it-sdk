@@ -98,7 +98,11 @@ __weak void itsdk_lorawan_onJoinSuccess() {
 /**
  * Callback function on JOIN Success
  */
-__weak void itsdk_lorawan_onConfirmClass(DeviceClass_t class) {
+void itsdk_lorawan_onConfirmClass_internal(DeviceClass_t class) {
+	itsdk_lorawan_onConfirmClass((itsdk_lorawan_dev_class)class);
+}
+
+__weak void itsdk_lorawan_onConfirmClass(itsdk_lorawan_dev_class class) {
    log_info("[LoRaWAN] Class switch to %d confirmed\r\n","ABC"[class]);
 }
 
@@ -133,10 +137,10 @@ itsdk_lorawan_init_t itsdk_lorawan_setup() {
 													itsdk_getRandomSeed,
 													itsdk_lorawan_ReceiveData,
 													itsdk_lorawan_onJoinSuccess,
-													itsdk_lorawan_onConfirmClass,
+													itsdk_lorawan_onConfirmClass_internal,
 													itsdk_lorawan_onTxNeeded,
 													itsdk_lorawan_macProcessNotify,
-													itsdk_lorawan_uplinkAckConfirmed};
+													/*itsdk_lorawan_uplinkAckConfirmed*/};
 	static LoRaParam_t LoRaParamInit = {LORAWAN_ADR_ON,
 	                                    DR_0,
 										#if ITSDK_LORAWAN_NETWORKTYPE == __LORAWAN_NWK_PUBLIC
@@ -147,6 +151,7 @@ itsdk_lorawan_init_t itsdk_lorawan_setup() {
 	                                    };
 	LORA_Init(&LoRaMainCallbacks, &LoRaParamInit);
 
+	return LORAWAN_INIT_SUCESS;
 }
 
 

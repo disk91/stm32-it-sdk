@@ -85,6 +85,7 @@ typedef enum {
 
 typedef struct s_gpio_irq_chain {
 	void (*irq_func)(uint16_t GPIO_Pin);
+	uint16_t pinMask;
 	struct s_gpio_irq_chain * next;
 } gpio_irq_chain_t;
 

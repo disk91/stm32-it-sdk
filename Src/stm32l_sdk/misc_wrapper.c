@@ -85,11 +85,11 @@ uint32_t itsdk_getRandomSeed() {
  */
 void itsdk_getUniqId(uint8_t * id, int8_t size){
 
-	uint32_t i = ( *( uint32_t* )STM32_ID1 ) << 16 + ( *( uint32_t* )STM32_ID2 )  << 8 + (*( uint32_t* )STM32_ID3 );
+	uint32_t i = (( *( uint32_t* )STM32_ID1 ) << 16) + (( *( uint32_t* )STM32_ID2 )  << 8) + (*( uint32_t* )STM32_ID3 );
 	uint8_t l=0;
 	uint32_t s=i;
 	while ( l < size ) {
-		if ( l & 0x3 == 0 ) {
+		if ( (l & 0x3) == 0 ) {
 			switch ( (l >> 2) & 3 ) {
 				case 0:	s = i ^ STM32_ID1; break;
 				case 1: s = i ^ STM32_ID2; break;
@@ -98,7 +98,7 @@ void itsdk_getUniqId(uint8_t * id, int8_t size){
 				case 3: s = i; break;
 			}
 		}
-		id[l] = ( i >> (8*(l&3))) & 0xFF;
+		id[l] = ( s >> (8*(l&3))) & 0xFF;
 		l++;
 	}
 

@@ -32,6 +32,13 @@ typedef enum {
 	LORAWAN_INIT_FAILED
 } itsdk_lorawan_init_t;
 
+typedef enum {
+	LORAWAN_DEVICE_CLASS_A = 0,
+	LORAWAN_DEVICE_CLASS_B,
+	LORAWAN_DEVICE_CLASS_C
+} itsdk_lorawan_dev_class;
+
+itsdk_lorawan_init_t itsdk_lorawan_setup();
 
 // ===============================================================
 // TO BE OVERRIDDED
@@ -49,7 +56,7 @@ void itsdk_lorawan_onDataReception(uint8_t port, uint8_t * data, uint8_t size);
 // Function automatically fired on join success
 void itsdk_lorawan_onJoinSuccess();
 // Function automatically fired on device class change confirmation
-void itsdk_lorawan_onConfirmClass(DeviceClass_t class);
+void itsdk_lorawan_onConfirmClass(itsdk_lorawan_dev_class class);
 // Function automatically fired when the network is requesting a Uplink transmission
 void itsdk_lorawan_onTxNeeded();
 // Function automatically fired when the network server has confirmed ack reception
