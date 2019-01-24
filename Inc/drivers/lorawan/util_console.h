@@ -39,9 +39,7 @@ extern "C"
 
 #define PPRINTF(...) 			log_info(__VA_ARGS__)
 #define PRINTF(...)     		log_info(__VA_ARGS__)
-#define PRINTNOW()     			do { 													\
-									log_info("%d: ",(uint32_t)itsdk_time_get_ms());		\
-								} while(0);
+#define PRINTNOW()     			log_info("%d: ",(uint32_t)itsdk_time_get_ms())
 
 #if (ITSDK_LOGGER_MODULE & __LOG_MOD_LOWLORADBG) > 0
 	#define TVL1(X)		X

@@ -32,6 +32,8 @@ Maintainer: Miguel Luis, Gregory Cristian and Wael Guibene
 
 /* Includes ------------------------------------------------------------------*/
 #include <it_sdk/itsdk.h>
+#include <it_sdk/time/timer.h>
+#include <it_sdk/logger/logger.h>
 
 #include <time.h>
 #include <drivers/lorawan/timeServer.h>
@@ -108,13 +110,111 @@ void TimerInit( TimerEvent_t *obj, void ( *callback )( void *context ) )
   obj->Next = NULL;
 }
 
+static bool TimerExists( TimerEvent_t *obj )
+{
+  TimerEvent_t* cur = TimerListHead;
+
+  while( cur != NULL )
+  {
+    if( cur == obj )
+    {
+      return true;
+    }
+    cur = cur->Next;
+  }
+  return false;
+}
+
+
+/**
+ * This is changing the parameter pass to the callback function at timer expiration
+ * Here we search the itsdk timer structure based on previous context value then we
+ * change it. Both structure are kept up-to-date.
+ */
 void TimerSetContext( TimerEvent_t *obj, void* context )
 {
-  obj->Context = context;
+	log_debug("TimerSetContext\r\n");
+
+	// search the real timer based on the context
+	itsdk_stimer_slot_t * t = itsdk_stimer_get(obj->Callback,(uint32_t)obj->Context);
+	if ( t != NULL ) {
+		t->customValue = (uint32_t)(context);
+	} else {
+		// the timer is not running, so we just need to update the local structure
+		log_info("TimerSetContext - not running \r\n");
+	}
+	obj->Context = context;
 }
+
+/**
+ * This is changing the duration of the timer. The value is given in ms.
+ * We search for the itsdk timer structure and update it when running.
+ * If not running the timestamp field will keep the value in ms.
+ */
+void TimerSetValue( TimerEvent_t *obj, uint32_t value )
+{
+	log_debug("TimerSetValue %d\r\n",value);
+	// search the real timer based on the context
+	itsdk_stimer_slot_t * t = itsdk_stimer_get(obj->Callback,(uint32_t)obj->Context);
+	if ( t != NULL ) {
+		// best is to stop the timer and restart it with the new duration
+		TimerStop(obj);
+		obj->Timestamp = value;
+		obj->ReloadValue = value;
+		TimerStart(obj);
+	} else {
+		// the timer is not running, so we just need to update the local structure
+		log_info("TimerSetValue - not running \r\n");
+		obj->Timestamp = value;
+		obj->ReloadValue = value;
+	}
+
+/*
+  uint32_t minValue = 0;
+  uint32_t ticks = HW_RTC_ms2Tick( value );
+
+  TimerStop( obj );
+
+  minValue = HW_RTC_GetMinimumTimeout( );
+
+  if( ticks < minValue )
+  {
+    ticks = minValue;
+  }
+
+  obj->Timestamp = ticks;
+  obj->ReloadValue = ticks;
+  */
+}
+
+/**
+ * Force the timer expiration at Timestamp???
+ * C'est quoi la difference avec start ?
+ */
+static void TimerSetTimeout( TimerEvent_t *obj )
+{
+  int32_t minTicks= HW_RTC_GetMinimumTimeout( );
+  obj->IsNext2Expire = true;
+
+  // In case deadline too soon
+  if(obj->Timestamp  < (HW_RTC_GetTimerElapsedTime(  ) + minTicks) )
+  {
+    obj->Timestamp = HW_RTC_GetTimerElapsedTime(  ) + minTicks;
+  }
+  HW_RTC_SetAlarm( obj->Timestamp );
+}
+
 
 void TimerStart( TimerEvent_t *obj )
 {
+/*
+	itsdk_timer_return_t r = itsdk_stimer_register(
+			obj->
+	);
+*/
+
+
+
   uint32_t elapsedTime = 0;
   
   BACKUP_PRIMASK();
@@ -151,68 +251,6 @@ void TimerStart( TimerEvent_t *obj )
     }
   }
   RESTORE_PRIMASK( );
-}
-
-
-
-bool TimerIsStarted( TimerEvent_t *obj )
-{
-  return obj->IsStarted;
-}
-
-void TimerIrqHandler( void )
-{
-  TimerEvent_t* cur;
-  TimerEvent_t* next;
-  
-
-  
-  uint32_t old =  HW_RTC_GetTimerContext( );
-  uint32_t now =  HW_RTC_SetTimerContext( );
-  uint32_t DeltaContext = now - old; //intentionnal wrap around
-  
-  /* Update timeStamp based upon new Time Reference*/
-  /* because delta context should never exceed 2^32*/
-  if ( TimerListHead != NULL )
-  {
-    for (cur=TimerListHead; cur->Next != NULL; cur= cur->Next)
-    {
-      next =cur->Next;
-      if (next->Timestamp > DeltaContext)
-      {
-        next->Timestamp -= DeltaContext;
-      }
-      else
-      {
-        next->Timestamp = 0 ;
-      }
-    }
-  }
-  
-  /* execute imediately the alarm callback */
-  if ( TimerListHead != NULL )
-  {
-    cur = TimerListHead;
-    TimerListHead = TimerListHead->Next;
-    cur->IsStarted = false;
-    exec_cb( cur->Callback, cur->Context );
-  }
-
-
-  // remove all the expired object from the list
-  while( ( TimerListHead != NULL ) && ( TimerListHead->Timestamp < HW_RTC_GetTimerElapsedTime(  )  ))
-  {
-   cur = TimerListHead;
-   TimerListHead = TimerListHead->Next;
-   cur->IsStarted = false;
-   exec_cb( cur->Callback, cur->Context );
-  }
-
-  /* start the next TimerListHead if it exists AND NOT running */
-  if( ( TimerListHead != NULL ) && ( TimerListHead->IsNext2Expire == false ) )
-  {
-    TimerSetTimeout( TimerListHead );
-  }
 }
 
 void TimerStop( TimerEvent_t *obj ) 
@@ -290,7 +328,6 @@ void TimerStop( TimerEvent_t *obj )
   
   RESTORE_PRIMASK( );
 }  
-  
 
 
 void TimerReset( TimerEvent_t *obj )
@@ -299,23 +336,72 @@ void TimerReset( TimerEvent_t *obj )
   TimerStart( obj );
 }
 
-void TimerSetValue( TimerEvent_t *obj, uint32_t value )
+bool TimerIsStarted( TimerEvent_t *obj )
 {
-  uint32_t minValue = 0;
-  uint32_t ticks = HW_RTC_ms2Tick( value );
+  return obj->IsStarted;
+}
 
-  TimerStop( obj );
+void TimerIrqHandler( void )
+{
+  TimerEvent_t* cur;
+  TimerEvent_t* next;
 
-  minValue = HW_RTC_GetMinimumTimeout( );
-  
-  if( ticks < minValue )
+
+
+  uint32_t old =  HW_RTC_GetTimerContext( );
+  uint32_t now =  HW_RTC_SetTimerContext( );
+  uint32_t DeltaContext = now - old; //intentionnal wrap around
+
+  /* Update timeStamp based upon new Time Reference*/
+  /* because delta context should never exceed 2^32*/
+  if ( TimerListHead != NULL )
   {
-    ticks = minValue;
+    for (cur=TimerListHead; cur->Next != NULL; cur= cur->Next)
+    {
+      next =cur->Next;
+      if (next->Timestamp > DeltaContext)
+      {
+        next->Timestamp -= DeltaContext;
+      }
+      else
+      {
+        next->Timestamp = 0 ;
+      }
+    }
   }
 
-  obj->Timestamp = ticks;
-  obj->ReloadValue = ticks;
+  /* execute imediately the alarm callback */
+  if ( TimerListHead != NULL )
+  {
+    cur = TimerListHead;
+    TimerListHead = TimerListHead->Next;
+    cur->IsStarted = false;
+    exec_cb( cur->Callback, cur->Context );
+  }
+
+
+  // remove all the expired object from the list
+  while( ( TimerListHead != NULL ) && ( TimerListHead->Timestamp < HW_RTC_GetTimerElapsedTime(  )  ))
+  {
+   cur = TimerListHead;
+   TimerListHead = TimerListHead->Next;
+   cur->IsStarted = false;
+   exec_cb( cur->Callback, cur->Context );
+  }
+
+  /* start the next TimerListHead if it exists AND NOT running */
+  if( ( TimerListHead != NULL ) && ( TimerListHead->IsNext2Expire == false ) )
+  {
+    TimerSetTimeout( TimerListHead );
+  }
 }
+
+
+
+
+
+
+
 
 TimerTime_t TimerGetCurrentTime( void )
 {
@@ -331,32 +417,7 @@ TimerTime_t TimerGetElapsedTime( TimerTime_t past )
   return HW_RTC_Tick2ms( nowInTicks- pastInTicks );
 }
 
-static bool TimerExists( TimerEvent_t *obj )
-{
-  TimerEvent_t* cur = TimerListHead;
 
-  while( cur != NULL )
-  {
-    if( cur == obj )
-    {
-      return true;
-    }
-    cur = cur->Next;
-  }
-  return false;
-}
-static void TimerSetTimeout( TimerEvent_t *obj )
-{
-  int32_t minTicks= HW_RTC_GetMinimumTimeout( );
-  obj->IsNext2Expire = true; 
-
-  // In case deadline too soon
-  if(obj->Timestamp  < (HW_RTC_GetTimerElapsedTime(  ) + minTicks) )
-  {
-    obj->Timestamp = HW_RTC_GetTimerElapsedTime(  ) + minTicks;
-  }
-  HW_RTC_SetAlarm( obj->Timestamp );
-}
 
 TimerTime_t TimerTempCompensation( TimerTime_t period, float temperature )
 {

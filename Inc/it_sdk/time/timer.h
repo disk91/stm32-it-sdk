@@ -72,6 +72,11 @@ itsdk_timer_return_t itsdk_stimer_stop(
 		uint32_t value
 );
 
+itsdk_stimer_slot_t * itsdk_stimer_get(
+		void (*callback_func)(uint32_t value),
+		uint32_t value
+);
+
 bool itsdk_stimer_isRunning(
 		void (*callback_func)(uint32_t value),
 		uint32_t value

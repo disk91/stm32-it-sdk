@@ -163,8 +163,9 @@ static void TraceBeaconInfo(MlmeIndication_t *mlmeIndication);
  */
 static void McpsConfirm( McpsConfirm_t *mcpsConfirm )
 {
+
     TVL2( PRINTNOW(); PRINTF("APP> McpsConfirm STATUS: %s\r\n", EventInfoStatusStrings[mcpsConfirm->Status] ); )
-  
+
     if( mcpsConfirm->Status == LORAMAC_EVENT_INFO_STATUS_OK )
     {
         switch( mcpsConfirm->McpsRequest )
@@ -192,8 +193,9 @@ static void McpsConfirm( McpsConfirm_t *mcpsConfirm )
         }
     }
     
-    /*implicitely desactivated when VERBOSE_LEVEL < 2*/
+    //implicitely desactivated when VERBOSE_LEVEL < 2
     TraceUpLinkFrame(mcpsConfirm);
+
 }
 
 /*!
@@ -205,7 +207,7 @@ static void McpsConfirm( McpsConfirm_t *mcpsConfirm )
 static void McpsIndication( McpsIndication_t *mcpsIndication )
 {
     TVL2( PRINTNOW(); PRINTF("APP> McpsInd STATUS: %s\r\n", EventInfoStatusStrings[mcpsIndication->Status] );)
-    
+
     lora_AppData_t AppData;
     if( mcpsIndication->Status != LORAMAC_EVENT_INFO_STATUS_OK )
     {
@@ -823,6 +825,10 @@ void LORA_GetCurrentClass( DeviceClass_t *currentClass )
 }
 
 
+
+/**
+ * @TODO bug la dedans il y a une ref aAppData qui n'est pas global !!!
+ */
 static void TraceUpLinkFrame(McpsConfirm_t *mcpsConfirm)
 {
 

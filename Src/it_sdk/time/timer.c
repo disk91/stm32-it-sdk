@@ -47,7 +47,7 @@
 #if ITSDK_WITH_HW_TIMER > 0
 
 /**
- * Run the timer for the given time. Sync mode, return only after timer execution
+ * Run the timer for the given time. Sync mode: returns only after timer execution
  * At end the callback_func is called with value as parameter. If NULL the function
  * just return.
  */
@@ -147,6 +147,18 @@ bool itsdk_stimer_isRunning(
 		void (*callback_func)(uint32_t value),
 		uint32_t value
 ) {
+
+	itsdk_stimer_slot_t * t = itsdk_stimer_get(callback_func,value);
+	return ( t != NULL );
+}
+
+/**
+ * Get a timer structure from callback & value
+ */
+itsdk_stimer_slot_t * itsdk_stimer_get(
+		void (*callback_func)(uint32_t value),
+		uint32_t value
+) {
 	for (int i=0 ; i < ITSDK_TIMER_SLOTS ; i++) {
 		if (
 				__stimer_slots[i].inUse == true
@@ -154,10 +166,11 @@ bool itsdk_stimer_isRunning(
 			&&  __stimer_slots[i].callback_func == callback_func
 		) {
 			// found
-			return true;
+			return  &__stimer_slots[i];
 		}
 	}
-	return false;
+	return NULL;
+
 }
 
 
