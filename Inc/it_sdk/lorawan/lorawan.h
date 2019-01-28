@@ -38,7 +38,8 @@ typedef enum {
 	LORAWAN_DEVICE_CLASS_C
 } itsdk_lorawan_dev_class;
 
-itsdk_lorawan_init_t itsdk_lorawan_setup();
+itsdk_lorawan_init_t itsdk_lorawan_setup(uint16_t region);
+itsdk_lorawan_init_t itsdk_lorawan_join();
 
 // ===============================================================
 // TO BE OVERRIDDED

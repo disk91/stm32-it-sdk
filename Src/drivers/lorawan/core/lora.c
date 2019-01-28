@@ -98,11 +98,6 @@ static MibRequestConfirm_t mibReq;
 
 static LoRaMainCallback_t *LoRaMainCallbacks;
 
-extern lora_AppData_t AppData;
-
-
-
-
 
 /*!
  * MAC event info status strings.
@@ -208,7 +203,7 @@ static void McpsIndication( McpsIndication_t *mcpsIndication )
 {
     TVL2( PRINTNOW(); PRINTF("APP> McpsInd STATUS: %s\r\n", EventInfoStatusStrings[mcpsIndication->Status] );)
 
-    lora_AppData_t AppData;
+    lora_AppData_t _AppData;
     if( mcpsIndication->Status != LORAMAC_EVENT_INFO_STATUS_OK )
     {
         return;
@@ -265,11 +260,11 @@ static void McpsIndication( McpsIndication_t *mcpsIndication )
           break;
         default:
           
-          AppData.Port = mcpsIndication->Port;
-          AppData.BuffSize = mcpsIndication->BufferSize;
-          AppData.Buff = mcpsIndication->Buffer;
+          _AppData.Port = mcpsIndication->Port;
+          _AppData.BuffSize = mcpsIndication->BufferSize;
+          _AppData.Buff = mcpsIndication->Buffer;
         
-          LoRaMainCallbacks->LORA_RxData( &AppData );
+          LoRaMainCallbacks->LORA_RxData( &_AppData );
           break;
       }
     }
@@ -442,7 +437,7 @@ static void MlmeIndication( MlmeIndication_t *MlmeIndication )
 /**
  *  lora Init
  */
-void LORA_Init (LoRaMainCallback_t *callbacks, LoRaParam_t* LoRaParam )
+void LORA_Init (LoRaMainCallback_t *callbacks, LoRaParam_t* LoRaParam, uint16_t region )
 {
   /* init the Tx Duty Cycle*/
   LoRaParamInit = LoRaParam;
@@ -481,24 +476,66 @@ void LORA_Init (LoRaMainCallback_t *callbacks, LoRaParam_t* LoRaParam )
         LoRaMacCallbacks.GetBatteryLevel = LoRaMainCallbacks->BoardGetBatteryLevel;
         LoRaMacCallbacks.GetTemperatureLevel = LoRaMainCallbacks->BoardGetTemperatureLevel;
         LoRaMacCallbacks.MacProcessNotify = LoRaMainCallbacks->MacProcessNotify;
+        switch ( region ) {
 #if defined( REGION_AS923 )
-        LoRaMacInitialization( &LoRaMacPrimitives, &LoRaMacCallbacks, LORAMAC_REGION_AS923 );
-#elif defined( REGION_AU915 )
-        LoRaMacInitialization( &LoRaMacPrimitives, &LoRaMacCallbacks, LORAMAC_REGION_AU915 );
-#elif defined( REGION_CN470 )
-        LoRaMacInitialization( &LoRaMacPrimitives, &LoRaMacCallbacks, LORAMAC_REGION_CN470 );
-#elif defined( REGION_CN779 )
-        LoRaMacInitialization( &LoRaMacPrimitives, &LoRaMacCallbacks, LORAMAC_REGION_CN779 );
-#elif defined( REGION_EU433 )
-        LoRaMacInitialization( &LoRaMacPrimitives, &LoRaMacCallbacks, LORAMAC_REGION_EU433 );
- #elif defined( REGION_IN865 )
-        LoRaMacInitialization( &LoRaMacPrimitives, &LoRaMacCallbacks, LORAMAC_REGION_IN865 );
-#elif defined( REGION_EU868 )
-        LoRaMacInitialization( &LoRaMacPrimitives, &LoRaMacCallbacks, LORAMAC_REGION_EU868 );
-#elif defined( REGION_KR920 )
-        LoRaMacInitialization( &LoRaMacPrimitives, &LoRaMacCallbacks, LORAMAC_REGION_KR920 );
-#elif defined( REGION_US915 )
-        LoRaMacInitialization( &LoRaMacPrimitives, &LoRaMacCallbacks, LORAMAC_REGION_US915 );
+        case __LORAWAN_REGION_AS923:
+        	LoRaMacInitialization( &LoRaMacPrimitives, &LoRaMacCallbacks, LORAMAC_REGION_AS923 );
+        	break;
+#endif
+#if defined( REGION_AU915 )
+        case __LORAWAN_REGION_AU915:
+            LoRaMacInitialization( &LoRaMacPrimitives, &LoRaMacCallbacks, LORAMAC_REGION_AU915 );
+            break;
+#endif
+#if defined( REGION_CN470 )
+        case __LORAWAN_REGION_CN470:
+        	LoRaMacInitialization( &LoRaMacPrimitives, &LoRaMacCallbacks, LORAMAC_REGION_CN470 );
+        	break;
+#endif
+#if defined( REGION_CN779 )
+        case __LORAWAN_REGION_CN779:
+            LoRaMacInitialization( &LoRaMacPrimitives, &LoRaMacCallbacks, LORAMAC_REGION_CN779 );
+            break;
+#endif
+#if defined( REGION_EU433 )
+        case __LORAWAN_REGION_EU433:
+        	LoRaMacInitialization( &LoRaMacPrimitives, &LoRaMacCallbacks, LORAMAC_REGION_EU433 );
+        	break;
+#endif
+#if defined( REGION_EU868 )
+        case __LORAWAN_REGION_EU868:
+        	log_info("1\r\n");
+        	LoRaMacInitialization( &LoRaMacPrimitives, &LoRaMacCallbacks, LORAMAC_REGION_EU868 );
+        	log_info("2\r\n");
+        	break;
+#endif
+#if defined( REGION_KR920 )
+        case __LORAWAN_REGION_KR920:
+        	LoRaMacInitialization( &LoRaMacPrimitives, &LoRaMacCallbacks, LORAMAC_REGION_KR920 );
+        	break;
+#endif
+#if defined( REGION_IN865 )
+        case __LORAWAN_REGION_IN865:
+        	LoRaMacInitialization( &LoRaMacPrimitives, &LoRaMacCallbacks, LORAMAC_REGION_IN865 );
+        	break;
+#endif
+#if defined( REGION_US915 )
+        case __LORAWAN_REGION_US915:
+        	break;
+#endif
+#if defined( REGION_RU864 )
+        case __LORAWAN_REGION_RU864:
+        	LoRaMacInitialization( &LoRaMacPrimitives, &LoRaMacCallbacks, LORAMAC_REGION_RU864 );
+        	break;
+#endif
+        default:
+        	return;
+        }
+
+#if ITSDK_LORAWAN_REGION_ALLOWED == __LORAWAN_REGION_NONE
+	#error "Please define a region in the compiler options."
+#endif
+
 
 #if defined( HYBRID )
                 uint16_t channelMask[] = { 0x00FF, 0x0000, 0x0000, 0x0000, 0x0001, 0x0000};
@@ -509,42 +546,48 @@ void LORA_Init (LoRaMainCallback_t *callbacks, LoRaParam_t* LoRaParam )
                 mibReq.Param.ChannelsDefaultMask = channelMask;
                 LoRaMacMibSetRequestConfirm( &mibReq );
 #endif
-#elif defined( REGION_RU864 )
-        LoRaMacInitialization( &LoRaMacPrimitives, &LoRaMacCallbacks, LORAMAC_REGION_RU864 );
-#else
-    #error "Please define a region in the compiler options."
-#endif
       
       mibReq.Type = MIB_ADR;
       mibReq.Param.AdrEnable = LoRaParamInit->AdrEnable;
       LoRaMacMibSetRequestConfirm( &mibReq );
+  	log_info("3\r\n");
 
       mibReq.Type = MIB_PUBLIC_NETWORK;
       mibReq.Param.EnablePublicNetwork = LoRaParamInit->EnablePublicNetwork;
       LoRaMacMibSetRequestConfirm( &mibReq );
-      
+  	log_info("4\r\n");
+
       mibReq.Type = MIB_APP_KEY;
       mibReq.Param.AppKey = AppKey;
       LoRaMacMibSetRequestConfirm( &mibReq );
+  	log_info("5\r\n");
 
       mibReq.Type = MIB_NWK_KEY;
       mibReq.Param.NwkKey = NwkKey;
       LoRaMacMibSetRequestConfirm( &mibReq );      
-                      
+  	log_info("6\r\n");
+
       mibReq.Type = MIB_DEVICE_CLASS;
       mibReq.Param.Class= CLASS_A;
       LoRaMacMibSetRequestConfirm( &mibReq );
+  	log_info("7\r\n");
 
 #if defined( REGION_EU868 )
-      LoRaMacTestSetDutyCycleOn( LORAWAN_DUTYCYCLE_ON );
+      if ( region == __LORAWAN_REGION_EU868 ) {
+    	  LoRaMacTestSetDutyCycleOn( LORAWAN_DUTYCYCLE_ON );
+      }
 #endif
-      
+  	log_info("8\r\n");
+
       mibReq.Type = MIB_SYSTEM_MAX_RX_ERROR;
       mibReq.Param.SystemMaxRxError = 20;
       LoRaMacMibSetRequestConfirm( &mibReq );
+  	log_info("9\r\n");
 
       /*set Mac statein Idle*/
       LoRaMacStart( );
+  	log_info("10\r\n");
+
 }
 
 
@@ -842,8 +885,8 @@ static void TraceUpLinkFrame(McpsConfirm_t *mcpsConfirm)
     TVL2( PRINTNOW(); PRINTF("#= U/L FRAME %lu =# Class %c, Port %d, data size %d, pwr %d, ", \
                              mcpsConfirm->UpLinkCounter, \
                              "ABC"[mibReq.Param.Class], \
-                             AppData.Port, \
-                             AppData.BuffSize, \
+                             0, /*AppData.Port,*/ \
+                             0, /*AppData.BuffSize,*/ \
                              mcpsConfirm->TxPower );)
 
     mibGet.Type  = MIB_CHANNELS_MASK;

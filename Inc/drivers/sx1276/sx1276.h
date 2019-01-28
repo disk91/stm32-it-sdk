@@ -42,8 +42,22 @@
 #ifndef __SX1276_H__
 #define __SX1276_H__
 
+#include <it_sdk/config.h>
+#include <it_sdk/logger/logger.h>
 #include "sx1276Regs-Fsk.h"
 #include "sx1276Regs-LoRa.h"
+
+#if (ITSDK_LOGGER_MODULE & __LOG_MOD_LOWLORADBG) > 0
+#define LOG_INFO_SX1276(x)		log_info x
+#define LOG_WARN_SX1276(x) 		log_warn x
+#define LOG_ERROR_SX1276(x)		log_error x
+#define LOG_DEBUG_SX1276(x)		log_debug x
+#else
+#define LOG_INFO_S2LP(x)
+#define LOG_WARN_S2LP(x)
+#define LOG_ERROR_S2LP(x)
+#define LOG_DEBUG_S2LP(x)
+#endif
 
 /*!
  * Radio wake-up time from sleep

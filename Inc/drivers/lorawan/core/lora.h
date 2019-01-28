@@ -210,9 +210,10 @@ void ( *MacProcessNotify )( void );
  * @brief Lora Initialisation
  * @param [IN] LoRaMainCallback_t
  * @param [IN] application parmaters
+ * @param [IN] Region to connect to (see __LORAWAN_REGION_XXYYY )
  * @retval none
  */
-void LORA_Init (LoRaMainCallback_t *callbacks, LoRaParam_t* LoRaParam );
+void LORA_Init (LoRaMainCallback_t *callbacks, LoRaParam_t* LoRaParam, uint16_t region  );
 
 /**
  * @brief run Lora classA state Machine 

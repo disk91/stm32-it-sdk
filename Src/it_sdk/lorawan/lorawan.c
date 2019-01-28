@@ -129,7 +129,11 @@ __weak void itsdk_lorawan_uplinkAckConfirmed() {
     log_info("[LoRaWAN] Network Server \"ack\" an uplink data confirmed message transmission\r\n");
 }
 
-itsdk_lorawan_init_t itsdk_lorawan_setup() {
+/**
+ * Init the LoRaWan Stack
+ */
+itsdk_lorawan_init_t itsdk_lorawan_setup(uint16_t region) {
+	log_info("itsdk_lorawan_setup\r\n");
 
 	static LoRaMainCallback_t LoRaMainCallbacks = { itsdk_lorawan_battery_level,
 													itsdk_lorawan_temerature,
@@ -149,10 +153,23 @@ itsdk_lorawan_init_t itsdk_lorawan_setup() {
 										   false
 										#endif
 	                                    };
-	LORA_Init(&LoRaMainCallbacks, &LoRaParamInit);
+	LORA_Init(&LoRaMainCallbacks, &LoRaParamInit, region);
 
 	return LORAWAN_INIT_SUCESS;
 }
+
+/**
+ * Join Process
+ */
+itsdk_lorawan_init_t itsdk_lorawan_join() {
+	log_info("itsdk_lorawan_join\r\n");
+
+	LORA_Join();
+	return LORAWAN_INIT_SUCESS;
+
+}
+
+
 
 
 
