@@ -177,6 +177,7 @@ static void TimerInsertTimer( TimerEvent_t *obj)
  */
 static void TimerCallback( uint32_t value ) {
 
+	log_debug("TimerCallback\r\n");
 
 	TimerEvent_t *obj = (TimerEvent_t *)value;
 	obj->IsStarted = false;

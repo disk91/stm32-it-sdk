@@ -33,7 +33,9 @@
 
 #if ITSDK_WITH_LORAWAN_LIB == __ENABLE
 #include <drivers/lorawan/core/lora.h>
+#include <drivers/lorawan/phy/radio.h>
 #include <it_sdk/lorawan/lorawan.h>
+
 
 
 /**
@@ -52,7 +54,7 @@ __weak uint8_t itsdk_lorawan_battery_level() {
  * Return the temperature
  * temperature in fixed decimal : 8b integer + 8b decimal
  */
-uint16_t itsdk_lorawan_temerature() {
+uint16_t itsdk_lorawan_temperature() {
 	int16_t t = adc_getTemperature();
 	t = (int16_t)(((int32_t)t << 8)/100);
 	return (uint16_t)t;
@@ -135,8 +137,11 @@ __weak void itsdk_lorawan_uplinkAckConfirmed() {
 itsdk_lorawan_init_t itsdk_lorawan_setup(uint16_t region) {
 	log_info("itsdk_lorawan_setup\r\n");
 
+	// Init hardware
+	Radio.IoInit();
+
 	static LoRaMainCallback_t LoRaMainCallbacks = { itsdk_lorawan_battery_level,
-													itsdk_lorawan_temerature,
+													itsdk_lorawan_temperature,
 													itsdk_lorawan_getUniqId,
 													itsdk_getRandomSeed,
 													itsdk_lorawan_ReceiveData,
