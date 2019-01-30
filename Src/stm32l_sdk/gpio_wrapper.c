@@ -230,10 +230,13 @@ void gpio_interruptClear(uint8_t bank, uint16_t id) {
 gpio_irq_chain_t __gpio_irq_chain = { NULL, 0, NULL };
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
+#warning REMOVE COMMENTS
+	log_info("IRQ(%d)\r\n",GPIO_Pin);
 	gpio_irq_chain_t * c = &__gpio_irq_chain;
 	while ( c != NULL ) {
 		void (*p)(uint16_t p) = c->irq_func;
 		if ( p != NULL && (c->pinMask==0 || ((c->pinMask & GPIO_Pin) > 0) ) ) {
+			log_info("Callback\r\n");
 			p(GPIO_Pin);
 		}
 		c = c->next;

@@ -32,30 +32,33 @@ Maintainer: Miguel Luis and Gregory Cristian
 
 #ifndef __UTILITIES_H__
 #define __UTILITIES_H__
+#include <it_sdk/config.h>
+#include <it_sdk/wrappers.h>
+#include <it_sdk/logger/logger.h>
 
 #include "util_console.h"
 #include "trace.h"
-/* BACKUP_PRIMASK MUST be implemented at the begining of the funtion 
+/* BACKUP_PRIMASK MUST be implemented at the begining of the function
    that implement a critical section                        
-   PRIMASK is saved on STACK and recovered at the end of the funtion
+   PRIMASK is saved on STACK and recovered at the end of the function
    That way RESTORE_PRIMASK ensures critical sections are maintained even in nested calls...*/
-#define BACKUP_PRIMASK()  uint32_t primask_bit= __get_PRIMASK()
-#define DISABLE_IRQ() __disable_irq()
-#define ENABLE_IRQ() __enable_irq()
-#define RESTORE_PRIMASK() __set_PRIMASK(primask_bit)
+#define BACKUP_PRIMASK()  uint32_t primask_bit= itsdk_getIrqMask()
+#define DISABLE_IRQ() itsdk_disableIrq()
+#define ENABLE_IRQ() itsdk_enableIrq()
+#define RESTORE_PRIMASK() itsdk_setIrqMask(primask_bit)
 
 
-#define CRITICAL_SECTION_BEGIN( )     uint32_t primask_bit= __get_PRIMASK();\
-                                    __disable_irq()
-#define CRITICAL_SECTION_END( )   __set_PRIMASK(primask_bit)
+#define CRITICAL_SECTION_BEGIN( )     itsdk_enterCriticalSection()
 
-#define LOG(...)     do{ TraceSend(__VA_ARGS__); }while(0);
+#define CRITICAL_SECTION_END( )   	  itsdk_leaveCriticalSection()
+
+#define LOG(...)     do{ log_info(__VA_ARGS__); }while(0);
 
 /* prepocessor directive to align buffer*/
 #define ALIGN(n)             __attribute__((aligned(n)))
 
 /* delay definition */
- #define DelayMs(n)             HAL_Delay(n) 
+ #define DelayMs(n)             itsdk_delayMs(n)
 
 typedef uint32_t TimerTime_t;
 

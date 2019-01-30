@@ -64,6 +64,51 @@ void itsdk_delayMs(uint32_t ms) {
 }
 
 /**
+ * Get the IRQ Mask
+ */
+uint32_t itsdk_getIrqMask() {
+	return __get_PRIMASK();
+}
+
+/**
+ * Set / Restore the IRQ Mask
+ */
+void itsdk_setIrqMask(uint32_t mask) {
+	__set_PRIMASK(mask);
+}
+/**
+ * Enter a critical section / disable interrupt
+ */
+static uint32_t __interrupt_mask;
+void itsdk_enterCriticalSection() {
+	__interrupt_mask = itsdk_getIrqMask();
+	__disable_irq();
+}
+
+/**
+ * Restore the initial irq mask
+ * to leave a critical secqtion
+ */
+void itsdk_leaveCriticalSection() {
+	itsdk_setIrqMask(__interrupt_mask);
+}
+
+/**
+ * Disable IRQ
+ */
+void itsdk_disableIrq() {
+	__disable_irq();
+}
+
+/**
+ * Enable IRQ
+ */
+void itsdk_enableIrq() {
+	__enable_irq();
+}
+
+
+/**
  * Generate a seed. This seed is different for any of the objects
  *
  */

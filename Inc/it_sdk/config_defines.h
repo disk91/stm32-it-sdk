@@ -202,6 +202,34 @@
 #define __LORAWAN_ABP			0x02				// Activation By Personalization
 
 /**
+ * LoRaWAN ADR (Adaptative Data Rate)
+ */
+#define __LORAWAN_ADR_UNDEFINED	0x00
+#define __LORAWAN_ADR_OFF		0x01
+#define __LORAWAN_ADR_ON		0x02
+
+/**
+ * LoRaWAN default Data Rate
+ */
+#define __LORAWAN_DR_UNDEFINED	0x0
+#define __LORAWAN_DR_0			0x1
+#define __LORAWAN_DR_1			0x2
+#define __LORAWAN_DR_2			0x3
+#define __LORAWAN_DR_3			0x4
+#define __LORAWAN_DR_4			0x5
+#define __LORAWAN_DR_5			0x6
+#define __LORAWAN_DR_6			0x7
+#define __LORAWAN_DR_7			0x8
+#define __LORAWAN_DR_8			0x9
+#define __LORAWAN_DR_9			0x10
+#define __LORAWAN_DR_10			0x11
+#define __LORAWAN_DR_11			0x12
+#define __LORAWAN_DR_12			0x13
+#define __LORAWAN_DR_13			0x14
+#define __LORAWAN_DR_14			0x15
+#define __LORAWAN_DR_15			0x16
+
+/**
  * LoRaWAN Misc defines
  */
 #define __LORAWAN_NWK_PUBLIC		0x01			// Public network

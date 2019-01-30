@@ -132,6 +132,27 @@ typedef struct sLoRaParam
  */
     bool EnablePublicNetwork;
 
+   // Disk91 - modification
+   // Extends with the configuration...
+
+   // __LORAWAN_OTAA or __LORAWAN_ABP
+   uint8_t   JoinType;
+   uint8_t * devEui;						// Dev EUI pointer (8B)
+   union {
+	   struct s_otaa {
+		   uint8_t * appEui;				// OTAA App EUI pointer (8B)
+		   uint8_t * appKey;		   		// OTAA App Key pointer (16B)
+		   uint8_t * nwkKey;		   		// OTAA Nwk Key pointer (16B)
+	   } otaa;
+	   struct s_abp {
+		   uint8_t * FNwkSIntKey;			// Nwk Internal Session Key
+		   uint8_t * SNwkSIntKey;			//
+		   uint8_t * nwkSEncKey;			// Nwk Session Key
+		   uint8_t * appSKey;				// App Session Key
+		   uint32_t  devAddr;				// Dev addr
+	   } abp;
+   } config;
+
 } LoRaParam_t;
 
 /* Lora Main callbacks*/

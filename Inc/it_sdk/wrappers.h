@@ -163,6 +163,13 @@ itsdk_reset_cause_t itsdk_getResetCause();
 void itsdk_reset();
 void itsdk_delayMs(uint32_t ms);
 
+uint32_t itsdk_getIrqMask();
+void itsdk_setIrqMask(uint32_t mask);
+void itsdk_enterCriticalSection();
+void itsdk_leaveCriticalSection();
+void itsdk_disableIrq();
+void itsdk_enableIrq();
+
 uint32_t itsdk_getRandomSeed();								// get a random seed value - can be the same for one given object
 void itsdk_getUniqId(uint8_t * id, int8_t size);			// fill id table with an object ID having the given size
 

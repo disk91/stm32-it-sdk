@@ -18,6 +18,7 @@
 
 #include <it_sdk/itsdk.h>
 #if ITSDK_WITH_LORAWAN_LIB == __ENABLE
+#include <it_sdk/logger/logger.h>
 
 /* Includes ------------------------------------------------------------------*/
 #include <drivers/sx1276/hw.h>
@@ -61,20 +62,22 @@
 
 #define HEX16(X)  X[0],X[1], X[2],X[3], X[4],X[5], X[6],X[7],X[8],X[9], X[10],X[11], X[12],X[13], X[14],X[15]
 #define HEX8(X)   X[0],X[1], X[2],X[3], X[4],X[5], X[6],X[7]
+/*
 static uint8_t DevEui[] = ITSDK_LORAWAN_DEVEUI;
 static uint8_t JoinEui[] = ITSDK_LORAWAN_APPEUI;
 static uint8_t AppKey[] = ITSDK_LORAWAN_APPKEY;
 static uint8_t NwkKey[] = ITSDK_LORAWAN_NWKKEY;
-
+*/
 static MlmeReqJoin_t JoinParameters;
 
 #if( ITSDK_LORAWAN_ACTIVATION == __LORAWAN_ABP )
-
+/*
 static uint8_t FNwkSIntKey[] = ITSDK_LORAWAN_FNWKSKEY;
 static uint8_t SNwkSIntKey[] = ITSDK_LORAWAN_SNWKSKEY;
 static uint8_t NwkSEncKey[] = ITSDK_LORAWAN_NWKSKEY;
 static uint8_t AppSKey[] = ITSDK_LORAWAN_APPSKEY;
 static uint32_t DevAddr = ITSDK_LORAWAN_DEVADDR;
+*/
 #endif
 
 #ifdef LORAMAC_CLASSB_ENABLED
@@ -449,34 +452,33 @@ void LORA_Init (LoRaMainCallback_t *callbacks, LoRaParam_t* LoRaParam, uint16_t 
   LoRaMainCallbacks->BoardGetUniqueId( DevEui );  
 #endif
   
-#if( ITSDK_LORAWAN_ACTIVATION == __LORAWAN_OTAA )
+  if ( LoRaParamInit->JoinType == __LORAWAN_OTAA ) {
+	  PPRINTF( "OTAA\n\r");
+	  PPRINTF( "DevEui= %02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X\n\r", HEX8(LoRaParamInit->devEui));
+	  PPRINTF( "AppEui= %02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X\n\r", HEX8(LoRaParamInit->config.otaa.appEui));
+	  PPRINTF( "AppKey= %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n\r", HEX16(LoRaParamInit->config.otaa.appKey));
+  } else if (LoRaParamInit->JoinType == __LORAWAN_ABP) {
+	#if (STATIC_DEVICE_ADDRESS != 1)
+	  // Random seed initialization
+	  srand1( LoRaMainCallbacks->BoardGetRandomSeed( ) );
+	  // Choose a random device address
+	  LoRaParamInit->config.abp.devAddr = randr( 0, 0x01FFFFFF );
+	#endif
+	PPRINTF( "ABP\n\r");
+	PPRINTF( "DevEui= %02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X\n\r", HEX8(LoRaParamInit->devEui));
+	PPRINTF( "DevAdd=  %08X\n\r", LoRaParamInit->config.abp.devAddr) ;
+	PPRINTF( "NwkSKey= %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n\r", HEX16(LoRaParamInit->config.abp.nwkSEncKey));
+	PPRINTF( "AppSKey= %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n\r", HEX16(LoRaParamInit->config.abp.appSKey));
+  }
 
-  PPRINTF( "OTAA\n\r"); 
-  PPRINTF( "DevEui= %02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X\n\r", HEX8(DevEui));
-  PPRINTF( "AppEui= %02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X\n\r", HEX8(JoinEui));
-  PPRINTF( "AppKey= %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n\r", HEX16(AppKey));
-#else
-
-#if (STATIC_DEVICE_ADDRESS != 1)
-  // Random seed initialization
-  srand1( LoRaMainCallbacks->BoardGetRandomSeed( ) );
-  // Choose a random device address
-  DevAddr = randr( 0, 0x01FFFFFF );
-#endif
-  PPRINTF( "ABP\n\r"); 
-  PPRINTF( "DevEui= %02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X\n\r", HEX8(DevEui));
-  PPRINTF( "DevAdd=  %08X\n\r", DevAddr) ;
-  PPRINTF( "NwkSKey= %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n\r", HEX16(NwkSEncKey));
-  PPRINTF( "AppSKey= %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n\r", HEX16(AppSKey));
-#endif
-        LoRaMacPrimitives.MacMcpsConfirm = McpsConfirm;
-        LoRaMacPrimitives.MacMcpsIndication = McpsIndication;
-        LoRaMacPrimitives.MacMlmeConfirm = MlmeConfirm;
-        LoRaMacPrimitives.MacMlmeIndication = MlmeIndication;
-        LoRaMacCallbacks.GetBatteryLevel = LoRaMainCallbacks->BoardGetBatteryLevel;
-        LoRaMacCallbacks.GetTemperatureLevel = LoRaMainCallbacks->BoardGetTemperatureLevel;
-        LoRaMacCallbacks.MacProcessNotify = LoRaMainCallbacks->MacProcessNotify;
-        switch ( region ) {
+  LoRaMacPrimitives.MacMcpsConfirm = McpsConfirm;
+  LoRaMacPrimitives.MacMcpsIndication = McpsIndication;
+  LoRaMacPrimitives.MacMlmeConfirm = MlmeConfirm;
+  LoRaMacPrimitives.MacMlmeIndication = MlmeIndication;
+  LoRaMacCallbacks.GetBatteryLevel = LoRaMainCallbacks->BoardGetBatteryLevel;
+  LoRaMacCallbacks.GetTemperatureLevel = LoRaMainCallbacks->BoardGetTemperatureLevel;
+  LoRaMacCallbacks.MacProcessNotify = LoRaMainCallbacks->MacProcessNotify;
+  switch ( region ) {
 #if defined( REGION_AS923 )
         case __LORAWAN_REGION_AS923:
         	LoRaMacInitialization( &LoRaMacPrimitives, &LoRaMacCallbacks, LORAMAC_REGION_AS923 );
@@ -550,43 +552,66 @@ void LORA_Init (LoRaMainCallback_t *callbacks, LoRaParam_t* LoRaParam, uint16_t 
       mibReq.Type = MIB_ADR;
       mibReq.Param.AdrEnable = LoRaParamInit->AdrEnable;
       LoRaMacMibSetRequestConfirm( &mibReq );
-  	log_info("3\r\n");
 
       mibReq.Type = MIB_PUBLIC_NETWORK;
       mibReq.Param.EnablePublicNetwork = LoRaParamInit->EnablePublicNetwork;
       LoRaMacMibSetRequestConfirm( &mibReq );
-  	log_info("4\r\n");
 
-      mibReq.Type = MIB_APP_KEY;
-      mibReq.Param.AppKey = AppKey;
-      LoRaMacMibSetRequestConfirm( &mibReq );
-  	log_info("5\r\n");
+      if ( LoRaParamInit->JoinType == __LORAWAN_OTAA ) {
+		  mibReq.Type = MIB_APP_KEY;
+		  mibReq.Param.AppKey = LoRaParamInit->config.otaa.appKey;
+		  LoRaMacMibSetRequestConfirm( &mibReq );
 
-      mibReq.Type = MIB_NWK_KEY;
-      mibReq.Param.NwkKey = NwkKey;
-      LoRaMacMibSetRequestConfirm( &mibReq );      
-  	log_info("6\r\n");
+		  mibReq.Type = MIB_NWK_KEY;
+		  mibReq.Param.NwkKey = LoRaParamInit->config.otaa.nwkKey;
+		  LoRaMacMibSetRequestConfirm( &mibReq );
+      } else if (LoRaParamInit->JoinType == __LORAWAN_ABP) {
+    	  mibReq.Type = MIB_NET_ID;
+    	  mibReq.Param.NetID = ITSDK_LORAWAN_NETWORKID;
+    	  LoRaMacMibSetRequestConfirm( &mibReq );
+
+    	  mibReq.Type = MIB_DEV_ADDR;
+    	  mibReq.Param.DevAddr = LoRaParamInit->config.abp.devAddr;
+    	  LoRaMacMibSetRequestConfirm( &mibReq );
+
+    	  mibReq.Type = MIB_F_NWK_S_INT_KEY;
+    	  mibReq.Param.FNwkSIntKey = LoRaParamInit->config.abp.FNwkSIntKey;
+    	  LoRaMacMibSetRequestConfirm( &mibReq );
+
+    	  mibReq.Type = MIB_S_NWK_S_INT_KEY;
+    	  mibReq.Param.SNwkSIntKey = LoRaParamInit->config.abp.SNwkSIntKey;
+    	  LoRaMacMibSetRequestConfirm( &mibReq );
+
+    	  mibReq.Type = MIB_NWK_S_ENC_KEY;
+    	  mibReq.Param.NwkSEncKey = LoRaParamInit->config.abp.nwkSEncKey;
+    	  LoRaMacMibSetRequestConfirm( &mibReq );
+
+    	  mibReq.Type = MIB_APP_S_KEY;
+    	  mibReq.Param.AppSKey = LoRaParamInit->config.abp.appSKey;
+    	  LoRaMacMibSetRequestConfirm( &mibReq );
+
+    	  mibReq.Type = MIB_NETWORK_ACTIVATION;
+    	  mibReq.Param.NetworkActivation = ACTIVATION_TYPE_ABP;
+    	  LoRaMacMibSetRequestConfirm( &mibReq );
+      }
+
 
       mibReq.Type = MIB_DEVICE_CLASS;
       mibReq.Param.Class= CLASS_A;
       LoRaMacMibSetRequestConfirm( &mibReq );
-  	log_info("7\r\n");
 
 #if defined( REGION_EU868 )
       if ( region == __LORAWAN_REGION_EU868 ) {
     	  LoRaMacTestSetDutyCycleOn( LORAWAN_DUTYCYCLE_ON );
       }
 #endif
-  	log_info("8\r\n");
 
       mibReq.Type = MIB_SYSTEM_MAX_RX_ERROR;
       mibReq.Param.SystemMaxRxError = 20;
       LoRaMacMibSetRequestConfirm( &mibReq );
-  	log_info("9\r\n");
 
       /*set Mac statein Idle*/
       LoRaMacStart( );
-  	log_info("10\r\n");
 
 }
 
@@ -596,57 +621,35 @@ void LORA_Join( void)
     MlmeReq_t mlmeReq;
   
     mlmeReq.Type = MLME_JOIN;
-    mlmeReq.Req.Join.DevEui = DevEui;
-    mlmeReq.Req.Join.JoinEui = JoinEui;
+    mlmeReq.Req.Join.DevEui = LoRaParamInit->devEui;
+    mlmeReq.Req.Join.JoinEui = LoRaParamInit->config.otaa.appEui;
     mlmeReq.Req.Join.Datarate = LoRaParamInit->TxDatarate;
   
     JoinParameters = mlmeReq.Req.Join;
 
-#if( ITSDK_LORAWAN_ACTIVATION == __LORAWAN_OTAA )
-    LoRaMacMlmeRequest( &mlmeReq );
-#else
-    mibReq.Type = MIB_NET_ID;
-    mibReq.Param.NetID = LORAWAN_NETWORK_ID;
-    LoRaMacMibSetRequestConfirm( &mibReq );
+    if (LoRaParamInit->JoinType ==  __LORAWAN_OTAA) {
+        LoRaMacStatus_t r = LoRaMacMlmeRequest( &mlmeReq );
+        if ( r != LORAMAC_STATUS_OK ) {
+        	log_warn("LoRaMacMlmeRequest return error(%d)\r\n",r);
+        }
 
-    mibReq.Type = MIB_DEV_ADDR;
-    mibReq.Param.DevAddr = DevAddr;
-    LoRaMacMibSetRequestConfirm( &mibReq );
 
-    mibReq.Type = MIB_F_NWK_S_INT_KEY;
-    mibReq.Param.FNwkSIntKey = FNwkSIntKey;
-    LoRaMacMibSetRequestConfirm( &mibReq );
+    } else if(LoRaParamInit->JoinType ==  __LORAWAN_ABP) {
+        // Enable legacy mode to operate according to LoRaWAN Spec. 1.0.3
+        Version_t abpLrWanVersion;
 
-    mibReq.Type = MIB_S_NWK_S_INT_KEY;
-    mibReq.Param.SNwkSIntKey = SNwkSIntKey;
-    LoRaMacMibSetRequestConfirm( &mibReq );
+        abpLrWanVersion.Fields.Major    = 1;
+        abpLrWanVersion.Fields.Minor    = 0;
+        abpLrWanVersion.Fields.Revision = 3;
+        abpLrWanVersion.Fields.Rfu      = 0;
 
-    mibReq.Type = MIB_NWK_S_ENC_KEY;
-    mibReq.Param.NwkSEncKey = NwkSEncKey;
-    LoRaMacMibSetRequestConfirm( &mibReq );
+        mibReq.Type = MIB_ABP_LORAWAN_VERSION;
+        mibReq.Param.AbpLrWanVersion = abpLrWanVersion;
+        LoRaMacMibSetRequestConfirm( &mibReq );
 
-    mibReq.Type = MIB_APP_S_KEY;
-    mibReq.Param.AppSKey = AppSKey;
-    LoRaMacMibSetRequestConfirm( &mibReq );
-
-    mibReq.Type = MIB_NETWORK_ACTIVATION;
-    mibReq.Param.NetworkActivation = ACTIVATION_TYPE_ABP;
-    LoRaMacMibSetRequestConfirm( &mibReq );
+        LoRaMainCallbacks->LORA_HasJoined();
+    }
     
-    // Enable legacy mode to operate according to LoRaWAN Spec. 1.0.3
-    Version_t abpLrWanVersion;
-
-    abpLrWanVersion.Fields.Major    = 1;
-    abpLrWanVersion.Fields.Minor    = 0;
-    abpLrWanVersion.Fields.Revision = 3;
-    abpLrWanVersion.Fields.Rfu      = 0;
-
-    mibReq.Type = MIB_ABP_LORAWAN_VERSION;
-    mibReq.Param.AbpLrWanVersion = abpLrWanVersion;
-    LoRaMacMibSetRequestConfirm( &mibReq );
-
-    LoRaMainCallbacks->LORA_HasJoined();
-#endif
 }
 
 LoraFlagStatus LORA_JoinStatus( void)

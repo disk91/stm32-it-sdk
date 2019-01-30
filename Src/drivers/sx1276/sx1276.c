@@ -1362,14 +1362,14 @@ void SX1276WriteBuffer( uint16_t addr, uint8_t *buffer, uint8_t size )
 	gpio_reset(ITSDK_SX1276_NSS_BANK, ITSDK_SX1276_NSS_PIN);
 //    HW_GPIO_Write( RADIO_NSS_PORT, RADIO_NSS_PIN, 0 );
 
-	uint8_t tx = addr | 0x80;
-	uint8_t rx;
-	spi_rwRegister(&ITSDK_SX1276_SPI,&tx,&rx,1);
+	uint16_t tx = addr | 0x80;
+	uint16_t rx;
+	spi_rwRegister(&ITSDK_SX1276_SPI,(uint8_t*)&tx,(uint8_t*)&rx,1);
     //HW_SPI_InOut( addr | 0x80 );
     for( i = 0; i < size; i++ )
     {
     	tx = buffer[i];
-    	spi_rwRegister(&ITSDK_SX1276_SPI,&tx,&rx,1);
+    	spi_rwRegister(&ITSDK_SX1276_SPI,(uint8_t*)&tx,(uint8_t*)&rx,1);
         //HW_SPI_InOut( buffer[i] );
     }
 
@@ -1388,15 +1388,15 @@ void SX1276ReadBuffer( uint16_t addr, uint8_t *buffer, uint8_t size )
 	gpio_reset(ITSDK_SX1276_NSS_BANK, ITSDK_SX1276_NSS_PIN);
 //    HW_GPIO_Write( RADIO_NSS_PORT, RADIO_NSS_PIN, 0 );
 
-	uint8_t tx = addr | 0x7f;
-	uint8_t rx;
-	spi_rwRegister(&ITSDK_SX1276_SPI,&tx,&rx,1);
+	uint16_t tx = addr & 0x7f;
+	uint16_t rx;
+	spi_rwRegister(&ITSDK_SX1276_SPI,(uint8_t*)&tx,(uint8_t*)&rx,1);
     //HW_SPI_InOut( addr & 0x7F );
 
 	tx = 0;
     for( i = 0; i < size; i++ )
     {
-    	spi_rwRegister(&ITSDK_SX1276_SPI,&tx,&rx,1);
+    	spi_rwRegister(&ITSDK_SX1276_SPI,(uint8_t*)&tx,(uint8_t*)&rx,1);
     	buffer[i] = rx;
         //buffer[i] = HW_SPI_InOut( 0 );
     }

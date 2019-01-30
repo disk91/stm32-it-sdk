@@ -150,13 +150,74 @@ itsdk_lorawan_init_t itsdk_lorawan_setup(uint16_t region) {
 													itsdk_lorawan_onTxNeeded,
 													itsdk_lorawan_macProcessNotify,
 													/*itsdk_lorawan_uplinkAckConfirmed*/};
-	static LoRaParam_t LoRaParamInit = {LORAWAN_ADR_ON,
-	                                    DR_0,
-										#if ITSDK_LORAWAN_NETWORKTYPE == __LORAWAN_NWK_PUBLIC
-										   true
+
+	static uint8_t devEui[8] = ITSDK_LORAWAN_DEVEUI;
+	static uint8_t appEui[8] = ITSDK_LORAWAN_APPEUI;
+	static uint8_t appKey[16] = ITSDK_LORAWAN_APPKEY;
+
+	static LoRaParam_t LoRaParamInit = {
+										#if ITSDK_LORAWAN_ADR == __LORAWAN_ADR_ON
+											LORAWAN_ADR_ON,
+										#elif ITSDK_LORAWAN_ADR == __LORAWAN_ADR_OFF
+											LORAWAN_ADR_OFF,
 										#else
-										   false
+											#error Invalid ITSDK_LORAWAN_ADR configuration
 										#endif
+
+										#if ITSDK_LORAWAN_DEFAULT_DR == __LORAWAN_DR_0
+											DR_0,
+										#elif ITSDK_LORAWAN_DEFAULT_DR == __LORAWAN_DR_1
+											DR_1,
+										#elif ITSDK_LORAWAN_DEFAULT_DR == __LORAWAN_DR_2
+											DR_2,
+										#elif ITSDK_LORAWAN_DEFAULT_DR == __LORAWAN_DR_3
+											DR_3,
+										#elif ITSDK_LORAWAN_DEFAULT_DR == __LORAWAN_DR_4
+											DR_4,
+										#elif ITSDK_LORAWAN_DEFAULT_DR == __LORAWAN_DR_5
+											DR_5,
+										#elif ITSDK_LORAWAN_DEFAULT_DR == __LORAWAN_DR_6
+											DR_6,
+										#elif ITSDK_LORAWAN_DEFAULT_DR == __LORAWAN_DR_7
+											DR_7,
+										#elif ITSDK_LORAWAN_DEFAULT_DR == __LORAWAN_DR_8
+											DR_8,
+										#elif ITSDK_LORAWAN_DEFAULT_DR == __LORAWAN_DR_9
+											DR_9,
+										#elif ITSDK_LORAWAN_DEFAULT_DR == __LORAWAN_DR_10
+											DR_10,
+										#elif ITSDK_LORAWAN_DEFAULT_DR == __LORAWAN_DR_11
+											DR_11,
+										#elif ITSDK_LORAWAN_DEFAULT_DR == __LORAWAN_DR_12
+											DR_12,
+										#elif ITSDK_LORAWAN_DEFAULT_DR == __LORAWAN_DR_13
+											DR_13,
+										#elif ITSDK_LORAWAN_DEFAULT_DR == __LORAWAN_DR_14
+											DR_14,
+										#elif ITSDK_LORAWAN_DEFAULT_DR == __LORAWAN_DR_15
+											DR_15,
+										#else
+										   #error Invalid ITSDK_LORAWAN_DEFAULT_DR configuration
+										#endif
+
+										#if ITSDK_LORAWAN_NETWORKTYPE == __LORAWAN_NWK_PUBLIC
+										   true,
+										#else
+										   false,
+										#endif
+
+										   ITSDK_LORAWAN_ACTIVATION,
+										   devEui,
+										#if ITSDK_LORAWAN_ACTIVATION ==  __LORAWAN_OTAA
+										   .config.otaa = {
+												   appEui,
+												   appKey,
+												   appKey
+										   }
+										#else
+											#error Mode actually not supported
+										#endif
+
 	                                    };
 	LORA_Init(&LoRaMainCallbacks, &LoRaParamInit, region);
 
