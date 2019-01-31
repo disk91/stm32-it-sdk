@@ -219,7 +219,10 @@ typedef struct sLoRaMainCallback
  * 
  *\warning  Runs in a IRQ context. Should only change variables state.  
  */
-void ( *MacProcessNotify )( void );
+    void ( *MacProcessNotify )( void );
+
+    void ( *LORA_McpsDataConfirm )(void);
+
 } LoRaMainCallback_t;
 
 

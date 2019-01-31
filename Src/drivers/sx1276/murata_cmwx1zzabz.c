@@ -118,13 +118,13 @@ const struct Radio_s Radio =
 
 uint32_t SX1276GetWakeTime( void )
 {
-  LOG_INFO_SX1276((">> SX1276GetWakeTime\r\n"));
+  //LOG_INFO_SX1276((">> SX1276GetWakeTime\r\n"));
   return  BOARD_WAKEUP_TIME;
 }
 
 void SX1276SetXO( uint8_t state )
 {
-  LOG_INFO_SX1276((">> SX1276SetXO\r\n"));
+  //LOG_INFO_SX1276((">> SX1276SetXO\r\n"));
 
   if (state == SET )
   {
@@ -139,7 +139,7 @@ void SX1276SetXO( uint8_t state )
 }
 void SX1276IoInit( void )
 {
-	  LOG_INFO_SX1276((">> SX1276IoInit\r\n"));
+  LOG_INFO_SX1276((">> SX1276IoInit\r\n"));
 
   //GPIO_InitTypeDef initStruct={0};
   
@@ -175,7 +175,7 @@ void SX1276IoInit( void )
 gpio_irq_chain_t __sx1276_gpio_irq[4] = { 0 };
 void SX1276IoIrqInit( DioIrqHandler **irqHandlers )
 {
-	  LOG_INFO_SX1276((">> SX1276IoIrqInit\r\n"));
+	LOG_INFO_SX1276((">> SX1276IoIrqInit\r\n"));
 
     gpio_interruptPriority(ITSDK_SX1276_DIO_0_BANK,ITSDK_SX1276_DIO_0_PIN,IRQ_HIGH_PRIORITY,0);
     gpio_interruptEnable(ITSDK_SX1276_DIO_0_BANK, ITSDK_SX1276_DIO_0_PIN);
@@ -205,7 +205,7 @@ void SX1276IoIrqInit( DioIrqHandler **irqHandlers )
 
 void SX1276IoDeInit( void )
 {
-	  LOG_INFO_SX1276((">> SX1276IoDeInit\r\n"));
+  LOG_INFO_SX1276((">> SX1276IoDeInit\r\n"));
 
   gpio_configure(ITSDK_SX1276_DIO_0_BANK, ITSDK_SX1276_DIO_0_PIN, GPIO_INTERRUPT_RISING_PULLDWN );
   gpio_configure(ITSDK_SX1276_DIO_1_BANK, ITSDK_SX1276_DIO_1_PIN, GPIO_INTERRUPT_RISING_PULLDWN );
@@ -235,7 +235,7 @@ void SX1276IoDeInit( void )
 
 void SX1276SetRfTxPower( int8_t power )
 {
-	LOG_INFO_SX1276((">> SX1276SetRfTxPower\r\n"));
+	LOG_INFO_SX1276((">> SX1276SetRfTxPower (%d)\r\n",power));
 
     uint8_t paConfig = 0;
     uint8_t paDac = 0;
@@ -299,7 +299,7 @@ void SX1276SetRfTxPower( int8_t power )
 
 uint8_t SX1276GetPaSelect( uint8_t power )
 {
-	LOG_INFO_SX1276((">> SX1276GetPaSelect\r\n"));
+	//LOG_INFO_SX1276((">> SX1276GetPaSelect\r\n"));
 
     if (power >14)
     {
@@ -313,7 +313,7 @@ uint8_t SX1276GetPaSelect( uint8_t power )
 
 void SX1276SetAntSwLowPower( bool status )
 {
-	LOG_INFO_SX1276((">> SX1276SetAntSwLowPower\r\n"));
+	//LOG_INFO_SX1276((">> SX1276SetAntSwLowPower\r\n"));
 
     if( status == false )
     {
@@ -383,7 +383,7 @@ static void SX1276AntSwDeInit( void )
 
 void SX1276SetAntSw( uint8_t opMode )
 {
-	LOG_INFO_SX1276((">> SX1276SetAntSw\r\n"));
+	LOG_INFO_SX1276((">> SX1276SetAntSw (%d)\r\n",opMode));
 
  uint8_t paConfig =  SX1276Read( REG_PACONFIG );
     switch( opMode )
@@ -414,7 +414,7 @@ void SX1276SetAntSw( uint8_t opMode )
 
 bool SX1276CheckRfFrequency( uint32_t frequency )
 {
-	LOG_INFO_SX1276((">> SX1276CheckRfFrequency\r\n"));
+	//LOG_INFO_SX1276((">> SX1276CheckRfFrequency\r\n"));
 
     // Implement check. Currently all frequencies are supported
     return true;

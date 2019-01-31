@@ -35,11 +35,5 @@
 
 #include <it_sdk/itsdk.h>
 
-/*
-#include <drivers/sx1276/hw_gpio.h>
-#include <drivers/sx1276/hw_spi.h>
-#include <drivers/sx1276/hw_rtc.h>
-#include <drivers/sx1276/hw_msp.h>
-*/
 
 #endif /* DRIVERS_SX1276_HW_H_ */

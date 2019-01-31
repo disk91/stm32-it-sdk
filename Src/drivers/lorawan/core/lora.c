@@ -179,6 +179,9 @@ static void McpsConfirm( McpsConfirm_t *mcpsConfirm )
                 // Check Datarate
                 // Check TxPower
                 // Check AckReceived
+            	if(mcpsConfirm->AckReceived){
+            	     LoRaMainCallbacks->LORA_McpsDataConfirm();
+            	}
                 // Check NbTrials
                 break;
             }

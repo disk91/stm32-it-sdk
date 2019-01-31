@@ -243,7 +243,7 @@ void SX1276BoardInit( LoRaBoardCallback_t *callbacks )
 
 uint32_t SX1276Init( RadioEvents_t *events )
 {
-	  LOG_INFO_SX1276((">> SX1276Init\r\n"));
+	LOG_INFO_SX1276((">> SX1276Init\r\n"));
 
     uint8_t i;
 
@@ -279,14 +279,14 @@ uint32_t SX1276Init( RadioEvents_t *events )
 
 RadioState_t SX1276GetStatus( void )
 {
-	  LOG_INFO_SX1276((">> SX1276GetStatus\r\n"));
+	//  LOG_INFO_SX1276((">> SX1276GetStatus\r\n"));
 
     return SX1276.Settings.State;
 }
 
 void SX1276SetChannel( uint32_t freq )
 {
-	  LOG_INFO_SX1276((">> SX1276SetChannel\r\n"));
+	//  LOG_INFO_SX1276((">> SX1276SetChannel\r\n"));
 
     uint32_t channel;
 
@@ -301,7 +301,7 @@ void SX1276SetChannel( uint32_t freq )
 
 bool SX1276IsChannelFree( RadioModems_t modem, uint32_t freq, int16_t rssiThresh, uint32_t maxCarrierSenseTime )
 {
-	  LOG_INFO_SX1276((">> SX1276IsChannelFree\r\n"));
+	//  LOG_INFO_SX1276((">> SX1276IsChannelFree\r\n"));
 
     bool status = true;
     int16_t rssi = 0;
@@ -334,7 +334,7 @@ bool SX1276IsChannelFree( RadioModems_t modem, uint32_t freq, int16_t rssiThresh
 
 uint32_t SX1276Random( void )
 {
-	  LOG_INFO_SX1276((">> SX1276Random\r\n"));
+	//  LOG_INFO_SX1276((">> SX1276Random\r\n"));
 
     uint8_t i;
     uint32_t rnd = 0;
@@ -377,7 +377,7 @@ uint32_t SX1276Random( void )
  */
 void RxChainCalibration( void )
 {
-	  LOG_INFO_SX1276((">> RxChainCalibration\r\n"));
+	//  LOG_INFO_SX1276((">> RxChainCalibration\r\n"));
 
     uint8_t regPaConfigInitVal;
     uint32_t initialFreq;
@@ -423,7 +423,7 @@ void RxChainCalibration( void )
  */
 static uint8_t GetFskBandwidthRegValue( uint32_t bandwidth )
 {
-	  LOG_INFO_SX1276((">> GetFskBandwidthRegValue\r\n"));
+	//  LOG_INFO_SX1276((">> GetFskBandwidthRegValue\r\n"));
 
     uint8_t i;
 
@@ -446,7 +446,7 @@ void SX1276SetRxConfig( RadioModems_t modem, uint32_t bandwidth,
                          bool crcOn, bool freqHopOn, uint8_t hopPeriod,
                          bool iqInverted, bool rxContinuous )
 {
-	  LOG_INFO_SX1276((">> SX1276SetRxConfig\r\n"));
+	LOG_INFO_SX1276((">> SX1276SetRxConfig\r\n"));
 
     SX1276SetModem( modem );
 
@@ -616,7 +616,7 @@ void SX1276SetTxConfig( RadioModems_t modem, int8_t power, uint32_t fdev,
                         bool fixLen, bool crcOn, bool freqHopOn,
                         uint8_t hopPeriod, bool iqInverted, uint32_t timeout )
 {
-	  LOG_INFO_SX1276((">> SX1276SetTxConfig\r\n"));
+	LOG_INFO_SX1276((">> SX1276SetTxConfig\r\n"));
 
     SX1276SetModem( modem );
 
@@ -747,7 +747,7 @@ void SX1276SetTxConfig( RadioModems_t modem, int8_t power, uint32_t fdev,
 
 uint32_t SX1276GetTimeOnAir( RadioModems_t modem, uint8_t pktLen )
 {
-	  LOG_INFO_SX1276((">> SX1276GetTimeOnAir\r\n"));
+	LOG_INFO_SX1276((">> SX1276GetTimeOnAir\r\n"));
 
     uint32_t airTime = 0;
 
@@ -828,7 +828,7 @@ uint32_t SX1276GetTimeOnAir( RadioModems_t modem, uint8_t pktLen )
 
 void SX1276Send( uint8_t *buffer, uint8_t size )
 {
-	  LOG_INFO_SX1276((">> SX1276Send\r\n"));
+	LOG_INFO_SX1276((">> SX1276Send\r\n"));
 
     uint32_t txTimeout = 0;
 
@@ -904,7 +904,7 @@ void SX1276Send( uint8_t *buffer, uint8_t size )
 
 void SX1276SetSleep( void )
 {
-	  LOG_INFO_SX1276((">> SX1276SetSleep\r\n"));
+	//  LOG_INFO_SX1276((">> SX1276SetSleep\r\n"));
 
     TimerStop( &RxTimeoutTimer );
     TimerStop( &TxTimeoutTimer );
@@ -915,7 +915,7 @@ void SX1276SetSleep( void )
 
 void SX1276SetStby( void )
 {
-	  LOG_INFO_SX1276((">> SX1276SetStby\r\n"));
+	//  LOG_INFO_SX1276((">> SX1276SetStby\r\n"));
 
     TimerStop( &RxTimeoutTimer );
     TimerStop( &TxTimeoutTimer );
@@ -926,7 +926,7 @@ void SX1276SetStby( void )
 
 void SX1276SetRx( uint32_t timeout )
 {
-	  LOG_INFO_SX1276((">> SX1276SetRx\r\n"));
+	LOG_INFO_SX1276((">> SX1276SetRx\r\n"));
 
     bool rxContinuous = false;
 
@@ -1094,7 +1094,7 @@ void SX1276SetRx( uint32_t timeout )
 
 void SX1276SetTx( uint32_t timeout )
 {
-	  LOG_INFO_SX1276((">> SX1276SetTx\r\n"));
+    LOG_INFO_SX1276((">> SX1276SetTx\r\n"));
 
     TimerSetValue( &TxTimeoutTimer, timeout );
 
@@ -1159,7 +1159,7 @@ void SX1276SetTx( uint32_t timeout )
 
 void SX1276StartCad( void )
 {
-	  LOG_INFO_SX1276((">> SX1276StartCad\r\n"));
+	//  LOG_INFO_SX1276((">> SX1276StartCad\r\n"));
 
     switch( SX1276.Settings.Modem )
     {
@@ -1194,7 +1194,7 @@ void SX1276StartCad( void )
 
 void SX1276SetTxContinuousWave( uint32_t freq, int8_t power, uint16_t time )
 {
-	  LOG_INFO_SX1276((">> SX1276SetTxContinuousWave\r\n"));
+	LOG_INFO_SX1276((">> SX1276SetTxContinuousWave\r\n"));
 
     uint32_t timeout = ( uint32_t )( time * 1000 );
 
@@ -1216,7 +1216,7 @@ void SX1276SetTxContinuousWave( uint32_t freq, int8_t power, uint16_t time )
 
 int16_t SX1276ReadRssi( RadioModems_t modem )
 {
-	  LOG_INFO_SX1276((">> SX1276ReadRssi\r\n"));
+	LOG_INFO_SX1276((">> SX1276ReadRssi\r\n"));
 
     int16_t rssi = 0;
 
@@ -1244,7 +1244,7 @@ int16_t SX1276ReadRssi( RadioModems_t modem )
 
 void SX1276Reset( void )
 {
-	  LOG_INFO_SX1276((">> SX1276Reset\r\n"));
+	LOG_INFO_SX1276((">> SX1276Reset\r\n"));
 
 	gpio_configure(ITSDK_SX1276_RESET_BANK,ITSDK_SX1276_RESET_PIN,GPIO_OUTPUT_PP);
 	gpio_reset(ITSDK_SX1276_RESET_BANK, ITSDK_SX1276_RESET_PIN);
@@ -1275,7 +1275,7 @@ void SX1276Reset( void )
 
 void SX1276SetOpMode( uint8_t opMode )
 {
-	  LOG_INFO_SX1276((">> SX1276SetOpMode\r\n"));
+	//  LOG_INFO_SX1276((">> SX1276SetOpMode\r\n"));
 
     if( opMode == RF_OPMODE_SLEEP )
     {
@@ -1299,7 +1299,7 @@ void SX1276SetOpMode( uint8_t opMode )
 
 void SX1276SetModem( RadioModems_t modem )
 {
-	  LOG_INFO_SX1276((">> SX1276SetModem\r\n"));
+	//  LOG_INFO_SX1276((">> SX1276SetModem (%s)\r\n",((modem==MODEM_LORA)?"LORA":"FSK")));
 
     if( ( SX1276Read( REG_OPMODE ) & RFLR_OPMODE_LONGRANGEMODE_ON ) != 0 )
     {
@@ -1422,7 +1422,7 @@ void SX1276ReadFifo( uint8_t *buffer, uint8_t size )
 
 void SX1276SetMaxPayloadLength( RadioModems_t modem, uint8_t max )
 {
-	LOG_INFO_SX1276((">> SX1276SetMaxPayloadLength\r\n"));
+	// LOG_INFO_SX1276((">> SX1276SetMaxPayloadLength\r\n"));
     SX1276SetModem( modem );
 
     switch( modem )
@@ -1441,7 +1441,7 @@ void SX1276SetMaxPayloadLength( RadioModems_t modem, uint8_t max )
 
 void SX1276SetPublicNetwork( bool enable )
 {
-	LOG_INFO_SX1276((">> SX1276SetPublicNetwork\r\n"));
+	// LOG_INFO_SX1276((">> SX1276SetPublicNetwork\r\n"));
 
     SX1276SetModem( MODEM_LORA );
     SX1276.Settings.LoRa.PublicNetwork = enable;
@@ -1459,7 +1459,7 @@ void SX1276SetPublicNetwork( bool enable )
 
 uint32_t SX1276GetWakeupTime( void )
 {
-	LOG_INFO_SX1276((">> SX1276GetWakeupTime\r\n"));
+	//LOG_INFO_SX1276((">> SX1276GetWakeupTime\r\n"));
 
     return ( uint32_t )LoRaBoardCallbacks->SX1276BoardGetWakeTime( ) + RADIO_WAKEUP_TIME;// BOARD_WAKEUP_TIME;
 }

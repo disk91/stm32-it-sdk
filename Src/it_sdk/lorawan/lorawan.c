@@ -36,7 +36,7 @@
 #include <drivers/lorawan/phy/radio.h>
 #include <it_sdk/lorawan/lorawan.h>
 
-
+uint8_t LoraMacProcessRequest;
 
 /**
  * Return a batteryLevel from 1 to 254
@@ -120,8 +120,7 @@ __weak void itsdk_lorawan_onTxNeeded() {
  */
 void itsdk_lorawan_macProcessNotify(void) {
   log_info("[LoRaWAN] Mac Process Notify\r\n");
-
-  //LoraMacProcessRequest=LORA_SET;
+  LoraMacProcessRequest=LORA_SET;
 }
 
 /**
@@ -149,7 +148,7 @@ itsdk_lorawan_init_t itsdk_lorawan_setup(uint16_t region) {
 													itsdk_lorawan_onConfirmClass_internal,
 													itsdk_lorawan_onTxNeeded,
 													itsdk_lorawan_macProcessNotify,
-													/*itsdk_lorawan_uplinkAckConfirmed*/};
+													itsdk_lorawan_uplinkAckConfirmed};
 
 	static uint8_t devEui[8] = ITSDK_LORAWAN_DEVEUI;
 	static uint8_t appEui[8] = ITSDK_LORAWAN_APPEUI;
@@ -236,6 +235,24 @@ itsdk_lorawan_init_t itsdk_lorawan_join() {
 }
 
 
+itsdk_lorawan_init_t itsdk_lorawan_send(uint8_t * payload, uint8_t sz, uint8_t port) {
+	lora_AppData_t d;
+	d.Buff = payload,
+	d.BuffSize = sz;
+	d.Port = port;
+
+	LORA_send(&d, LORAWAN_UNCONFIRMED_MSG);
+}
+
+void itsdk_lorawan_loop() {
+
+	while (LoraMacProcessRequest==LORA_SET)  {
+	      /*reset notification flag*/
+	      LoraMacProcessRequest=LORA_RESET;
+	      LoRaMacProcess( );
+	}
+
+}
 
 
 

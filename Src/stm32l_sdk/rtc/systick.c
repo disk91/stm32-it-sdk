@@ -33,18 +33,28 @@
 
 bool __enable_systick = true;
 
+#ifdef ITSDK_CORE_CLKFREQ
+	#if ITSDK_CORE_CLKFREQ > 16000000
+		#define __TICK_DURATION_US ( 1000 / (ITSDK_CORE_CLKFREQ/16000000) )
+	#else
+		#define __TICK_DURATION_US ( 1000 * (16000000/ITSDK_CORE_CLKFREQ) )
+	#endif
+#else
+	#define __TICK_DURATION_US 1000
+#endif
+
 /**
  * Action to be executed on Systick
  * The name vary depending on the Firwmare version ... ST, you make me crazy !
  */
 void HAL_IncTick(void) {
 	// add 1ms to the global counter
-	if (__enable_systick) itsdk_time_add_us(1000);
+	if (__enable_systick) itsdk_time_add_us(__TICK_DURATION_US);
 	uwTick++;
 	__lowPower_wakeup_reason = LOWPWR_WAKEUP_SYSTICK;
 }
 void HAL_SYSTICK_Callback(void) {
 	// add 1ms to the global counter
-	if (__enable_systick) itsdk_time_add_us(1000);
+	if (__enable_systick) itsdk_time_add_us(__TICK_DURATION_US);
 	__lowPower_wakeup_reason = LOWPWR_WAKEUP_SYSTICK;
 }

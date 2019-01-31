@@ -177,9 +177,9 @@ static void TimerInsertTimer( TimerEvent_t *obj)
  */
 static void TimerCallback( uint32_t value ) {
 
-	log_debug("TimerCallback\r\n");
-
 	TimerEvent_t *obj = (TimerEvent_t *)value;
+	log_debug("TimerCallback (%d)\r\n",obj->ReloadValue);
+
 	obj->IsStarted = false;
 	if (obj->Callback != NULL) {
 		obj->Callback(obj->Context);
@@ -233,14 +233,13 @@ void TimerSetValue( TimerEvent_t *obj, uint32_t value )
 	if ( t != NULL ) {
 		// best is to stop the timer and restart it with the new duration
 		TimerStop(obj);
-		obj->Timestamp = value;
-		obj->ReloadValue = value;
+		obj->Timestamp = (value*110)/100;
+		obj->ReloadValue = (value*110)/100;
 		TimerStart(obj);
 	} else {
 		// the timer is not running, so we just need to update the local structure
-		log_info("TimerSetValue - not running \r\n");
-		obj->Timestamp = value;
-		obj->ReloadValue = value;
+		obj->Timestamp = (value*110)/100;
+		obj->ReloadValue = (value*110)/100;
 	}
 
 /*
@@ -287,8 +286,11 @@ void TimerStart( TimerEvent_t *obj )
 {
 	log_info("Start timer for %d ms\r\n",obj->ReloadValue);
 
+	itsdk_enterCriticalSection();
 	// do not add a timer already existing
 	if( ( obj == NULL ) || ( TimerExists( obj ) == true ) ) {
+		itsdk_leaveCriticalSection();
+		log_error("Timer error\r\n");
 	    return;
 	}
 	obj->Timestamp = obj->ReloadValue;
@@ -311,7 +313,7 @@ void TimerStart( TimerEvent_t *obj )
 		log_error("Error during timer initialization %d \r\n",ret);
 		_Error_Handler(__FILE__,__LINE__);
 	}
-
+	itsdk_leaveCriticalSection();
 
 //  uint32_t elapsedTime = 0;
 //
@@ -359,22 +361,25 @@ void TimerStop( TimerEvent_t *obj )
 {
 	log_info("Stop a timer waiting for %d ms\r\n",obj->ReloadValue);
 
-	// do not stop a timer already existing
-	if( ( obj == NULL ) || ( TimerExists( obj ) == true ) ) {
+	itsdk_enterCriticalSection();
+	// do not stop a non existing
+	if( ( obj == NULL ) || ( TimerExists( obj ) == false ) ) {
+		itsdk_leaveCriticalSection();
 	    return;
 	}
 
-	itsdk_timer_return_t ret = itsdk_stimer_stop(
-										TimerCallback,
-										(uint32_t)obj
-								);
-	obj->IsStarted = false;
-	if (ret == TIMER_NOT_FOUND) {
-		log_warn("Timer to stop is not found\r\n");
+	if (obj->IsStarted) {
+		itsdk_timer_return_t ret = itsdk_stimer_stop(
+											TimerCallback,
+											(uint32_t)obj
+									);
+		if (ret == TIMER_NOT_FOUND) {
+			log_warn("Timer to stop is not found or completed\r\n");
+		}
+		obj->IsStarted = false;
 	}
-
 	removeFromList(obj);
-
+	itsdk_leaveCriticalSection();
 
 //  BACKUP_PRIMASK();
 //

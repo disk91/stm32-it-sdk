@@ -151,6 +151,8 @@ void stm32l_lowPowerResume() {
  * gpio is dynamically modified in the code.
  */
 __weak void stm32l_lowPowerRestoreGpioConfig() {
+#warning remove trace
+	log_info("WRONG !!\r\n");
 	MX_GPIO_Init();
 }
 
@@ -198,7 +200,6 @@ void _stm32l_disableGpios() {
     /*       to analog input mode) including  UART I/O pins.           					*/
 
 #ifdef GPIOA
-
 	__GpioAnalog(GPIOA,(~ITSDK_LOWPOWER_GPIO_A_KEEP) & (GPIOA_PIN_AVAILABLE));
 	if( ITSDK_LOWPOWER_GPIO_A_KEEP == __LP_GPIO_NONE ) {
 		__HAL_RCC_GPIOA_CLK_DISABLE();
@@ -249,6 +250,8 @@ void _stm32l_disableGpios() {
 #if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_GPIO ) > 0
 
 void __LP_GPIO_IRQHandler(uint16_t GPIO_Pin) {
+#warning REMOVE
+	log_info("WakeUp\r\n");
 
   /* Clear Wake Up Flag */
   __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);

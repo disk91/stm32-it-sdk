@@ -23,7 +23,9 @@
  * \author    MCD Application Team ( STMicroelectronics International )
  */
 #include <stdio.h>
-//#include "hw_rtc.h"
+
+#include <it_sdk/config.h>
+#include <it_sdk/time/time.h>
 #include <drivers/lorawan/systime.h>
 
 #define END_OF_FEBRUARY_LEAP                         60 //31+29
@@ -101,10 +103,19 @@ SysTime_t SysTimeSub( SysTime_t a, SysTime_t b )
     return c;
 }
 
+
 void SysTimeSet( SysTime_t sysTime )
 {
+#warning REMOVE
+	log_info("Set time %d.%d\r\n",sysTime.Seconds,sysTime.SubSeconds);
+
+	uint64_t t = sysTime.Seconds;
+	t *= 1000;
+	t += sysTime.SubSeconds;
+    itsdk_time_set_ms(t);
+
+	/*
     SysTime_t DeltaTime;
-  
     SysTime_t calendarTime = { .Seconds = 0, .SubSeconds = 0 };
 
     calendarTime.Seconds = HW_RTC_GetCalendarTime( ( uint16_t* )&calendarTime.SubSeconds );
@@ -112,11 +123,23 @@ void SysTimeSet( SysTime_t sysTime )
     // sysTime is epoch
     DeltaTime = SysTimeSub( sysTime, calendarTime );
 
+
     HW_RTC_BKUPWrite( DeltaTime.Seconds, ( uint32_t )DeltaTime.SubSeconds );
+    */
 }
+
 
 SysTime_t SysTimeGet( void )
 {
+
+    SysTime_t sysTime = { .Seconds = 0, .SubSeconds = 0 };
+	uint64_t t = itsdk_time_get_ms();
+	sysTime.Seconds = t / 1000;
+	sysTime.SubSeconds = t - (sysTime.Seconds*1000);
+#warning REMOVE
+	log_info("Get time %d.%d\r\n",sysTime.Seconds,sysTime.SubSeconds);
+
+	/*
     SysTime_t calendarTime = { .Seconds = 0, .SubSeconds = 0 };
     SysTime_t sysTime = { .Seconds = 0, .SubSeconds = 0 };
     SysTime_t DeltaTime;
@@ -126,11 +149,11 @@ SysTime_t SysTimeGet( void )
     HW_RTC_BKUPRead( &DeltaTime.Seconds, ( uint32_t* )&DeltaTime.SubSeconds );
 
     sysTime = SysTimeAdd( DeltaTime, calendarTime );
-
+*/
     return sysTime;
 }
 
-
+/*
 SysTime_t SysTimeGetMcuTime( void )
 {
     SysTime_t calendarTime = { .Seconds = 0, .SubSeconds = 0 };
@@ -147,7 +170,7 @@ uint32_t SysTime2Ms( SysTime_t sysTime )
     SysTime_t calendarTime = SysTimeSub( sysTime, DeltaTime );
     return calendarTime.Seconds * 1000 + calendarTime.SubSeconds;
 }
-
+*/
 uint32_t SysTimeMkTime( const struct tm* localtime )
 {
     uint32_t nbdays;
@@ -235,7 +258,7 @@ static uint32_t CalendarGetMonth( uint32_t days, uint32_t year )
 {
     uint32_t month;
     if( ( year % 4 ) == 0 )
-    {   /*leap year*/
+    {   //leap year
         if( days < END_OF_FEBRUARY_LEAP )
         {   // January or February
             // month =  days * 2 / ( 30 + 31 );
