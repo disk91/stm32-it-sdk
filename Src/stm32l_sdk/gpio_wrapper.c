@@ -45,6 +45,7 @@ GPIO_TypeDef * getPortFromBankId(uint8_t bankId) {
 	case __BANK_B: return GPIOB;
 	case __BANK_C: return GPIOC;
 	case __BANK_D: return GPIOD;
+	case __BANK_E: return GPIOE;
 	case __BANK_H: return GPIOH;
 	default:
 		itsdk_error_handler(__FILE__, __LINE__);
@@ -98,6 +99,9 @@ void gpio_configure(uint8_t bank, uint16_t id, itsdk_gpio_type_t type ) {
 		  break;
 	case __BANK_D:
 		  __GPIOD_CLK_ENABLE();
+		  break;
+	case __BANK_E:
+		  __GPIOE_CLK_ENABLE();
 		  break;
 	case __BANK_H:
 		  __GPIOH_CLK_ENABLE();
@@ -236,7 +240,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	while ( c != NULL ) {
 		void (*p)(uint16_t p) = c->irq_func;
 		if ( p != NULL && (c->pinMask==0 || ((c->pinMask & GPIO_Pin) > 0) ) ) {
-			log_info("Callback\r\n");
 			p(GPIO_Pin);
 		}
 		c = c->next;

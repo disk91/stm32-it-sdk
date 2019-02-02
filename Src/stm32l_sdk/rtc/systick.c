@@ -29,9 +29,21 @@
 #include <it_sdk/itsdk.h>
 #include <it_sdk/time/time.h>
 #include <it_sdk/lowpower/lowpower.h>
+#include <it_sdk/logger/logger.h>
 #include <stm32l0xx_hal.h>
+#if ITSDK_CLK_BEST_SOURCE == __CLK_BEST_SRC_RTC
+	#include <stm32l_sdk/rtc/rtc.h>
+#endif
+#if ITSDK_CLK_BEST_SOURCE == __CLK_BEST_SRC_CLK
+	#include <stm32l_sdk/timer/timer.h>
+#endif
 
-bool __enable_systick = true;
+bool 		__enable_systick = true;
+#if ITSDK_WITH_CLK_ADJUST > 0
+   uint32_t	__systick_ratio = 1000;
+#else
+   #define 	__systick_ratio   1000
+#endif
 
 #ifdef ITSDK_CORE_CLKFREQ
 	#if ITSDK_CORE_CLKFREQ > 16000000
@@ -49,12 +61,48 @@ bool __enable_systick = true;
  */
 void HAL_IncTick(void) {
 	// add 1ms to the global counter
-	if (__enable_systick) itsdk_time_add_us(__TICK_DURATION_US);
+	if (__enable_systick) itsdk_time_add_us((__TICK_DURATION_US*__systick_ratio)/1000);
 	uwTick++;
 	__lowPower_wakeup_reason = LOWPWR_WAKEUP_SYSTICK;
 }
 void HAL_SYSTICK_Callback(void) {
 	// add 1ms to the global counter
-	if (__enable_systick) itsdk_time_add_us(__TICK_DURATION_US);
+	if (__enable_systick) itsdk_time_add_us((__TICK_DURATION_US*__systick_ratio)/1000);
 	__lowPower_wakeup_reason = LOWPWR_WAKEUP_SYSTICK;
+}
+
+
+/**
+ * Update the correction tickRatio => realTicks = (calcTickRatio * seenTicks)/1000
+ */
+void systick_adjustTime() {
+#if ITSDK_WITH_CLK_ADJUST > 0
+	uint64_t start_clk = itsdk_time_get_us()/1000;
+	#if ITSDK_CLK_BEST_SOURCE == __CLK_BEST_SRC_RTC
+		#if ITSDK_WITH_RTC == __RTC_ENABLED
+			uint64_t start_rtc = rtc_getTimestampMsRaw(false);
+			while ( (rtc_getTimestampMsRaw(false)-start_rtc) < 200 );	// wait for 200ms
+		#else
+		   #error 'RTC IS DISABLED, CAN BE USED AS A CLK SOURCE'
+		#endif
+	#elif ITSDK_CLK_BEST_SOURCE == __CLK_BEST_SRC_CLK
+		itsdk_hwtimer_sync_run(
+				200,
+				NULL,
+				0
+		);
+	#else
+		#error 'INVALID BEST CLK SRC'
+	#endif
+	uint64_t stop_clk = itsdk_time_get_us()/1000;
+	uint64_t ratio = (1000*200)/(stop_clk-start_clk);
+	log_info("ticks : %d / 200ms ==> %d\r\n",(int)(stop_clk-start_clk),(int)ratio);
+
+	// Protection against value too bad, sounds like a problem
+	if ( ratio > 1400 || ratio < 600 ) {
+		log_error("rtc_calcClockRatio ratio looks invalid %d\r\n",(uint32_t)ratio);
+		ratio = 1000;
+	}
+	__systick_ratio=(uint32_t)ratio;
+#endif
 }

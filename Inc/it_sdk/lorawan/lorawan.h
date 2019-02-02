@@ -32,16 +32,36 @@ typedef enum {
 	LORAWAN_INIT_FAILED
 } itsdk_lorawan_init_t;
 
+
+typedef enum {
+	LORAWAN_SEND_QUEUED = 0,				// Message put in the sending queue (SUCCESS)
+	LORAWAN_SEND_SENT,						// Message sent (SUCCESS)
+	LORAWAN_SEND_NOT_JOINED,				// The device has not joined message can be sent (ERROR)
+	LORAWAN_SEND_FAILED						// Various other failure (ERROR)
+} itsdk_lorawan_send_t;
+
+
 typedef enum {
 	LORAWAN_DEVICE_CLASS_A = 0,
 	LORAWAN_DEVICE_CLASS_B,
 	LORAWAN_DEVICE_CLASS_C
 } itsdk_lorawan_dev_class;
 
+typedef struct itsdk_lorawan_state_s {
+	bool		hasJoined;
+	uint32_t	joinTime;					// Time in S when the device has confirmed last joined
+
+
+} itsdk_lorawan_state_t;
+
 itsdk_lorawan_init_t itsdk_lorawan_setup(uint16_t region);
 itsdk_lorawan_init_t itsdk_lorawan_join();
-itsdk_lorawan_init_t itsdk_lorawan_send(uint8_t * payload, uint8_t sz, uint8_t port);
+itsdk_lorawan_send_t itsdk_lorawan_send(uint8_t * payload, uint8_t sz, uint8_t port,bool confirm);
+bool itsdk_lorawan_hasjoined();
+
+
 void itsdk_lorawan_loop();
+
 
 // ===============================================================
 // TO BE OVERRIDDED

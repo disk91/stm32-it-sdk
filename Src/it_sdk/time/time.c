@@ -29,9 +29,10 @@
 #include <it_sdk/time/time.h>
 #if ITSDK_PLATFORM == __PLATFORM_STM32L0
 	#include <stm32l_sdk/rtc/rtc.h>
+	#include <stm32l_sdk/time/time.h>
 #endif
 
-uint64_t __timeus = 0;
+volatile uint64_t __timeus = 0;
 uint8_t  __time_has_overrun = 0;
 uint8_t  __time_overrun_cnt = 0;
 
@@ -71,6 +72,14 @@ uint64_t itsdk_time_get_ms() {
 }
 
 /**
+ * Get current time in us
+ */
+uint64_t itsdk_time_get_us() {
+	return __timeus;
+}
+
+
+/**
  * Reset the time to 0
  */
 void itsdk_time_reset() {
@@ -89,6 +98,7 @@ void itsdk_time_init() {
 #if ITSDK_PLATFORM == __PLATFORM_STM32L0
 	rtc_resetTime();
 	rtc_adjustTime();
+	systick_adjustTime();
 #else
 	#error "platform not supported"
 #endif

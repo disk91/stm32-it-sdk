@@ -61,14 +61,17 @@ void rtc_runRtcUntil(uint16_t ms) {
 }
 
 /*
- * Convert a duration in ticks
+ * Convert a duration in ticks (Wake-Up Clock only)
  */
 uint32_t rtc_getTicksFromDuration(uint32_t ms) {
-    return (ms * 2314) / 1000;
+    return (ms * (ITSDK_RTC_CLKFREQ/16)) / 1000;
 }
 
+/*
+ * Convert a tick duration in ms (Wake-Up Clock only)
+ */
 int32_t rtc_getMsFromTicks(uint32_t ticks) {
-	return (ticks * 1000) / 2314;
+	return (ticks * 1000) / (ITSDK_RTC_CLKFREQ/16);
 }
 
 /**
@@ -303,7 +306,7 @@ void rtc_adjustTime() {
  * Return the corrected clockRatio => realClock = (calcClockRatio * seenClock)/1000
  */
 uint32_t rtc_calcClockRatio() {
-#if ITSDK_WITH_CLK_ADJUST > 0
+#if ITSDK_WITH_CLK_ADJUST > 0 && ITSDK_CLK_BEST_SOURCE == __CLK_BEST_SRC_CLK
 
 	// timer test
 	uint64_t start = rtc_getTimestampMsRaw(false);

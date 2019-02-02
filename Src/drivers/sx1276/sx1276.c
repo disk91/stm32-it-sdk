@@ -47,7 +47,7 @@
 #include <drivers/sx1276/hw.h>
 #include <drivers/lorawan/phy/radio.h>
 #include <drivers/sx1276/sx1276.h>
-#include "../../../Inc/drivers/lorawan/timeServer.h"
+#include <drivers/lorawan/timeServer.h>
 
 /*
  * Local types definition
@@ -446,7 +446,7 @@ void SX1276SetRxConfig( RadioModems_t modem, uint32_t bandwidth,
                          bool crcOn, bool freqHopOn, uint8_t hopPeriod,
                          bool iqInverted, bool rxContinuous )
 {
-	LOG_INFO_SX1276((">> SX1276SetRxConfig\r\n"));
+	//LOG_INFO_SX1276((">> SX1276SetRxConfig\r\n"));
 
     SX1276SetModem( modem );
 
@@ -616,7 +616,7 @@ void SX1276SetTxConfig( RadioModems_t modem, int8_t power, uint32_t fdev,
                         bool fixLen, bool crcOn, bool freqHopOn,
                         uint8_t hopPeriod, bool iqInverted, uint32_t timeout )
 {
-	LOG_INFO_SX1276((">> SX1276SetTxConfig\r\n"));
+	//LOG_INFO_SX1276((">> SX1276SetTxConfig\r\n"));
 
     SX1276SetModem( modem );
 
@@ -926,7 +926,7 @@ void SX1276SetStby( void )
 
 void SX1276SetRx( uint32_t timeout )
 {
-	LOG_INFO_SX1276((">> SX1276SetRx\r\n"));
+	LOG_INFO_SX1276((">> SX1276SetRx (%d)\r\n",timeout));
 
     bool rxContinuous = false;
 
@@ -1094,7 +1094,7 @@ void SX1276SetRx( uint32_t timeout )
 
 void SX1276SetTx( uint32_t timeout )
 {
-    LOG_INFO_SX1276((">> SX1276SetTx\r\n"));
+    LOG_INFO_SX1276((">> SX1276SetTx (%d)\r\n",timeout));
 
     TimerSetValue( &TxTimeoutTimer, timeout );
 

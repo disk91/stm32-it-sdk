@@ -355,7 +355,7 @@ static void SX1276AntSwInit( void )
 
 static void SX1276AntSwDeInit( void )
 {
-	LOG_INFO_SX1276((">> SX1276AntSwDeInit\r\n"));
+	//LOG_INFO_SX1276((">> SX1276AntSwDeInit\r\n"));
 
   gpio_configure(ITSDK_MURATA_ANTSW_RX_BANK, ITSDK_MURATE_ANTSW_RX_PIN, GPIO_ANALOG );
   gpio_reset(ITSDK_MURATA_ANTSW_RX_BANK,ITSDK_MURATE_ANTSW_RX_PIN);
@@ -383,9 +383,9 @@ static void SX1276AntSwDeInit( void )
 
 void SX1276SetAntSw( uint8_t opMode )
 {
-	LOG_INFO_SX1276((">> SX1276SetAntSw (%d)\r\n",opMode));
+	//LOG_INFO_SX1276((">> SX1276SetAntSw (%d)\r\n",opMode));
 
- uint8_t paConfig =  SX1276Read( REG_PACONFIG );
+    uint8_t paConfig =  SX1276Read( REG_PACONFIG );
     switch( opMode )
     {
     case RFLR_OPMODE_TRANSMITTER:

@@ -76,6 +76,13 @@
 #define __RTC_ENABLED				0x0001			// With RTC
 
 /**
+ * CLK CORRECTION SOURCE
+ */
+#define __CLK_BEST_SRC_UNDEFINED	0x00			// The most accurate source is unknonw
+#define __CLK_BEST_SRC_RTC			0x01			// The RTC clock is the most accurate source
+#define __CLK_BEST_SRC_CLK			0x02			// The main CLK is the most accurated source
+
+/**
  * ADC configuration
  */
 #define __ADC_NONE					0x00			// No ADC
@@ -130,7 +137,7 @@
 #define __BANK_D				3
 #define __BANK_E				4
 #define __BANK_F				5
-#define __BANK_H				6
+#define __BANK_H				7
 
 
 /**

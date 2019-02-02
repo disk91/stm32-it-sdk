@@ -1,8 +1,8 @@
 /* ==========================================================
- * time.h - 
+ * time.h - stm32L0x1 time header
  * Project : Disk91 SDK
  * ----------------------------------------------------------
- * Created on: 12 sept. 2018
+ * Created on: 2 feb. 2019
  *     Author: Paul Pinault aka Disk91
  * ----------------------------------------------------------
  * Copyright (C) 2018 Disk91
@@ -20,19 +20,13 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  * ----------------------------------------------------------
- * 
+ *
  *
  * ==========================================================
  */
-#ifndef IT_SDK_TIME_TIME_H_
-#define IT_SDK_TIME_TIME_H_
-#include <stdint.h>
+#ifndef STM32L_SDK_TIME_TIME_H_
+#define STM32L_SDK_TIME_TIME_H_
 
-void itsdk_time_add_us(uint32_t us);
-void itsdk_time_set_ms(uint64_t ms);
-uint64_t itsdk_time_get_ms();
-uint64_t itsdk_time_get_us();
-void itsdk_time_reset();
-void itsdk_time_init();
+void systick_adjustTime();
 
-#endif /* IT_SDK_TIME_TIME_H_ */
+#endif // STM32L_SDK_TIME_TIME_H_

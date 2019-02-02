@@ -196,7 +196,7 @@ static void TimerCallback( uint32_t value ) {
 
 void TimerInit( TimerEvent_t *obj, void ( *callback )( void *context ) )
 {
-  log_debug("TimerInit\r\n");
+  //log_debug("TimerInit\r\n");
 
   obj->Timestamp = 0;
   obj->ReloadValue = 0;
@@ -227,19 +227,19 @@ void TimerSetContext( TimerEvent_t *obj, void* context )
  */
 void TimerSetValue( TimerEvent_t *obj, uint32_t value )
 {
-	log_debug("TimerSetValue %d\r\n",value);
+	//log_debug("TimerSetValue %d\r\n",value);
 	// search the real timer based on the context
 	itsdk_stimer_slot_t * t = itsdk_stimer_get(TimerCallback,(uint32_t)obj);
 	if ( t != NULL ) {
 		// best is to stop the timer and restart it with the new duration
 		TimerStop(obj);
-		obj->Timestamp = (value*110)/100;
-		obj->ReloadValue = (value*110)/100;
+		obj->Timestamp = value;
+		obj->ReloadValue = value;
 		TimerStart(obj);
 	} else {
 		// the timer is not running, so we just need to update the local structure
-		obj->Timestamp = (value*110)/100;
-		obj->ReloadValue = (value*110)/100;
+		obj->Timestamp = value;
+		obj->ReloadValue = value;
 	}
 
 /*
@@ -284,7 +284,7 @@ static void TimerSetTimeout( TimerEvent_t *obj )
  */
 void TimerStart( TimerEvent_t *obj )
 {
-	log_info("Start timer for %d ms\r\n",obj->ReloadValue);
+	log_info("St %d ms\r\n",obj->ReloadValue);
 
 	itsdk_enterCriticalSection();
 	// do not add a timer already existing
@@ -359,7 +359,7 @@ void TimerStart( TimerEvent_t *obj )
  */
 void TimerStop( TimerEvent_t *obj ) 
 {
-	log_info("Stop a timer waiting for %d ms\r\n",obj->ReloadValue);
+	log_info("Sp %d ms\r\n",obj->ReloadValue);
 
 	itsdk_enterCriticalSection();
 	// do not stop a non existing
@@ -373,9 +373,9 @@ void TimerStop( TimerEvent_t *obj )
 											TimerCallback,
 											(uint32_t)obj
 									);
-		if (ret == TIMER_NOT_FOUND) {
-			log_warn("Timer to stop is not found or completed\r\n");
-		}
+//		if (ret == TIMER_NOT_FOUND) {
+//			log_warn("Timer to stop is not found or completed\r\n");
+//		}
 		obj->IsStarted = false;
 	}
 	removeFromList(obj);

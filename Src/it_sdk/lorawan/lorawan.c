@@ -36,6 +36,13 @@
 #include <drivers/lorawan/phy/radio.h>
 #include <it_sdk/lorawan/lorawan.h>
 
+
+static itsdk_lorawan_state_t __loraWanState;
+
+
+
+
+
 uint8_t LoraMacProcessRequest;
 
 /**
@@ -95,6 +102,8 @@ __weak void itsdk_lorawan_onDataReception(uint8_t port, uint8_t * data, uint8_t 
  */
 __weak void itsdk_lorawan_onJoinSuccess() {
    log_info("[LoRaWAN] Join success\r\n");
+   __loraWanState.hasJoined = true;
+   __loraWanState.joinTime = (uint32_t)(itsdk_time_get_ms()/1000);
 }
 
 /**
@@ -135,6 +144,9 @@ __weak void itsdk_lorawan_uplinkAckConfirmed() {
  */
 itsdk_lorawan_init_t itsdk_lorawan_setup(uint16_t region) {
 	log_info("itsdk_lorawan_setup\r\n");
+
+	// Init structure
+	__loraWanState.hasJoined = false;
 
 	// Init hardware
 	Radio.IoInit();
@@ -235,14 +247,27 @@ itsdk_lorawan_init_t itsdk_lorawan_join() {
 }
 
 
-itsdk_lorawan_init_t itsdk_lorawan_send(uint8_t * payload, uint8_t sz, uint8_t port) {
-	lora_AppData_t d;
-	d.Buff = payload,
-	d.BuffSize = sz;
-	d.Port = port;
+itsdk_lorawan_send_t itsdk_lorawan_send(uint8_t * payload, uint8_t sz, uint8_t port, bool confirm) {
 
-	LORA_send(&d, LORAWAN_UNCONFIRMED_MSG);
+	if ( __loraWanState.hasJoined ) {
+		lora_AppData_t d;
+		d.Buff = payload,
+		d.BuffSize = sz;
+		d.Port = port;
+		LORA_send(&d, ((confirm)?LORAWAN_CONFIRMED_MSG:LORAWAN_UNCONFIRMED_MSG));
+		return LORAWAN_SEND_QUEUED;
+	} else return LORAWAN_SEND_NOT_JOINED;
+
 }
+
+
+/**
+ * Return true once the device has joined the the network
+ */
+bool itsdk_lorawan_hasjoined() {
+	return (__loraWanState.hasJoined);
+}
+
 
 void itsdk_lorawan_loop() {
 

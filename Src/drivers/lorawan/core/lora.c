@@ -509,9 +509,7 @@ void LORA_Init (LoRaMainCallback_t *callbacks, LoRaParam_t* LoRaParam, uint16_t 
 #endif
 #if defined( REGION_EU868 )
         case __LORAWAN_REGION_EU868:
-        	log_info("1\r\n");
         	LoRaMacInitialization( &LoRaMacPrimitives, &LoRaMacCallbacks, LORAMAC_REGION_EU868 );
-        	log_info("2\r\n");
         	break;
 #endif
 #if defined( REGION_KR920 )
@@ -698,6 +696,8 @@ bool LORA_send(lora_AppData_t* AppData, LoraConfirm_t IsTxConfirmed)
     {
         if( IsTxConfirmed == LORAWAN_UNCONFIRMED_MSG )
         {
+        	log_info("### unconfirmed\r\n");
+
             mcpsReq.Type = MCPS_UNCONFIRMED;
             mcpsReq.Req.Unconfirmed.fPort = AppData->Port;
             mcpsReq.Req.Unconfirmed.fBufferSize = AppData->BuffSize;
@@ -706,7 +706,9 @@ bool LORA_send(lora_AppData_t* AppData, LoraConfirm_t IsTxConfirmed)
         }
         else
         {
-            mcpsReq.Type = MCPS_CONFIRMED;
+        	log_info("### confirmed\r\n");
+
+        	mcpsReq.Type = MCPS_CONFIRMED;
             mcpsReq.Req.Confirmed.fPort = AppData->Port;
             mcpsReq.Req.Confirmed.fBufferSize = AppData->BuffSize;
             mcpsReq.Req.Confirmed.fBuffer = AppData->Buff;
