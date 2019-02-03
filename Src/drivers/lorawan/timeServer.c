@@ -37,7 +37,6 @@ Maintainer: Miguel Luis, Gregory Cristian and Wael Guibene
 
 #include <time.h>
 #include <drivers/lorawan/timeServer.h>
-//#include "low_power.h"
 
 
 
@@ -185,7 +184,7 @@ static void TimerCallback( uint32_t value ) {
 		obj->Callback(obj->Context);
 	} else {
 		log_error("Callback function is NULL \r\n");
-		_Error_Handler(__FILE__,__LINE__);
+		itsdk_error_handler(__FILE__,__LINE__);
 	}
 	removeFromList(obj);
 }
@@ -307,11 +306,12 @@ void TimerStart( TimerEvent_t *obj )
 	itsdk_timer_return_t ret = itsdk_stimer_register(
 									obj->ReloadValue,
 									TimerCallback,
-									(uint32_t)obj
+									(uint32_t)obj,
+									TIMER_REFUSE_LOWPOWER
 		 	 	 	 	 	   );
 	if ( ret != TIMER_INIT_SUCCESS ) {
 		log_error("Error during timer initialization %d \r\n",ret);
-		_Error_Handler(__FILE__,__LINE__);
+		itsdk_error_handler(__FILE__,__LINE__);
 	}
 	itsdk_leaveCriticalSection();
 
@@ -369,13 +369,10 @@ void TimerStop( TimerEvent_t *obj )
 	}
 
 	if (obj->IsStarted) {
-		itsdk_timer_return_t ret = itsdk_stimer_stop(
-											TimerCallback,
-											(uint32_t)obj
-									);
-//		if (ret == TIMER_NOT_FOUND) {
-//			log_warn("Timer to stop is not found or completed\r\n");
-//		}
+		itsdk_stimer_stop(
+							TimerCallback,
+							(uint32_t)obj
+						);
 		obj->IsStarted = false;
 	}
 	removeFromList(obj);

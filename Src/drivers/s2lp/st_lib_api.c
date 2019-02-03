@@ -640,7 +640,8 @@ sfx_u8 MCU_API_timer_start(sfx_u32 time_duration_in_s)
 	if (   itsdk_stimer_register(
 				(time_duration_in_s)*1000-500,
 				__TIMER_Handler,
-				0
+				0,
+				TIMER_ACCEPT_LOWPOWER
 			) != TIMER_INIT_SUCCESS ) {
 		itsdk_error_handler(__FILE__, __LINE__);
 	}
@@ -704,7 +705,8 @@ sfx_u8 MCU_API_timer_start_carrier_sense(sfx_u16 time_duration_in_ms)
 	if (   itsdk_stimer_register(
 			time_duration_in_ms,
 			__TIMER2_Handler,
-			0
+			0,
+			TIMER_ACCEPT_LOWPOWER
 		) != TIMER_INIT_SUCCESS ) {
 			itsdk_error_handler(__FILE__, __LINE__);
 		}

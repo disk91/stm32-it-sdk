@@ -88,7 +88,8 @@ itsdk_stimer_slot_t	__stimer_slots[ITSDK_TIMER_SLOTS] = {0};
 itsdk_timer_return_t itsdk_stimer_register(
 		uint32_t ms,
 		void (*callback_func)(uint32_t value),
-		uint32_t value
+		uint32_t value,
+		itsdk_timer_lpAccept allowLowPower
 ) {
 	if ( ms < ITSDK_LOWPOWER_RTC_MS ) {
 		#if (ITSDK_LOGGER_MODULE & __LOG_MOD_STIMER) > 0
@@ -106,6 +107,7 @@ itsdk_timer_return_t itsdk_stimer_register(
 	}
 	if ( i < ITSDK_TIMER_SLOTS ) {
 		__stimer_slots[i].inUse = true;
+		__stimer_slots[i].allowLowPower = ((allowLowPower==TIMER_ACCEPT_LOWPOWER)?true:false);
 		__stimer_slots[i].customValue = value;
 		__stimer_slots[i].callback_func = callback_func;
 		__stimer_slots[i].timeoutMs = itsdk_time_get_ms()+ms;
@@ -150,6 +152,24 @@ bool itsdk_stimer_isRunning(
 
 	itsdk_stimer_slot_t * t = itsdk_stimer_get(callback_func,value);
 	return ( t != NULL );
+}
+
+/**
+ * Return true when the MCU is authorized to switch in low power mode.
+ * Some soft timers need to have a precise timing and are not supporting
+ * the variation due to the deep sleep RTC duration.
+ * An improvement will be to moderate the RTC sleep duration to the duration
+ * of these timer to avoid the timing GAP. See it later.
+ */
+bool itsdk_stimer_isLowPowerSwitchAutorized() {
+	int i = 0;
+	while ( i < ITSDK_TIMER_SLOTS) {
+		if (__stimer_slots[i].inUse && __stimer_slots[i].allowLowPower == false ) {
+			return false;
+		}
+		i++;
+	}
+	return true;
 }
 
 /**

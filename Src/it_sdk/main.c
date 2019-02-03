@@ -103,7 +103,13 @@ void itsdk_loop() {
 	   itsdk_stimer_run();
 	#endif
 	project_loop();
-	lowPower_switch();
+	#if ITSDK_TIMER_SLOTS > 0
+		if ( itsdk_stimer_isLowPowerSwitchAutorized() ) {
+	#endif
+			lowPower_switch();
+	#if ITSDK_TIMER_SLOTS > 0
+		}
+	#endif
 }
 
 /**

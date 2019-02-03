@@ -46,7 +46,7 @@
 			0,
 			NULL
 	};
-
+	uint16_t __lowPower_wakeup_pin =0;
 #endif
 
 
@@ -97,11 +97,15 @@ void stm32l_lowPowerSetup() {
 
 		#if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_GPIO ) > 0
 		  // Register interrupt handler
+		  __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU); 			// Clear wakeUp flag
 		  gpio_registerIrqAction(&__lowpwer_gpio_irq);	// Install the action as the irq can be activated outside this code
 		#endif
 
  	    // Switch to STOPMode
 		__lowPower_wakeup_reason=LOWPWR_WAKEUP_UNDEF;
+		#if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_GPIO ) > 0
+			__lowPower_wakeup_pin=0;
+		#endif
  	    HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
 	}
 
@@ -134,13 +138,24 @@ void stm32l_lowPowerResume() {
 			MX_USART2_UART_Init();
 		#endif
 		HAL_ResumeTick();
+
+		// For GPIO wake up, we execute callback once the MCU has been reconfigured
+		#if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_GPIO ) > 0
+			if ( __lowPower_wakeup_reason == LOWPWR_WAKEUP_GPIO && __lowPower_wakeup_pin != 0 ) {
+				HAL_GPIO_EXTI_Callback(__lowPower_wakeup_pin);
+			}
+		#endif
+
 	}
 //  useful line of code to identify the wakeup cause when needed...
-//	if (__lowPower_wakeup_reason != LOWPWR_WAKEUP_UNDEF ) {
-//		log_info("-%d-",__lowPower_wakeup_reason);
-//	} else {
-//		log_info("|");
-//	}
+	if (__lowPower_wakeup_reason != LOWPWR_WAKEUP_UNDEF ) {
+		if ( __lowPower_wakeup_reason == LOWPWR_WAKEUP_GPIO )
+			log_info("-%d-(%d)-",__lowPower_wakeup_reason,__lowPower_wakeup_pin);
+		else
+			log_info("-%d-",__lowPower_wakeup_reason);
+	} else {
+		log_info("|");
+	}
 
 }
 
@@ -245,17 +260,18 @@ void _stm32l_disableGpios() {
 
 /**
  * IRQ Handler
+ * We store the pin, reason of the wake up becaus we are going to callback the irq handler
+ * once the mcu is reconfigured & ready
  */
 
 #if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_GPIO ) > 0
 
 void __LP_GPIO_IRQHandler(uint16_t GPIO_Pin) {
-#warning REMOVE
-	log_info("WakeUp\r\n");
 
   /* Clear Wake Up Flag */
   __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
   __lowPower_wakeup_reason=LOWPWR_WAKEUP_GPIO;
+  __lowPower_wakeup_pin = GPIO_Pin;
 
 }
 

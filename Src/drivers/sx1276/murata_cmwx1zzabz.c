@@ -30,7 +30,9 @@ Maintainer: Miguel Luis and Gregory Cristian
   *
   ******************************************************************************
   */
-  
+#include <it_sdk/config.h>
+#if ITSDK_WITH_LORAWAN_LIB == __ENABLE && ITSDK_LORAWAN_LIB == __LORAWAN_SX1276
+
 /* Includes ------------------------------------------------------------------*/
 
 #include <drivers/sx1276/hw.h>
@@ -420,3 +422,5 @@ bool SX1276CheckRfFrequency( uint32_t frequency )
     return true;
 }
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+
+#endif

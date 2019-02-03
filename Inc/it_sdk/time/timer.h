@@ -39,14 +39,19 @@ typedef enum {
 
 } itsdk_timer_return_t;
 
+typedef enum {
+	TIMER_ACCEPT_LOWPOWER=0,
+	TIMER_REFUSE_LOWPOWER
+} itsdk_timer_lpAccept;
+
 // =====================================================================================
 // HW TIMERS
 // =====================================================================================
 
 itsdk_timer_return_t itsdk_hwtimer_sync_run(
-		uint32_t ms,
-		void (*callback_func)(uint32_t value),
-		uint32_t value
+		uint32_t ms,							// timer duration
+		void (*callback_func)(uint32_t value),	// function to call back on timer expiration
+		uint32_t value							//   value to be pass to the callback function
 );
 
 // =====================================================================================
@@ -56,6 +61,7 @@ itsdk_timer_return_t itsdk_hwtimer_sync_run(
 
 typedef struct s_itsdk_stimer_slot {
 	bool			inUse;								// This structure is in use
+	bool 	 		allowLowPower;						// when true a deep sleep switch is authorized during time wait
 	uint32_t		timeoutMs;							// End of the timer value
 	void 			(*callback_func)(uint32_t value);	// Callback function
 	uint32_t		customValue;
@@ -64,7 +70,8 @@ typedef struct s_itsdk_stimer_slot {
 itsdk_timer_return_t itsdk_stimer_register(
 		uint32_t ms,									// timer duration
 		void (*callback_func)(uint32_t value),			// callback function
-		uint32_t value									// value to pass to callback function
+		uint32_t value,									// value to pass to callback function
+		itsdk_timer_lpAccept allowLowPower				// when true the MCU can switch to low power during timer execution
 );
 
 itsdk_timer_return_t itsdk_stimer_stop(
@@ -82,6 +89,7 @@ bool itsdk_stimer_isRunning(
 		uint32_t value
 );
 
+bool itsdk_stimer_isLowPowerSwitchAutorized();
 void itsdk_stimer_run();
 
 #endif /* IT_SDK_TIME_TIME_H_ */
