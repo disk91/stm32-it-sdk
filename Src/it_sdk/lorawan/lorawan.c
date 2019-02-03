@@ -32,40 +32,22 @@
 #include <it_sdk/logger/logger.h>
 
 #if ITSDK_WITH_LORAWAN_LIB == __ENABLE
+#include <drivers/lorawan/core/lorawan.h>
 #include <drivers/lorawan/core/lora.h>
 #include <drivers/lorawan/phy/radio.h>
 #include <it_sdk/lorawan/lorawan.h>
 
 
-static itsdk_lorawan_state_t __loraWanState;
+#define HEX16(X)  X[0],X[1], X[2],X[3], X[4],X[5], X[6],X[7],X[8],X[9], X[10],X[11], X[12],X[13], X[14],X[15]
+#define HEX8(X)   X[0],X[1], X[2],X[3], X[4],X[5], X[6],X[7]
 
 
 
 
+//uint8_t LoraMacProcessRequest;
 
-uint8_t LoraMacProcessRequest;
 
-/**
- * Return a batteryLevel from 1 to 254
- * 1 = VBAT_MIN
- * 254 = VBAT_MAX
- */
-__weak uint8_t itsdk_lorawan_battery_level() {
-	 uint16_t mv = adc_getVBat();
-	 if ( mv <= ITSDK_VBAT_MIN ) return 1;
-	 if ( mv >= ITSDK_VBAT_MAX ) return 254;
-	 return (( (uint32_t) (mv - ITSDK_VBAT_MIN)*ITSDK_VBAT_MAX) /(ITSDK_VBAT_MAX-ITSDK_VBAT_MIN) );
-}
 
-/**
- * Return the temperature
- * temperature in fixed decimal : 8b integer + 8b decimal
- */
-uint16_t itsdk_lorawan_temperature() {
-	int16_t t = adc_getTemperature();
-	t = (int16_t)(((int32_t)t << 8)/100);
-	return (uint16_t)t;
-}
 
 /**
  * Return a 8 bytes uniq Id for the device
@@ -75,36 +57,8 @@ void itsdk_lorawan_getUniqId(uint8_t *id ) {
 	return;
 }
 
-/**
- * Callback function on data reception
- * this function is based on a lorawan stack internal structure
- */
-void itsdk_lorawan_ReceiveData(lora_AppData_t *AppData)
-{
-	itsdk_lorawan_onDataReception(
-			AppData->Port,
-			AppData->Buff,
-			AppData->BuffSize
-	);
-}
 
 
-/**
- * Callback function on Data Reception
- * this function is based on standard element and can be overrided.
- */
-__weak void itsdk_lorawan_onDataReception(uint8_t port, uint8_t * data, uint8_t size) {
-   log_info("[LoRaWAN] data received %d bytes\r\n",size);
-}
-
-/**
- * Callback function on JOIN Success
- */
-__weak void itsdk_lorawan_onJoinSuccess() {
-   log_info("[LoRaWAN] Join success\r\n");
-   __loraWanState.hasJoined = true;
-   __loraWanState.joinTime = (uint32_t)(itsdk_time_get_ms()/1000);
-}
 
 /**
  * Callback function on JOIN Success
@@ -117,120 +71,75 @@ __weak void itsdk_lorawan_onConfirmClass(itsdk_lorawan_dev_class class) {
    log_info("[LoRaWAN] Class switch to %d confirmed\r\n","ABC"[class]);
 }
 
-/**
- * Callback function requesting transmission
- */
-__weak void itsdk_lorawan_onTxNeeded() {
-   log_info("[LoRaWAN] Network Server is asking for an uplink transmission\r\n");
-}
 
-/**
- * ??? to be clarified
- */
-void itsdk_lorawan_macProcessNotify(void) {
-  log_info("[LoRaWAN] Mac Process Notify\r\n");
-  LoraMacProcessRequest=LORA_SET;
-}
+
+
 
 /**
  * Callback on Uplink Ack from the Network server
  */
-__weak void itsdk_lorawan_uplinkAckConfirmed() {
+__weak void lorawan_driver_onUplinkAckConfirmed() {
     log_info("[LoRaWAN] Network Server \"ack\" an uplink data confirmed message transmission\r\n");
 }
+
 
 /**
  * Init the LoRaWan Stack
  */
+static uint8_t devEui[8] = ITSDK_LORAWAN_DEVEUI;
+static uint8_t appEui[8] = ITSDK_LORAWAN_APPEUI;
+static uint8_t appKey[16] = ITSDK_LORAWAN_APPKEY;
+
+static lorawan_driver_config_t __config;
 itsdk_lorawan_init_t itsdk_lorawan_setup(uint16_t region) {
 	log_info("itsdk_lorawan_setup\r\n");
 
-	// Init structure
-	__loraWanState.hasJoined = false;
-
-	// Init hardware
 	Radio.IoInit();
 
-	static LoRaMainCallback_t LoRaMainCallbacks = { itsdk_lorawan_battery_level,
-													itsdk_lorawan_temperature,
-													itsdk_lorawan_getUniqId,
-													itsdk_getRandomSeed,
-													itsdk_lorawan_ReceiveData,
-													itsdk_lorawan_onJoinSuccess,
-													itsdk_lorawan_onConfirmClass_internal,
-													itsdk_lorawan_onTxNeeded,
-													itsdk_lorawan_macProcessNotify,
-													itsdk_lorawan_uplinkAckConfirmed};
+	#if (ITSDK_LORAWAN_DEVEUI_SRC == __LORAWAN_DEVEUI_GENERATED)
+	  itsdk_getUniqId(DevEui, 8);
+	#endif
 
-	static uint8_t devEui[8] = ITSDK_LORAWAN_DEVEUI;
-	static uint8_t appEui[8] = ITSDK_LORAWAN_APPEUI;
-	static uint8_t appKey[16] = ITSDK_LORAWAN_APPKEY;
 
-	static LoRaParam_t LoRaParamInit = {
-										#if ITSDK_LORAWAN_ADR == __LORAWAN_ADR_ON
-											LORAWAN_ADR_ON,
-										#elif ITSDK_LORAWAN_ADR == __LORAWAN_ADR_OFF
-											LORAWAN_ADR_OFF,
-										#else
-											#error Invalid ITSDK_LORAWAN_ADR configuration
-										#endif
+	#if ITSDK_LORAWAN_ADR == __LORAWAN_ADR_ON
+	__config.adrEnable =LORAWAN_ADR_ON;
+	#elif ITSDK_LORAWAN_ADR == __LORAWAN_ADR_OFF
+	__config.adrEnable =LORAWAN_ADR_OFF;
+	#else
+   	  #error Invalid ITSDK_LORAWAN_ADR configuration
+	#endif
 
-										#if ITSDK_LORAWAN_DEFAULT_DR == __LORAWAN_DR_0
-											DR_0,
-										#elif ITSDK_LORAWAN_DEFAULT_DR == __LORAWAN_DR_1
-											DR_1,
-										#elif ITSDK_LORAWAN_DEFAULT_DR == __LORAWAN_DR_2
-											DR_2,
-										#elif ITSDK_LORAWAN_DEFAULT_DR == __LORAWAN_DR_3
-											DR_3,
-										#elif ITSDK_LORAWAN_DEFAULT_DR == __LORAWAN_DR_4
-											DR_4,
-										#elif ITSDK_LORAWAN_DEFAULT_DR == __LORAWAN_DR_5
-											DR_5,
-										#elif ITSDK_LORAWAN_DEFAULT_DR == __LORAWAN_DR_6
-											DR_6,
-										#elif ITSDK_LORAWAN_DEFAULT_DR == __LORAWAN_DR_7
-											DR_7,
-										#elif ITSDK_LORAWAN_DEFAULT_DR == __LORAWAN_DR_8
-											DR_8,
-										#elif ITSDK_LORAWAN_DEFAULT_DR == __LORAWAN_DR_9
-											DR_9,
-										#elif ITSDK_LORAWAN_DEFAULT_DR == __LORAWAN_DR_10
-											DR_10,
-										#elif ITSDK_LORAWAN_DEFAULT_DR == __LORAWAN_DR_11
-											DR_11,
-										#elif ITSDK_LORAWAN_DEFAULT_DR == __LORAWAN_DR_12
-											DR_12,
-										#elif ITSDK_LORAWAN_DEFAULT_DR == __LORAWAN_DR_13
-											DR_13,
-										#elif ITSDK_LORAWAN_DEFAULT_DR == __LORAWAN_DR_14
-											DR_14,
-										#elif ITSDK_LORAWAN_DEFAULT_DR == __LORAWAN_DR_15
-											DR_15,
-										#else
-										   #error Invalid ITSDK_LORAWAN_DEFAULT_DR configuration
-										#endif
+	__config.JoinType = ITSDK_LORAWAN_ACTIVATION;
+	__config.devEui = devEui;
+	#if ITSDK_LORAWAN_NETWORKTYPE == __LORAWAN_NWK_PUBLIC
+	__config.enablePublicNetwork = true;
+	#else
+	__config.enablePublicNetwork = false;
+	#endif
+	__config.region = region;
+	__config.txDatarate = ITSDK_LORAWAN_DEFAULT_DR;
+	#if ITSDK_LORAWAN_ACTIVATION ==  __LORAWAN_OTAA
+	__config.config.otaa.appEui = appEui;
+	__config.config.otaa.appKey = appKey;
+	__config.config.otaa.nwkKey = appKey;
+	#else
+		#error "ABP not yest supported"
+	#endif
 
-										#if ITSDK_LORAWAN_NETWORKTYPE == __LORAWAN_NWK_PUBLIC
-										   true,
-										#else
-										   false,
-										#endif
+	if ( __config.JoinType == __LORAWAN_OTAA ) {
+		log_debug( "OTAA\n\r");
+		log_debug( "DevEui= %02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X\n\r", HEX8(__config.devEui));
+		log_debug( "AppEui= %02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X\n\r", HEX8(__config.config.otaa.appEui));
+		log_debug( "AppKey= %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n\r", HEX16(__config.config.otaa.appKey));
+	} else if (__config.JoinType == __LORAWAN_ABP) {
+		log_debug( "ABP\n\r");
+		log_debug( "DevEui= %02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X\n\r", HEX8(__config.devEui));
+		log_debug( "DevAdd=  %08X\n\r", __config.config.abp.devAddr) ;
+		log_debug( "NwkSKey= %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n\r", HEX16(__config.config.abp.nwkSEncKey));
+		log_debug( "AppSKey= %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n\r", HEX16(__config.config.abp.appSKey));
+	}
 
-										   ITSDK_LORAWAN_ACTIVATION,
-										   devEui,
-										#if ITSDK_LORAWAN_ACTIVATION ==  __LORAWAN_OTAA
-										   .config.otaa = {
-												   appEui,
-												   appKey,
-												   appKey
-										   }
-										#else
-											#error Mode actually not supported
-										#endif
-
-	                                    };
-	LORA_Init(&LoRaMainCallbacks, &LoRaParamInit, region);
+	lorawan_driver_LORA_Init(&__config);
 
 	return LORAWAN_INIT_SUCESS;
 }
@@ -241,7 +150,11 @@ itsdk_lorawan_init_t itsdk_lorawan_setup(uint16_t region) {
 itsdk_lorawan_init_t itsdk_lorawan_join() {
 	log_info("itsdk_lorawan_join\r\n");
 
-	LORA_Join();
+	lorawan_driver_LORA_Join(
+			&__config,
+			LORAWAN_RUN_SYNC
+	);
+
 	return LORAWAN_INIT_SUCESS;
 
 }
@@ -249,14 +162,14 @@ itsdk_lorawan_init_t itsdk_lorawan_join() {
 
 itsdk_lorawan_send_t itsdk_lorawan_send(uint8_t * payload, uint8_t sz, uint8_t port, bool confirm) {
 
-	if ( __loraWanState.hasJoined ) {
+	//if ( __loraWanState.hasJoined ) {
 		lora_AppData_t d;
 		d.Buff = payload,
 		d.BuffSize = sz;
 		d.Port = port;
 		LORA_send(&d, ((confirm)?LORAWAN_CONFIRMED_MSG:LORAWAN_UNCONFIRMED_MSG));
 		return LORAWAN_SEND_QUEUED;
-	} else return LORAWAN_SEND_NOT_JOINED;
+	//} else return LORAWAN_SEND_NOT_JOINED;
 
 }
 
@@ -265,19 +178,11 @@ itsdk_lorawan_send_t itsdk_lorawan_send(uint8_t * payload, uint8_t sz, uint8_t p
  * Return true once the device has joined the the network
  */
 bool itsdk_lorawan_hasjoined() {
-	return (__loraWanState.hasJoined);
+	return true; //(__loraWanState.hasJoined);
 }
 
 
-void itsdk_lorawan_loop() {
 
-	while (LoraMacProcessRequest==LORA_SET)  {
-	      /*reset notification flag*/
-	      LoraMacProcessRequest=LORA_RESET;
-	      LoRaMacProcess( );
-	}
-
-}
 
 
 

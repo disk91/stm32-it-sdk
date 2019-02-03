@@ -140,6 +140,13 @@ void stm32l_lowPowerResume() {
 		HAL_ResumeTick();
 
 		// For GPIO wake up, we execute callback once the MCU has been reconfigured
+		// Need to see if uptimum... there is a risk of double execution
+		// Car l'irq chain devrait appeler les handler classiques sauf que
+		// le proc n'est pas reinitialisé donc ca ne se passe pas bien
+		// du coup il ne faudrait executer que le WU et pas les autres...
+		// qui sont reappelés ici
+		// A voir ca.
+		#warning "Check what happen.. risk of double execution"
 		#if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_GPIO ) > 0
 			if ( __lowPower_wakeup_reason == LOWPWR_WAKEUP_GPIO && __lowPower_wakeup_pin != 0 ) {
 				HAL_GPIO_EXTI_Callback(__lowPower_wakeup_pin);
@@ -148,14 +155,14 @@ void stm32l_lowPowerResume() {
 
 	}
 //  useful line of code to identify the wakeup cause when needed...
-	if (__lowPower_wakeup_reason != LOWPWR_WAKEUP_UNDEF ) {
-		if ( __lowPower_wakeup_reason == LOWPWR_WAKEUP_GPIO )
-			log_info("-%d-(%d)-",__lowPower_wakeup_reason,__lowPower_wakeup_pin);
-		else
-			log_info("-%d-",__lowPower_wakeup_reason);
-	} else {
-		log_info("|");
-	}
+//	if (__lowPower_wakeup_reason != LOWPWR_WAKEUP_UNDEF ) {
+//		if ( __lowPower_wakeup_reason == LOWPWR_WAKEUP_GPIO )
+//			log_info("-%d-(%d)-",__lowPower_wakeup_reason,__lowPower_wakeup_pin);
+//		else
+//			log_info("-%d-",__lowPower_wakeup_reason);
+//	} else {
+//		log_info("|");
+//	}
 
 }
 
@@ -166,8 +173,6 @@ void stm32l_lowPowerResume() {
  * gpio is dynamically modified in the code.
  */
 __weak void stm32l_lowPowerRestoreGpioConfig() {
-#warning remove trace
-	log_info("WRONG !!\r\n");
 	MX_GPIO_Init();
 }
 

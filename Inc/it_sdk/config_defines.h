@@ -203,6 +203,13 @@
 #define __LORAWAN_SX1276		1					// SX1276 like for Murata or RFM95w
 
 /**
+ * Supported LoRaWAN Implementation
+ */
+#define __LORAWAN_NONE			0					// No selection, LORAWAN should be disabled
+#define __LORAWAN_SEMTECH		1					// Activate the LoRaWan stack
+
+
+/**
  * LoRaWAN Type of activation
  */
 #define __LORAWAN_OTAA			0x01				// Over The Air Activation

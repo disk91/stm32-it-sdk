@@ -105,7 +105,7 @@ static LoRaMainCallback_t *LoRaMainCallbacks;
 /*!
  * MAC event info status strings.
  */
-const char* EventInfoStatusStrings[] =
+const char* _EventInfoStatusStrings[] =
 { 
     "OK", "Error", "Tx timeout", "Rx 1 timeout",
     "Rx 2 timeout", "Rx1 error", "Rx2 error",
@@ -117,7 +117,7 @@ const char* EventInfoStatusStrings[] =
 /*!
  * MAC status strings
  */
-const char* MacStatusStrings[] =
+const char* _MacStatusStrings[] =
 {
     "OK", "Busy", "Service unknown", "Parameter invalid", "Frequency invalid",
     "Datarate invalid", "Freuqency or datarate invalid", "No network joined",
@@ -128,7 +128,7 @@ const char* MacStatusStrings[] =
     "MAC command error", "ERROR"
 };
 
-const char* MlmeReqStrings[] =
+const char* _MlmeReqStrings[] =
 {
     "MLME_JOIN",
     "MLME_REJOIN_0",
@@ -147,8 +147,8 @@ const char* MlmeReqStrings[] =
     "MLME_BEACON_TIMING,MLME_BEACON_LOST"
 };
 
-static void TraceUpLinkFrame(McpsConfirm_t *mcpsConfirm);
-static void TraceDownLinkFrame(McpsIndication_t *mcpsIndication);
+ void TraceUpLinkFrame(McpsConfirm_t *mcpsConfirm);
+ void TraceDownLinkFrame(McpsIndication_t *mcpsIndication);
 #ifdef LORAMAC_CLASSB_ENABLED
 static void TraceBeaconInfo(MlmeIndication_t *mlmeIndication);
 #endif /* LORAMAC_CLASSB_ENABLED */
@@ -162,7 +162,7 @@ static void TraceBeaconInfo(MlmeIndication_t *mlmeIndication);
 static void McpsConfirm( McpsConfirm_t *mcpsConfirm )
 {
 
-    TVL2( PRINTNOW(); PRINTF("APP> McpsConfirm STATUS: %s\r\n", EventInfoStatusStrings[mcpsConfirm->Status] ); )
+    TVL2( PRINTNOW(); PRINTF("APP> McpsConfirm STATUS: %s\r\n", _EventInfoStatusStrings[mcpsConfirm->Status] ); )
 
     if( mcpsConfirm->Status == LORAMAC_EVENT_INFO_STATUS_OK )
     {
@@ -207,7 +207,7 @@ static void McpsConfirm( McpsConfirm_t *mcpsConfirm )
  */
 static void McpsIndication( McpsIndication_t *mcpsIndication )
 {
-    TVL2( PRINTNOW(); PRINTF("APP> McpsInd STATUS: %s\r\n", EventInfoStatusStrings[mcpsIndication->Status] );)
+    TVL2( PRINTNOW(); PRINTF("APP> McpsInd STATUS: %s\r\n", _EventInfoStatusStrings[mcpsIndication->Status] );)
 
     lora_AppData_t _AppData;
     if( mcpsIndication->Status != LORAMAC_EVENT_INFO_STATUS_OK )
@@ -291,7 +291,7 @@ static void MlmeConfirm( MlmeConfirm_t *mlmeConfirm )
     MibRequestConfirm_t mibReq;
 #endif /* LORAMAC_CLASSB_ENABLED */
 
-    TVL2( PRINTNOW(); PRINTF("APP> MlmeConfirm STATUS: %s\r\n", EventInfoStatusStrings[mlmeConfirm->Status] );)
+    TVL2( PRINTNOW(); PRINTF("APP> MlmeConfirm STATUS: %s\r\n", _EventInfoStatusStrings[mlmeConfirm->Status] );)
     
     switch( mlmeConfirm->MlmeRequest )
     {
@@ -301,6 +301,7 @@ static void MlmeConfirm( MlmeConfirm_t *mlmeConfirm )
             {
               // Status is OK, node has joined the network
               LoRaMainCallbacks->LORA_HasJoined();
+
 #ifdef LORAMAC_CLASSB_ENABLED
 #if defined( USE_DEVICE_TIMING )              
               LORA_DeviceTimeReq();
@@ -399,7 +400,7 @@ static void MlmeIndication( MlmeIndication_t *MlmeIndication )
     MibRequestConfirm_t mibReq;
 #endif /* LORAMAC_CLASSB_ENABLED */
 
-    TVL2( PRINTNOW(); PRINTF("APP> MLMEInd STATUS: %s\r\n", EventInfoStatusStrings[MlmeIndication->Status] );    )
+    TVL2( PRINTNOW(); PRINTF("APP> MLMEInd STATUS: %s\r\n", _EventInfoStatusStrings[MlmeIndication->Status] );    )
 
     switch( MlmeIndication->MlmeIndication )
     {
@@ -880,7 +881,7 @@ void LORA_GetCurrentClass( DeviceClass_t *currentClass )
 /**
  * @TODO bug la dedans il y a une ref aAppData qui n'est pas global !!!
  */
-static void TraceUpLinkFrame(McpsConfirm_t *mcpsConfirm)
+void TraceUpLinkFrame(McpsConfirm_t *mcpsConfirm)
 {
 
     MibRequestConfirm_t mibGet;
@@ -925,7 +926,7 @@ static void TraceUpLinkFrame(McpsConfirm_t *mcpsConfirm)
 } 
 
 
-static void TraceDownLinkFrame(McpsIndication_t *mcpsIndication)
+void TraceDownLinkFrame(McpsIndication_t *mcpsIndication)
 {
     const char *slotStrings[] = { "1", "2", "C", "Ping-Slot", "Multicast Ping-Slot" };
   

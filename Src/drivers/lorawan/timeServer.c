@@ -359,7 +359,7 @@ void TimerStart( TimerEvent_t *obj )
  */
 void TimerStop( TimerEvent_t *obj ) 
 {
-	log_info("Sp %d ms\r\n",obj->ReloadValue);
+//	log_info("Sp %d ms\r\n",obj->ReloadValue);
 
 	itsdk_enterCriticalSection();
 	// do not stop a non existing
