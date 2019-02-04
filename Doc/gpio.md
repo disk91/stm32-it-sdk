@@ -49,6 +49,8 @@ typedef struct s_gpio_irq_chain {
 
 Then the implementation will manage the routing to the interrupt callback (irq_func). The pinMask allows to have a common callback for mutiple interrupt. 
 
+A Wake-Up specif mechanism is implemented. When an IRQ Wake-UP the MCU the normal IRQ processing is postpowned waiting the MCU to be coorectly reconfigured after waking up. A specific IRQ handler is set thanks to *gpio_registerWakeUpAction(...)* call. Once set this handler and only this one will be called on GPIO Irq. Once the *gpio_removeWakeUpAction()* called the normal IRQ chain will be fired on gpio IRQ.
+
 
 #### STM32
 The Interrupt handler is overriding HAL_GPIO_EXTI_Callback.

@@ -96,7 +96,7 @@ void systick_adjustTime() {
 	#endif
 	uint64_t stop_clk = itsdk_time_get_us()/1000;
 	uint64_t ratio = (1000*200)/(stop_clk-start_clk);
-	log_info("ticks : %d / 200ms ==> %d\r\n",(int)(stop_clk-start_clk),(int)ratio);
+	//log_info("ticks : %d / 200ms ==> %d\r\n",(int)(stop_clk-start_clk),(int)ratio);
 
 	// Protection against value too bad, sounds like a problem
 	if ( ratio > 1400 || ratio < 600 ) {

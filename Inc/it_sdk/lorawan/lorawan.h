@@ -32,11 +32,19 @@ typedef enum {
 	LORAWAN_INIT_FAILED
 } itsdk_lorawan_init_t;
 
+typedef enum {
+	LORAWAN_JOIN_PENDING = 0,
+	LORAWAN_JOIN_SUCCESS,
+	LORAWAN_JOIN_FAILED
+} itsdk_lorawan_join_t;
 
 typedef enum {
 	LORAWAN_SEND_QUEUED = 0,				// Message put in the sending queue (SUCCESS)
 	LORAWAN_SEND_SENT,						// Message sent (SUCCESS)
+	LORAWAN_SEND_ACKED,						// Message sent and Acked (SUCESS)
+	LORAWAN_SEND_RUNNING,					// Message is in progress (asycn mode) (SUCCESS)
 	LORAWAN_SEND_NOT_JOINED,				// The device has not joined message can be sent (ERROR)
+	LORAWAN_SEND_DUTYCYCLE,					// Not sent - duty cycle constraints
 	LORAWAN_SEND_FAILED						// Various other failure (ERROR)
 } itsdk_lorawan_send_t;
 
@@ -47,16 +55,31 @@ typedef enum {
 	LORAWAN_DEVICE_CLASS_C
 } itsdk_lorawan_dev_class;
 
+typedef enum {
+	LORAWAN_RUN_SYNC = 0,
+	LORAWAN_RUN_ASYNC
+} itsdk_lorawan_run_t;
+
+typedef enum {
+	LORAWAN_SEND_CONFIRMED = 0,
+	LORAWAN_SEND_UNCONFIRMED
+} itsdk_lorawan_sendconf_t;
 
 
 
 
-
-itsdk_lorawan_init_t itsdk_lorawan_setup(uint16_t region);
-itsdk_lorawan_init_t itsdk_lorawan_join();
-itsdk_lorawan_send_t itsdk_lorawan_send(uint8_t * payload, uint8_t sz, uint8_t port,bool confirm);
-bool itsdk_lorawan_hasjoined();
-void itsdk_lorawan_loop();
+itsdk_lorawan_init_t itsdk_lorawan_setup(uint16_t region);					// Init LoRaWan lib
+itsdk_lorawan_join_t itsdk_lorawan_join(itsdk_lorawan_run_t runMode);		// Join according to configuration
+itsdk_lorawan_send_t itsdk_lorawan_send(									// Send a frame
+		uint8_t * payload,
+		uint8_t   payloadSize,
+		uint8_t   port,
+		uint8_t	  dataRate,
+		itsdk_lorawan_sendconf_t confirm,
+		itsdk_lorawan_run_t runMode
+);
+bool itsdk_lorawan_hasjoined();												// Ensure we have joined
+void itsdk_lorawan_loop();													// LoRaWan stack processing loop
 
 
 

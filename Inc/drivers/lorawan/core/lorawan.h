@@ -28,13 +28,9 @@
 #ifndef IT_SDK_DRIVERS_LORAWAN_H_
 #define IT_SDK_DRIVERS_LORAWAN_H_
 
-typedef enum {
-	LORAWAN_JOIN_PENDING = 0,
-	LORAWAN_JOIN_SUCCESS,
-	LORAWAN_JOIN_FAILED
-} lorawan_driver_join_status;
+#include <it_sdk/lorawan/lorawan.h>
 
-typedef enum lorawan_driver_state_e {
+typedef enum lorawan_driver_joinState_e {
 	LORAWAN_STATE_NONE = 0,
 	LORAWAN_STATE_INITIALIZED,
 	LORAWAN_STATE_JOINING,
@@ -42,16 +38,41 @@ typedef enum lorawan_driver_state_e {
 	LORAWAN_STATE_JOIN_FAILED,
 
 	LORAWAN_STATE_END
-} lorawan_driver_state;
+} lorawan_driver_joinState;
 
+typedef enum lorawan_driver_sendState_e {
+	LORAWAN_SEND_STATE_NONE = 0,
+	LORAWAN_SEND_STATE_RUNNING,
+	LORAWAN_SEND_STATE_SENT,
+	LORAWAN_SEND_STATE_ACKED,
+	LORAWAN_SEND_STATE_NOTACKED,
+	LORAWAN_SEND_STATE_FAILED,
+	LORAWAN_SEND_STATE_DUTYCYCLE,
+
+	LORAWAN_SEND_STATE_END
+} lorawan_driver_sendState;
 
 /**
  * This structure maintains the abstraction layer internal state
  */
 typedef struct lorawan_driver_state_s {
-	volatile lorawan_driver_state		stackState;			// current state for the stack
+	volatile lorawan_driver_joinState	joinState;			// current state for the stack
+	volatile lorawan_driver_sendState	sendState;			// current state for running send
+
 	uint32_t							joinTime;			// Time in S when the device has confirmed last joined
 	bool								reqPending;			// Indicate a processing is pending
+
+	uint8_t 							txDatarate;			// default transmission rate
+    uint8_t   							JoinType;			// OTAA / ABP
+    union {
+		   struct s_otaa1 {
+			   uint8_t 					devEui[8];			// devEui
+			   uint8_t 					appEui[8];			// appEui
+		   } otaa;
+		   struct s_abp1 {
+
+		   } abp;
+    } join;
 
 } lorawan_driver_state_t;
 
@@ -86,11 +107,6 @@ typedef struct lorawan_driver_config_s {
 } lorawan_driver_config_t;
 
 
-typedef enum {
-	LORAWAN_RUN_SYNC = 0,
-	LORAWAN_RUN_ASYNC
-} lorawan_driver_run_t;
-
 /**
  * API
  */
@@ -99,9 +115,17 @@ void lorawan_driver_LORA_Init(
 		lorawan_driver_config_t * config
 );
 
-lorawan_driver_join_status lorawan_driver_LORA_Join(
-		lorawan_driver_config_t * config,
-		lorawan_driver_run_t 	  runMode
+itsdk_lorawan_join_t lorawan_driver_LORA_Join(
+		itsdk_lorawan_run_t 	  runMode
+);
+
+itsdk_lorawan_send_t lorawan_driver_LORA_Send(
+		uint8_t					* payload,
+		uint8_t					  size,
+		uint8_t					  port,
+		uint8_t					  dataRate,
+		itsdk_lorawan_sendconf_t  isTxConfirmed,
+		itsdk_lorawan_run_t 	  runMode
 );
 
 #endif // IT_SDK_DRIVERS_LORAWAN_H_

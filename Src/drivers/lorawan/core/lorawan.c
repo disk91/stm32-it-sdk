@@ -37,6 +37,7 @@
 #include <it_sdk/wrappers.h>
 #include <it_sdk/logger/logger.h>
 #include <it_sdk/time/timer.h>
+#include <it_sdk/lorawan/lorawan.h>
 #include <drivers/lorawan/core/lorawan.h>
 #include <drivers/lorawan/mac/LoRaMac.h>
 #include <drivers/lorawan/core/lora-test.h>
@@ -78,6 +79,7 @@ static LoRaMacPrimitives_t LoRaMacPrimitives;
  * - MacProcessNotify : irq processing callback
  */
 static LoRaMacCallback_t   LoRaMacCallbacks;
+
 
 /**
  * Internal lorawan driver state
@@ -299,7 +301,7 @@ const char* MlmeReqStrings[] =
 void lorawan_driver_LORA_Init(
 		lorawan_driver_config_t * config
 ){
-  __loraWanState.stackState = LORAWAN_STATE_NONE;
+  __loraWanState.joinState = LORAWAN_STATE_NONE;
   LoRaMacPrimitives.MacMcpsConfirm = McpsConfirm;
   LoRaMacPrimitives.MacMcpsIndication = McpsIndication;
   LoRaMacPrimitives.MacMlmeConfirm = MlmeConfirm;
@@ -382,6 +384,8 @@ void lorawan_driver_LORA_Init(
   	    mibReq.Param.EnablePublicNetwork = config->enablePublicNetwork;
   	    LoRaMacMibSetRequestConfirm( &mibReq );
 
+  	    __loraWanState.txDatarate = __convertDR(config->txDatarate);
+  	    __loraWanState.JoinType = config->JoinType;
   	    if ( config->JoinType == __LORAWAN_OTAA ) {
   	    	mibReq.Type = MIB_APP_KEY;
   	    	mibReq.Param.AppKey = config->config.otaa.appKey;
@@ -390,6 +394,11 @@ void lorawan_driver_LORA_Init(
   	    	mibReq.Type = MIB_NWK_KEY;
   	    	mibReq.Param.NwkKey = config->config.otaa.nwkKey;
   	    	LoRaMacMibSetRequestConfirm( &mibReq );
+
+  	    	// Store the config element not in MIB
+  	        bcopy(config->devEui,__loraWanState.join.otaa.devEui,8);
+  	        bcopy(config->config.otaa.appEui,__loraWanState.join.otaa.appEui,8);
+
   	    } else if (config->JoinType == __LORAWAN_ABP) {
 
   	    	if (config->config.abp.devAddr == 0) {
@@ -447,9 +456,10 @@ void lorawan_driver_LORA_Init(
                 LoRaMacMibSetRequestConfirm( &mibReq );
 		#endif
 
+
          // Init the Mac layer
          LoRaMacStart();
-         __loraWanState.stackState = LORAWAN_STATE_INITIALIZED;
+         __loraWanState.joinState = LORAWAN_STATE_INITIALIZED;
 
 }
 
@@ -458,29 +468,26 @@ void lorawan_driver_LORA_Init(
 // Join
 // =======================================================================================
 
-
-lorawan_driver_join_status lorawan_driver_LORA_Join(
-		lorawan_driver_config_t * config,
-		lorawan_driver_run_t 	  runMode
+static MlmeReqJoin_t JoinParameters;
+itsdk_lorawan_join_t lorawan_driver_LORA_Join(
+		itsdk_lorawan_run_t 	  runMode
 ){
-    MlmeReq_t mlmeReq;
-
-    mlmeReq.Type = MLME_JOIN;
-    mlmeReq.Req.Join.DevEui = config->devEui;
-    mlmeReq.Req.Join.JoinEui = config->config.otaa.appEui;
-    mlmeReq.Req.Join.Datarate = __convertDR(config->txDatarate);
-
-    //MlmeReqJoin_t JoinParameters = mlmeReq.Req.Join;
-
-    switch (config->JoinType) {
+    switch (__loraWanState.JoinType) {
     case __LORAWAN_OTAA:
     	{
-			LoRaMacStatus_t r = LoRaMacMlmeRequest( &mlmeReq );
+    	    MlmeReq_t mlmeReq;
+    	    mlmeReq.Type = MLME_JOIN;
+    	    mlmeReq.Req.Join.DevEui = __loraWanState.join.otaa.devEui;
+    	    mlmeReq.Req.Join.JoinEui = __loraWanState.join.otaa.appEui;
+    	    mlmeReq.Req.Join.Datarate = __loraWanState.txDatarate;
+    	    JoinParameters = mlmeReq.Req.Join;
+
+    	    LoRaMacStatus_t r = LoRaMacMlmeRequest( &mlmeReq );
 			if ( r != LORAMAC_STATUS_OK ) {
 				log_warn("LoRaMacMlmeRequest return error(%d)\r\n",r);
-				__loraWanState.stackState = LORAWAN_JOIN_FAILED;
+				__loraWanState.joinState = LORAWAN_JOIN_FAILED;
 			} else {
-				__loraWanState.stackState = LORAWAN_STATE_JOINING;
+				__loraWanState.joinState = LORAWAN_STATE_JOINING;
 			}
     	}
         break;
@@ -498,7 +505,7 @@ lorawan_driver_join_status lorawan_driver_LORA_Join(
 			mibReq.Type = MIB_ABP_LORAWAN_VERSION;
 			mibReq.Param.AbpLrWanVersion = abpLrWanVersion;
 			LoRaMacMibSetRequestConfirm( &mibReq );
-			__loraWanState.stackState = LORAWAN_STATE_JOIN_SUCCESS;
+			__loraWanState.joinState = LORAWAN_STATE_JOIN_SUCCESS;
 			__loraWanState.joinTime = (uint32_t)(itsdk_time_get_ms()/1000);
 
 
@@ -512,16 +519,105 @@ lorawan_driver_join_status lorawan_driver_LORA_Join(
 
     if (runMode==LORAWAN_RUN_SYNC) {
         // Go for synchronous
-    	while(__loraWanState.stackState == LORAWAN_STATE_JOINING) {
+    	while(__loraWanState.joinState == LORAWAN_STATE_JOINING) {
     		lorawan_driver_waitUntilEndOfExecution();
     	}
-    	if ( __loraWanState.stackState == LORAWAN_STATE_JOIN_SUCCESS ) {
+    	if ( __loraWanState.joinState == LORAWAN_STATE_JOIN_SUCCESS ) {
     		return LORAWAN_JOIN_SUCCESS;
     	} else {
     		return LORAWAN_JOIN_FAILED;
     	}
     } else {
     	return LORAWAN_JOIN_PENDING;
+    }
+
+}
+
+// =======================================================================================
+// Send
+// =======================================================================================
+
+itsdk_lorawan_send_t lorawan_driver_LORA_Send(
+		uint8_t					* payload,
+		uint8_t					  size,
+		uint8_t					  port,
+		uint8_t					  dataRate,
+		itsdk_lorawan_sendconf_t  isTxConfirmed,
+		itsdk_lorawan_run_t 	  runMode
+){
+    McpsReq_t mcpsReq;
+    LoRaMacTxInfo_t txInfo;
+
+    if (__loraWanState.joinState != LORAWAN_STATE_JOIN_SUCCESS ) return LORAWAN_SEND_NOT_JOINED;
+
+    /*if certification test are on going, application data is not sent*/
+    if (certif_running() == true) {
+      return false;
+    }
+
+    // Verify if a command can be proceed by the MAC Layer
+    if( LoRaMacQueryTxPossible( size, &txInfo ) != LORAMAC_STATUS_OK ) {
+        // Send empty frame in order to flush MAC commands
+        mcpsReq.Type = MCPS_UNCONFIRMED;
+        mcpsReq.Req.Unconfirmed.fBuffer = NULL;
+        mcpsReq.Req.Unconfirmed.fBufferSize = 0;
+        mcpsReq.Req.Unconfirmed.Datarate = __convertDR(dataRate);
+    } else {
+    	// Ok To proceed
+        if( isTxConfirmed == LORAWAN_SEND_UNCONFIRMED )
+        {
+        	log_info("### send type unconfirmed\r\n");
+
+            mcpsReq.Type = MCPS_UNCONFIRMED;
+            mcpsReq.Req.Unconfirmed.fPort = port;
+            mcpsReq.Req.Unconfirmed.fBufferSize = size;
+            mcpsReq.Req.Unconfirmed.fBuffer = payload;
+            mcpsReq.Req.Unconfirmed.Datarate = __convertDR(dataRate);
+        }
+        else
+        {
+        	log_info("### send type confirmed\r\n");
+
+        	mcpsReq.Type = MCPS_CONFIRMED;
+            mcpsReq.Req.Confirmed.fPort = port;
+            mcpsReq.Req.Confirmed.fBufferSize = size;
+            mcpsReq.Req.Confirmed.fBuffer = payload;
+            mcpsReq.Req.Confirmed.NbTrials = ITSDK_LORAWAN_CNF_RETRY;
+            mcpsReq.Req.Confirmed.Datarate = __convertDR(dataRate);
+        }
+    }
+    __loraWanState.sendState = LORAWAN_SEND_STATE_RUNNING;
+    LoRaMacStatus_t r = LoRaMacMcpsRequest( &mcpsReq );
+    switch ( r ) {
+    	case LORAMAC_STATUS_OK:
+    		if ( runMode==LORAWAN_RUN_SYNC ) {
+    	    	while(__loraWanState.sendState == LORAWAN_SEND_STATE_RUNNING) {
+    	    		lorawan_driver_waitUntilEndOfExecution();
+    	    	}
+    	    	switch(__loraWanState.sendState) {
+    	    	case LORAWAN_SEND_STATE_SENT:
+    	    		return LORAWAN_SEND_SENT;
+    	    	case LORAWAN_SEND_STATE_ACKED:
+    	    		return LORAWAN_SEND_ACKED;
+    	    	case LORAWAN_SEND_STATE_NOTACKED:
+    	    		return LORAWAN_SEND_SENT;
+    	    	default:
+    	    		return LORAWAN_SEND_FAILED;
+    	    	}
+   	    		return LORAWAN_SEND_FAILED;	// Never reached
+    		} else {
+    			return LORAWAN_SEND_RUNNING;
+    		}
+    	case LORAMAC_STATUS_DUTYCYCLE_RESTRICTED:
+    		__loraWanState.sendState = LORAWAN_SEND_STATE_DUTYCYCLE;
+    		return LORAWAN_SEND_DUTYCYCLE;
+    	case LORAMAC_STATUS_NO_NETWORK_JOINED:
+    		__loraWanState.sendState = LORAWAN_SEND_STATE_FAILED;
+    		return LORAWAN_SEND_NOT_JOINED;
+    	default:
+    		__loraWanState.sendState = LORAWAN_SEND_STATE_FAILED;
+    		log_debug("[LoRaWan] can't send err(%d)\r\n",r);
+    		return LORAWAN_SEND_FAILED;
     }
 
 }
@@ -545,6 +641,8 @@ static void McpsConfirm( McpsConfirm_t *mcpsConfirm )
             {
                 // Check Datarate
                 // Check TxPower
+            	__loraWanState.sendState = LORAWAN_SEND_STATE_SENT;
+        		log_info("### send confirmed\r\n");
                 break;
             }
             case MCPS_CONFIRMED:
@@ -553,9 +651,11 @@ static void McpsConfirm( McpsConfirm_t *mcpsConfirm )
                 // Check TxPower
                 // Check AckReceived
             	if(mcpsConfirm->AckReceived){
+                	__loraWanState.sendState = LORAWAN_SEND_STATE_ACKED;
             		log_info("### Ack confirmed\r\n");
             	} else {
             		log_info("### Ack not confirmed\r\n");
+                	__loraWanState.sendState = LORAWAN_SEND_STATE_NOTACKED;
             	}
                 // Check NbTrials
                 break;
@@ -635,8 +735,7 @@ static void McpsIndication( McpsIndication_t *mcpsIndication )
       {
         case CERTIF_PORT:
           // revoir cette partie... pas top de garder des param comme ca en rab
-  		  #warning "See how to setup this part back"
-          //certif_rx( mcpsIndication, &JoinParameters );
+          certif_rx( mcpsIndication, &JoinParameters );
           break;
         default:
 
@@ -678,10 +777,9 @@ static void MlmeConfirm( MlmeConfirm_t *mlmeConfirm )
             if( mlmeConfirm->Status == LORAMAC_EVENT_INFO_STATUS_OK )
             {
               // Status is OK, node has joined the network
-              __loraWanState.stackState = LORAWAN_STATE_JOIN_SUCCESS;
+              __loraWanState.joinState = LORAWAN_STATE_JOIN_SUCCESS;
               __loraWanState.joinTime = (uint32_t)(itsdk_time_get_ms()/1000);
               lorawan_driver_onJoinSuccess();
-              log_info("### The device has joined\r\n");
 
 #ifdef LORAMAC_CLASSB_ENABLED
 #if defined( USE_DEVICE_TIMING )
@@ -694,8 +792,7 @@ static void MlmeConfirm( MlmeConfirm_t *mlmeConfirm )
             else
             {
                 // Join was not successful. Try to join again
-            	log_info("### Join failed, try again. (we should remove this)\r\n");
-            	__loraWanState.stackState = LORAWAN_STATE_JOIN_FAILED;
+            	__loraWanState.joinState = LORAWAN_STATE_JOIN_FAILED;
                 // -> join retry to manage out of this ... LORA_Join();
             }
             break;

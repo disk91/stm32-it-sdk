@@ -29,6 +29,7 @@
 
 #include <stdbool.h>
 
+#define ITSDK_STIMER_INFINITE	0xFFFFFFFF
 
 typedef enum {
 	TIMER_INIT_SUCCESS=0,
@@ -89,7 +90,9 @@ bool itsdk_stimer_isRunning(
 		uint32_t value
 );
 
-bool itsdk_stimer_isLowPowerSwitchAutorized();
-void itsdk_stimer_run();
+void itsdk_stimer_run();								// run the stimer (need to be called as much as possible, on regular basis)
+
+bool itsdk_stimer_isLowPowerSwitchAutorized();			// If a timer is not compatible to low power switch it return false
+uint32_t itsdk_stimer_nextTimeoutMs();					// Return the time pending to next timer end.
 
 #endif /* IT_SDK_TIME_TIME_H_ */

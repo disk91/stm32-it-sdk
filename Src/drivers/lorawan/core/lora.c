@@ -444,12 +444,13 @@ static void MlmeIndication( MlmeIndication_t *MlmeIndication )
 /**
  *  lora Init
  */
+/*
 void LORA_Init (LoRaMainCallback_t *callbacks, LoRaParam_t* LoRaParam, uint16_t region )
 {
-  /* init the Tx Duty Cycle*/
+  // init the Tx Duty Cycle
   LoRaParamInit = LoRaParam;
   
-  /* init the main call backs*/
+  / init the main call backs
   LoRaMainCallbacks = callbacks;
   
 #if (ITSDK_LORAWAN_DEVEUI_SRC == __LORAWAN_DEVEUI_GENERATED)
@@ -612,12 +613,13 @@ void LORA_Init (LoRaMainCallback_t *callbacks, LoRaParam_t* LoRaParam, uint16_t 
       mibReq.Param.SystemMaxRxError = 20;
       LoRaMacMibSetRequestConfirm( &mibReq );
 
-      /*set Mac statein Idle*/
+      //set Mac statein Idle
       LoRaMacStart( );
 
 }
+*/
 
-
+/*
 void LORA_Join( void)
 {
     MlmeReq_t mlmeReq;
@@ -627,7 +629,7 @@ void LORA_Join( void)
     mlmeReq.Req.Join.JoinEui = LoRaParamInit->config.otaa.appEui;
     mlmeReq.Req.Join.Datarate = LoRaParamInit->TxDatarate;
   
-    JoinParameters = mlmeReq.Req.Join;
+    //JoinParameters = mlmeReq.Req.Join;
 
     if (LoRaParamInit->JoinType ==  __LORAWAN_OTAA) {
         LoRaMacStatus_t r = LoRaMacMlmeRequest( &mlmeReq );
@@ -653,7 +655,7 @@ void LORA_Join( void)
     }
     
 }
-
+*/
 LoraFlagStatus LORA_JoinStatus( void)
 {
   MibRequestConfirm_t mibReq;
@@ -673,13 +675,13 @@ LoraFlagStatus LORA_JoinStatus( void)
 }
 
 
-
+/*
 bool LORA_send(lora_AppData_t* AppData, LoraConfirm_t IsTxConfirmed)
 {
     McpsReq_t mcpsReq;
     LoRaMacTxInfo_t txInfo;
   
-    /*if certification test are on going, application data is not sent*/
+    //if certification test are on going, application data is not sent
     if (certif_running() == true)
     {
       return false;
@@ -687,6 +689,10 @@ bool LORA_send(lora_AppData_t* AppData, LoraConfirm_t IsTxConfirmed)
     
     if( LoRaMacQueryTxPossible( AppData->BuffSize, &txInfo ) != LORAMAC_STATUS_OK )
     {
+    	// a voir ce truc.. un peu etrange ...
+    	// on dirait que l'on regarde si busy ou pas...
+    	// ici cas busy
+
         // Send empty frame in order to flush MAC commands
         mcpsReq.Type = MCPS_UNCONFIRMED;
         mcpsReq.Req.Unconfirmed.fBuffer = NULL;
@@ -697,7 +703,7 @@ bool LORA_send(lora_AppData_t* AppData, LoraConfirm_t IsTxConfirmed)
     {
         if( IsTxConfirmed == LORAWAN_UNCONFIRMED_MSG )
         {
-        	log_info("### unconfirmed\r\n");
+        	log_info("### send type unconfirmed\r\n");
 
             mcpsReq.Type = MCPS_UNCONFIRMED;
             mcpsReq.Req.Unconfirmed.fPort = AppData->Port;
@@ -707,7 +713,7 @@ bool LORA_send(lora_AppData_t* AppData, LoraConfirm_t IsTxConfirmed)
         }
         else
         {
-        	log_info("### confirmed\r\n");
+        	log_info("### send type confirmed\r\n");
 
         	mcpsReq.Type = MCPS_CONFIRMED;
             mcpsReq.Req.Confirmed.fPort = AppData->Port;
@@ -723,7 +729,7 @@ bool LORA_send(lora_AppData_t* AppData, LoraConfirm_t IsTxConfirmed)
     }
     return true;
 }  
-
+*/
 #ifdef LORAMAC_CLASSB_ENABLED
 #if defined( USE_DEVICE_TIMING )
 static LoraErrorStatus LORA_DeviceTimeReq( void)

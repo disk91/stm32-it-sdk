@@ -106,8 +106,6 @@ SysTime_t SysTimeSub( SysTime_t a, SysTime_t b )
 
 void SysTimeSet( SysTime_t sysTime )
 {
-#warning REMOVE
-	log_info("Set time %d.%d\r\n",sysTime.Seconds,sysTime.SubSeconds);
 
 	uint64_t t = sysTime.Seconds;
 	t *= 1000;
@@ -136,8 +134,6 @@ SysTime_t SysTimeGet( void )
 	uint64_t t = itsdk_time_get_ms();
 	sysTime.Seconds = t / 1000;
 	sysTime.SubSeconds = t - (sysTime.Seconds*1000);
-#warning REMOVE
-	log_info("Get time %d.%d\r\n",sysTime.Seconds,sysTime.SubSeconds);
 
 	/*
     SysTime_t calendarTime = { .Seconds = 0, .SubSeconds = 0 };

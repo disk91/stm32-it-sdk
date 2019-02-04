@@ -73,6 +73,7 @@ void itsdk_setup() {
 	  wdg_setupWithMaxMs(ITSDK_WDG_MS);
 	#endif
 	project_setup();
+
 }
 
 /**

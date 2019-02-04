@@ -57,7 +57,7 @@ void itsdk_time_add_us(uint32_t us) {
  */
 void itsdk_time_set_ms(uint64_t ms) {
 	uint64_t n = ms * 1000L;
-	if ( n < __timeus  ) {
+	if ( (__timeus - n) > 1000000L   ) {	// difference is > 1m assuming the counter has restarted
 		__time_has_overrun=1;
 		__time_overrun_cnt++;
 	}
@@ -99,6 +99,7 @@ void itsdk_time_init() {
 	rtc_resetTime();
 	rtc_adjustTime();
 	systick_adjustTime();
+	itsdk_time_set_ms(rtc_getTimestampMs());
 #else
 	#error "platform not supported"
 #endif

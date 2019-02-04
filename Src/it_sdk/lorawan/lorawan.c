@@ -42,13 +42,6 @@
 #define HEX8(X)   X[0],X[1], X[2],X[3], X[4],X[5], X[6],X[7]
 
 
-
-
-//uint8_t LoraMacProcessRequest;
-
-
-
-
 /**
  * Return a 8 bytes uniq Id for the device
  */
@@ -56,8 +49,6 @@ void itsdk_lorawan_getUniqId(uint8_t *id ) {
 	itsdk_getUniqId(id, 8);
 	return;
 }
-
-
 
 
 /**
@@ -70,9 +61,6 @@ void itsdk_lorawan_onConfirmClass_internal(DeviceClass_t class) {
 __weak void itsdk_lorawan_onConfirmClass(itsdk_lorawan_dev_class class) {
    log_info("[LoRaWAN] Class switch to %d confirmed\r\n","ABC"[class]);
 }
-
-
-
 
 
 /**
@@ -90,9 +78,9 @@ static uint8_t devEui[8] = ITSDK_LORAWAN_DEVEUI;
 static uint8_t appEui[8] = ITSDK_LORAWAN_APPEUI;
 static uint8_t appKey[16] = ITSDK_LORAWAN_APPKEY;
 
-static lorawan_driver_config_t __config;
 itsdk_lorawan_init_t itsdk_lorawan_setup(uint16_t region) {
 	log_info("itsdk_lorawan_setup\r\n");
+	lorawan_driver_config_t __config;
 
 	Radio.IoInit();
 
@@ -130,7 +118,7 @@ itsdk_lorawan_init_t itsdk_lorawan_setup(uint16_t region) {
 		log_debug( "OTAA\n\r");
 		log_debug( "DevEui= %02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X\n\r", HEX8(__config.devEui));
 		log_debug( "AppEui= %02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X\n\r", HEX8(__config.config.otaa.appEui));
-		log_debug( "AppKey= %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n\r", HEX16(__config.config.otaa.appKey));
+		log_debug( "AppKey= %02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X\n\r", HEX16(__config.config.otaa.appKey));
 	} else if (__config.JoinType == __LORAWAN_ABP) {
 		log_debug( "ABP\n\r");
 		log_debug( "DevEui= %02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X\n\r", HEX8(__config.devEui));
@@ -140,36 +128,46 @@ itsdk_lorawan_init_t itsdk_lorawan_setup(uint16_t region) {
 	}
 
 	lorawan_driver_LORA_Init(&__config);
+	bzero(&__config,sizeof(__config));
 
 	return LORAWAN_INIT_SUCESS;
 }
 
 /**
  * Join Process
+ * The process can be
+ *  - synchronous : will return after connection success or failed ( return - LORAWAN_JOIN_PENDING )
+ *  - asynchronous : will return immediately after transmission and reception will be managed over timer & interrupt
+ *                   it allows to switch low power but is a higher risk in term of timing respect.
+ *                   returns (LORAWAN_JOIN_SUCCESS/LORAWAN_JOIN_FAILED)
  */
-itsdk_lorawan_init_t itsdk_lorawan_join() {
+itsdk_lorawan_join_t itsdk_lorawan_join(itsdk_lorawan_run_t runMode) {
 	log_info("itsdk_lorawan_join\r\n");
-
-	lorawan_driver_LORA_Join(
-			&__config,
-			LORAWAN_RUN_SYNC
-	);
-
-	return LORAWAN_INIT_SUCESS;
-
+	return lorawan_driver_LORA_Join(runMode);
 }
 
 
-itsdk_lorawan_send_t itsdk_lorawan_send(uint8_t * payload, uint8_t sz, uint8_t port, bool confirm) {
+/**
+ * Send a LoRaWAN frame containing the Payload of the given payloadSize bytes on given port.
+ * The dataRate can be set.
+ * Confirmation mode (downlink) can be specified.
+ * The send can be synchronous or asynchronous.
+ * In synchronous mode the status will be
+ *   - LORAWAN_SEND_SENT/LORAWAN_SEND_ACKED on success
+ *   - LORAWAN_SEND_NOT_JOINED / LORAWAN_SEND_DUTYCYCLE / LORAWAN_SEND_FAILED on error
+ * In asynchronous mode the status will be
+ *   - LORAWAN_SEND_RUNNING
+ */
+itsdk_lorawan_send_t itsdk_lorawan_send(
+		uint8_t * payload,
+		uint8_t   payloadSize,
+		uint8_t   port,
+		uint8_t	  dataRate,
+		itsdk_lorawan_sendconf_t confirm,
+		itsdk_lorawan_run_t runMode
+) {
 
-	//if ( __loraWanState.hasJoined ) {
-		lora_AppData_t d;
-		d.Buff = payload,
-		d.BuffSize = sz;
-		d.Port = port;
-		LORA_send(&d, ((confirm)?LORAWAN_CONFIRMED_MSG:LORAWAN_UNCONFIRMED_MSG));
-		return LORAWAN_SEND_QUEUED;
-	//} else return LORAWAN_SEND_NOT_JOINED;
+	return lorawan_driver_LORA_Send(payload,payloadSize,port,dataRate,confirm,runMode);
 
 }
 

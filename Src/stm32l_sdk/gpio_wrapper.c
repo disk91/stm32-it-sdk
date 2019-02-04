@@ -236,10 +236,20 @@ void gpio_interruptClear(uint8_t bank, uint16_t id) {
  * equal to 0.
  */
 gpio_irq_chain_t __gpio_irq_chain = { NULL, 0, NULL };
+gpio_irq_chain_t * __gpio_irq_wakeup;
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-#warning REMOVE COMMENTS
-	log_info("IRQ(%d)\r\n",GPIO_Pin);
+	// When the __gpio_irq_wakeup handler is set this handler is called
+	// Because we do not want the normal handler to be called until the
+	// MCU is correctly configured when waking up from deep-sleep
+	if (__gpio_irq_wakeup != NULL ) {
+		void (*p)(uint16_t p) = __gpio_irq_wakeup->irq_func;
+		if ( p != NULL ) {
+			p(GPIO_Pin);
+			return;
+		}
+	}
+	// Normal non wake-up situation.
 	gpio_irq_chain_t * c = &__gpio_irq_chain;
 	while ( c != NULL ) {
 		void (*p)(uint16_t p) = c->irq_func;
@@ -249,6 +259,22 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 		c = c->next;
 	}
     __HAL_GPIO_EXTI_CLEAR_IT(GPIO_Pin);
+}
+
+/**
+ * Add an action on wake-up.
+ * This action replace temporaly the exiting actions
+ */
+void gpio_registerWakeUpAction(gpio_irq_chain_t * chain) {
+	__gpio_irq_wakeup = chain;
+}
+
+/**
+ * Remove the action on wake-up.
+ * This action restore the previously defined gpio actions
+ */
+void gpio_removeWakeUpAction() {
+	__gpio_irq_wakeup = NULL;
 }
 
 /**

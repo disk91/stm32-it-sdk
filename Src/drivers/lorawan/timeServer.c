@@ -307,7 +307,7 @@ void TimerStart( TimerEvent_t *obj )
 									obj->ReloadValue,
 									TimerCallback,
 									(uint32_t)obj,
-									TIMER_REFUSE_LOWPOWER
+									TIMER_ACCEPT_LOWPOWER
 		 	 	 	 	 	   );
 	if ( ret != TIMER_INIT_SUCCESS ) {
 		log_error("Error during timer initialization %d \r\n",ret);

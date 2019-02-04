@@ -102,6 +102,8 @@ void gpio_interruptClear(uint8_t bank, uint16_t id);
 void gpio_registerIrqAction(gpio_irq_chain_t * chain);
 void gpio_removeIrqAction(gpio_irq_chain_t * chain);
 bool gpio_existAction(gpio_irq_chain_t * chain);
+void gpio_registerWakeUpAction(gpio_irq_chain_t * chain);
+void gpio_removeWakeUpAction();
 
 // ================================================
 // spi

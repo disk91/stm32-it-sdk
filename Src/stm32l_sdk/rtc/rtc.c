@@ -39,8 +39,10 @@
  * Configure the RTC source clock for running LowPower
  */
 void rtc_configure4LowPower(uint16_t ms) {
-	rtc_prepareSleepTime();
-	rtc_runRtcUntil(ms);
+		rtc_prepareSleepTime();
+	if ( ms > 0 ) {
+		rtc_runRtcUntil(ms);
+	}
 }
 
 /**

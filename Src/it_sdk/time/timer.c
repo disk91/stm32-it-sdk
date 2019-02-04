@@ -210,4 +210,22 @@ void itsdk_stimer_run() {
 }
 
 
+/**
+ * Compute the number of Ms from Now to the next Timer to expire.
+ * return ITSDK_STIMER_INFINITE when none are in execution or in the future.
+ */
+uint32_t itsdk_stimer_nextTimeoutMs(){
+	uint32_t t = itsdk_time_get_ms();
+	uint32_t min = ITSDK_STIMER_INFINITE;
+	for ( int i = 0 ; i < ITSDK_TIMER_SLOTS ; i++ ) {
+		if ( __stimer_slots[i].inUse && __stimer_slots[i].timeoutMs >= t ) {
+			if ( __stimer_slots[i].timeoutMs < min ) min = __stimer_slots[i].timeoutMs;
+		}
+	}
+	if ( min < ITSDK_STIMER_INFINITE ) {
+		min = min - t;
+	}
+	return min;
+}
+
 #endif
