@@ -41,45 +41,20 @@
 #define HEX16(X)  X[0],X[1], X[2],X[3], X[4],X[5], X[6],X[7],X[8],X[9], X[10],X[11], X[12],X[13], X[14],X[15]
 #define HEX8(X)   X[0],X[1], X[2],X[3], X[4],X[5], X[6],X[7]
 
+// =================================================================================
+// INIT
+// =================================================================================
 
-/**
- * Return a 8 bytes uniq Id for the device
- */
-void itsdk_lorawan_getUniqId(uint8_t *id ) {
-	itsdk_getUniqId(id, 8);
-	return;
-}
-
-
-/**
- * Callback function on JOIN Success
- */
-void itsdk_lorawan_onConfirmClass_internal(DeviceClass_t class) {
-	itsdk_lorawan_onConfirmClass((itsdk_lorawan_dev_class)class);
-}
-
-__weak void itsdk_lorawan_onConfirmClass(itsdk_lorawan_dev_class class) {
-   log_info("[LoRaWAN] Class switch to %d confirmed\r\n","ABC"[class]);
-}
-
-
-/**
- * Callback on Uplink Ack from the Network server
- */
-__weak void lorawan_driver_onUplinkAckConfirmed() {
-    log_info("[LoRaWAN] Network Server \"ack\" an uplink data confirmed message transmission\r\n");
-}
-
-
-/**
- * Init the LoRaWan Stack
- */
 static uint8_t devEui[8] = ITSDK_LORAWAN_DEVEUI;
 static uint8_t appEui[8] = ITSDK_LORAWAN_APPEUI;
 static uint8_t appKey[16] = ITSDK_LORAWAN_APPKEY;
 
-itsdk_lorawan_init_t itsdk_lorawan_setup(uint16_t region) {
-	log_info("itsdk_lorawan_setup\r\n");
+/**
+ * Init the LoRaWan Stack
+ * Actually static
+ */
+itsdk_lorawan_init_t itsdk_lorawan_setup(uint16_t region, itsdk_lorawan_channelInit_t * channelConfig) {
+	log_debug("itsdk_lorawan_setup\r\n");
 	lorawan_driver_config_t __config;
 
 	Radio.IoInit();
@@ -114,24 +89,27 @@ itsdk_lorawan_init_t itsdk_lorawan_setup(uint16_t region) {
 		#error "ABP not yest supported"
 	#endif
 
-	if ( __config.JoinType == __LORAWAN_OTAA ) {
-		log_debug( "OTAA\n\r");
-		log_debug( "DevEui= %02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X\n\r", HEX8(__config.devEui));
-		log_debug( "AppEui= %02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X\n\r", HEX8(__config.config.otaa.appEui));
-		log_debug( "AppKey= %02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X\n\r", HEX16(__config.config.otaa.appKey));
-	} else if (__config.JoinType == __LORAWAN_ABP) {
-		log_debug( "ABP\n\r");
-		log_debug( "DevEui= %02X-%02X-%02X-%02X-%02X-%02X-%02X-%02X\n\r", HEX8(__config.devEui));
-		log_debug( "DevAdd=  %08X\n\r", __config.config.abp.devAddr) ;
-		log_debug( "NwkSKey= %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n\r", HEX16(__config.config.abp.nwkSEncKey));
-		log_debug( "AppSKey= %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n\r", HEX16(__config.config.abp.appSKey));
-	}
-
 	lorawan_driver_LORA_Init(&__config);
 	bzero(&__config,sizeof(__config));
 
+	if ( channelConfig != NULL ) {
+		for ( int i=0 ; i < channelConfig->num ; i++ ) {
+			if ( lorawan_driver_LORA_AddChannel(
+					channelConfig->channels[i].id,
+					channelConfig->channels[i].frequency,
+					channelConfig->channels[i].frequencyRx,
+					channelConfig->channels[i].minDr,
+					channelConfig->channels[i].maxDr,
+					channelConfig->channels[i].band
+				) != LORAWAN_CHANNEL_SUCCESS ) return LORAWAN_INIT_CHANNEL_FAILED;
+		}
+	}
 	return LORAWAN_INIT_SUCESS;
 }
+
+// =================================================================================
+// JOIN
+// =================================================================================
 
 /**
  * Join Process
@@ -140,17 +118,62 @@ itsdk_lorawan_init_t itsdk_lorawan_setup(uint16_t region) {
  *  - asynchronous : will return immediately after transmission and reception will be managed over timer & interrupt
  *                   it allows to switch low power but is a higher risk in term of timing respect.
  *                   returns (LORAWAN_JOIN_SUCCESS/LORAWAN_JOIN_FAILED)
+ *                   in async mode the given function will be called with the join status.
+ *                   When no function is proposed, the status can be polled.
  */
-itsdk_lorawan_join_t itsdk_lorawan_join(itsdk_lorawan_run_t runMode) {
-	log_info("itsdk_lorawan_join\r\n");
-	return lorawan_driver_LORA_Join(runMode);
+itsdk_lorawan_join_t itsdk_lorawan_join_sync() {
+	log_debug("itsdk_lorawan_join_sync\r\n");
+	return lorawan_driver_LORA_Join(LORAWAN_RUN_SYNC);
 }
+
+
+// Override the underlaying callbacks
+static void (*__itsdk_lorawan_join_cb)(itsdk_lorawan_join_t status)  = NULL;
+void lorawan_driver_onJoinSuccess() {
+	if (__itsdk_lorawan_join_cb != NULL) {
+		__itsdk_lorawan_join_cb(LORAWAN_JOIN_SUCCESS);
+	}
+}
+void lorawan_driver_onJoinFailed() {
+	if (__itsdk_lorawan_join_cb != NULL) {
+		__itsdk_lorawan_join_cb(LORAWAN_JOIN_FAILED);
+	}
+}
+
+itsdk_lorawan_join_t itsdk_lorawan_join_async(
+		void (*callback_func)(itsdk_lorawan_join_t status)
+) {
+	log_debug("itsdk_lorawan_join_async\r\n");
+	if ( callback_func != NULL ) {
+		__itsdk_lorawan_join_cb = callback_func;
+	} else {
+		__itsdk_lorawan_join_cb = NULL;
+	}
+	return lorawan_driver_LORA_Join(LORAWAN_RUN_ASYNC);
+}
+
+/**
+ * Return true once the device has joined the the network
+ */
+bool itsdk_lorawan_hasjoined() {
+	log_debug("itsdk_lorawan_hasjoined\r\n");
+	return ( lorawan_driver_LORA_getJoinState() == LORAWAN_STATE_JOIN_SUCCESS);
+}
+
+itsdk_lorawan_join_t itsdk_lorawan_getJoinState() {
+#warning tobe fixed
+	return lorawan_driver_LORA_getSendState();
+}
+
+// =================================================================================
+// SEND
+// =================================================================================
 
 
 /**
  * Send a LoRaWAN frame containing the Payload of the given payloadSize bytes on given port.
  * The dataRate can be set.
- * Confirmation mode (downlink) can be specified.
+ * Confirmation mode (downlink) can be specified. In this case a number of retry can be precised.
  * The send can be synchronous or asynchronous.
  * In synchronous mode the status will be
  *   - LORAWAN_SEND_SENT/LORAWAN_SEND_ACKED on success
@@ -158,29 +181,109 @@ itsdk_lorawan_join_t itsdk_lorawan_join(itsdk_lorawan_run_t runMode) {
  * In asynchronous mode the status will be
  *   - LORAWAN_SEND_RUNNING
  */
-itsdk_lorawan_send_t itsdk_lorawan_send(
+itsdk_lorawan_send_t itsdk_lorawan_send_sync(
 		uint8_t * payload,
 		uint8_t   payloadSize,
 		uint8_t   port,
 		uint8_t	  dataRate,
 		itsdk_lorawan_sendconf_t confirm,
-		itsdk_lorawan_run_t runMode
+		uint8_t	  retry
 ) {
-
-	return lorawan_driver_LORA_Send(payload,payloadSize,port,dataRate,confirm,runMode);
-
+	log_debug("itsdk_lorawan_send_sync\r\n");
+	return lorawan_driver_LORA_Send(payload,payloadSize,port,dataRate,confirm,retry,LORAWAN_RUN_SYNC);
 }
 
+static void (*__itsdk_lorawan_send_cb)(itsdk_lorawan_send_t status)  = NULL;
+void lorawan_driver_onSendSuccessAckFailed() {
+	if (__itsdk_lorawan_send_cb != NULL) {
+		__itsdk_lorawan_send_cb(LORAWAN_SEND_STATE_NOTACKED);
+	}
+}
+void lorawan_driver_onSendAckSuccess() {
+	if (__itsdk_lorawan_send_cb != NULL) {
+		__itsdk_lorawan_send_cb(LORAWAN_SEND_STATE_ACKED);
+	}
+}
+void lorawan_driver_onSendSuccess() {
+	if (__itsdk_lorawan_send_cb != NULL) {
+		__itsdk_lorawan_send_cb(LORAWAN_SEND_STATE_SENT);
+	}
+}
+void lorawan_driver_onDataReception(uint8_t port, uint8_t * data, uint8_t size) {
+	if (__itsdk_lorawan_send_cb != NULL) {
+		__itsdk_lorawan_send_cb(LORAWAN_SEND_STATE_ACKED_WITH_DOWNLINK);
+	}
+}
+
+void lorawan_driver_onPendingDownlink() {
+	if (__itsdk_lorawan_send_cb != NULL) {
+		__itsdk_lorawan_send_cb(LORAWAN_SEND_STATE_ACKED_DOWNLINK_PENDING);
+	}
+}
+
+itsdk_lorawan_send_t itsdk_lorawan_send_async(
+		uint8_t * payload,
+		uint8_t   payloadSize,
+		uint8_t   port,
+		uint8_t	  dataRate,
+		itsdk_lorawan_sendconf_t confirm,
+		uint8_t	  retry,
+		void (*callback_func)(itsdk_lorawan_send_t status)
+) {
+	log_debug("itsdk_lorawan_send_async\r\n");
+	if ( callback_func != NULL ) {
+		__itsdk_lorawan_send_cb = callback_func;
+	} else {
+		__itsdk_lorawan_send_cb = NULL;
+	}
+	return lorawan_driver_LORA_Send(payload,payloadSize,port,dataRate,confirm,retry,LORAWAN_RUN_ASYNC);
+}
 
 /**
- * Return true once the device has joined the the network
+ * Return sent current state
  */
-bool itsdk_lorawan_hasjoined() {
-	return true; //(__loraWanState.hasJoined);
+itsdk_lorawan_send_t itsdk_lorawan_getSendState() {
+# warning to be fixed
+	return lorawan_driver_LORA_getSendState();
+}
+
+// =================================================================================
+// MISC
+// =================================================================================
+
+void itsdk_lorawan_changeDefaultRate(uint8_t newRate) {
+	lorawan_driver_LORA_ChangeDefaultRate(newRate);
+}
+
+itsdk_lorawan_rssisnr_t itsdk_lorawan_getLastRssiSnr(int16_t *rssi, uint8_t *snr){
+	return lorawan_driver_LORA_GetLastRssiSnr(rssi,snr);
+}
+
+bool itsdk_lorawan_setTxPower(itsdk_lorawan_txpower txPwr) {
+	return lorawan_driver_LORA_SetTxPower(txPwr);
+}
+
+itsdk_lorawan_txpower itsdk_lorawan_getTxPower() {
+	return lorawan_driver_LORA_GetTxPower();
 }
 
 
+uint16_t itsdk_lorawan_getDownlinkFrameCounter() {
+	return lorawan_driver_LORA_GetDownlinkFrameCounter();
+}
 
+
+uint16_t itsdk_lorawan_getUplinkFrameCounter() {
+	return lorawan_driver_LORA_GetUplinkFrameCounter();
+}
+
+/**
+ * This function need to be called in the project_loop function
+ * to manage the lorawan stack ( mandatory for async mode )
+ */
+void itsdk_lorawan_loop() {
+	lorawan_driver_loop();
+}
 
 
 

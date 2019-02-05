@@ -94,17 +94,19 @@ static LoraErrorStatus LORA_BeaconTimeReq(void);
 /*!
  * Defines the LoRa parameters at Init
  */
+/*
 static LoRaParam_t* LoRaParamInit;
 static LoRaMacPrimitives_t LoRaMacPrimitives;
 static LoRaMacCallback_t LoRaMacCallbacks;
 static MibRequestConfirm_t mibReq;
 
 static LoRaMainCallback_t *LoRaMainCallbacks;
-
+*/
 
 /*!
  * MAC event info status strings.
  */
+/*
 const char* _EventInfoStatusStrings[] =
 { 
     "OK", "Error", "Tx timeout", "Rx 1 timeout",
@@ -113,10 +115,11 @@ const char* _EventInfoStatusStrings[] =
     "Downlink too many frames loss", "Address fail", "MIC fail",
     "Multicast faile", "Beacon locked", "Beacon lost", "Beacon not found"
 };
-
+*/
 /*!
  * MAC status strings
  */
+/*
 const char* _MacStatusStrings[] =
 {
     "OK", "Busy", "Service unknown", "Parameter invalid", "Frequency invalid",
@@ -127,7 +130,8 @@ const char* _MacStatusStrings[] =
     "Busy uplink collision", "Crypto error", "FCnt handler error",
     "MAC command error", "ERROR"
 };
-
+*/
+/*
 const char* _MlmeReqStrings[] =
 {
     "MLME_JOIN",
@@ -146,7 +150,7 @@ const char* _MlmeReqStrings[] =
     "MLME_PING_SLOT_INFO",
     "MLME_BEACON_TIMING,MLME_BEACON_LOST"
 };
-
+*/
  void TraceUpLinkFrame(McpsConfirm_t *mcpsConfirm);
  void TraceDownLinkFrame(McpsIndication_t *mcpsIndication);
 #ifdef LORAMAC_CLASSB_ENABLED
@@ -159,6 +163,7 @@ static void TraceBeaconInfo(MlmeIndication_t *mlmeIndication);
  * \param   [IN] McpsConfirm - Pointer to the confirm structure,
  *               containing confirm attributes.
  */
+/*
 static void McpsConfirm( McpsConfirm_t *mcpsConfirm )
 {
 
@@ -198,13 +203,14 @@ static void McpsConfirm( McpsConfirm_t *mcpsConfirm )
     TraceUpLinkFrame(mcpsConfirm);
 
 }
-
+*/
 /*!
  * \brief   MCPS-Indication event function
  *
  * \param   [IN] mcpsIndication - Pointer to the indication structure,
  *               containing indication attributes.
  */
+/*
 static void McpsIndication( McpsIndication_t *mcpsIndication )
 {
     TVL2( PRINTNOW(); PRINTF("APP> McpsInd STATUS: %s\r\n", _EventInfoStatusStrings[mcpsIndication->Status] );)
@@ -275,21 +281,22 @@ static void McpsIndication( McpsIndication_t *mcpsIndication )
       }
     }
     
-    /*implicitely desactivated when VERBOSE_LEVEL < 2*/
+    //implicitely desactivated when VERBOSE_LEVEL < 2
     TraceDownLinkFrame(mcpsIndication);
 }
-
+*/
 /*!
  * \brief   MLME-Confirm event function
  *
  * \param   [IN] MlmeConfirm - Pointer to the confirm structure,
  *               containing confirm attributes.
  */
+/*
 static void MlmeConfirm( MlmeConfirm_t *mlmeConfirm )
 {
 #ifdef LORAMAC_CLASSB_ENABLED
     MibRequestConfirm_t mibReq;
-#endif /* LORAMAC_CLASSB_ENABLED */
+#endif // LORAMAC_CLASSB_ENABLED
 
     TVL2( PRINTNOW(); PRINTF("APP> MlmeConfirm STATUS: %s\r\n", _EventInfoStatusStrings[mlmeConfirm->Status] );)
     
@@ -307,8 +314,8 @@ static void MlmeConfirm( MlmeConfirm_t *mlmeConfirm )
               LORA_DeviceTimeReq();
 #else              
               LORA_BeaconTimeReq();
-#endif /* USE_DEVICE_TIMING */
-#endif /* LORAMAC_CLASSB_ENABLED */
+#endif // USE_DEVICE_TIMING
+#endif // LORAMAC_CLASSB_ENABLED
             }
             else
             {
@@ -335,16 +342,16 @@ static void MlmeConfirm( MlmeConfirm_t *mlmeConfirm )
         {
             if( mlmeConfirm->Status == LORAMAC_EVENT_INFO_STATUS_OK )
             {
-                /* Beacon has been acquired */
-                /* REquest Server for Ping Slot */
+                // Beacon has been acquired
+                // REquest Server for Ping Slot
                 LORA_PingSlotReq( );
             }
             else
             {
-                /* Beacon not acquired */
-                /* Search again */
-                /* we can check if the MAC has received a time reference for the beacon*/
-                /* in this case do either a Device_Time_Req  or a Beacon_Timing_req*/
+                // Beacon not acquired
+                // Search again
+                // we can check if the MAC has received a time reference for the beacon
+                // in this case do either a Device_Time_Req  or a Beacon_Timing_req
                 LORA_BeaconReq( );
             }
             break;
@@ -353,7 +360,7 @@ static void MlmeConfirm( MlmeConfirm_t *mlmeConfirm )
         {
             if( mlmeConfirm->Status == LORAMAC_EVENT_INFO_STATUS_OK )
             {
-               /* class B is now ativated*/
+               // class B is now ativated
                 mibReq.Type = MIB_DEVICE_CLASS;
                 mibReq.Param.Class = CLASS_B;
                 LoRaMacMibSetRequestConfirm( &mibReq );
@@ -365,7 +372,7 @@ static void MlmeConfirm( MlmeConfirm_t *mlmeConfirm )
 #endif
                 TVL2( PRINTF("\r\n#= Switch to Class B done. =#r\n" );)
                 
-                /*notify upper layer*/
+                //notify upper layer
                 LoRaMainCallbacks->LORA_ConfirmClass(CLASS_B);
             }
             else
@@ -382,23 +389,24 @@ static void MlmeConfirm( MlmeConfirm_t *mlmeConfirm )
               LORA_DeviceTimeReq();
             }  
         }              
-#endif /* USE_DEVICE_TIMING */
-#endif /* LORAMAC_CLASSB_ENABLED */
+#endif // USE_DEVICE_TIMING
+#endif // LORAMAC_CLASSB_ENABLED
         default:
             break;
     }
 }
-
+*/
 /*!
  * \brief   MLME-Indication event function
  *
  * \param   [IN] MlmeIndication - Pointer to the indication structure.
  */
+/*
 static void MlmeIndication( MlmeIndication_t *MlmeIndication )
 {
 #ifdef LORAMAC_CLASSB_ENABLED
     MibRequestConfirm_t mibReq;
-#endif /* LORAMAC_CLASSB_ENABLED */
+#endif // LORAMAC_CLASSB_ENABLED
 
     TVL2( PRINTNOW(); PRINTF("APP> MLMEInd STATUS: %s\r\n", _EventInfoStatusStrings[MlmeIndication->Status] );    )
 
@@ -436,11 +444,12 @@ static void MlmeIndication( MlmeIndication_t *MlmeIndication )
             break;
 
         }
-#endif /* LORAMAC_CLASSB_ENABLED */
+#endif // LORAMAC_CLASSB_ENABLED
         default:
             break;
     }
 }
+*/
 /**
  *  lora Init
  */
@@ -656,6 +665,7 @@ void LORA_Join( void)
     
 }
 */
+/*
 LoraFlagStatus LORA_JoinStatus( void)
 {
   MibRequestConfirm_t mibReq;
@@ -673,7 +683,7 @@ LoraFlagStatus LORA_JoinStatus( void)
     return LORA_SET;
   }
 }
-
+*/
 
 /*
 bool LORA_send(lora_AppData_t* AppData, LoraConfirm_t IsTxConfirmed)
@@ -730,6 +740,7 @@ bool LORA_send(lora_AppData_t* AppData, LoraConfirm_t IsTxConfirmed)
     return true;
 }  
 */
+/*
 #ifdef LORAMAC_CLASSB_ENABLED
 #if defined( USE_DEVICE_TIMING )
 static LoraErrorStatus LORA_DeviceTimeReq( void)
@@ -802,8 +813,9 @@ static LoraErrorStatus LORA_PingSlotReq( void)
      return LORA_ERROR;
   }
 }
-#endif /* LORAMAC_CLASSB_ENABLED */
-
+#endif // LORAMAC_CLASSB_ENABLED
+*/
+/*
 LoraErrorStatus LORA_RequestClass( DeviceClass_t newClass )
 {
   LoraErrorStatus Errorstatus = LORA_SUCCESS;
@@ -814,7 +826,7 @@ LoraErrorStatus LORA_RequestClass( DeviceClass_t newClass )
   LoRaMacMibGetRequestConfirm( &mibReq );
   
   currentClass = mibReq.Param.Class;
-  /*attempt to swicth only if class update*/
+  //attempt to swicth only if class update
   if (currentClass != newClass)
   {
     switch (newClass)
@@ -824,7 +836,7 @@ LoraErrorStatus LORA_RequestClass( DeviceClass_t newClass )
         mibReq.Param.Class = CLASS_A;
         if( LoRaMacMibSetRequestConfirm( &mibReq ) == LORAMAC_STATUS_OK )
         {
-        /*switch is instantanuous*/
+        //switch is instantanuous
           LoRaMainCallbacks->LORA_ConfirmClass(CLASS_A);
         }
         else
@@ -840,11 +852,11 @@ LoraErrorStatus LORA_RequestClass( DeviceClass_t newClass )
         {
           Errorstatus = LORA_ERROR;
         }
-        /*switch is not instantanuous*/
+        //switch is not instantanuous
         Errorstatus = LORA_BeaconReq( );
 #else
         PRINTF( "warning: LORAMAC_CLASSB_ENABLED has not been defined at compilation\n\r");
-#endif /* LORAMAC_CLASSB_ENABLED */
+#endif // LORAMAC_CLASSB_ENABLED
         break;
       }
       case CLASS_C:
@@ -853,7 +865,7 @@ LoraErrorStatus LORA_RequestClass( DeviceClass_t newClass )
         {
           Errorstatus = LORA_ERROR;
         }
-        /*switch is instantanuous*/
+        //switch is instantanuous
         mibReq.Param.Class = CLASS_C;
         if( LoRaMacMibSetRequestConfirm( &mibReq ) == LORAMAC_STATUS_OK )
         {
@@ -871,7 +883,8 @@ LoraErrorStatus LORA_RequestClass( DeviceClass_t newClass )
   }
   return Errorstatus;
 }
-
+*/
+/*
 void LORA_GetCurrentClass( DeviceClass_t *currentClass )
 {
   MibRequestConfirm_t mibReq;
@@ -881,6 +894,7 @@ void LORA_GetCurrentClass( DeviceClass_t *currentClass )
   
   *currentClass = mibReq.Param.Class;
 }
+*/
 
 
 

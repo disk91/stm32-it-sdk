@@ -269,7 +269,6 @@ int16_t adc_getTemperature() {
  * Return VDD in mV ( internal VDD )
  */
 uint16_t adc_getVdd() {
-#warning "verify vdd read is working well"
 	//return  ( ((uint32_t)VDD_APPLI * (*VREFINT_CAL) )/ adc_getValue(0));
 	return adc_getValue(0);
 }

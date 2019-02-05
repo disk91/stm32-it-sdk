@@ -45,12 +45,17 @@ typedef enum lorawan_driver_sendState_e {
 	LORAWAN_SEND_STATE_RUNNING,
 	LORAWAN_SEND_STATE_SENT,
 	LORAWAN_SEND_STATE_ACKED,
+	LORAWAN_SEND_STATE_ACKED_WITH_DOWNLINK,
+	LORAWAN_SEND_STATE_ACKED_DOWNLINK_PENDING,
 	LORAWAN_SEND_STATE_NOTACKED,
 	LORAWAN_SEND_STATE_FAILED,
 	LORAWAN_SEND_STATE_DUTYCYCLE,
 
 	LORAWAN_SEND_STATE_END
 } lorawan_driver_sendState;
+
+
+#define	LORAWAN_DRIVER_INVALID_RSSI	0xFFFF
 
 /**
  * This structure maintains the abstraction layer internal state
@@ -61,6 +66,12 @@ typedef struct lorawan_driver_state_s {
 
 	uint32_t							joinTime;			// Time in S when the device has confirmed last joined
 	bool								reqPending;			// Indicate a processing is pending
+
+    uint16_t							upLinkCounter;		// Uploing Frame counter
+    uint16_t							downlinkCounter;	// Downlink Frame counter
+    int16_t								lastRssi;			// Last Ack / Rx Rssi value
+    int8_t								lastSnr;			// Last Ack / Rx Snr value
+    uint8_t								lastRetries;		// Number of retry on last acked transmision
 
 	uint8_t 							txDatarate;			// default transmission rate
     uint8_t   							JoinType;			// OTAA / ABP
@@ -125,7 +136,49 @@ itsdk_lorawan_send_t lorawan_driver_LORA_Send(
 		uint8_t					  port,
 		uint8_t					  dataRate,
 		itsdk_lorawan_sendconf_t  isTxConfirmed,
+		uint8_t	  				  retry,
 		itsdk_lorawan_run_t 	  runMode
 );
+
+
+lorawan_driver_sendState lorawan_driver_LORA_getSendState();
+lorawan_driver_joinState lorawan_driver_LORA_getJoinState();
+void lorawan_driver_LORA_ChangeDefaultRate(uint8_t newRate);
+itsdk_lorawan_rssisnr_t lorawan_driver_LORA_GetLastRssiSnr(int16_t *rssi, uint8_t *snr);
+bool lorawan_driver_LORA_SetTxPower(itsdk_lorawan_txpower txPwr );
+itsdk_lorawan_txpower lorawan_driver_LORA_GetTxPower();
+uint16_t lorawan_driver_LORA_GetDownlinkFrameCounter();
+uint16_t lorawan_driver_LORA_GetUplinkFrameCounter();
+itsdk_lorawan_channel_t lorawan_driver_LORA_RemoveChannel(uint8_t channelId);
+itsdk_lorawan_channel_t lorawan_driver_LORA_AddChannel(
+		uint8_t		channelId,
+		uint32_t 	frequency,
+		uint32_t	rx1Frequency,
+		uint8_t		minDataRate,
+		uint8_t		maxDataRate,
+		uint8_t		band
+);
+void lorawan_driver_loop();
+
+// ===========================================================================
+// Callback API -> can be override
+// ===========================================================================
+void lorawan_driver_onTxNeeded();
+void lorawan_driver_onSendSuccessAckFailed();
+void lorawan_driver_onSendAckSuccess();
+void lorawan_driver_onSendSuccess();
+void lorawan_driver_onJoinSuccess();
+void lorawan_driver_onJoinFailed();
+void lorawan_driver_onDataReception(uint8_t port, uint8_t * data, uint8_t size);
+void lorawan_driver_onPendingDownlink();
+
+
+// ===========================================================================
+// Particular function with correct default setting, can be override when the
+// default way the sdk works is modified.
+// ===========================================================================
+uint16_t lorawan_driver_temperature();
+uint8_t lorawan_driver_battery_level();
+void lorawan_driver_waitUntilEndOfExecution();
 
 #endif // IT_SDK_DRIVERS_LORAWAN_H_

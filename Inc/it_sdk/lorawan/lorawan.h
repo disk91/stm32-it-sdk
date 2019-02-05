@@ -29,6 +29,7 @@
 
 typedef enum {
 	LORAWAN_INIT_SUCESS = 0,
+	LORAWAN_INIT_CHANNEL_FAILED,
 	LORAWAN_INIT_FAILED
 } itsdk_lorawan_init_t;
 
@@ -65,34 +66,98 @@ typedef enum {
 	LORAWAN_SEND_UNCONFIRMED
 } itsdk_lorawan_sendconf_t;
 
+typedef enum {
+	LORAWAN_RSSISNR_VALID = 0,
+	LORAWAN_RSSISNR_INVALID
+} itsdk_lorawan_rssisnr_t;
+
+typedef enum {
+	LORAWAN_CHANNEL_SUCCESS = 0,
+	LORAWAN_CHANNEL_INVALID_PARAMS,
+	LORAWAN_CHANNEL_FAILED
+} itsdk_lorawan_channel_t;
+
+typedef enum {
+	LORAWAN_TXPOWER_0 = 0,
+	LORAWAN_TXPOWER_1,
+	LORAWAN_TXPOWER_2,
+	LORAWAN_TXPOWER_3,
+	LORAWAN_TXPOWER_4,
+	LORAWAN_TXPOWER_5,
+	LORAWAN_TXPOWER_6,
+	LORAWAN_TXPOWER_7,
+	LORAWAN_TXPOWER_8,
+	LORAWAN_TXPOWER_9,
+	LORAWAN_TXPOWER_10,
+	LORAWAN_TXPOWER_11,
+	LORAWAN_TXPOWER_12,
+	LORAWAN_TXPOWER_13,
+	LORAWAN_TXPOWER_14,
+	LORAWAN_TXPOWER_15
+} itsdk_lorawan_txpower;
+
+typedef struct {
+	uint8_t num;
+	struct {
+		uint8_t  id;
+		uint32_t frequency;
+		uint32_t frequencyRx;
+		uint8_t  minDr;
+		uint8_t  maxDr;
+		uint8_t  band;
+	} channels[];
+} itsdk_lorawan_channelInit_t;
+
+// ===============================================================
+// PUBLIC API
+// ===============================================================
 
 
+itsdk_lorawan_init_t itsdk_lorawan_setup(									// Init LoRaWan lib
+		uint16_t region, 													//   Region
+		itsdk_lorawan_channelInit_t * channelConfig							//   Static Channel configuration
+);
 
-itsdk_lorawan_init_t itsdk_lorawan_setup(uint16_t region);					// Init LoRaWan lib
-itsdk_lorawan_join_t itsdk_lorawan_join(itsdk_lorawan_run_t runMode);		// Join according to configuration
-itsdk_lorawan_send_t itsdk_lorawan_send(									// Send a frame
+itsdk_lorawan_join_t itsdk_lorawan_join_sync();								// Join according to configuration (synchrnous)
+itsdk_lorawan_join_t itsdk_lorawan_join_async(								// Join asynchronously
+		void (*callback_func)(itsdk_lorawan_join_t status)					//  function to callback on join success/failed
+);
+bool itsdk_lorawan_hasjoined();												// Ensure we have joined
+itsdk_lorawan_join_t itsdk_lorawan_getJoinState();							// Join state details
+
+itsdk_lorawan_send_t itsdk_lorawan_send_sync(								// Send a frame in sync mode
 		uint8_t * payload,
 		uint8_t   payloadSize,
 		uint8_t   port,
 		uint8_t	  dataRate,
 		itsdk_lorawan_sendconf_t confirm,
-		itsdk_lorawan_run_t runMode
+		uint8_t	  retry
 );
-bool itsdk_lorawan_hasjoined();												// Ensure we have joined
-void itsdk_lorawan_loop();													// LoRaWan stack processing loop
+itsdk_lorawan_send_t itsdk_lorawan_send_async(								// Send a frame in async mode
+		uint8_t * payload,
+		uint8_t   payloadSize,
+		uint8_t   port,
+		uint8_t	  dataRate,
+		itsdk_lorawan_sendconf_t confirm,
+		uint8_t	  retry,
+		void (*callback_func)(itsdk_lorawan_send_t status)
+);
+itsdk_lorawan_send_t itsdk_lorawan_getSendState();						// Send state for polling
 
+void itsdk_lorawan_changeDefaultRate(uint8_t newRate);
+itsdk_lorawan_rssisnr_t itsdk_lorawan_getLastRssiSnr(int16_t *rssi, uint8_t *snr);
+bool itsdk_lorawan_setTxPower(itsdk_lorawan_txpower txPwr);
+itsdk_lorawan_txpower itsdk_lorawan_getTxPower();
+uint16_t itsdk_lorawan_getDownlinkFrameCounter();
+uint16_t itsdk_lorawan_getUplinkFrameCounter();
+
+void itsdk_lorawan_loop();													// LoRaWan stack processing loop - MUST be in project_loop()
 
 
 // ===============================================================
 // TO BE OVERRIDDED
 // ===============================================================
 
-/**
- * Return a batteryLevel from 1 to 254
- * 1 = VBAT_MIN
- * 254 = VBAT_MAX
- */
-uint8_t itsdk_lorawan_battery_level();
 
 // Function automatically fired on data reception
 void itsdk_lorawan_onDataReception(uint8_t port, uint8_t * data, uint8_t size);

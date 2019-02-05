@@ -53,10 +53,10 @@
 #define LOG_ERROR_SX1276(x)		log_error x
 #define LOG_DEBUG_SX1276(x)		log_debug x
 #else
-#define LOG_INFO_S2LP(x)
-#define LOG_WARN_S2LP(x)
-#define LOG_ERROR_S2LP(x)
-#define LOG_DEBUG_S2LP(x)
+#define LOG_INFO_SX1276(x)
+#define LOG_WARN_SX1276(x)
+#define LOG_ERROR_SX1276(x)
+#define LOG_DEBUG_SX1276(x)
 #endif
 
 /*!

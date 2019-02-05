@@ -36,12 +36,23 @@ extern "C"
 // ---------------------------------------------------------------------------
 // ITSDK customization
 
+#if (ITSDK_LOGGER_MODULE & __LOG_MOD_LOWLORAINF) > 0
+#define LOG_INFO_LORAWAN(x)			log_info x
+#define LOG_WARN_LORAWAN(x) 		log_warn x
+#define LOG_ERROR_LORAWAN(x)		log_error x
+#define LOG_DEBUG_LORAWAN(x)		log_debug x
+#else
+#define LOG_INFO_LORAWAN(x)
+#define LOG_WARN_LORAWAN(x)
+#define LOG_ERROR_LORAWAN(x)
+#define LOG_DEBUG_LORAWAN(x)
+#endif
 
-#define PPRINTF(...) 			log_info(__VA_ARGS__)
-#define PRINTF(...)     		log_info(__VA_ARGS__)
-#define PRINTNOW()     			log_info("%d: ",(uint32_t)itsdk_time_get_ms())
+#define PPRINTF(...) 			LOG_INFO_LORAWAN((__VA_ARGS__))
+#define PRINTF(...)     		LOG_INFO_LORAWAN((__VA_ARGS__))
+#define PRINTNOW()     			LOG_INFO_LORAWAN(("%d: ",(uint32_t)itsdk_time_get_ms()))
 
-#if (ITSDK_LOGGER_MODULE & __LOG_MOD_LOWLORADBG) > 0
+#if (ITSDK_LOGGER_MODULE & __LOG_MOD_LOWLORAINF) > 0
 	#define TVL1(X)		X
 #else
 	#define TVL1(X)

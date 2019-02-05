@@ -50,7 +50,8 @@
 #define ITSDK_LORAWAN_ADR			__LORAWAN_ADR_OFF					   // Adaptative Data Rate
 #define ITSDK_LORAWAN_DEFAULT_DR	__LORAWAN_DR_0						   // Default data rate (SF12 125KHz)
 #define ITSDK_LORAWAN_CNF_RETRY		3									   // Number of retry when Confirm mode is applied
-
+#define ITSDK_LORAWAN_MAX_RX_ERROR	0									   // Extends the RX windows with +/- MS
+																		   // This is for unprecised clocks (0=default value)
 
 																		   // =============================
 																		   // FREQUENCY MAPPING
@@ -75,13 +76,13 @@
 																		   // =============================
 
 #define ITSDK_LORAWAN_DEVEUI		{													\
-										0x00, 0x00, 0x00, 0x00, 0x56, 0x99, 0x3B, 0x73	\
+										0x00, 0xF8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00	\
 									}									   // Static DEVEUI (big endian)
 																		   // Bytes are in the same order as
 																		   // in a String.
 
 #define ITSDK_LORAWAN_APPEUI		{													\
-										0x00, 0x00, 0x00, 0x00, 0xF0, 0x00, 0x3B, 0x19	\
+										0x70, 0xB3, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00	\
 									}									   // Static APPEUI (big endian)
 																		   // Bytes are in the same order as
 																		   // in a String.
@@ -135,6 +136,22 @@
 
 #define ITSDK_LORAWAN_NETWORKID		( uint32_t )0x00000000				   // 32b Network ID
 #define ITSDK_LORAWAN_DEVADDR		( uint32_t )0x00000000				   // 32b Session Device address
+
+																		   // =============================
+																		   // CHANNEL STATIC CONFIG
+																		   // =============================
+
+#define ITSDK_LORAWAN_CHANNEL {										\
+								5,		/*num of channel*/			\
+								{									\
+									{	3, 867100000, 867100000, __LORAWAN_DR_0, __LORAWAN_DR_5, 0 }, \
+									{	4, 867300000, 867300000, __LORAWAN_DR_0, __LORAWAN_DR_5, 0 }, \
+									{	5, 867500000, 867500000, __LORAWAN_DR_0, __LORAWAN_DR_5, 0 }, \
+									{	6, 867700000, 867700000, __LORAWAN_DR_0, __LORAWAN_DR_5, 0 }, \
+									{	7, 867900000, 867900000, __LORAWAN_DR_0, __LORAWAN_DR_5, 0 }  \
+								}									\
+							  }												// TTN EU Configuration
+
 
 #endif
 // +-------------SX1276------------|--------------------------------------|---------------------------------------|

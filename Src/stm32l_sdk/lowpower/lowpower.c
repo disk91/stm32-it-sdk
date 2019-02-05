@@ -38,6 +38,10 @@
 #include "usart.h"
 #include "gpio.h"
 
+#if ITSDK_TIMER_SLOTS > 0
+#include <it_sdk/time/timer.h>
+#endif
+
 
 #if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_GPIO ) > 0
 	void __LP_GPIO_IRQHandler(uint16_t GPIO_Pin);

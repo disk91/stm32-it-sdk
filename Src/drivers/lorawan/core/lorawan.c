@@ -44,16 +44,6 @@
 #include <drivers/lorawan/compiled_region.h>
 
 
-/*
-#include <drivers/lorawan/core/lora.h>
-#include <drivers/lorawan/phy/radio.h>
-#include <it_sdk/lorawan/lorawan.h>
-
-#include <drivers/sx1276/hw.h>
-#include <drivers/lorawan/timeServer.h>
-#include <drivers/lorawan/core/lora.h>
-*/
-
 /**
  * API with LoRaMAC stack
  * See details on : https://stackforce.github.io/LoRaMac-doc/
@@ -139,27 +129,47 @@ __weak void lorawan_driver_onDataReception(uint8_t port, uint8_t * data, uint8_t
 
 
 /**
- * Callback function on data reception
- * this function is based on a lorawan stack internal structure
- */
-/*
-static void __onReceiveData(lora_AppData_t *AppData)
-{
-	itsdk_lorawan_onDataReception(
-			AppData->Port,
-			AppData->Buff,
-			AppData->BuffSize
-	);
-}
-*/
-
-/**
  * Callback function on JOIN Success
  */
 __weak void lorawan_driver_onJoinSuccess() {
    log_info("[LoRaWAN] Join success\r\n");
 }
 
+/**
+ * Callback function on JOIN Failed
+ */
+__weak void lorawan_driver_onJoinFailed() {
+   log_info("[LoRaWAN] Join failed\r\n");
+}
+
+/**
+ * Callback function on Send Success
+ */
+__weak void lorawan_driver_onSendSuccess() {
+   log_info("[LoRaWAN] Send success\r\n");
+}
+
+/**
+ * Callback function on Send+Ack Success
+ */
+__weak void lorawan_driver_onSendAckSuccess() {
+   log_info("[LoRaWAN] Send+Ack success\r\n");
+}
+
+/**
+ * Callback function on Send+Ack Success & downlink is pending
+ */
+__weak void lorawan_driver_onPendingDownlink() {
+   log_info("[LoRaWAN] Pending downlink\r\n");
+}
+
+
+/**
+ * Callback function on Send Success but Ack Failed
+ */
+__weak void lorawan_driver_onSendSuccessAckFailed() {
+   log_info("[LoRaWAN] Send sucess Ack failed\r\n");
+}
 
 
 // =======================================================================================
@@ -193,7 +203,6 @@ __weak uint16_t lorawan_driver_temperature() {
  * Called after IRQ processing
  */
 void lorawan_driver_macProcessNotify(void) {
-  log_info("[LoRaWAN] Mac Process Notify\r\n");
   __loraWanState.reqPending=true;
 }
 
@@ -240,13 +249,65 @@ static uint8_t __convertDR(uint8_t itsdkDr) {
 	return 0;	// never reached
 }
 
+// From itsdk -> semtech
+static uint8_t __convertTxPower(uint8_t pwr) {
+	switch (pwr) {
+	case LORAWAN_TXPOWER_0 : return TX_POWER_0;
+	case LORAWAN_TXPOWER_1 : return TX_POWER_1;
+	case LORAWAN_TXPOWER_2 : return TX_POWER_2;
+	case LORAWAN_TXPOWER_3 : return TX_POWER_3;
+	case LORAWAN_TXPOWER_4 : return TX_POWER_4;
+	case LORAWAN_TXPOWER_5 : return TX_POWER_5;
+	case LORAWAN_TXPOWER_6 : return TX_POWER_6;
+	case LORAWAN_TXPOWER_7 : return TX_POWER_7;
+	case LORAWAN_TXPOWER_8 : return TX_POWER_8;
+	case LORAWAN_TXPOWER_9 : return TX_POWER_9;
+	case LORAWAN_TXPOWER_10 : return TX_POWER_10;
+	case LORAWAN_TXPOWER_11 : return TX_POWER_11;
+	case LORAWAN_TXPOWER_12 : return TX_POWER_12;
+	case LORAWAN_TXPOWER_13 : return TX_POWER_13;
+	case LORAWAN_TXPOWER_14 : return TX_POWER_14;
+	case LORAWAN_TXPOWER_15 : return TX_POWER_15;
+	default:
+		log_error("[LoRaWan] Invalid TxPower configuration %d \r\n",pwr);
+		itsdk_error_handler(__FILE__,__LINE__);
+	}
+	return 0;	// never reached
+}
+
+// from semtech -> itsdk
+static uint8_t __unconvertTxPower(uint8_t pwr) {
+	switch (pwr) {
+	case TX_POWER_0 : return LORAWAN_TXPOWER_0;
+	case TX_POWER_1 : return LORAWAN_TXPOWER_1;
+	case TX_POWER_2 : return LORAWAN_TXPOWER_2;
+	case TX_POWER_3 : return LORAWAN_TXPOWER_3;
+	case TX_POWER_4 : return LORAWAN_TXPOWER_4;
+	case TX_POWER_5 : return LORAWAN_TXPOWER_5;
+	case TX_POWER_6 : return LORAWAN_TXPOWER_6;
+	case TX_POWER_7 : return LORAWAN_TXPOWER_7;
+	case TX_POWER_8 : return LORAWAN_TXPOWER_8;
+	case TX_POWER_9 : return LORAWAN_TXPOWER_9;
+	case TX_POWER_10 : return LORAWAN_TXPOWER_10;
+	case TX_POWER_11 : return LORAWAN_TXPOWER_11;
+	case TX_POWER_12 : return LORAWAN_TXPOWER_12;
+	case TX_POWER_13 : return LORAWAN_TXPOWER_13;
+	case TX_POWER_14 : return LORAWAN_TXPOWER_14;
+	case TX_POWER_15 : return LORAWAN_TXPOWER_15;
+	default:
+		log_error("[LoRaWan] Invalid TxPower configuration %d \r\n",pwr);
+		itsdk_error_handler(__FILE__,__LINE__);
+	}
+	return 0;	// never reached
+}
+
+
 // =======================================================================================
 // Some string for trace
 // =======================================================================================
 
-/*!
- * MAC event info status strings.
- */
+
+// MAC event info status strings.
 const char* EventInfoStatusStrings[] =
 {
     "OK", "Error", "Tx timeout", "Rx 1 timeout",
@@ -259,6 +320,7 @@ const char* EventInfoStatusStrings[] =
 /*!
  * MAC status strings
  */
+/*
 const char* MacStatusStrings[] =
 {
     "OK", "Busy", "Service unknown", "Parameter invalid", "Frequency invalid",
@@ -269,7 +331,8 @@ const char* MacStatusStrings[] =
     "Busy uplink collision", "Crypto error", "FCnt handler error",
     "MAC command error", "ERROR"
 };
-
+*/
+/*
 const char* MlmeReqStrings[] =
 {
     "MLME_JOIN",
@@ -288,7 +351,7 @@ const char* MlmeReqStrings[] =
     "MLME_PING_SLOT_INFO",
     "MLME_BEACON_TIMING,MLME_BEACON_LOST"
 };
-
+*/
 
 // =======================================================================================
 // Init the LoRaMac
@@ -302,6 +365,9 @@ void lorawan_driver_LORA_Init(
 		lorawan_driver_config_t * config
 ){
   __loraWanState.joinState = LORAWAN_STATE_NONE;
+  __loraWanState.upLinkCounter = 0;
+  __loraWanState.downlinkCounter = 0;
+  __loraWanState.lastRssi = LORAWAN_DRIVER_INVALID_RSSI;
   LoRaMacPrimitives.MacMcpsConfirm = McpsConfirm;
   LoRaMacPrimitives.MacMcpsIndication = McpsIndication;
   LoRaMacPrimitives.MacMlmeConfirm = MlmeConfirm;
@@ -309,6 +375,8 @@ void lorawan_driver_LORA_Init(
   LoRaMacCallbacks.GetBatteryLevel = lorawan_driver_battery_level;
   LoRaMacCallbacks.GetTemperatureLevel = lorawan_driver_temperature;
   LoRaMacCallbacks.MacProcessNotify = lorawan_driver_macProcessNotify;
+
+
 
   // Set the Radio configuration
   switch ( config->region ) {
@@ -375,6 +443,12 @@ void lorawan_driver_LORA_Init(
 
   	    // Set the default configuration to the MIB
  	  	MibRequestConfirm_t mibReq;
+
+		#if ITSDK_LORAWAN_MAX_RX_ERROR > 0
+  	  	mibReq.Type = MIB_SYSTEM_MAX_RX_ERROR;	// Change the default RX window margin error (default is +/- 10ms)
+  	  	mibReq.Param.SystemMaxRxError = ITSDK_LORAWAN_MAX_RX_ERROR;
+  	  	LoRaMacMibSetRequestConfirm( &mibReq );
+		#endif
 
   	    mibReq.Type = MIB_ADR;
   	    mibReq.Param.AdrEnable = config->adrEnable;
@@ -543,6 +617,7 @@ itsdk_lorawan_send_t lorawan_driver_LORA_Send(
 		uint8_t					  port,
 		uint8_t					  dataRate,
 		itsdk_lorawan_sendconf_t  isTxConfirmed,
+		uint8_t					  retry,
 		itsdk_lorawan_run_t 	  runMode
 ){
     McpsReq_t mcpsReq;
@@ -563,11 +638,10 @@ itsdk_lorawan_send_t lorawan_driver_LORA_Send(
         mcpsReq.Req.Unconfirmed.fBufferSize = 0;
         mcpsReq.Req.Unconfirmed.Datarate = __convertDR(dataRate);
     } else {
+    	__loraWanState.lastRetries = 0;
     	// Ok To proceed
         if( isTxConfirmed == LORAWAN_SEND_UNCONFIRMED )
         {
-        	log_info("### send type unconfirmed\r\n");
-
             mcpsReq.Type = MCPS_UNCONFIRMED;
             mcpsReq.Req.Unconfirmed.fPort = port;
             mcpsReq.Req.Unconfirmed.fBufferSize = size;
@@ -576,13 +650,11 @@ itsdk_lorawan_send_t lorawan_driver_LORA_Send(
         }
         else
         {
-        	log_info("### send type confirmed\r\n");
-
         	mcpsReq.Type = MCPS_CONFIRMED;
             mcpsReq.Req.Confirmed.fPort = port;
             mcpsReq.Req.Confirmed.fBufferSize = size;
             mcpsReq.Req.Confirmed.fBuffer = payload;
-            mcpsReq.Req.Confirmed.NbTrials = ITSDK_LORAWAN_CNF_RETRY;
+            mcpsReq.Req.Confirmed.NbTrials = retry;
             mcpsReq.Req.Confirmed.Datarate = __convertDR(dataRate);
         }
     }
@@ -623,6 +695,149 @@ itsdk_lorawan_send_t lorawan_driver_LORA_Send(
 }
 
 
+/**
+ * Configure the channels.
+ * Default channels can't be overiden
+ * For each of the channel the following information are provided
+ * - channelID - entry Id in the channel table
+ * - frequency - central freq
+ * - rx1frequency - expected rx frequency for this channel (usualy the same)
+ * - min / max DataRate format __LORAWAN_DR_xx
+ * - band - index in the band[] dfined in the RegionXXMMM.h file - in most case this parameter is not required and computed as part ot the init
+ */
+itsdk_lorawan_channel_t lorawan_driver_LORA_AddChannel(
+		uint8_t		channelId,
+		uint32_t 	frequency,
+		uint32_t	rx1Frequency,
+		uint8_t		minDataRate,
+		uint8_t		maxDataRate,
+		uint8_t		band
+){
+	ChannelParams_t params;
+	params.Frequency=frequency;
+	params.Rx1Frequency=rx1Frequency;
+	params.Band=band;					// Sounds like this parameter is completed during initialization
+										// Band definitions are in the different RegionXXMMM.h file
+										// This entry is the index in the band definition
+	params.DrRange.Fields.Min=__convertDR(minDataRate);
+	params.DrRange.Fields.Max=__convertDR(maxDataRate);
+
+	LoRaMacStatus_t r = LoRaMacChannelAdd(channelId, params);
+	switch ( r ) {
+		case LORAMAC_STATUS_OK:
+			return LORAWAN_CHANNEL_SUCCESS;
+		case LORAMAC_STATUS_PARAMETER_INVALID:
+		case LORAMAC_STATUS_FREQ_AND_DR_INVALID:
+		case LORAMAC_STATUS_DATARATE_INVALID:
+		case LORAMAC_STATUS_FREQUENCY_INVALID:
+			log_warn("[LoRaWan] Invalid channel configuration (%d)\r\n",r);
+			return LORAWAN_CHANNEL_INVALID_PARAMS;
+		default:
+			log_warn("[LoRaWan] Channel configuration error (%d)\r\n",r);
+			return LORAWAN_CHANNEL_FAILED;
+	}
+}
+
+/**
+ * Remove a previously defined channel
+ * channelId - entry Id in the channel table
+ */
+itsdk_lorawan_channel_t lorawan_driver_LORA_RemoveChannel(uint8_t channelId){
+	if ( LoRaMacChannelRemove(channelId) == LORAMAC_STATUS_OK ) {
+		return LORAWAN_CHANNEL_SUCCESS;
+	} else {
+		log_warn("[LoRaWan] Channel removal error\r\n");
+		return LORAWAN_CHANNEL_FAILED;
+	}
+}
+
+/**
+ * Returns the last Uplink frame counter
+ */
+uint16_t lorawan_driver_LORA_GetUplinkFrameCounter(){
+	return __loraWanState.upLinkCounter;
+}
+
+/**
+ * Returns the last downlink frame counter
+ */
+uint16_t lorawan_driver_LORA_GetDownlinkFrameCounter(){
+	return __loraWanState.downlinkCounter;
+}
+
+
+/**
+ * Return the TX_POWER
+ * 0 = TX_POWER_0 => Max EIRP
+ * 1 = TX_POWER_1 => Max EIRP - 2
+ * 2 = TX_POWER_2 => Max EIRP - 4
+ * ...
+ * see https://stackforce.github.io/LoRaMac-doc & Region.h
+ */
+itsdk_lorawan_txpower lorawan_driver_LORA_GetTxPower(){
+	 MibRequestConfirm_t mib;
+
+	 mib.Type = MIB_CHANNELS_TX_POWER;
+	 if ( LoRaMacMibGetRequestConfirm(&mib) == LORAMAC_STATUS_OK) {
+		 return __unconvertTxPower(mib.Param.ChannelsTxPower);
+	 }
+	 return 0xFF;
+}
+
+/**
+ * Change the Transmission power
+ * The transmission power is not in dB but in predefined values regarding Max ERP
+ * according to documentation.
+ */
+bool lorawan_driver_LORA_SetTxPower(itsdk_lorawan_txpower txPwr ){
+	  MibRequestConfirm_t mib;
+
+	  mib.Type = MIB_CHANNELS_TX_POWER;
+	  mib.Param.ChannelsTxPower = __convertTxPower(txPwr);
+	  if ( LoRaMacMibSetRequestConfirm(&mib) == LORAMAC_STATUS_OK ){
+		  return true;
+	  }
+	  return false;
+}
+
+
+/**
+ * Return the last RSSI/SNR from the last downlink or Ack message.
+ */
+itsdk_lorawan_rssisnr_t lorawan_driver_LORA_GetLastRssiSnr(int16_t *rssi, uint8_t *snr){
+	if ( __loraWanState.lastRssi != LORAWAN_DRIVER_INVALID_RSSI ) {
+		*rssi = __loraWanState.lastRssi;
+		*snr = __loraWanState.lastSnr;
+		return LORAWAN_RSSISNR_VALID;
+	}
+	return LORAWAN_RSSISNR_INVALID;
+}
+
+/**
+ * Change default DR (use on Join request)
+ */
+void lorawan_driver_LORA_ChangeDefaultRate(uint8_t newRate){
+	__loraWanState.txDatarate = __convertDR(newRate);
+}
+
+
+/**
+ * Return the current JoinState - use to follow the async join procedure
+ * if used in polling mode
+ */
+lorawan_driver_joinState lorawan_driver_LORA_getJoinState(){
+	return __loraWanState.joinState;
+}
+
+/**
+ * Return the current/last SendState - use to follow the async send procedure
+ * if used in polling mode
+ */
+lorawan_driver_sendState lorawan_driver_LORA_getSendState(){
+	return __loraWanState.sendState;
+}
+
+
 // =============================================================================================
 // MCPS ( TX & RX Operations ) LAYER
 // =============================================================================================
@@ -642,7 +857,7 @@ static void McpsConfirm( McpsConfirm_t *mcpsConfirm )
                 // Check Datarate
                 // Check TxPower
             	__loraWanState.sendState = LORAWAN_SEND_STATE_SENT;
-        		log_info("### send confirmed\r\n");
+            	lorawan_driver_onSendSuccess();
                 break;
             }
             case MCPS_CONFIRMED:
@@ -652,10 +867,12 @@ static void McpsConfirm( McpsConfirm_t *mcpsConfirm )
                 // Check AckReceived
             	if(mcpsConfirm->AckReceived){
                 	__loraWanState.sendState = LORAWAN_SEND_STATE_ACKED;
-            		log_info("### Ack confirmed\r\n");
+                	lorawan_driver_onSendSuccess();
+                	lorawan_driver_onSendAckSuccess();
             	} else {
-            		log_info("### Ack not confirmed\r\n");
                 	__loraWanState.sendState = LORAWAN_SEND_STATE_NOTACKED;
+                	lorawan_driver_onSendSuccess();
+                	lorawan_driver_onSendSuccessAckFailed();
             	}
                 // Check NbTrials
                 break;
@@ -669,8 +886,11 @@ static void McpsConfirm( McpsConfirm_t *mcpsConfirm )
         }
     }
 
+    __loraWanState.upLinkCounter = mcpsConfirm->UpLinkCounter;
+    __loraWanState.lastRetries = mcpsConfirm->NbRetries;
+
     //implicitely desactivated when VERBOSE_LEVEL < 2
-    TraceUpLinkFrame(mcpsConfirm);
+    //TraceUpLinkFrame(mcpsConfirm);
 
 }
 
@@ -688,12 +908,18 @@ static void McpsIndication( McpsIndication_t *mcpsIndication )
     {
         case MCPS_UNCONFIRMED:
         {
-        	log_info("??? unconfirmed\r\n");
+        	//log_info("??? unconfirmed\r\n");
+        	// on est ici visibelemtn apres receptin d'un doanwlink
+        	// #= D/L FRAME 3 =# RxWin 2, Port 0, data size 0, rssi -49, snr 7
+        	// Downlink reception ...
+
+
+
             break;
         }
         case MCPS_CONFIRMED:
         {
-        	log_info("??? confirmed\r\n");
+        	log_info("??? MCPS_CONFIRMED\r\n");
             break;
         }
         case MCPS_PROPRIETARY:
@@ -716,7 +942,9 @@ static void McpsIndication( McpsIndication_t *mcpsIndication )
     {
         // The server signals that it has pending data to be sent.
         // We schedule an uplink as soon as possible to flush the server.
-    	log_info("[LoRaWAN] Network Server is asking for an uplink transmission\r\n");
+    	LOG_INFO_LORAWAN(("[LoRaWAN] Network Server is asking for an uplink transmission\r\n"));
+    	__loraWanState.sendState = LORAWAN_SEND_STATE_ACKED_DOWNLINK_PENDING;
+    	lorawan_driver_onPendingDownlink();
 
     }
     // Check Buffer
@@ -744,7 +972,7 @@ static void McpsIndication( McpsIndication_t *mcpsIndication )
 //          _AppData.BuffSize = mcpsIndication->BufferSize;
 //          _AppData.Buff = mcpsIndication->Buffer;
 
-          log_info("### Data received\r\n");
+          LOG_INFO_LORAWAN(("### Data received\r\n"));
           lorawan_driver_onDataReception(
         		  mcpsIndication->Port,
 				  mcpsIndication->Buffer,
@@ -753,6 +981,11 @@ static void McpsIndication( McpsIndication_t *mcpsIndication )
           break;
       }
     }
+
+    __loraWanState.lastRssi = mcpsIndication->Rssi;
+    __loraWanState.downlinkCounter = mcpsIndication->DownLinkCounter;
+    __loraWanState.lastSnr = mcpsIndication->Snr;
+
 
     /*implicitely desactivated when VERBOSE_LEVEL < 2*/
     TraceDownLinkFrame(mcpsIndication);
@@ -793,6 +1026,7 @@ static void MlmeConfirm( MlmeConfirm_t *mlmeConfirm )
             {
                 // Join was not successful. Try to join again
             	__loraWanState.joinState = LORAWAN_STATE_JOIN_FAILED;
+            	lorawan_driver_onJoinFailed();
                 // -> join retry to manage out of this ... LORA_Join();
             }
             break;
@@ -887,7 +1121,7 @@ static void MlmeIndication( MlmeIndication_t *MlmeIndication )
         case MLME_SCHEDULE_UPLINK:
         {
             // The MAC signals that we shall provide an uplink as soon as possible
-        	log_info("### Tx Needed\r\n");
+        	LOG_INFO_LORAWAN(("### Tx Needed\r\n"));
         	lorawan_driver_onTxNeeded();
             break;
         }

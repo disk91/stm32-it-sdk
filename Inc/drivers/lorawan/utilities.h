@@ -52,7 +52,7 @@ Maintainer: Miguel Luis and Gregory Cristian
 
 #define CRITICAL_SECTION_END( )   	  itsdk_leaveCriticalSection()
 
-#define LOG(...)     do{ log_info(__VA_ARGS__); }while(0);
+#define LOG(...)     do{ log_debug(__VA_ARGS__); }while(0);
 
 /* prepocessor directive to align buffer*/
 #define ALIGN(n)             __attribute__((aligned(n)))

@@ -143,6 +143,7 @@
 /**
  * LOG MODULE DEFINES
  */
+#define __LOG_MOD_NONE			0x00000000			// No Log
 #define __LOG_MOD_STIMER		0x00000001			// software timer module
 #define __LOG_MOD_LOWSIGFOX		0x00000002			// sigfox low level driver whatever it is
 #define __LOG_MOD_SIGFOX		0x00000004			// sigfox abstraction layer
