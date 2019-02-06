@@ -27,7 +27,7 @@
 
 #if ITSDK_WITH_SPI == __SPI_ENABLED
 #include <stm32l_sdk/spi/spi.h>
-#include "spi.h"
+#include <it_sdk/wrappers.h>
 
 
 /**
@@ -44,7 +44,7 @@ _SPI_Status spi_rwRegister(
 				toTransmit,
 				toReceive,
 				sizeToTransmit,
-				STM32_SPI_TIMEOUT
+				ITSDK_SPI_TIMEOUT
 		);
 }
 
@@ -61,7 +61,7 @@ _SPI_Status spi_readRegister(
 			toTransmit,
 			toReceive,
 			sizeToTransmit,
-			STM32_SPI_TIMEOUT
+			ITSDK_SPI_TIMEOUT
 	);
 
 }
@@ -71,7 +71,7 @@ _SPI_Status spi_write_byte(
 		uint8_t Value
 ) {
   spi_wait4TransactionEnd(spi);
-  return (_SPI_Status)HAL_SPI_Transmit(spi, (uint8_t*) &Value, 1, STM32_SPI_TIMEOUT);
+  return (_SPI_Status)HAL_SPI_Transmit(spi, (uint8_t*) &Value, 1, ITSDK_SPI_TIMEOUT);
 }
 
 void spi_wait4TransactionEnd(

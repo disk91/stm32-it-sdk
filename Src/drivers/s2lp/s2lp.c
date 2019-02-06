@@ -28,7 +28,7 @@
  */
 
 #include <it_sdk/config.h>
-#if ITSDK_SIGFOX_LIB == __SIGFOX_S2LP
+#if ITSDK_WITH_SIGFOX_LIB > 0 && ITSDK_SIGFOX_LIB == __SIGFOX_S2LP
 
 #include <it_sdk/itsdk.h>
 #include <it_sdk/sigfox/sigfox.h>

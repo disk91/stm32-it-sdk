@@ -27,7 +27,7 @@
 #include <it_sdk/config.h>
 #include <it_sdk/lowpower/lowpower.h>
 #include <it_sdk/time/time.h>
-#if ITSDK_PLATFORM == __PLATFORM_STM32L0x1 || ITSDK_PLATFORM == __PLATFORM_STM32L0x3
+#if ITSDK_PLATFORM == __PLATFORM_STM32L0
 	#include <stm32l_sdk/lowpower/lowpower.h>
 	#include <stm32l_sdk/rtc/rtc.h>
 #endif
@@ -39,7 +39,7 @@ lowPower_wu_reason_t __lowPower_wakeup_reason = LOWPWR_WAKEUP_UNDEF;
  */
 void lowPower_switch() {
 
-	#if ITSDK_PLATFORM == __PLATFORM_STM32L0x1 || ITSDK_PLATFORM == __PLATFORM_STM32L0x3
+	#if ITSDK_PLATFORM == __PLATFORM_STM32L0
 		stm32l_lowPowerSetup();
 		// sleeping
 		stm32l_lowPowerResume();

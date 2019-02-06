@@ -29,7 +29,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <it_sdk/config.h>
-#if ITSDK_PLATFORM == __PLATFORM_STM32L0x1 || ITSDK_PLATFORM == __PLATFORM_STM32L0x3
+#if ITSDK_PLATFORM == __PLATFORM_STM32L0
 
 #include <it_sdk/itsdk.h>
 #include <it_sdk/wrappers.h>
@@ -45,6 +45,9 @@ GPIO_TypeDef * getPortFromBankId(uint8_t bankId) {
 	case __BANK_B: return GPIOB;
 	case __BANK_C: return GPIOC;
 	case __BANK_D: return GPIOD;
+#if ITSDK_DEVICE == __DEVICE_STM32L072XX
+	case __BANK_E: return GPIOE;
+#endif
 	case __BANK_H: return GPIOH;
 	default:
 		itsdk_error_handler(__FILE__, __LINE__);
@@ -52,15 +55,28 @@ GPIO_TypeDef * getPortFromBankId(uint8_t bankId) {
 	return NULL;
 }
 
+/**
+ * Convert the pin vector (every pin is corresponding to a single bit) to a pin number.
+ * Internal
+ */
+uint8_t getPinNumFromPinVector(uint16_t pinId) {
+	uint8_t pinPos=0;
+	if ( ( pinId & 0xFF00 ) != 0) { pinPos |= 0x8; }
+	if ( ( pinId & 0xF0F0 ) != 0) { pinPos |= 0x4; }
+	if ( ( pinId & 0xCCCC ) != 0) { pinPos |= 0x2; }
+	if ( ( pinId & 0xAAAA ) != 0) { pinPos |= 0x1; }
+	return pinPos;
+}
 
 /**
  * Convert a GPIO bank/pin into the corresponding ExtI line
  */
 IRQn_Type getIrqFromBankPin(uint8_t bankId, uint16_t id) {
 
-	if ( id <= 1 ) {
+	uint8_t pinPos = getPinNumFromPinVector(id);
+	if ( pinPos <= 1 ) {
 		return EXTI0_1_IRQn;
-	} else if ( id <= 3 ) {
+	} else if ( pinPos <= 3 ) {
 		return EXTI2_3_IRQn;
 	} else {
 		return EXTI4_15_IRQn;
@@ -86,6 +102,11 @@ void gpio_configure(uint8_t bank, uint16_t id, itsdk_gpio_type_t type ) {
 	case __BANK_D:
 		  __GPIOD_CLK_ENABLE();
 		  break;
+	#if ITSDK_DEVICE == __DEVICE_STM32L072XX
+	case __BANK_E:
+		  __GPIOE_CLK_ENABLE();
+		  break;
+    #endif
 	case __BANK_H:
 		  __GPIOH_CLK_ENABLE();
 		  break;
@@ -211,19 +232,49 @@ void gpio_interruptClear(uint8_t bank, uint16_t id) {
 
 /**
  * RCT Interrupt handler allowing to chain different function
+ * The callback function will be fired when pinMask is matching or
+ * equal to 0.
  */
-gpio_irq_chain_t __gpio_irq_chain = { NULL, NULL };
+gpio_irq_chain_t __gpio_irq_chain = { NULL, 0, NULL };
+gpio_irq_chain_t * __gpio_irq_wakeup;
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
+	// When the __gpio_irq_wakeup handler is set this handler is called
+	// Because we do not want the normal handler to be called until the
+	// MCU is correctly configured when waking up from deep-sleep
+	if (__gpio_irq_wakeup != NULL ) {
+		void (*p)(uint16_t p) = __gpio_irq_wakeup->irq_func;
+		if ( p != NULL ) {
+			p(GPIO_Pin);
+			return;
+		}
+	}
+	// Normal non wake-up situation.
 	gpio_irq_chain_t * c = &__gpio_irq_chain;
 	while ( c != NULL ) {
 		void (*p)(uint16_t p) = c->irq_func;
-		if ( p != NULL ) {
+		if ( p != NULL && (c->pinMask==0 || ((c->pinMask & GPIO_Pin) > 0) ) ) {
 			p(GPIO_Pin);
 		}
 		c = c->next;
 	}
     __HAL_GPIO_EXTI_CLEAR_IT(GPIO_Pin);
+}
+
+/**
+ * Add an action on wake-up.
+ * This action replace temporaly the exiting actions
+ */
+void gpio_registerWakeUpAction(gpio_irq_chain_t * chain) {
+	__gpio_irq_wakeup = chain;
+}
+
+/**
+ * Remove the action on wake-up.
+ * This action restore the previously defined gpio actions
+ */
+void gpio_removeWakeUpAction() {
+	__gpio_irq_wakeup = NULL;
 }
 
 /**

@@ -30,7 +30,8 @@
 
 #include <stdbool.h>
 #include <it_sdk/config.h>
-#if ITSDK_PLATFORM == __PLATFORM_STM32L0x3 || ITSDK_PLATFORM == __PLATFORM_STM32L0x1
+#include <it_sdk/wrappers.h>
+#if ITSDK_PLATFORM == __PLATFORM_STM32L0
 	#include <stm32l_sdk/spi/spi.h>
 #else
 	#error "M95640 driver is not supported for this platform"
@@ -57,26 +58,26 @@
 
 // *** Public prototypes
 void eeprom_m95640_hwInit();
-bool eeprom_m95640_init(__SPI_HANDLER_TYPE * spi);
+bool eeprom_m95640_init(ITSDK_SPI_HANDLER_TYPE * spi);
 
 void eeprom_m95640_write(
-		__SPI_HANDLER_TYPE * spi,
+		ITSDK_SPI_HANDLER_TYPE * spi,
 		uint16_t nAddress,
 		uint8_t cNbBytes,
 		uint8_t* pcBuffer
 );
 
 void eeprom_m95640_read(
-		__SPI_HANDLER_TYPE * spi,
+		ITSDK_SPI_HANDLER_TYPE * spi,
 		uint16_t nAddress,
 		uint8_t cNbBytes,
 		uint8_t* pcBuffer
 );
 
 uint8_t eeprom_m95640_getStatus(
-		__SPI_HANDLER_TYPE * spi,					// spi port to be used
-		bool				 withChipSelect			// update the chip select signal when true
-												    // when false, CS must be already activ
+		ITSDK_SPI_HANDLER_TYPE * spi,					// spi port to be used
+		bool				 	withChipSelect			// update the chip select signal when true
+														// when false, CS must be already activ
 );
 
 
@@ -90,17 +91,17 @@ typedef enum {
 void eeprom_m95640_chipSelected();
 void eeprom_m95640_chipUnSelected();
 void eeprom_m95640_enableWrite(
-		__SPI_HANDLER_TYPE * spi,					// spi port to be used
+		ITSDK_SPI_HANDLER_TYPE * spi,				// spi port to be used
 		bool				 withChipSelect			// update the chip select signal when true
 												    // when false, CS must be already activ
 );
 void eeprom_m95640_ensureEndOfWrite(
-		__SPI_HANDLER_TYPE * spi,					// spi port to be used
+		ITSDK_SPI_HANDLER_TYPE * spi,				// spi port to be used
 		bool				 withChipSelect			// update the chip select signal when true
 												    // when false, CS must be already activ
 );
 void eeprom_m95640_access(
-		__SPI_HANDLER_TYPE * spi,					// spi port to be used
+		ITSDK_SPI_HANDLER_TYPE * spi,				// spi port to be used
 		uint16_t nAddress,							// Address in the eeprom
 		uint8_t cNbBytes,							// Size of the data to be accessed
 		uint8_t* pcBuffer,							// Buffer where data are / where to store
@@ -108,7 +109,7 @@ void eeprom_m95640_access(
 );
 
 uint8_t eeprom_m95640_setSRWD(
-		__SPI_HANDLER_TYPE * spi,					// spi port to be used
+		ITSDK_SPI_HANDLER_TYPE * spi,				// spi port to be used
 		bool				 withChipSelect			// update the chip select signal when true
 												    // when false, CS must be already activ
 );

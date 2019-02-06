@@ -27,11 +27,12 @@
 #include <it_sdk/config.h>
 #include <it_sdk/itsdk.h>
 #include <it_sdk/time/time.h>
-#if ITSDK_PLATFORM == __PLATFORM_STM32L0x1 || ITSDK_PLATFORM == __PLATFORM_STM32L0x3
+#if ITSDK_PLATFORM == __PLATFORM_STM32L0
 	#include <stm32l_sdk/rtc/rtc.h>
+	#include <stm32l_sdk/time/time.h>
 #endif
 
-uint64_t __timeus = 0;
+volatile uint64_t __timeus = 0;
 uint8_t  __time_has_overrun = 0;
 uint8_t  __time_overrun_cnt = 0;
 
@@ -56,7 +57,7 @@ void itsdk_time_add_us(uint32_t us) {
  */
 void itsdk_time_set_ms(uint64_t ms) {
 	uint64_t n = ms * 1000L;
-	if ( n < __timeus  ) {
+	if ( (__timeus - n) > 1000000L   ) {	// difference is > 1m assuming the counter has restarted
 		__time_has_overrun=1;
 		__time_overrun_cnt++;
 	}
@@ -71,10 +72,18 @@ uint64_t itsdk_time_get_ms() {
 }
 
 /**
+ * Get current time in us
+ */
+uint64_t itsdk_time_get_us() {
+	return __timeus;
+}
+
+
+/**
  * Reset the time to 0
  */
 void itsdk_time_reset() {
-	#if ITSDK_PLATFORM == __PLATFORM_STM32L0x1 || ITSDK_PLATFORM == __PLATFORM_STM32L0x3
+	#if ITSDK_PLATFORM == __PLATFORM_STM32L0
 		rtc_resetTime();
 	#else
 		#error "platform not supported"
@@ -86,9 +95,11 @@ void itsdk_time_reset() {
  * Init time functions
  */
 void itsdk_time_init() {
-#if ITSDK_PLATFORM == __PLATFORM_STM32L0x1 || ITSDK_PLATFORM == __PLATFORM_STM32L0x3
+#if ITSDK_PLATFORM == __PLATFORM_STM32L0
 	rtc_resetTime();
 	rtc_adjustTime();
+	systick_adjustTime();
+	itsdk_time_set_ms(rtc_getTimestampMs());
 #else
 	#error "platform not supported"
 #endif

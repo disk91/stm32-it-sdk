@@ -26,10 +26,12 @@
  */
 #ifndef IT_SDK_TIME_TIME_H_
 #define IT_SDK_TIME_TIME_H_
+#include <stdint.h>
 
 void itsdk_time_add_us(uint32_t us);
 void itsdk_time_set_ms(uint64_t ms);
 uint64_t itsdk_time_get_ms();
+uint64_t itsdk_time_get_us();
 void itsdk_time_reset();
 void itsdk_time_init();
 

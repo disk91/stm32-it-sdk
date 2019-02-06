@@ -35,15 +35,22 @@
 #include <it_sdk/logger/logger.h>
 #include <it_sdk/wrappers.h>
 #include "stm32l0xx_hal.h"
+#include "usart.h"
+#include "gpio.h"
+
+#if ITSDK_TIMER_SLOTS > 0
+#include <it_sdk/time/timer.h>
+#endif
 
 
 #if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_GPIO ) > 0
 	void __LP_GPIO_IRQHandler(uint16_t GPIO_Pin);
 	gpio_irq_chain_t __lowpwer_gpio_irq = {
 			__LP_GPIO_IRQHandler,
+			0,
 			NULL
 	};
-
+	uint16_t __lowPower_wakeup_pin =0;
 #endif
 
 
@@ -58,7 +65,14 @@ void stm32l_lowPowerSetup() {
 		// -------------------------------------------------------------
 		HAL_SuspendTick();
 		#if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_RTC )
-			rtc_configure4LowPower(ITSDK_LOWPOWER_RTC_MS);		// Setup RTC wake Up
+			// Ensure we will wake up at next softTimer end.
+			#if ITSDK_TIMER_SLOTS > 0
+			   uint32_t maxDur = itsdk_stimer_nextTimeoutMs();
+			   maxDur = ( maxDur < ITSDK_LOWPOWER_RTC_MS)?maxDur:ITSDK_LOWPOWER_RTC_MS;
+			   rtc_configure4LowPower(maxDur);						// Setup RTC wake Up
+			#else
+			   rtc_configure4LowPower(ITSDK_LOWPOWER_RTC_MS);		// Setup RTC wake Up
+			#endif
 		#endif
 	    __HAL_RCC_PWR_CLK_ENABLE();				// Enable Power Control clock
  	    HAL_PWREx_EnableUltraLowPower();		// Ultra low power mode
@@ -94,11 +108,16 @@ void stm32l_lowPowerSetup() {
 
 		#if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_GPIO ) > 0
 		  // Register interrupt handler
-		  gpio_registerIrqAction(&__lowpwer_gpio_irq);	// Install the action as the irq can be activated outside this code
+		  __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU); 				// Clear wakeUp flag
+		  gpio_registerWakeUpAction(&__lowpwer_gpio_irq);	// Install the wakeup handler
+		  	  	  	  	  	  	  	  	  	  	  	  	  	// (the previously existing handler will be bypassed)
 		#endif
 
  	    // Switch to STOPMode
 		__lowPower_wakeup_reason=LOWPWR_WAKEUP_UNDEF;
+		#if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_GPIO ) > 0
+			__lowPower_wakeup_pin=0;
+		#endif
  	    HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
 	}
 
@@ -131,10 +150,22 @@ void stm32l_lowPowerResume() {
 			MX_USART2_UART_Init();
 		#endif
 		HAL_ResumeTick();
+
+		#if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_GPIO ) > 0
+		 // remove the WakeUp Handler and fire the pending irq to the normal IRQ handler
+		 gpio_removeWakeUpAction();
+ 		 if ( __lowPower_wakeup_reason == LOWPWR_WAKEUP_GPIO && __lowPower_wakeup_pin != 0 ) {
+			HAL_GPIO_EXTI_Callback(__lowPower_wakeup_pin);
+		 }
+		#endif
+
 	}
 //  useful line of code to identify the wakeup cause when needed...
 //	if (__lowPower_wakeup_reason != LOWPWR_WAKEUP_UNDEF ) {
-//		log_info("-%d-",__lowPower_wakeup_reason);
+//		if ( __lowPower_wakeup_reason == LOWPWR_WAKEUP_GPIO )
+//			log_info("-%d-(%d)-",__lowPower_wakeup_reason,__lowPower_wakeup_pin);
+//		else
+//			log_info("-%d-",__lowPower_wakeup_reason);
 //	} else {
 //		log_info("|");
 //	}
@@ -195,7 +226,6 @@ void _stm32l_disableGpios() {
     /*       to analog input mode) including  UART I/O pins.           					*/
 
 #ifdef GPIOA
-
 	__GpioAnalog(GPIOA,(~ITSDK_LOWPOWER_GPIO_A_KEEP) & (GPIOA_PIN_AVAILABLE));
 	if( ITSDK_LOWPOWER_GPIO_A_KEEP == __LP_GPIO_NONE ) {
 		__HAL_RCC_GPIOA_CLK_DISABLE();
@@ -241,6 +271,8 @@ void _stm32l_disableGpios() {
 
 /**
  * IRQ Handler
+ * We store the pin, reason of the wake up becaus we are going to callback the irq handler
+ * once the mcu is reconfigured & ready
  */
 
 #if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_GPIO ) > 0
@@ -250,6 +282,7 @@ void __LP_GPIO_IRQHandler(uint16_t GPIO_Pin) {
   /* Clear Wake Up Flag */
   __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
   __lowPower_wakeup_reason=LOWPWR_WAKEUP_GPIO;
+  __lowPower_wakeup_pin = GPIO_Pin;
 
 }
 

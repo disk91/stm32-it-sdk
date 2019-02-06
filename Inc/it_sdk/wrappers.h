@@ -30,6 +30,7 @@
 
 #include <stdbool.h>
 
+// ================================================
 // Serial wrappers
 void serial1_flush();
 void serial2_flush();
@@ -45,20 +46,25 @@ void serial2_println(char * msg);
 void debug_println(char * msg);
 void logfile_println(char * msg);
 
+// ================================================
 // watchdog
 void wdg_setupWithMaxMs(uint32_t ms);
 void wdg_refresh();
 
+// ================================================
 // eeprom
 bool _eeprom_write(uint8_t bank, uint32_t offset, void * data, int len);
 bool _eeprom_read(uint8_t bank, uint32_t offset, void * data, int len);
 
+// ================================================
 // adc
 #define ADC_TEMPERATURE_ERROR		-500
 int16_t adc_getTemperature();
 uint16_t adc_getVdd();
 uint16_t adc_getValue(uint32_t pin);
+uint16_t adc_getVBat();
 
+// ================================================
 // gpio
 typedef enum {
 	GPIO_OUTPUT_PP = 0,
@@ -79,6 +85,7 @@ typedef enum {
 
 typedef struct s_gpio_irq_chain {
 	void (*irq_func)(uint16_t GPIO_Pin);
+	uint16_t pinMask;
 	struct s_gpio_irq_chain * next;
 } gpio_irq_chain_t;
 
@@ -95,11 +102,48 @@ void gpio_interruptClear(uint8_t bank, uint16_t id);
 void gpio_registerIrqAction(gpio_irq_chain_t * chain);
 void gpio_removeIrqAction(gpio_irq_chain_t * chain);
 bool gpio_existAction(gpio_irq_chain_t * chain);
+void gpio_registerWakeUpAction(gpio_irq_chain_t * chain);
+void gpio_removeWakeUpAction();
 
-// misc_wrapper
-void itsdk_reset();
-void itsdk_delayMs(uint32_t ms);
+// ================================================
+// spi
+typedef enum
+{
+  SPI_OK       = 0x00U,
+  SPI_ERROR    = 0x01U,
+  SPI_BUSY     = 0x02U,
+  SPI_TIMEOUT  = 0x03U
+} _SPI_Status;
 
+_SPI_Status spi_rwRegister(
+		ITSDK_SPI_HANDLER_TYPE * spi,
+		uint8_t	* toTransmit,
+		uint8_t * toReceive,
+		uint8_t   sizeToTransmit
+);
+
+_SPI_Status spi_readRegister(
+		ITSDK_SPI_HANDLER_TYPE * spi,
+		uint8_t	* toTransmit,
+		uint8_t * toReceive,
+		uint8_t   sizeToTransmit
+);
+
+_SPI_Status spi_write_byte(
+		ITSDK_SPI_HANDLER_TYPE * spi,
+		uint8_t Value
+);
+
+void spi_wait4TransactionEnd(
+		ITSDK_SPI_HANDLER_TYPE * spi
+);
+
+void spi_reset(
+		ITSDK_SPI_HANDLER_TYPE * spi
+);
+
+
+// ================================================
 // Reset Cause
 typedef enum {
 	RESET_CAUSE_BOR = 0,		// under voltage			0
@@ -115,5 +159,21 @@ typedef enum {
 
 void itsdk_cleanResetCause();
 itsdk_reset_cause_t itsdk_getResetCause();
+
+// ================================================
+// misc_wrapper
+void itsdk_reset();
+void itsdk_delayMs(uint32_t ms);
+
+uint32_t itsdk_getIrqMask();
+void itsdk_setIrqMask(uint32_t mask);
+void itsdk_enterCriticalSection();
+void itsdk_leaveCriticalSection();
+void itsdk_disableIrq();
+void itsdk_enableIrq();
+
+uint32_t itsdk_getRandomSeed();								// get a random seed value - can be the same for one given object
+void itsdk_getUniqId(uint8_t * id, int8_t size);			// fill id table with an object ID having the given size
+
 
 #endif /* STM32L_SDK_WRAPPERS_H_ */

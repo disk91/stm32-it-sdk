@@ -29,7 +29,9 @@
 #define STM32L_SDK_RTC_RTC_H_
 
 #include <stdbool.h>
+#include <stdint.h>
 #include <it_sdk/config.h>
+#include <rtc.h>
 
 typedef struct s_rtc_irq_chain {
 	void (*irq_func)(RTC_HandleTypeDef *h);

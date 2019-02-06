@@ -26,7 +26,7 @@
  */
 
 #include <it_sdk/config.h>
-#if ITSDK_PLATFORM == __PLATFORM_STM32L0x1 || ITSDK_PLATFORM == __PLATFORM_STM32L0x3
+#if ITSDK_PLATFORM == __PLATFORM_STM32L0
 
 #include <it_sdk/wrappers.h>
 #include "stm32l0xx_hal.h"
@@ -61,6 +61,92 @@ void itsdk_cleanResetCause() {
  */
 void itsdk_delayMs(uint32_t ms) {
 	HAL_Delay(ms);
+}
+
+/**
+ * Get the IRQ Mask
+ */
+uint32_t itsdk_getIrqMask() {
+	return __get_PRIMASK();
+}
+
+/**
+ * Set / Restore the IRQ Mask
+ */
+void itsdk_setIrqMask(uint32_t mask) {
+	__set_PRIMASK(mask);
+}
+/**
+ * Enter a critical section / disable interrupt
+ */
+static uint32_t __interrupt_mask;
+void itsdk_enterCriticalSection() {
+	__interrupt_mask = itsdk_getIrqMask();
+	__disable_irq();
+}
+
+/**
+ * Restore the initial irq mask
+ * to leave a critical secqtion
+ */
+void itsdk_leaveCriticalSection() {
+	itsdk_setIrqMask(__interrupt_mask);
+}
+
+/**
+ * Disable IRQ
+ */
+void itsdk_disableIrq() {
+	__disable_irq();
+}
+
+/**
+ * Enable IRQ
+ */
+void itsdk_enableIrq() {
+	__enable_irq();
+}
+
+
+/**
+ * Generate a seed. This seed is different for any of the objects
+ *
+ */
+#if ITSDK_PLATFORM == __PLATFORM_STM32L0
+	#define  STM32_ID1    ( 0x1FF80050 )
+	#define  STM32_ID2    ( 0x1FF80054 )
+	#define  STM32_ID3    ( 0x1FF80064 )
+#else
+    #error "You need to define the MCU ID for this platform"
+#endif
+uint32_t itsdk_getRandomSeed() {
+	return ( ( *( uint32_t* )STM32_ID1 ) ^ ( *( uint32_t* )STM32_ID2 ) ^ ( *( uint32_t* )STM32_ID3 ) );
+}
+
+/**
+ * Generate a uniq ID based on the object ID. The id struct is
+ * initialized based on this. This size of the id table is given
+ * as a parameter
+ */
+void itsdk_getUniqId(uint8_t * id, int8_t size){
+
+	uint32_t i = (( *( uint32_t* )STM32_ID1 ) << 16) + (( *( uint32_t* )STM32_ID2 )  << 8) + (*( uint32_t* )STM32_ID3 );
+	uint8_t l=0;
+	uint32_t s=i;
+	while ( l < size ) {
+		if ( (l & 0x3) == 0 ) {
+			switch ( (l >> 2) & 3 ) {
+				case 0:	s = i ^ STM32_ID1; break;
+				case 1: s = i ^ STM32_ID2; break;
+				case 2: s = i ^ STM32_ID3; break;
+				default:
+				case 3: s = i; break;
+			}
+		}
+		id[l] = ( s >> (8*(l&3))) & 0xFF;
+		l++;
+	}
+
 }
 
 

@@ -29,17 +29,23 @@
 #define IT_SDK_CONFIG_DEFINES_H_
 
 /**
+ * Cube MX code generator
+ */
+#define __CUBEMX_VERSIONXXX			499
+#define __CUBEMX_VERSION500			500
+
+/**
  * Supported Hardware Platform
  */
 #define __PLATFORM_EFM32_TD			0
-#define __PLATFORM_STM32L0x1		1
-#define __PLATFORM_STM32L0x3		1
+#define __PLATFORM_STM32L0			1
 #define __PLAFTORM_ESP8266			2
 
 /**
  * Devices
  */
 #define __DEVICE_STM32L011D4		1
+#define __DEVICE_STM32L072XX		2
 #define __DEVICE_STM32L053R8		3
 
 /**
@@ -70,6 +76,13 @@
 #define __RTC_ENABLED				0x0001			// With RTC
 
 /**
+ * CLK CORRECTION SOURCE
+ */
+#define __CLK_BEST_SRC_UNDEFINED	0x00			// The most accurate source is unknonw
+#define __CLK_BEST_SRC_RTC			0x01			// The RTC clock is the most accurate source
+#define __CLK_BEST_SRC_CLK			0x02			// The main CLK is the most accurated source
+
+/**
  * ADC configuration
  */
 #define __ADC_NONE					0x00			// No ADC
@@ -86,6 +99,12 @@
  */
 #define __TIMER_NONE				0x00			// No hw timer code
 #define __TIMER_ENABLED				0x01			// with hw timer code
+
+/**
+ * Basic enable / disable
+ */
+#define __DISABLE					0x00
+#define __ENABLE					0x01
 
 /**
  * GPIO to keep activated on low power mode
@@ -118,15 +137,19 @@
 #define __BANK_D				3
 #define __BANK_E				4
 #define __BANK_F				5
-#define __BANK_H				6
+#define __BANK_H				7
 
 
 /**
  * LOG MODULE DEFINES
  */
+#define __LOG_MOD_NONE			0x00000000			// No Log
 #define __LOG_MOD_STIMER		0x00000001			// software timer module
 #define __LOG_MOD_LOWSIGFOX		0x00000002			// sigfox low level driver whatever it is
 #define __LOG_MOD_SIGFOX		0x00000004			// sigfox abstraction layer
+#define __LOG_MOD_LOWLORADBG	0x00000008			// Lora low level - hardware level
+#define __LOG_MOD_LOWLORAINF	0x00000010			// Lora low level - mac level
+#define __LOG_MOD_STKLORA		0x00000020			// Lora low level - itsdk level
 
 #define __LOG_MOD_CUSTOM1		0x00010000			// User level logging
 #define __LOG_MOD_CUSTOM2		0x00020000			// User level logging
@@ -148,8 +171,9 @@
 /**
  * Supported SIGFOX Interface
  */
-#define	__SIGFOX_S2LP			0
-#define __SIGFOX_WISOL10		1
+#define __SIGFOX_NONE			0
+#define	__SIGFOX_S2LP			1
+#define __SIGFOX_WISOL10		2
 
 /**
  * NVM source for Sigfox lib
@@ -172,5 +196,77 @@
 #define	__SIGFOX_ENCRYPT_SIGFOX 1					// Sigfox payload encryption
 #define	__SIGFOX_ENCRYPT_AESCTR 2					// Custom AES-CTR encryption
 #define	__SIGFOX_ENCRYPT_SPECK  4					// Speck encryption
+
+
+/**
+ * Supported LoRaWAN Interface
+ */
+#define __LORAWAN_NONE			0					// LoRaWan disabled
+#define __LORAWAN_SX1276		1					// SX1276 like for Murata or RFM95w
+
+/**
+ * Supported LoRaWAN Implementation
+ */
+#define __LORAWAN_NONE			0					// No selection, LORAWAN should be disabled
+#define __LORAWAN_SEMTECH		1					// Activate the LoRaWan stack
+
+
+/**
+ * LoRaWAN Type of activation
+ */
+#define __LORAWAN_OTAA			0x01				// Over The Air Activation
+#define __LORAWAN_ABP			0x02				// Activation By Personalization
+
+/**
+ * LoRaWAN ADR (Adaptative Data Rate)
+ */
+#define __LORAWAN_ADR_UNDEFINED	0x00
+#define __LORAWAN_ADR_OFF		0x01
+#define __LORAWAN_ADR_ON		0x02
+
+/**
+ * LoRaWAN default Data Rate
+ */
+#define __LORAWAN_DR_UNDEFINED	0x0
+#define __LORAWAN_DR_0			0x1
+#define __LORAWAN_DR_1			0x2
+#define __LORAWAN_DR_2			0x3
+#define __LORAWAN_DR_3			0x4
+#define __LORAWAN_DR_4			0x5
+#define __LORAWAN_DR_5			0x6
+#define __LORAWAN_DR_6			0x7
+#define __LORAWAN_DR_7			0x8
+#define __LORAWAN_DR_8			0x9
+#define __LORAWAN_DR_9			0x10
+#define __LORAWAN_DR_10			0x11
+#define __LORAWAN_DR_11			0x12
+#define __LORAWAN_DR_12			0x13
+#define __LORAWAN_DR_13			0x14
+#define __LORAWAN_DR_14			0x15
+#define __LORAWAN_DR_15			0x16
+
+/**
+ * LoRaWAN Misc defines
+ */
+#define __LORAWAN_NWK_PUBLIC		0x01			// Public network
+#define __LORAWAN_NWK_PRIVATE		0x02			// Private network
+
+#define __LORAWAN_DEVEUI_STATIC		0x01			// Device EUI is static
+#define __LORAWAN_DEVEUI_GENERATED	0x02			// Device EUI stored is generated from the boardId
+
+/**
+ * LoRaWAN Region to be compiled
+ */
+#define __LORAWAN_REGION_NONE		0x0000
+#define __LORAWAN_REGION_AS923		0x0001
+#define __LORAWAN_REGION_AU915		0x0002
+#define __LORAWAN_REGION_CN470		0x0004
+#define __LORAWAN_REGION_CN779		0x0008
+#define __LORAWAN_REGION_EU433		0x0010
+#define __LORAWAN_REGION_EU868		0x0020
+#define __LORAWAN_REGION_KR920		0x0040
+#define __LORAWAN_REGION_IN865		0x0080
+#define __LORAWAN_REGION_US915		0x0100
+#define __LORAWAN_REGION_RU864		0x0200
 
 #endif /* IT_SDK_CONFIG_DEFINES_H_ */

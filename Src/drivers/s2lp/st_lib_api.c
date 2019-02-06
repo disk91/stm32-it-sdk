@@ -29,6 +29,8 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include <it_sdk/config.h>
+#if ITSDK_WITH_SIGFOX_LIB > 0 && ITSDK_SIGFOX_LIB == __SIGFOX_S2LP
+
 #include <it_sdk/itsdk.h>
 #include <it_sdk/logger/logger.h>
 #include <it_sdk/time/timer.h>
@@ -500,6 +502,7 @@ NVM_RW_RESULTS NVM_Read(uint32_t nAddress, uint8_t cNbBytes, uint8_t* pcBuffer)
 void __GPIO_IRQHandler(uint16_t GPIO_Pin);
 gpio_irq_chain_t __sfx_gpio_irq = {
 		__GPIO_IRQHandler,
+		0,
 		NULL
 };
 volatile uint8_t __pendingIrqDelayed=0;
@@ -637,7 +640,8 @@ sfx_u8 MCU_API_timer_start(sfx_u32 time_duration_in_s)
 	if (   itsdk_stimer_register(
 				(time_duration_in_s)*1000-500,
 				__TIMER_Handler,
-				0
+				0,
+				TIMER_ACCEPT_LOWPOWER
 			) != TIMER_INIT_SUCCESS ) {
 		itsdk_error_handler(__FILE__, __LINE__);
 	}
@@ -701,7 +705,8 @@ sfx_u8 MCU_API_timer_start_carrier_sense(sfx_u16 time_duration_in_ms)
 	if (   itsdk_stimer_register(
 			time_duration_in_ms,
 			__TIMER2_Handler,
-			0
+			0,
+			TIMER_ACCEPT_LOWPOWER
 		) != TIMER_INIT_SUCCESS ) {
 			itsdk_error_handler(__FILE__, __LINE__);
 		}
@@ -763,6 +768,8 @@ void enc_utils_retrieve_key(uint8_t * key) {
 #endif
 
 }
+
+#endif // ITSDK_WITH_SIGFOX_LIB > 0
 
 
 

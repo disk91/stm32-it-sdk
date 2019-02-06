@@ -29,6 +29,7 @@
 #define IT_SDK_LOGGER_LOGGER_H_
 
 #include <stdbool.h>
+#include <stdint.h>
 
 #define LOGGER_MAX_BUF_SZ             80
 

@@ -34,7 +34,7 @@
 #include <it_sdk/time/timer.h>
 #include <it_sdk/logger/logger.h>
 
-#if ITSDK_PLATFORM == __PLATFORM_STM32L0x1 || ITSDK_PLATFORM == __PLATFORM_STM32L0x3
+#if ITSDK_PLATFORM == __PLATFORM_STM32L0
    #include <stm32l_sdk/timer/timer.h>
 #endif
 
@@ -47,7 +47,7 @@
 #if ITSDK_WITH_HW_TIMER > 0
 
 /**
- * Run the timer for the given time. Sync mode, return only after timer execution
+ * Run the timer for the given time. Sync mode: returns only after timer execution
  * At end the callback_func is called with value as parameter. If NULL the function
  * just return.
  */
@@ -57,7 +57,7 @@ itsdk_timer_return_t itsdk_hwtimer_sync_run(
 		uint32_t value
 ) {
 
-	#if ITSDK_PLATFORM == __PLATFORM_STM32L0x1 || ITSDK_PLATFORM == __PLATFORM_STM32L0x3
+	#if ITSDK_PLATFORM == __PLATFORM_STM32L0
 		return stm32l_hwtimer_sync_run(ms,callback_func,value);
 	#else
 		#error "platform not supported"
@@ -67,11 +67,6 @@ itsdk_timer_return_t itsdk_hwtimer_sync_run(
 
 
 #endif
-
-#define ITSDK_WITH_HW_TIMER			__TIMER_ENABLED							// Use Hardware Timer
-#define ITSDK_HW_TIMER1_HANDLE		htim21									// Timer handler to be used as primary timer
-#define ITSDK_HW_TIMER1_FREQ		16000000								// Primary timer base frequency
-
 
 
 
@@ -93,7 +88,8 @@ itsdk_stimer_slot_t	__stimer_slots[ITSDK_TIMER_SLOTS] = {0};
 itsdk_timer_return_t itsdk_stimer_register(
 		uint32_t ms,
 		void (*callback_func)(uint32_t value),
-		uint32_t value
+		uint32_t value,
+		itsdk_timer_lpAccept allowLowPower
 ) {
 	if ( ms < ITSDK_LOWPOWER_RTC_MS ) {
 		#if (ITSDK_LOGGER_MODULE & __LOG_MOD_STIMER) > 0
@@ -111,6 +107,7 @@ itsdk_timer_return_t itsdk_stimer_register(
 	}
 	if ( i < ITSDK_TIMER_SLOTS ) {
 		__stimer_slots[i].inUse = true;
+		__stimer_slots[i].allowLowPower = ((allowLowPower==TIMER_ACCEPT_LOWPOWER)?true:false);
 		__stimer_slots[i].customValue = value;
 		__stimer_slots[i].callback_func = callback_func;
 		__stimer_slots[i].timeoutMs = itsdk_time_get_ms()+ms;
@@ -152,6 +149,36 @@ bool itsdk_stimer_isRunning(
 		void (*callback_func)(uint32_t value),
 		uint32_t value
 ) {
+
+	itsdk_stimer_slot_t * t = itsdk_stimer_get(callback_func,value);
+	return ( t != NULL );
+}
+
+/**
+ * Return true when the MCU is authorized to switch in low power mode.
+ * Some soft timers need to have a precise timing and are not supporting
+ * the variation due to the deep sleep RTC duration.
+ * An improvement will be to moderate the RTC sleep duration to the duration
+ * of these timer to avoid the timing GAP. See it later.
+ */
+bool itsdk_stimer_isLowPowerSwitchAutorized() {
+	int i = 0;
+	while ( i < ITSDK_TIMER_SLOTS) {
+		if (__stimer_slots[i].inUse && __stimer_slots[i].allowLowPower == false ) {
+			return false;
+		}
+		i++;
+	}
+	return true;
+}
+
+/**
+ * Get a timer structure from callback & value
+ */
+itsdk_stimer_slot_t * itsdk_stimer_get(
+		void (*callback_func)(uint32_t value),
+		uint32_t value
+) {
 	for (int i=0 ; i < ITSDK_TIMER_SLOTS ; i++) {
 		if (
 				__stimer_slots[i].inUse == true
@@ -159,10 +186,11 @@ bool itsdk_stimer_isRunning(
 			&&  __stimer_slots[i].callback_func == callback_func
 		) {
 			// found
-			return true;
+			return  &__stimer_slots[i];
 		}
 	}
-	return false;
+	return NULL;
+
 }
 
 
@@ -181,5 +209,23 @@ void itsdk_stimer_run() {
 	}
 }
 
+
+/**
+ * Compute the number of Ms from Now to the next Timer to expire.
+ * return ITSDK_STIMER_INFINITE when none are in execution or in the future.
+ */
+uint32_t itsdk_stimer_nextTimeoutMs(){
+	uint32_t t = itsdk_time_get_ms();
+	uint32_t min = ITSDK_STIMER_INFINITE;
+	for ( int i = 0 ; i < ITSDK_TIMER_SLOTS ; i++ ) {
+		if ( __stimer_slots[i].inUse && __stimer_slots[i].timeoutMs >= t ) {
+			if ( __stimer_slots[i].timeoutMs < min ) min = __stimer_slots[i].timeoutMs;
+		}
+	}
+	if ( min < ITSDK_STIMER_INFINITE ) {
+		min = min - t;
+	}
+	return min;
+}
 
 #endif
