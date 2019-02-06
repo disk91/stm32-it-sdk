@@ -62,10 +62,11 @@
 #define ITSDK_WDG_CLKFREQ			37000									// Watchdog clock source frequency
 #define ITSDK_CORE_CLKFREQ			32000000								// Core Frequency of the chip
 
-#define ITSDK_LOGGER_CONF			0x00F0									// error->info level on serial1 => USART2 (see logger.c)
+#define ITSDK_LOGGER_CONF			0x0070									// error->info level on serial1 => USART2 (see logger.c)
 #define ITSDK_LOGGER_MODULE			( \
 									  __LOG_MOD_NONE		  \
-								/*	  __LOG_MOD_STIMER    */  \
+									| __LOG_MOD_STKLORA       \
+								/*	| __LOG_MOD_STIMER    */  \
 								/*	| __LOG_MOD_LOWLORADBG */ \
 								/*	| __LOG_MOD_LOWLORAINF */ \
 									)										// list the module to be activated in log see config_defines.h

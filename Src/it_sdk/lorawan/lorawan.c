@@ -124,7 +124,6 @@ itsdk_lorawan_join_t itsdk_lorawan_join_sync() {
 	return lorawan_driver_LORA_Join(LORAWAN_RUN_SYNC);
 }
 
-
 // Override the underlaying callbacks
 static void (*__itsdk_lorawan_join_cb)(itsdk_lorawan_join_t status)  = NULL;
 void lorawan_driver_onJoinSuccess() {
@@ -162,8 +161,20 @@ bool itsdk_lorawan_hasjoined() {
 
 itsdk_lorawan_join_t itsdk_lorawan_getJoinState() {
 	LOG_DEBUG_LORAWANSTK(("itsdk_lorawan_getJoinState\r\n"));
-#warning tobe fixed
-	return lorawan_driver_LORA_getSendState();
+	lorawan_driver_joinState r = lorawan_driver_LORA_getSendState();
+	switch(r) {
+	case LORAWAN_STATE_JOIN_SUCCESS:
+		return LORAWAN_JOIN_SUCCESS;
+	case LORAWAN_STATE_JOIN_FAILED:
+		return LORAWAN_JOIN_FAILED;
+
+	default:
+	case LORAWAN_STATE_NONE:
+	case LORAWAN_STATE_INITIALIZED:
+	case LORAWAN_STATE_JOINING:
+	case LORAWAN_STATE_END:
+		return LORAWAN_JOIN_PENDING;
+	}
 }
 
 // =================================================================================
@@ -198,32 +209,32 @@ static void (*__itsdk_lorawan_send_cb)(itsdk_lorawan_send_t status)  = NULL;
 void lorawan_driver_onSendSuccessAckFailed() {
 	LOG_INFO_LORAWANSTK(("**onSendSuccessAckFailed\r\n"));
 	if (__itsdk_lorawan_send_cb != NULL) {
-		__itsdk_lorawan_send_cb(LORAWAN_SEND_STATE_NOTACKED);
+		__itsdk_lorawan_send_cb(LORAWAN_SEND_SENT);
 	}
 }
 void lorawan_driver_onSendAckSuccess() {
 	LOG_INFO_LORAWANSTK(("**onSendSuccessAckSuccess\r\n"));
 	if (__itsdk_lorawan_send_cb != NULL) {
-		__itsdk_lorawan_send_cb(LORAWAN_SEND_STATE_ACKED);
+		__itsdk_lorawan_send_cb(LORAWAN_SEND_ACKED);
 	}
 }
 void lorawan_driver_onSendSuccess() {
 	LOG_INFO_LORAWANSTK(("**onSendSuccess\r\n"));
 	if (__itsdk_lorawan_send_cb != NULL) {
-		__itsdk_lorawan_send_cb(LORAWAN_SEND_STATE_SENT);
+		__itsdk_lorawan_send_cb(LORAWAN_SEND_SENT);
 	}
 }
 void lorawan_driver_onDataReception(uint8_t port, uint8_t * data, uint8_t size) {
 	LOG_INFO_LORAWANSTK(("**onDataReception\r\n"));
 	if (__itsdk_lorawan_send_cb != NULL) {
-		__itsdk_lorawan_send_cb(LORAWAN_SEND_STATE_ACKED_WITH_DOWNLINK);
+		__itsdk_lorawan_send_cb(LORAWAN_SEND_ACKED);
 	}
 }
 
 void lorawan_driver_onPendingDownlink() {
 	LOG_INFO_LORAWANSTK(("**onPendingDownlink\r\n"));
 	if (__itsdk_lorawan_send_cb != NULL) {
-		__itsdk_lorawan_send_cb(LORAWAN_SEND_STATE_ACKED_DOWNLINK_PENDING);
+		__itsdk_lorawan_send_cb(LORAWAN_SEND_ACKED);
 	}
 }
 
@@ -249,9 +260,26 @@ itsdk_lorawan_send_t itsdk_lorawan_send_async(
  * Return sent current state
  */
 itsdk_lorawan_send_t itsdk_lorawan_getSendState() {
-# warning to be fixed
 	LOG_DEBUG_LORAWANSTK(("itsdk_lorawan_getSendState\r\n"));
-	return lorawan_driver_LORA_getSendState();
+	lorawan_driver_sendState r = lorawan_driver_LORA_getSendState();
+	switch ( r ) {
+	case LORAWAN_SEND_STATE_SENT:
+	case LORAWAN_SEND_STATE_NOTACKED:
+		return LORAWAN_SEND_SENT;
+	case LORAWAN_SEND_STATE_ACKED:
+	case LORAWAN_SEND_STATE_ACKED_WITH_DOWNLINK:
+	case LORAWAN_SEND_STATE_ACKED_DOWNLINK_PENDING:
+		return LORAWAN_SEND_ACKED;
+	case LORAWAN_SEND_STATE_FAILED:
+		return LORAWAN_SEND_FAILED;
+	case LORAWAN_SEND_STATE_DUTYCYCLE:
+		return LORAWAN_SEND_DUTYCYCLE;
+	case LORAWAN_SEND_STATE_NONE:
+	case LORAWAN_SEND_STATE_RUNNING:
+	case LORAWAN_SEND_STATE_END:
+	default:
+		return LORAWAN_SEND_RUNNING;
+	}
 }
 
 // =================================================================================
