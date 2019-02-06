@@ -29,7 +29,8 @@
 
 #include <stdbool.h>
 
-#define ITSDK_STIMER_INFINITE	0xFFFFFFFF
+#define ITSDK_STIMER_INFINITE		0xFFFFFFFF
+#define ITSDK_STIMER_INFINITE_64	0xFFFFFFFFFFFFFFFF
 
 typedef enum {
 	TIMER_INIT_SUCCESS=0,
@@ -63,7 +64,7 @@ itsdk_timer_return_t itsdk_hwtimer_sync_run(
 typedef struct s_itsdk_stimer_slot {
 	bool			inUse;								// This structure is in use
 	bool 	 		allowLowPower;						// when true a deep sleep switch is authorized during time wait
-	uint32_t		timeoutMs;							// End of the timer value
+	uint64_t		timeoutMs;							// End of the timer value
 	void 			(*callback_func)(uint32_t value);	// Callback function
 	uint32_t		customValue;
 } itsdk_stimer_slot_t;

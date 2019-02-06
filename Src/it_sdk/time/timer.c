@@ -110,7 +110,7 @@ itsdk_timer_return_t itsdk_stimer_register(
 		__stimer_slots[i].allowLowPower = ((allowLowPower==TIMER_ACCEPT_LOWPOWER)?true:false);
 		__stimer_slots[i].customValue = value;
 		__stimer_slots[i].callback_func = callback_func;
-		__stimer_slots[i].timeoutMs = itsdk_time_get_ms()+ms;
+		__stimer_slots[i].timeoutMs = itsdk_time_get_ms()+(uint64_t)ms;
 		return TIMER_INIT_SUCCESS;
 	}
 	#if (ITSDK_LOGGER_MODULE & __LOG_MOD_STIMER) > 0
@@ -199,7 +199,7 @@ itsdk_stimer_slot_t * itsdk_stimer_get(
  * possible. At least on every wake-up from sleep
  */
 void itsdk_stimer_run() {
-	uint32_t t = itsdk_time_get_ms();
+	uint64_t t = itsdk_time_get_ms();
 	for ( int i = 0 ; i < ITSDK_TIMER_SLOTS ; i++ ) {
 		if ( __stimer_slots[i].inUse && __stimer_slots[i].timeoutMs <= t ) {
 			__stimer_slots[i].inUse = false;
@@ -215,17 +215,18 @@ void itsdk_stimer_run() {
  * return ITSDK_STIMER_INFINITE when none are in execution or in the future.
  */
 uint32_t itsdk_stimer_nextTimeoutMs(){
-	uint32_t t = itsdk_time_get_ms();
-	uint32_t min = ITSDK_STIMER_INFINITE;
+	uint64_t t = itsdk_time_get_ms();
+	uint64_t min = ITSDK_STIMER_INFINITE_64;
 	for ( int i = 0 ; i < ITSDK_TIMER_SLOTS ; i++ ) {
 		if ( __stimer_slots[i].inUse && __stimer_slots[i].timeoutMs >= t ) {
 			if ( __stimer_slots[i].timeoutMs < min ) min = __stimer_slots[i].timeoutMs;
 		}
 	}
-	if ( min < ITSDK_STIMER_INFINITE ) {
+	if ( min < ITSDK_STIMER_INFINITE_64 ) {
 		min = min - t;
+		return min;
 	}
-	return min;
+	return ITSDK_STIMER_INFINITE;
 }
 
 #endif

@@ -42,8 +42,12 @@ uint8_t __sNum = 0;
  * associated function to call. The mode params defines the sheduler behavior
  * Returns the scedId on sucees or ITSDK_SCHED_ERROR on error.
  */
-uint8_t itdt_sched_registerSched(uint16_t periodMs,uint16_t mode, void (*f)(void)) {
+uint8_t itdt_sched_registerSched(uint32_t periodMs,uint16_t mode, void (*f)(void)) {
 
+	if ( periodMs > ITSDK_SCHED_MAX_PERIOD ) {
+		log_error("[Sched] Period exceed Max\r\n");
+		return ITSDK_SCHED_ERROR;
+	}
 	if ( __sNum < ITSDK_SHEDULER_TASKS ) {
 		__scheds[__sNum].func=f;
 		__scheds[__sNum].period=periodMs;
@@ -69,7 +73,7 @@ void itdt_sched_execute() {
 					_LOG_SCHED(("[sched] (%d) exec @%ld\r\n",i,t));
 					(*__scheds[i].func)();
 				}
-	 		    __scheds[i].nextRun += __scheds[i].period;
+	 		    __scheds[i].nextRun += (uint64_t)__scheds[i].period;
 			}
 		} while (!__scheds[i].skip && __scheds[i].nextRun <= t );
 		while (__scheds[i].skip &&__scheds[i].nextRun <= t) __scheds[i].nextRun += __scheds[i].period;
