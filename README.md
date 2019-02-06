@@ -1,12 +1,12 @@
-# Disk91 IoT_SDK for STM32
+# Disk91 IoT_SDK not only for STM32
 
-This project is a low level SDK for STM32 for making IoT devices.
-It implements different usefull function is (I hope) a cleaner code than the usual ST SDK components. This SDK try to be fully configurable with header files.
+This project is a low level SDK actually implementing STM32 for making IoT devices.
+It implements different usefull function is (I hope) a cleaner code than the usual ST SDK components. This SDK try to be fully configurable with header files. The objectif is to propose an abstraction layer between the software implementation and the MCU execution allowing to port the firmware on different plateform. 
 
 Most is done to preserve code size. 
 Made for being compiled with open-source environment GCC / AC6
 
-* Supported functions
+* Supported MCU functions
   * Low Power switch with regular auto-wakeup / LPUART / GPIO Wake-up
   * RTC with calibration
   * Logger
@@ -14,20 +14,31 @@ Made for being compiled with open-source environment GCC / AC6
   * Task Scheduler
   * State Machine 
   * Watchdog 
-  * Timers
+  * Timers with calibration (harwdare & software)
+  * GPIO abstraction
+  * Time update
+  * Generic Interrupt Handler (hardware independant)
   
 * Communication protocols interface
   * Sigfox ( clear-text, AES128-CTR, SPECK32, Sigfox-EAS128-CTR-Encryption )
+  * LoRaWan ( LoRaWan-Encryption ) - actually join / uplink / uplink-ack supported (downlink not yet tested)
 
 * Supported / tested platforms
   * STM32L011
   * STM32L053
+  * STM32L072
 
 * Supported drivers
   * eeprom
      * m95640
   * sigfox
      * s2lp
+  * lorawan
+       * murata cmwx1zzabz (sx1276)
+       
+* Supported stacks
+  * lorawan
+     * semtech stack
 
 The second objective is to be able to port this SDK to different patform
 to make it a portable SDK. The SDK have a it-sdk directory where everything needs to be portable. stm32l-sdk contains all the subfunctions specific to this platform.
@@ -119,6 +130,17 @@ Other modifications (need to be done on every CubeMx project regeneration):
 
   - ADC - if you choose to not use ADC_OPTIMIZED_CODE_FOR_SIZE : remove generated adc.c/h and remove adc references in main.c 
   
+# Documentation
+
+The documentation about the different components is available in **/Doc** directory.
+The function API are not documented in the _.h_ files but more generally in the _.c_ files.
+Work in progress...
+
+# Examples 
+
+The examples are published on different Git repo to simplify the distribution of the SDK.
+See **/Example** directory for a direct access to these ready to use projects.
+
 # License 
 
 This code and ItSdk are under GPLv3. You can use it freely, you can modify, redistribute but *you must* publish your source code. 
