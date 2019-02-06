@@ -42,12 +42,13 @@
 
 #define ITSDK_SCHED_ERROR			0xFF
 
+#define ITSDK_SCHED_MAX_PERIOD		0x00FFFFFF	// 24b is the max duration
 /**
  * schedule configuration
  */
 typedef struct s_sched {
 	uint64_t nextRun;			// Next run time in ms
-	uint16_t period;			// Period between 2 execution
+	uint32_t period:24;			// Period between 2 execution (24 bits)
 								// Mode as a bitfield for task configuration see ITSDK_SCHED_CONF_XXX
 	uint8_t  skip:1;			//    skip missed execution
 	uint8_t	 halt:1;			//    stop for next executions
@@ -59,7 +60,7 @@ typedef struct s_sched {
  * Functions
  */
 void itdt_sched_execute();
-uint8_t itdt_sched_registerSched(uint16_t periodMs,uint16_t mode, void (*f)(void));
+uint8_t itdt_sched_registerSched(uint32_t periodMs,uint16_t mode, void (*f)(void));
 void itdf_sched_haltSched(uint8_t schedId);
 void itdf_sched_runSched(uint8_t schedId);
 

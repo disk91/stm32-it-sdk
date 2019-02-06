@@ -127,7 +127,7 @@ uint64_t rtc_getTimestampMsRaw(bool adjust) {
 #else
 	RTC_TimeTypeDef _time;
 	RTC_DateTypeDef _date;
-	uint32_t ms;
+	uint64_t ms;
 	HAL_RTC_GetTime(&hrtc, &_time, RTC_FORMAT_BIN);
 	HAL_RTC_GetDate(&hrtc, &_date, RTC_FORMAT_BIN);
 	ms  = (uint32_t)_time.Hours*3600*1000;
@@ -140,16 +140,16 @@ uint64_t rtc_getTimestampMsRaw(bool adjust) {
 		__rtc_days++;
 	}
 	__rtc_lastTick = ms;
-	ms = ( uint64_t )(__rtc_days*3600000L*24L)+ms;
+	ms = ( uint64_t )((uint64_t)__rtc_days*3600000L*24L)+(uint64_t)ms;
 #endif
 	// apply the RTC clock correction and add previous offset
 	#if ITSDK_WITH_CLK_ADJUST > 0
 		if (adjust && __rtc_init > 0) {
-			ms = (ms * __rtc_currentRatio) / 1000;
+			ms = (ms * (uint64_t)__rtc_currentRatio) / 1000L;
 			ms += __rtc_offset;
 		}
 	#else
-		ms = (adjust)?(ms * ITSDK_CLK_CORRECTION) / 1000:ms;
+		ms = (adjust)?(ms * ITSDK_CLK_CORRECTION) / 1000L:ms;
 	#endif
 	return ms;
 }
