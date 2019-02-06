@@ -27,6 +27,20 @@
 #ifndef IT_SDK_LORAWAN_H_
 #define IT_SDK_LORAWAN_H_
 
+#if (ITSDK_LOGGER_MODULE & __LOG_MOD_STKLORA) > 0
+#define LOG_INFO_LORAWANSTK(x)		log_info x
+#define LOG_WARN_LORAWANSTK(x) 		log_warn x
+#define LOG_ERROR_LORAWANSTK(x)		log_error x
+#define LOG_DEBUG_LORAWANSTK(x)		log_debug x
+#else
+#define LOG_INFO_LORAWANSTK(x)
+#define LOG_WARN_LORAWANSTK(x)
+#define LOG_ERROR_LORAWANSTK(x)
+#define LOG_DEBUG_LORAWANSTK(x)
+#endif
+
+
+
 typedef enum {
 	LORAWAN_INIT_SUCESS = 0,
 	LORAWAN_INIT_CHANNEL_FAILED,

@@ -37,14 +37,12 @@
 #include <drivers/lorawan/phy/radio.h>
 #include <it_sdk/lorawan/lorawan.h>
 
-
-#define HEX16(X)  X[0],X[1], X[2],X[3], X[4],X[5], X[6],X[7],X[8],X[9], X[10],X[11], X[12],X[13], X[14],X[15]
-#define HEX8(X)   X[0],X[1], X[2],X[3], X[4],X[5], X[6],X[7]
-
 // =================================================================================
 // INIT
 // =================================================================================
 
+// Unsecured storage... lets modify this part later
+// @TODO
 static uint8_t devEui[8] = ITSDK_LORAWAN_DEVEUI;
 static uint8_t appEui[8] = ITSDK_LORAWAN_APPEUI;
 static uint8_t appKey[16] = ITSDK_LORAWAN_APPKEY;
@@ -54,7 +52,7 @@ static uint8_t appKey[16] = ITSDK_LORAWAN_APPKEY;
  * Actually static
  */
 itsdk_lorawan_init_t itsdk_lorawan_setup(uint16_t region, itsdk_lorawan_channelInit_t * channelConfig) {
-	log_debug("itsdk_lorawan_setup\r\n");
+	LOG_INFO_LORAWANSTK(("itsdk_lorawan_setup\r\n"));
 	lorawan_driver_config_t __config;
 
 	Radio.IoInit();
@@ -122,7 +120,7 @@ itsdk_lorawan_init_t itsdk_lorawan_setup(uint16_t region, itsdk_lorawan_channelI
  *                   When no function is proposed, the status can be polled.
  */
 itsdk_lorawan_join_t itsdk_lorawan_join_sync() {
-	log_debug("itsdk_lorawan_join_sync\r\n");
+	LOG_INFO_LORAWANSTK(("itsdk_lorawan_join_sync\r\n"));
 	return lorawan_driver_LORA_Join(LORAWAN_RUN_SYNC);
 }
 
@@ -130,11 +128,13 @@ itsdk_lorawan_join_t itsdk_lorawan_join_sync() {
 // Override the underlaying callbacks
 static void (*__itsdk_lorawan_join_cb)(itsdk_lorawan_join_t status)  = NULL;
 void lorawan_driver_onJoinSuccess() {
+	LOG_INFO_LORAWANSTK(("** onJoinSuccess\r\n"));
 	if (__itsdk_lorawan_join_cb != NULL) {
 		__itsdk_lorawan_join_cb(LORAWAN_JOIN_SUCCESS);
 	}
 }
 void lorawan_driver_onJoinFailed() {
+	LOG_INFO_LORAWANSTK(("** onJoinFailed\r\n"));
 	if (__itsdk_lorawan_join_cb != NULL) {
 		__itsdk_lorawan_join_cb(LORAWAN_JOIN_FAILED);
 	}
@@ -143,7 +143,7 @@ void lorawan_driver_onJoinFailed() {
 itsdk_lorawan_join_t itsdk_lorawan_join_async(
 		void (*callback_func)(itsdk_lorawan_join_t status)
 ) {
-	log_debug("itsdk_lorawan_join_async\r\n");
+	LOG_INFO_LORAWANSTK(("itsdk_lorawan_join_async\r\n"));
 	if ( callback_func != NULL ) {
 		__itsdk_lorawan_join_cb = callback_func;
 	} else {
@@ -156,11 +156,12 @@ itsdk_lorawan_join_t itsdk_lorawan_join_async(
  * Return true once the device has joined the the network
  */
 bool itsdk_lorawan_hasjoined() {
-	log_debug("itsdk_lorawan_hasjoined\r\n");
+	LOG_DEBUG_LORAWANSTK(("itsdk_lorawan_hasjoined\r\n"));
 	return ( lorawan_driver_LORA_getJoinState() == LORAWAN_STATE_JOIN_SUCCESS);
 }
 
 itsdk_lorawan_join_t itsdk_lorawan_getJoinState() {
+	LOG_DEBUG_LORAWANSTK(("itsdk_lorawan_getJoinState\r\n"));
 #warning tobe fixed
 	return lorawan_driver_LORA_getSendState();
 }
@@ -189,33 +190,38 @@ itsdk_lorawan_send_t itsdk_lorawan_send_sync(
 		itsdk_lorawan_sendconf_t confirm,
 		uint8_t	  retry
 ) {
-	log_debug("itsdk_lorawan_send_sync\r\n");
+	LOG_INFO_LORAWANSTK(("itsdk_lorawan_send_sync\r\n"));
 	return lorawan_driver_LORA_Send(payload,payloadSize,port,dataRate,confirm,retry,LORAWAN_RUN_SYNC);
 }
 
 static void (*__itsdk_lorawan_send_cb)(itsdk_lorawan_send_t status)  = NULL;
 void lorawan_driver_onSendSuccessAckFailed() {
+	LOG_INFO_LORAWANSTK(("**onSendSuccessAckFailed\r\n"));
 	if (__itsdk_lorawan_send_cb != NULL) {
 		__itsdk_lorawan_send_cb(LORAWAN_SEND_STATE_NOTACKED);
 	}
 }
 void lorawan_driver_onSendAckSuccess() {
+	LOG_INFO_LORAWANSTK(("**onSendSuccessAckSuccess\r\n"));
 	if (__itsdk_lorawan_send_cb != NULL) {
 		__itsdk_lorawan_send_cb(LORAWAN_SEND_STATE_ACKED);
 	}
 }
 void lorawan_driver_onSendSuccess() {
+	LOG_INFO_LORAWANSTK(("**onSendSuccess\r\n"));
 	if (__itsdk_lorawan_send_cb != NULL) {
 		__itsdk_lorawan_send_cb(LORAWAN_SEND_STATE_SENT);
 	}
 }
 void lorawan_driver_onDataReception(uint8_t port, uint8_t * data, uint8_t size) {
+	LOG_INFO_LORAWANSTK(("**onDataReception\r\n"));
 	if (__itsdk_lorawan_send_cb != NULL) {
 		__itsdk_lorawan_send_cb(LORAWAN_SEND_STATE_ACKED_WITH_DOWNLINK);
 	}
 }
 
 void lorawan_driver_onPendingDownlink() {
+	LOG_INFO_LORAWANSTK(("**onPendingDownlink\r\n"));
 	if (__itsdk_lorawan_send_cb != NULL) {
 		__itsdk_lorawan_send_cb(LORAWAN_SEND_STATE_ACKED_DOWNLINK_PENDING);
 	}
@@ -230,7 +236,7 @@ itsdk_lorawan_send_t itsdk_lorawan_send_async(
 		uint8_t	  retry,
 		void (*callback_func)(itsdk_lorawan_send_t status)
 ) {
-	log_debug("itsdk_lorawan_send_async\r\n");
+	LOG_INFO_LORAWANSTK(("itsdk_lorawan_send_async\r\n"));
 	if ( callback_func != NULL ) {
 		__itsdk_lorawan_send_cb = callback_func;
 	} else {
@@ -244,6 +250,7 @@ itsdk_lorawan_send_t itsdk_lorawan_send_async(
  */
 itsdk_lorawan_send_t itsdk_lorawan_getSendState() {
 # warning to be fixed
+	LOG_DEBUG_LORAWANSTK(("itsdk_lorawan_getSendState\r\n"));
 	return lorawan_driver_LORA_getSendState();
 }
 
@@ -252,28 +259,34 @@ itsdk_lorawan_send_t itsdk_lorawan_getSendState() {
 // =================================================================================
 
 void itsdk_lorawan_changeDefaultRate(uint8_t newRate) {
+	LOG_INFO_LORAWANSTK(("itsdk_lorawan_changeDefaultRate\r\n"));
 	lorawan_driver_LORA_ChangeDefaultRate(newRate);
 }
 
 itsdk_lorawan_rssisnr_t itsdk_lorawan_getLastRssiSnr(int16_t *rssi, uint8_t *snr){
+	LOG_INFO_LORAWANSTK(("itsdk_lorawan_getLastRssiSnr\r\n"));
 	return lorawan_driver_LORA_GetLastRssiSnr(rssi,snr);
 }
 
 bool itsdk_lorawan_setTxPower(itsdk_lorawan_txpower txPwr) {
+	LOG_INFO_LORAWANSTK(("itsdk_lorawan_setTxPower\r\n"));
 	return lorawan_driver_LORA_SetTxPower(txPwr);
 }
 
 itsdk_lorawan_txpower itsdk_lorawan_getTxPower() {
+	LOG_INFO_LORAWANSTK(("itsdk_lorawan_getTxPower\r\n"));
 	return lorawan_driver_LORA_GetTxPower();
 }
 
 
 uint16_t itsdk_lorawan_getDownlinkFrameCounter() {
+	LOG_INFO_LORAWANSTK(("itsdk_lorawan_getDownlinkFrameCounter\r\n"));
 	return lorawan_driver_LORA_GetDownlinkFrameCounter();
 }
 
 
 uint16_t itsdk_lorawan_getUplinkFrameCounter() {
+	LOG_INFO_LORAWANSTK(("itsdk_lorawan_getUplinkFrameCounter\r\n"));
 	return lorawan_driver_LORA_GetUplinkFrameCounter();
 }
 
@@ -282,6 +295,7 @@ uint16_t itsdk_lorawan_getUplinkFrameCounter() {
  * to manage the lorawan stack ( mandatory for async mode )
  */
 void itsdk_lorawan_loop() {
+	LOG_DEBUG_LORAWANSTK(("itsdk_lorawan_loop\r\n"));
 	lorawan_driver_loop();
 }
 

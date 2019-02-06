@@ -147,8 +147,9 @@
 #define __LOG_MOD_STIMER		0x00000001			// software timer module
 #define __LOG_MOD_LOWSIGFOX		0x00000002			// sigfox low level driver whatever it is
 #define __LOG_MOD_SIGFOX		0x00000004			// sigfox abstraction layer
-#define __LOG_MOD_LOWLORADBG	0x00000008			// Lora low level - debug
-#define __LOG_MOD_LOWLORAINF	0x00000010			// Lora low level - info
+#define __LOG_MOD_LOWLORADBG	0x00000008			// Lora low level - hardware level
+#define __LOG_MOD_LOWLORAINF	0x00000010			// Lora low level - mac level
+#define __LOG_MOD_STKLORA		0x00000020			// Lora low level - itsdk level
 
 #define __LOG_MOD_CUSTOM1		0x00010000			// User level logging
 #define __LOG_MOD_CUSTOM2		0x00020000			// User level logging
