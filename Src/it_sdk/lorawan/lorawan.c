@@ -181,6 +181,21 @@ itsdk_lorawan_join_t itsdk_lorawan_getJoinState() {
 // SEND
 // =================================================================================
 
+/**
+ * Send a LoRaWAN frame containing the Payload of the given payloadSize bytes on given port.
+ * This first simple uplink is reducing the number of options...
+ * Synchronous, no ack.
+ */
+itsdk_lorawan_send_t itsdk_lorawan_send_simple_uplink_sync(
+		uint8_t * payload,
+		uint8_t   payloadSize,
+		uint8_t   port,
+		uint8_t	  dataRate
+) {
+	LOG_INFO_LORAWANSTK(("itsdk_lorawan_send_simple_uplink_sync\r\n"));
+	return lorawan_driver_LORA_Send(payload,payloadSize,port,dataRate,LORAWAN_SEND_UNCONFIRMED,0,LORAWAN_RUN_SYNC, NULL,NULL,NULL);
+}
+
 
 /**
  * Send a LoRaWAN frame containing the Payload of the given payloadSize bytes on given port.
@@ -199,42 +214,52 @@ itsdk_lorawan_send_t itsdk_lorawan_send_sync(
 		uint8_t   port,
 		uint8_t	  dataRate,
 		itsdk_lorawan_sendconf_t confirm,
-		uint8_t	  retry
+		uint8_t	  retry,
+		uint8_t	* rPort,													// In case of reception - Port (uint8_t)
+		uint8_t	* rSize,													// In case of reception - Size (uint8_t) - init with buffer max size
+		uint8_t * rData														// In case of recpetion - Data (uint8_t[] bcopied)
 ) {
 	LOG_INFO_LORAWANSTK(("itsdk_lorawan_send_sync\r\n"));
-	return lorawan_driver_LORA_Send(payload,payloadSize,port,dataRate,confirm,retry,LORAWAN_RUN_SYNC);
+	return lorawan_driver_LORA_Send(payload,payloadSize,port,dataRate,confirm,retry,LORAWAN_RUN_SYNC,rPort,rSize,rData);
 }
 
-static void (*__itsdk_lorawan_send_cb)(itsdk_lorawan_send_t status)  = NULL;
+static void (*__itsdk_lorawan_send_cb)(itsdk_lorawan_send_t status, uint8_t port, uint8_t size, uint8_t * rxData) = NULL;
 void lorawan_driver_onSendSuccessAckFailed() {
 	LOG_INFO_LORAWANSTK(("**onSendSuccessAckFailed\r\n"));
 	if (__itsdk_lorawan_send_cb != NULL) {
-		__itsdk_lorawan_send_cb(LORAWAN_SEND_SENT);
+		__itsdk_lorawan_send_cb(LORAWAN_SEND_SENT,0,0,NULL);
 	}
 }
 void lorawan_driver_onSendAckSuccess() {
 	LOG_INFO_LORAWANSTK(("**onSendSuccessAckSuccess\r\n"));
 	if (__itsdk_lorawan_send_cb != NULL) {
-		__itsdk_lorawan_send_cb(LORAWAN_SEND_ACKED);
+		__itsdk_lorawan_send_cb(LORAWAN_SEND_ACKED,0,0,NULL);
 	}
 }
 void lorawan_driver_onSendSuccess() {
 	LOG_INFO_LORAWANSTK(("**onSendSuccess\r\n"));
 	if (__itsdk_lorawan_send_cb != NULL) {
-		__itsdk_lorawan_send_cb(LORAWAN_SEND_SENT);
+		__itsdk_lorawan_send_cb(LORAWAN_SEND_SENT,0,0,NULL);
 	}
 }
+
 void lorawan_driver_onDataReception(uint8_t port, uint8_t * data, uint8_t size) {
-	LOG_INFO_LORAWANSTK(("**onDataReception\r\n"));
+	LOG_INFO_LORAWANSTK(("**onDataReception (%d) : ",size));
+	#if (ITSDK_LOGGER_MODULE & __LOG_MOD_STKLORA) > 0
+		for ( int i = 0 ; i < size ; i++ ) {
+			LOG_INFO_LORAWANSTK(("%02X ",data[i]));
+		}
+		LOG_INFO_LORAWANSTK(("\n"));
+	#endif
 	if (__itsdk_lorawan_send_cb != NULL) {
-		__itsdk_lorawan_send_cb(LORAWAN_SEND_ACKED);
+		__itsdk_lorawan_send_cb(LORAWAN_SEND_ACKED_WITH_DOWNLINK,port,size,data);
 	}
 }
 
 void lorawan_driver_onPendingDownlink() {
 	LOG_INFO_LORAWANSTK(("**onPendingDownlink\r\n"));
 	if (__itsdk_lorawan_send_cb != NULL) {
-		__itsdk_lorawan_send_cb(LORAWAN_SEND_ACKED);
+		__itsdk_lorawan_send_cb(LORAWAN_SEND_ACKED_WITH_DOWNLINK_PENDING,0,0,NULL);
 	}
 }
 
@@ -245,7 +270,7 @@ itsdk_lorawan_send_t itsdk_lorawan_send_async(
 		uint8_t	  dataRate,
 		itsdk_lorawan_sendconf_t confirm,
 		uint8_t	  retry,
-		void (*callback_func)(itsdk_lorawan_send_t status)
+		void (*callback_func)(itsdk_lorawan_send_t status, uint8_t port, uint8_t size, uint8_t * rxData)
 ) {
 	LOG_INFO_LORAWANSTK(("itsdk_lorawan_send_async\r\n"));
 	if ( callback_func != NULL ) {
@@ -253,7 +278,7 @@ itsdk_lorawan_send_t itsdk_lorawan_send_async(
 	} else {
 		__itsdk_lorawan_send_cb = NULL;
 	}
-	return lorawan_driver_LORA_Send(payload,payloadSize,port,dataRate,confirm,retry,LORAWAN_RUN_ASYNC);
+	return lorawan_driver_LORA_Send(payload,payloadSize,port,dataRate,confirm,retry,LORAWAN_RUN_ASYNC,NULL,NULL,NULL);
 }
 
 /**

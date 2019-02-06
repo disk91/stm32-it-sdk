@@ -33,7 +33,7 @@ The RTC need to be activated with the following configuration:
 The RTC predivider are configured to provide a 1Hz signal to the RTC according to the formula:
 1Hz= (RTCCLK)/((1+Async_previv)*(1+Sync_prediv))
 * for 37KHz (LSI) Asycn_prediv 124 & Sync_prediv 295
-* for 32.768KHz (LSE) Async_prediv 127 & Sync_previd 255
+* for 32.768KHz (LSE) Async_prediv 127 & Sync_prediv 255
 
 The wake-up unit for the different sleep mode is directly connected to RTCLK signal with a predivision. The setting have to be RTCLK/16.
 

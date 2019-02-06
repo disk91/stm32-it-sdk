@@ -54,13 +54,16 @@ typedef enum {
 } itsdk_lorawan_join_t;
 
 typedef enum {
-	LORAWAN_SEND_QUEUED = 0,				// Message put in the sending queue (SUCCESS)
-	LORAWAN_SEND_SENT,						// Message sent (SUCCESS)
-	LORAWAN_SEND_ACKED,						// Message sent and Acked (SUCESS)
-	LORAWAN_SEND_RUNNING,					// Message is in progress (asycn mode) (SUCCESS)
-	LORAWAN_SEND_NOT_JOINED,				// The device has not joined message can be sent (ERROR)
-	LORAWAN_SEND_DUTYCYCLE,					// Not sent - duty cycle constraints
-	LORAWAN_SEND_FAILED						// Various other failure (ERROR)
+	LORAWAN_SEND_QUEUED = 0,				  // Message put in the sending queue (SUCCESS)
+	LORAWAN_SEND_SENT,						  // Message sent (SUCCESS)
+	LORAWAN_SEND_ACKED,						  // Message sent and Acked (SUCCESS)
+	LORAWAN_SEND_ACKED_WITH_DOWNLINK,		  // Message sent and Acked with downlink (SUCCESS)
+	LORAWAN_SEND_ACKED_WITH_DOWNLINK_PENDING, // Message sent and Acked with downlink & Other downlink is pending (SUCCESS)
+	LORAWAN_SEND_RUNNING,					  // Message is in progress (async mode) (SUCCESS)
+	LORAWAN_SEND_NOT_JOINED,				  // The device has not joined message can be sent (ERROR)
+	LORAWAN_SEND_DUTYCYCLE,					  // Not sent - duty cycle constraints
+	LORAWAN_SEND_ALREADYRUNNING,			  // A transmission is already in progress (ERROR)
+	LORAWAN_SEND_FAILED						  // Various other failure (ERROR)
 } itsdk_lorawan_send_t;
 
 
@@ -145,7 +148,10 @@ itsdk_lorawan_send_t itsdk_lorawan_send_sync(								// Send a frame in sync mod
 		uint8_t   port,
 		uint8_t	  dataRate,
 		itsdk_lorawan_sendconf_t confirm,
-		uint8_t	  retry
+		uint8_t	  retry,
+		uint8_t	* rPort,													// In case of reception - Port (uint8_t)
+		uint8_t	* rSize,													// In case of reception - Size (uint8_t) - init with buffer max size
+		uint8_t * rData														// In case of recpetion - Data (uint8_t[] bcopied)
 );
 itsdk_lorawan_send_t itsdk_lorawan_send_async(								// Send a frame in async mode
 		uint8_t * payload,
@@ -154,7 +160,7 @@ itsdk_lorawan_send_t itsdk_lorawan_send_async(								// Send a frame in async m
 		uint8_t	  dataRate,
 		itsdk_lorawan_sendconf_t confirm,
 		uint8_t	  retry,
-		void (*callback_func)(itsdk_lorawan_send_t status)
+		void (*callback_func)(itsdk_lorawan_send_t status, uint8_t port, uint8_t size, uint8_t * rxData)
 );
 itsdk_lorawan_send_t itsdk_lorawan_getSendState();						// Send state for polling
 
