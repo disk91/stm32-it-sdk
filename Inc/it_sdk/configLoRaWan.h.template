@@ -52,6 +52,7 @@
 #define ITSDK_LORAWAN_CNF_RETRY		3									   // Number of retry when Confirm mode is applied
 #define ITSDK_LORAWAN_MAX_RX_ERROR	0									   // Extends the RX windows with +/- MS
 																		   // This is for unprecised clocks (0=default value)
+#define ITSDK_LORAWAN_MAX_DWNLNKSZ	32									   // Max downlink Size in Byte for reception buffer
 
 																		   // =============================
 																		   // FREQUENCY MAPPING

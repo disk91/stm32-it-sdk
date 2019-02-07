@@ -45,6 +45,7 @@ typedef enum lorawan_driver_sendState_e {
 	LORAWAN_SEND_STATE_RUNNING,
 	LORAWAN_SEND_STATE_SENT,
 	LORAWAN_SEND_STATE_ACKED,
+	LORAWAN_SEND_STATE_ACKED_NO_DOWNLINK,
 	LORAWAN_SEND_STATE_ACKED_WITH_DOWNLINK,
 	LORAWAN_SEND_STATE_ACKED_DOWNLINK_PENDING,
 	LORAWAN_SEND_STATE_NOTACKED,
@@ -136,8 +137,11 @@ itsdk_lorawan_send_t lorawan_driver_LORA_Send(
 		uint8_t					  port,
 		uint8_t					  dataRate,
 		itsdk_lorawan_sendconf_t  isTxConfirmed,
-		uint8_t	  				  retry,
-		itsdk_lorawan_run_t 	  runMode
+		uint8_t					  retry,
+		itsdk_lorawan_run_t 	  runMode,
+		uint8_t					* rPort,				// for sync mode only - on reception - Port
+		uint8_t					* rSize,				// for sync mode only - on reception - DataSize - contains maxSize on input
+		uint8_t					* rData					// for sync mode only - on reception - Data (bcopied)
 );
 
 
