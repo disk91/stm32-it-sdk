@@ -662,13 +662,13 @@ itsdk_lorawan_send_t lorawan_driver_LORA_Send(
 							*rSize = __lorawan_driver_lastDownlink.size;
 							bcopy(
 								__lorawan_driver_lastDownlink.data,
-								*rData,
+								rData,
 								((ITSDK_LORAWAN_MAX_DWNLNKSZ<__lorawan_driver_lastDownlink.size)?ITSDK_LORAWAN_MAX_DWNLNKSZ:__lorawan_driver_lastDownlink.size)
 							);
 						} else {
 							bcopy(
 								__lorawan_driver_lastDownlink.data,
-								*rData,
+								rData,
 								*rSize
 							);
 							*rSize = __lorawan_driver_lastDownlink.size;
@@ -676,7 +676,7 @@ itsdk_lorawan_send_t lorawan_driver_LORA_Send(
     	    		} else {
     	    			log_warn(("[LoRaWan] Receiving downlink but can't return it\r\n"));
     	    		}
-    	    		return (r ==LORAWAN_SEND_STATE_ACKED_WITH_DOWNLINK)?LORAWAN_SEND_ACKED_WITH_DOWNLINK:LORAWAN_SEND_ACKED_WITH_DOWNLINK_PENDING;
+    	    		return (__loraWanState.sendState ==LORAWAN_SEND_STATE_ACKED_WITH_DOWNLINK)?LORAWAN_SEND_ACKED_WITH_DOWNLINK:LORAWAN_SEND_ACKED_WITH_DOWNLINK_PENDING;
     	    	case LORAWAN_SEND_STATE_ACKED_NO_DOWNLINK:
     	    		return LORAWAN_SEND_ACKED;
     	    	case LORAWAN_SEND_STATE_NOTACKED:
@@ -868,8 +868,8 @@ static void McpsConfirm( McpsConfirm_t *mcpsConfirm )
 
     TVL2( PRINTNOW(); PRINTF("APP> McpsConfirm STATUS: %s\r\n", EventInfoStatusStrings[mcpsConfirm->Status] ); )
 
-    if( mcpsConfirm->Status == LORAMAC_EVENT_INFO_STATUS_OK )
-    {
+	switch (mcpsConfirm->Status){
+	case LORAMAC_EVENT_INFO_STATUS_OK:
         switch( mcpsConfirm->McpsRequest )
         {
             case MCPS_UNCONFIRMED:
@@ -891,6 +891,8 @@ static void McpsConfirm( McpsConfirm_t *mcpsConfirm )
                 	lorawan_driver_onSendSuccess();
                 	lorawan_driver_onSendAckSuccess();
             	} else {
+            		// Apprently when no ACK the status is no LORAMAC_EVENT_INFO_STATUS_OK so this branch
+            		// is not executed
                 	__loraWanState.sendState = LORAWAN_SEND_STATE_NOTACKED;
                 	lorawan_driver_onSendSuccess();
                 	lorawan_driver_onSendSuccessAckFailed();
@@ -900,12 +902,23 @@ static void McpsConfirm( McpsConfirm_t *mcpsConfirm )
             }
             case MCPS_PROPRIETARY:
             {
-                break;
+            	__loraWanState.sendState = LORAWAN_SEND_STATE_NONE;
+            	break;
             }
             default:
+            	__loraWanState.sendState = LORAWAN_SEND_STATE_FAILED;
                 break;
         }
-    }
+        break;
+    case LORAMAC_EVENT_INFO_STATUS_RX2_TIMEOUT:
+    	__loraWanState.sendState = LORAWAN_SEND_STATE_NOTACKED;
+    	lorawan_driver_onSendSuccess();
+    	lorawan_driver_onSendSuccessAckFailed();
+    	break;
+    default:
+    	log_warn("[LoRaWan] MCPSc returns(%d)\r\n",mcpsConfirm->Status);
+    	__loraWanState.sendState = LORAWAN_SEND_STATE_FAILED;
+	}
 
     __loraWanState.upLinkCounter = mcpsConfirm->UpLinkCounter;
     __loraWanState.lastRetries = mcpsConfirm->NbRetries;
@@ -922,6 +935,8 @@ static void McpsIndication( McpsIndication_t *mcpsIndication )
     //lora_AppData_t _AppData;
     if( mcpsIndication->Status != LORAMAC_EVENT_INFO_STATUS_OK )
     {
+    	log_warn("[LoRaWan] MCPSi returns(%d)\r\n",mcpsIndication->Status);
+    	__loraWanState.sendState = LORAWAN_SEND_STATE_FAILED;
         return;
     }
 
@@ -933,8 +948,6 @@ static void McpsIndication( McpsIndication_t *mcpsIndication )
         	// on est ici visibelemtn apres receptin d'un doanwlink
         	// #= D/L FRAME 3 =# RxWin 2, Port 0, data size 0, rssi -49, snr 7
         	// Downlink reception ...
-
-
 
             break;
         }
@@ -972,6 +985,7 @@ static void McpsIndication( McpsIndication_t *mcpsIndication )
         case CERTIF_PORT:
           // revoir cette partie... pas top de garder des param comme ca en rab
           certif_rx( mcpsIndication, &JoinParameters );
+          __loraWanState.sendState = LORAWAN_SEND_STATE_ACKED_WITH_DOWNLINK;
           break;
         default:
 
@@ -1061,10 +1075,10 @@ static void MlmeConfirm( MlmeConfirm_t *mlmeConfirm )
             {
                 // Check DemodMargin
                 // Check NbGateways
-                if (certif_running() == true )
-                {
-                     certif_linkCheck( mlmeConfirm);
+                if (certif_running() == true ){
+                     certif_linkCheck(mlmeConfirm);
                 }
+                log_info("### link_Check\r\n");
             }
             break;
         }
