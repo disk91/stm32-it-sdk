@@ -31,7 +31,7 @@
 #include <string.h>
 #include <it_sdk/config.h>
 
-#if ( ITSDK_SIGFOX_ENCRYPTION & __SIGFOX_ENCRYPT_SPECK ) > 0
+#if ( ITSDK_SIGFOX_ENCRYPTION & __PAYLOAD_ENCRYPT_SPECK ) > 0 || ( ITSDK_LORAWAN_ENCRYPTION & __PAYLOAD_ENCRYPT_SPECK ) > 0
 #include <it_sdk/itsdk.h>
 #include <it_sdk/sigfox/sigfox.h>
 #include <it_sdk/encrypt/encrypt.h>

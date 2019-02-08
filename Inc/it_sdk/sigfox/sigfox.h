@@ -31,6 +31,7 @@
 
 #include <it_sdk/config.h>
 #include <it_sdk/itsdk.h>
+#include <it_sdk/encrypt/encrypt.h>
 
 #ifdef ITSDK_WITH_SIGFOX_LIB
 
@@ -62,15 +63,8 @@ typedef enum
     SIGFOX_OOB_RC_SYNC
 } itdsk_sigfox_oob_t;
 
-typedef enum {												// Encryption mode are cumulative
-	SIGFOX_ENCRYPT_NONE = __SIGFOX_ENCRYPT_NONE,			// Clear text payload
-	SIGFOX_ENCRYPT_SIGFOX = __SIGFOX_ENCRYPT_SIGFOX,		// Sigfox native encryption
-	SIGFOX_ENCRYPT_AESCTR = __SIGFOX_ENCRYPT_AESCTR,		// Software AES-CTR (like sigfox) encryption
-	SIGFOX_ENCRYPT_SPECK = __SIGFOX_ENCRYPT_SPECK			// SPECK32 encryption
-} itdsk_sigfox_encrypt_t;
 
 typedef uint32_t itsdk_sigfox_device_is_t;
-
 
 typedef struct {
 	bool		initialized;
@@ -104,7 +98,7 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendFrame(
 		uint8_t repeat,
 		itdsk_sigfox_speed_t speed,
 		int8_t power,
-		itdsk_sigfox_encrypt_t encrypt,
+		itdsk_payload_encrypt_t encrypt,
 		bool ack,
 		uint8_t * dwn
 );

@@ -31,6 +31,7 @@
 #include <it_sdk/itsdk.h>
 #include <it_sdk/sigfox/sigfox.h>
 #include <it_sdk/logger/logger.h>
+#include <it_sdk/encrypt/encrypt.h>
 
 #if ITSDK_WITH_SIGFOX_LIB > 0
 
@@ -42,9 +43,7 @@
 	#include <drivers/sigfox/sigfox_api.h>
 #endif
 
-#if (ITSDK_SIGFOX_ENCRYPTION & __SIGFOX_ENCRYPT_AESCTR) > 0
-	#include <it_sdk/encrypt/encrypt.h>
-#endif
+
 
 #if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
 s2lp_config_t __s2lpConf;
@@ -115,7 +114,7 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendFrame(
 		uint8_t repeat,
 		itdsk_sigfox_speed_t speed,
 		int8_t power,
-		itdsk_sigfox_encrypt_t encrypt,
+		itdsk_payload_encrypt_t encrypt,
 		bool ack,
 		uint8_t * dwn
 ) {
@@ -125,11 +124,17 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendFrame(
 	if ( repeat > 2) repeat = 2;
 	if ( power == SIGFOX_POWER_DEFAULT ) power = __sigfox_state.default_power;
 	if ( speed == SIGFOX_SPEED_DEFAULT ) speed = __sigfox_state.default_speed;
-	if ( ack && dwn == NULL) return SIGFOX_ERROR_PARAMS;
+	if ( ack && (dwn == NULL)) return SIGFOX_ERROR_PARAMS;
+
+	#if ( ITSDK_SIGFOX_ENCRYPTION & __PAYLOAD_ENCRYPT_SIGFOX)
+	if ( (encrypt & PAYLOAD_ENCRYPT_SIGFOX) == 0 ) {
+		log_warn("[Sigfox] Sigfox payload encrypted whatever with ITSDK_SIGFOX_ENCRYPTION setting\r\n");
+	}
+	#endif
 
 	// encrypt the frame
-	#if ( ITSDK_SIGFOX_ENCRYPTION & __SIGFOX_ENCRYPT_SPECK ) > 0
-		if ( (encrypt & SIGFOX_ENCRYPT_SPECK) > 0 ) {
+	#if ( ITSDK_SIGFOX_ENCRYPTION & __PAYLOAD_ENCRYPT_SPECK ) > 0
+		if ( (encrypt & PAYLOAD_ENCRYPT_SPECK) > 0 ) {
 			uint64_t masterKey;
 			itsdk_sigfox_speck_getMasterKey(&masterKey);
 			itsdk_speck_encrypt(
@@ -140,8 +145,8 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendFrame(
 			);
 		}
 	#endif
-	#if (ITSDK_SIGFOX_ENCRYPTION & __SIGFOX_ENCRYPT_AESCTR) > 0
-		if ( (encrypt & SIGFOX_ENCRYPT_AESCTR) > 0 ) {
+	#if (ITSDK_SIGFOX_ENCRYPTION & __PAYLOAD_ENCRYPT_AESCTR) > 0
+		if ( (encrypt & PAYLOAD_ENCRYPT_AESCTR) > 0 ) {
 			uint32_t devId;
 			itsdk_sigfox_getDeviceId(&devId);
 			uint16_t seqId;
@@ -523,7 +528,7 @@ __weak  itsdk_sigfox_init_t itsdk_sigfox_aes_getMasterKey(uint8_t * masterKey) {
 #else
 	uint8_t tmp[16] = ITSDK_SIGFOX_KEY;
 	itsdk_encrypt_cifferKey(tmp,16);
-	bcopy((void *)tmp,(void *)sharedKey,16);
+	bcopy((void *)tmp,(void *)masterKey,16);
 #endif
 	return SIGFOX_INIT_SUCESS;
 }
