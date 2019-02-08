@@ -28,7 +28,20 @@
 #ifndef IT_SDK_ENCRYPT_H_
 #define IT_SDK_ENCRYPT_H_
 
-#define ITSDK_ENCRYPT_MAX_FRAME_SIZE	12		// max size for a frame to be encrypted (related to buffer size)
+#include <it_sdk/config.h>
+
+typedef enum {												// Encryption mode are cumulative
+	PAYLOAD_ENCRYPT_NONE = __PAYLOAD_ENCRYPT_NONE,			// Clear text payload
+	PAYLOAD_ENCRYPT_SIGFOX = __PAYLOAD_ENCRYPT_SIGFOX,		// Sigfox native encryption
+	PAYLOAD_ENCRYPT_AESCTR = __PAYLOAD_ENCRYPT_AESCTR,		// Software AES-CTR (like sigfox) encryption
+	PAYLOAD_ENCRYPT_SPECK = __PAYLOAD_ENCRYPT_SPECK			// SPECK32 encryption
+} itdsk_payload_encrypt_t;
+
+#if defined ITSDK_LORAWAN_ENCRYPTION && ITSDK_LORAWAN_ENCRYPTION > 0
+  #define ITSDK_ENCRYPT_MAX_FRAME_SIZE    64				// LoRaWan max frame size (arbitral)
+#else
+  #define ITSDK_ENCRYPT_MAX_FRAME_SIZE	  12				// Sigfox - max size for a frame to be encrypted (related to buffer size)
+#endif
 
 void itsdk_encrypt_cifferKey(uint8_t * key, int len);
 void itsdk_encrypt_unCifferKey(uint8_t * key, int len);

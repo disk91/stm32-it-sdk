@@ -77,19 +77,19 @@
 																		   // =============================
 
 #define ITSDK_LORAWAN_DEVEUI		{													\
-										0x00, 0xF8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00	\
+										0x00, 0x00, 0x00, 0xBA, 0x56, 0x99, 0x3B, 0x73	\
 									}									   // Static DEVEUI (big endian)
 																		   // Bytes are in the same order as
 																		   // in a String.
 
 #define ITSDK_LORAWAN_APPEUI		{													\
-										0x70, 0xB3, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00	\
+										0x70, 0x00, 0x00, 0x7E, 0xF0, 0x00, 0x3B, 0x19	\
 									}									   // Static APPEUI (big endian)
 																		   // Bytes are in the same order as
 																		   // in a String.
 
 #define ITSDK_LORAWAN_APPKEY		{													\
-										0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
+										0x00, 0x00, 0x00, 0x00, 0x87, 0xC9, 0x2F, 0x47, \
 										0x17, 0xEE, 0xF7, 0x06, 0xAC, 0x09, 0x5D, 0xD8  \
 									}									   // Static APPKEY (byte[])
 																		   // Bytes are in the same order compared
@@ -97,7 +97,7 @@
 
 
 #define ITSDK_LORAWAN_NWKKEY		{													\
-										0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
+										0x00, 0x00, 0x00, 0x00, 0x87, 0xC9, 0x2F, 0x47, \
 										0x17, 0xEE, 0xF7, 0x06, 0xAC, 0x09, 0x5D, 0xD8  \
 									}									   // Static NETWORK KEY (byte[])
 																		   // Bytes are in the same order compared
@@ -153,6 +153,35 @@
 								}									\
 							  }												// TTN EU Configuration
 
+																		   // =============================
+																		   // ITSDK E2E ENCRYPTION STATIC CONFIG
+																		   // =============================
+
+#define ITSDK_LORAWAN_ENCRYPTION		( /* __PAYLOAD_ENCRYPT_NONE | */ \
+										    __PAYLOAD_ENCRYPT_AESCTR \
+									      | __PAYLOAD_ENCRYPT_SPECK  \
+									    )									// Encryption code activated
+#define ITSDK_LORAWAN_AES_SHAREDKEY	( 0xAE632397 ^ ITSDK_PROTECT_KEY )      // CHANGE ME
+																			// Shared Key for CTR generation
+#define ITSDK_LORAWAN_AES_INITALNONCE ( 0x25 )								// CHANGE ME
+																			// Initial value for Nonce used for AES128-CRT
+#define ITSDK_LORAWAN_SPECKKEY		(   (uint64_t)0xEF583AB7A57834BC  \
+									  ^ (  (uint64_t)ITSDK_PROTECT_KEY \
+									     | ((uint64_t)ITSDK_PROTECT_KEY << 32)) \
+									)										// CHANGE ME
+																			// Shared Key for SPECK32/64 Encryption
+#define ITSDK_LORAWAN_AES_MASTERKEYH (   (uint64_t)0x2B7E151628AED2A6  \
+									  ^ (  (uint64_t)ITSDK_PROTECT_KEY \
+									     | ((uint64_t)ITSDK_PROTECT_KEY << 32)) \
+									 )										// CHANGE ME
+																			// Static 16B key used as master key (8B HIGH)
+																			// for end to end encryption
+#define ITSDK_LORAWAN_AES_MASTERKEYL (   (uint64_t)0xABF7158809CF4F3C  \
+									  ^ (  (uint64_t)ITSDK_PROTECT_KEY \
+									     | ((uint64_t)ITSDK_PROTECT_KEY << 32)) \
+									 )										// CHANGE ME
+																		    // Static 16B key used as master key (8B LOW)
+																		    // for end to end encryption
 
 #endif
 // +-------------SX1276------------|--------------------------------------|---------------------------------------|

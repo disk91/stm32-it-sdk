@@ -27,6 +27,8 @@
 #ifndef IT_SDK_LORAWAN_H_
 #define IT_SDK_LORAWAN_H_
 
+#include <it_sdk/encrypt/encrypt.h>
+
 #if (ITSDK_LOGGER_MODULE & __LOG_MOD_STKLORA) > 0
 #define LOG_INFO_LORAWANSTK(x)		log_info x
 #define LOG_WARN_LORAWANSTK(x) 		log_warn x
@@ -39,6 +41,11 @@
 #define LOG_DEBUG_LORAWANSTK(x)
 #endif
 
+
+typedef enum {
+	LORAWAN_RETURN_SUCESS = 0,
+	LORAWAN_RETURN_FAILED
+} itsdk_lorawan_return_t;
 
 
 typedef enum {
@@ -142,7 +149,7 @@ itsdk_lorawan_join_t itsdk_lorawan_join_async(								// Join asynchronously
 bool itsdk_lorawan_hasjoined();												// Ensure we have joined
 itsdk_lorawan_join_t itsdk_lorawan_getJoinState();							// Join state details
 
-itsdk_lorawan_send_t itsdk_lorawan_send_sync(								// Send a frame in sync mode
+itsdk_lorawan_send_t itsdk_lorawan_send_sync(
 		uint8_t * payload,
 		uint8_t   payloadSize,
 		uint8_t   port,
@@ -151,25 +158,28 @@ itsdk_lorawan_send_t itsdk_lorawan_send_sync(								// Send a frame in sync mod
 		uint8_t	  retry,
 		uint8_t	* rPort,													// In case of reception - Port (uint8_t)
 		uint8_t	* rSize,													// In case of reception - Size (uint8_t) - init with buffer max size
-		uint8_t * rData														// In case of recpetion - Data (uint8_t[] bcopied)
+		uint8_t * rData,													// In case of recpetion - Data (uint8_t[] bcopied)
+		itdsk_payload_encrypt_t encrypt										// End to End encryption mode
 );
-itsdk_lorawan_send_t itsdk_lorawan_send_async(								// Send a frame in async mode
+itsdk_lorawan_send_t itsdk_lorawan_send_async(
 		uint8_t * payload,
 		uint8_t   payloadSize,
 		uint8_t   port,
 		uint8_t	  dataRate,
 		itsdk_lorawan_sendconf_t confirm,
 		uint8_t	  retry,
-		void (*callback_func)(itsdk_lorawan_send_t status, uint8_t port, uint8_t size, uint8_t * rxData)
+		void (*callback_func)(itsdk_lorawan_send_t status, uint8_t port, uint8_t size, uint8_t * rxData),
+		itdsk_payload_encrypt_t encrypt										// End to End encryption mode
 );
 itsdk_lorawan_send_t itsdk_lorawan_getSendState();						// Send state for polling
 
-void itsdk_lorawan_changeDefaultRate(uint8_t newRate);
+itsdk_lorawan_return_t itsdk_lorawan_changeDefaultRate(uint8_t newRate);
 itsdk_lorawan_rssisnr_t itsdk_lorawan_getLastRssiSnr(int16_t *rssi, uint8_t *snr);
-bool itsdk_lorawan_setTxPower(itsdk_lorawan_txpower txPwr);
-itsdk_lorawan_txpower itsdk_lorawan_getTxPower();
-uint16_t itsdk_lorawan_getDownlinkFrameCounter();
-uint16_t itsdk_lorawan_getUplinkFrameCounter();
+itsdk_lorawan_return_t itsdk_lorawan_setTxPower(itsdk_lorawan_txpower txPwr);
+itsdk_lorawan_return_t itsdk_lorawan_getTxPower(itsdk_lorawan_txpower * power);
+itsdk_lorawan_return_t itsdk_lorawan_getDownlinkFrameCounter(uint16_t * counter);
+itsdk_lorawan_return_t itsdk_lorawan_getUplinkFrameCounter(uint16_t * counter);
+itsdk_lorawan_return_t itsdk_lorawan_getNextUplinkFrameCounter(uint16_t * counter);
 
 void itsdk_lorawan_loop();													// LoRaWan stack processing loop - MUST be in project_loop()
 
@@ -178,6 +188,17 @@ void itsdk_lorawan_loop();													// LoRaWan stack processing loop - MUST b
 // TO BE OVERRIDDED
 // ===============================================================
 
+// Static key access... override to work differently.
+itsdk_lorawan_return_t itsdk_lorawan_aes_getNonce(uint8_t * nonce);
+itsdk_lorawan_return_t itsdk_lorawan_aes_getSharedKey(uint32_t * sharedKey);
+itsdk_lorawan_return_t itsdk_lorawan_aes_getMasterKey(uint8_t * masterKey);
+itsdk_lorawan_return_t itsdk_lorawan_speck_getMasterKey(uint64_t * masterKey);
+
+// Get the DevEUI
+itsdk_lorawan_return_t itsdk_lorawan_getDeviceId(uint64_t * devId);
+itsdk_lorawan_return_t itsdk_lorawan_getDeviceEUI(uint8_t * devEui);
+itsdk_lorawan_return_t itsdk_lorawan_getAppEUI(uint8_t * appEui);
+itsdk_lorawan_return_t itsdk_lorawan_getAppKEY(uint8_t * appKey);
 
 // Function automatically fired on data reception
 void itsdk_lorawan_onDataReception(uint8_t port, uint8_t * data, uint8_t size);

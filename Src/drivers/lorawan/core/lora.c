@@ -68,7 +68,7 @@ static uint8_t JoinEui[] = ITSDK_LORAWAN_APPEUI;
 static uint8_t AppKey[] = ITSDK_LORAWAN_APPKEY;
 static uint8_t NwkKey[] = ITSDK_LORAWAN_NWKKEY;
 */
-static MlmeReqJoin_t JoinParameters;
+//static MlmeReqJoin_t JoinParameters;
 
 #if( ITSDK_LORAWAN_ACTIVATION == __LORAWAN_ABP )
 /*

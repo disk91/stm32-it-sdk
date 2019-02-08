@@ -30,6 +30,7 @@
 #include <it_sdk/config.h>
 #include <it_sdk/itsdk.h>
 #include <it_sdk/logger/logger.h>
+#include <it_sdk/encrypt/encrypt.h>
 
 #if ITSDK_WITH_LORAWAN_LIB == __ENABLE
 #include <drivers/lorawan/core/lorawan.h>
@@ -37,15 +38,11 @@
 #include <drivers/lorawan/phy/radio.h>
 #include <it_sdk/lorawan/lorawan.h>
 
+
 // =================================================================================
 // INIT
 // =================================================================================
 
-// Unsecured storage... lets modify this part later
-// @TODO
-static uint8_t devEui[8] = ITSDK_LORAWAN_DEVEUI;
-static uint8_t appEui[8] = ITSDK_LORAWAN_APPEUI;
-static uint8_t appKey[16] = ITSDK_LORAWAN_APPKEY;
 
 /**
  * Init the LoRaWan Stack
@@ -54,6 +51,13 @@ static uint8_t appKey[16] = ITSDK_LORAWAN_APPKEY;
 itsdk_lorawan_init_t itsdk_lorawan_setup(uint16_t region, itsdk_lorawan_channelInit_t * channelConfig) {
 	LOG_INFO_LORAWANSTK(("itsdk_lorawan_setup\r\n"));
 	lorawan_driver_config_t __config;
+	static uint8_t devEui[8];
+	static uint8_t appEui[8];
+	static uint8_t appKey[16];
+
+	itsdk_lorawan_getDeviceEUI(devEui);
+	itsdk_lorawan_getAppEUI(appEui);
+	itsdk_lorawan_getAppKEY(appKey);
 
 	Radio.IoInit();
 
@@ -197,6 +201,58 @@ itsdk_lorawan_send_t itsdk_lorawan_send_simple_uplink_sync(
 }
 
 
+
+/**
+ * Internal function to encrypt the payload.
+ * This is E2E encryption not LoRaWan encryption included in the LoRaWan Stack.
+ * This encryption layer is a second layer of encryption on top of the payload before applying network security.
+ * This encryption layer will need to be decrypted on the receiver side.
+ */
+static void __itsdk_lorawan_encrypt_payload(
+	uint8_t * payload,
+	uint8_t   payloadSize,
+	itdsk_payload_encrypt_t encrypt
+){
+#if ( ITSDK_LORAWAN_ENCRYPTION & __PAYLOAD_ENCRYPT_SPECK ) > 0
+	if ( (encrypt & PAYLOAD_ENCRYPT_SPECK) > 0 ) {
+		uint64_t masterKey;
+		itsdk_lorawan_speck_getMasterKey(&masterKey);
+		itsdk_speck_encrypt(
+				payload,
+				payload,
+				payloadSize,
+				masterKey
+		);
+	}
+#endif
+#if (ITSDK_LORAWAN_ENCRYPTION & __PAYLOAD_ENCRYPT_AESCTR) > 0
+	if ( (encrypt & PAYLOAD_ENCRYPT_AESCTR) > 0 ) {
+		uint64_t devId64;
+		itsdk_lorawan_getDeviceId(&devId64);
+		uint16_t seqId;
+		itsdk_lorawan_getNextUplinkFrameCounter(&seqId);
+		uint8_t nonce;
+		itsdk_lorawan_aes_getNonce(&nonce);
+		uint32_t sharedKey;
+		itsdk_lorawan_aes_getSharedKey(&sharedKey);
+		uint8_t masterKey[16];
+		itsdk_lorawan_aes_getMasterKey(masterKey);
+
+		itsdk_aes_crt_encrypt_128B(
+				payload,							// Data to be encrypted
+				payload,							// Can be the same as clearData
+				payloadSize,						// Size of data to be encrypted
+				(uint32_t)devId64,					// 32b device ID (32b low)
+				seqId,								// 16b sequenceId (incremented for each of the frame)
+				nonce,								// 8b  value you can update dynamically from backend
+				sharedKey,							// 24b hardcoded value (hidden with ITSDK_PROTECT_KEY)
+				masterKey							// 128B key used for encryption (hidden with ITSDK_PROTECT_KEY)
+		);
+	}
+#endif
+}
+
+
 /**
  * Send a LoRaWAN frame containing the Payload of the given payloadSize bytes on given port.
  * The dataRate can be set.
@@ -217,9 +273,11 @@ itsdk_lorawan_send_t itsdk_lorawan_send_sync(
 		uint8_t	  retry,
 		uint8_t	* rPort,													// In case of reception - Port (uint8_t)
 		uint8_t	* rSize,													// In case of reception - Size (uint8_t) - init with buffer max size
-		uint8_t * rData														// In case of recpetion - Data (uint8_t[] bcopied)
+		uint8_t * rData,													// In case of recpetion - Data (uint8_t[] bcopied)
+		itdsk_payload_encrypt_t encrypt										// End to End encryption mode
 ) {
 	LOG_INFO_LORAWANSTK(("itsdk_lorawan_send_sync\r\n"));
+	__itsdk_lorawan_encrypt_payload(payload,payloadSize,encrypt);
 	return lorawan_driver_LORA_Send(payload,payloadSize,port,dataRate,confirm,retry,LORAWAN_RUN_SYNC,rPort,rSize,rData);
 }
 
@@ -270,9 +328,11 @@ itsdk_lorawan_send_t itsdk_lorawan_send_async(
 		uint8_t	  dataRate,
 		itsdk_lorawan_sendconf_t confirm,
 		uint8_t	  retry,
-		void (*callback_func)(itsdk_lorawan_send_t status, uint8_t port, uint8_t size, uint8_t * rxData)
+		void (*callback_func)(itsdk_lorawan_send_t status, uint8_t port, uint8_t size, uint8_t * rxData),
+		itdsk_payload_encrypt_t encrypt										// End to End encryption mode
 ) {
 	LOG_INFO_LORAWANSTK(("itsdk_lorawan_send_async\r\n"));
+	__itsdk_lorawan_encrypt_payload(payload,payloadSize,encrypt);
 	if ( callback_func != NULL ) {
 		__itsdk_lorawan_send_cb = callback_func;
 	} else {
@@ -311,9 +371,55 @@ itsdk_lorawan_send_t itsdk_lorawan_getSendState() {
 // MISC
 // =================================================================================
 
-void itsdk_lorawan_changeDefaultRate(uint8_t newRate) {
+/**
+ * Get the device EUI as a uint64_t value
+ */
+__weak itsdk_lorawan_return_t itsdk_lorawan_getDeviceId(uint64_t * devId) {
+	LOG_INFO_LORAWANSTK(("itsdk_lorawan_getDeviceId\r\n"));
+	uint8_t d[8] = ITSDK_LORAWAN_DEVEUI;
+	uint64_t di = 0;
+	for ( int i = 0 ; i < 8 ; i++ ){
+		di = (di << 8) | d[i];
+	}
+	*devId = di;
+	return LORAWAN_RETURN_SUCESS;
+}
+
+/**
+ * Get the device EUI as a uint8_t[]
+ */
+__weak itsdk_lorawan_return_t itsdk_lorawan_getDeviceEUI(uint8_t * devEui){
+	LOG_INFO_LORAWANSTK(("itsdk_lorawan_getDeviceEUI\r\n"));
+	uint8_t d[8] = ITSDK_LORAWAN_DEVEUI;
+	bcopy(d,devEui,8);
+	return LORAWAN_RETURN_SUCESS;
+}
+
+/**
+ * Get the appEUI as a uint8_t[]
+ */
+__weak itsdk_lorawan_return_t itsdk_lorawan_getAppEUI(uint8_t * appEui){
+	LOG_INFO_LORAWANSTK(("itsdk_lorawan_getAppEUI\r\n"));
+	uint8_t d[8] = ITSDK_LORAWAN_APPEUI;
+	bcopy(d,appEui,8);
+	return LORAWAN_RETURN_SUCESS;
+}
+
+/**
+ * Get the appKEY as a uint8_t[]
+ */
+__weak itsdk_lorawan_return_t itsdk_lorawan_getAppKEY(uint8_t * appKey){
+	LOG_INFO_LORAWANSTK(("itsdk_lorawan_getAppKEY\r\n"));
+	uint8_t d[16] = ITSDK_LORAWAN_APPKEY;
+	bcopy(d,appKey,16);
+	return LORAWAN_RETURN_SUCESS;
+}
+
+
+itsdk_lorawan_return_t itsdk_lorawan_changeDefaultRate(uint8_t newRate) {
 	LOG_INFO_LORAWANSTK(("itsdk_lorawan_changeDefaultRate\r\n"));
 	lorawan_driver_LORA_ChangeDefaultRate(newRate);
+	return LORAWAN_RETURN_SUCESS;
 }
 
 itsdk_lorawan_rssisnr_t itsdk_lorawan_getLastRssiSnr(int16_t *rssi, uint8_t *snr){
@@ -321,26 +427,36 @@ itsdk_lorawan_rssisnr_t itsdk_lorawan_getLastRssiSnr(int16_t *rssi, uint8_t *snr
 	return lorawan_driver_LORA_GetLastRssiSnr(rssi,snr);
 }
 
-bool itsdk_lorawan_setTxPower(itsdk_lorawan_txpower txPwr) {
+itsdk_lorawan_return_t itsdk_lorawan_setTxPower(itsdk_lorawan_txpower txPwr) {
 	LOG_INFO_LORAWANSTK(("itsdk_lorawan_setTxPower\r\n"));
-	return lorawan_driver_LORA_SetTxPower(txPwr);
+	return (lorawan_driver_LORA_SetTxPower(txPwr))?LORAWAN_RETURN_SUCESS:LORAWAN_RETURN_FAILED;
 }
 
-itsdk_lorawan_txpower itsdk_lorawan_getTxPower() {
+itsdk_lorawan_return_t itsdk_lorawan_getTxPower(itsdk_lorawan_txpower * power) {
 	LOG_INFO_LORAWANSTK(("itsdk_lorawan_getTxPower\r\n"));
-	return lorawan_driver_LORA_GetTxPower();
+	*power = lorawan_driver_LORA_GetTxPower();
+	return LORAWAN_RETURN_SUCESS;
 }
 
 
-uint16_t itsdk_lorawan_getDownlinkFrameCounter() {
+itsdk_lorawan_return_t itsdk_lorawan_getDownlinkFrameCounter(uint16_t * counter) {
 	LOG_INFO_LORAWANSTK(("itsdk_lorawan_getDownlinkFrameCounter\r\n"));
-	return lorawan_driver_LORA_GetDownlinkFrameCounter();
+	*counter = lorawan_driver_LORA_GetDownlinkFrameCounter();
+	return LORAWAN_RETURN_SUCESS;
 }
 
 
-uint16_t itsdk_lorawan_getUplinkFrameCounter() {
+itsdk_lorawan_return_t itsdk_lorawan_getUplinkFrameCounter(uint16_t * counter) {
 	LOG_INFO_LORAWANSTK(("itsdk_lorawan_getUplinkFrameCounter\r\n"));
-	return lorawan_driver_LORA_GetUplinkFrameCounter();
+	*counter = lorawan_driver_LORA_GetUplinkFrameCounter();
+	return LORAWAN_RETURN_SUCESS;
+}
+
+itsdk_lorawan_return_t itsdk_lorawan_getNextUplinkFrameCounter(uint16_t * counter) {
+	LOG_INFO_LORAWANSTK(("itsdk_lorawan_getNextUplinkFrameCounter\r\n"));
+	*counter = lorawan_driver_LORA_GetUplinkFrameCounter();
+	*counter = *counter+1;
+	return LORAWAN_RETURN_SUCESS;
 }
 
 /**
@@ -352,6 +468,55 @@ void itsdk_lorawan_loop() {
 	lorawan_driver_loop();
 }
 
+// ===================================================================================
+// Overloadable functions
+// ===================================================================================
+
+/**
+ * Return default nonce, this function is overloaded in the main program
+ * to return a dynamic value
+ */
+__weak  itsdk_lorawan_return_t itsdk_lorawan_aes_getNonce(uint8_t * nonce) {
+	*nonce = ITSDK_LORAWAN_AES_INITALNONCE;
+	return LORAWAN_RETURN_SUCESS;
+}
+
+/**
+ * Return default sharedKey, this function is overloaded in the main program
+ * to return a dynamic value
+ */
+__weak  itsdk_lorawan_return_t itsdk_lorawan_aes_getSharedKey(uint32_t * sharedKey) {
+	*sharedKey = ITSDK_LORAWAN_AES_SHAREDKEY;
+	return LORAWAN_RETURN_SUCESS;
+}
+
+
+/**
+ * Return default masterKey (protected by ITSDK_PROTECT_KEY), this function is overloaded in the main program
+ * to return a dynamic value when needed
+ */
+__weak  itsdk_lorawan_return_t itsdk_lorawan_aes_getMasterKey(uint8_t * masterKey) {
+	uint64_t h = ITSDK_LORAWAN_AES_MASTERKEYH;
+	uint64_t l = ITSDK_LORAWAN_AES_MASTERKEYL;
+	uint8_t tmp[16];
+	for ( int i = 0 ; i < 8 ; i++) {
+		tmp[i] = (h >> ((8-i)*8-8)) & 0xFF;
+	}
+	for ( int i = 0 ; i < 8 ; i++) {
+		tmp[8+i] = (l >> ((8-i)*8-8)) & 0xFF;
+	}
+	bcopy((void *)tmp,(void *)masterKey,16);
+	return LORAWAN_RETURN_SUCESS;
+}
+
+/**
+ * Return default speck Key ( protected by ITSDK_PROTECT_KEY), this function is overloaded in the main program
+ * ro return a dynamic value when needed
+ */
+__weak  itsdk_lorawan_return_t itsdk_lorawan_speck_getMasterKey(uint64_t * masterKey) {
+	*masterKey = ITSDK_LORAWAN_SPECKKEY;
+	return LORAWAN_RETURN_SUCESS;
+}
 
 
 #endif

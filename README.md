@@ -21,7 +21,7 @@ Made for being compiled with open-source environment GCC / AC6
   
 * Communication protocols interface
   * Sigfox ( clear-text, AES128-CTR, SPECK32, Sigfox-EAS128-CTR-Encryption )
-  * LoRaWan ( LoRaWan-Encryption ) - actually join / uplink / uplink-ack supported (downlink not yet tested)
+  * LoRaWan ( LoRaWan-Encryption, EAS128-CTR, SPECK32 ) - join / uplink / downlink / ack
 
 * Supported / tested platforms
   * STM32L011
