@@ -28,6 +28,27 @@
 #ifndef IT_SDK_CONSOLE_CONSOLE_H_
 #define IT_SDK_CONSOLE_CONSOLE_H_
 
+#include <it_sdk/config.h>
+#if ITSDK_WITH_CONSOLE == __ENABLE
+
+#if ITSDK_CONSOLE_LINEBUFFER > 127
+#error "ITSDK_CONSOLE_LINEBUFFER is too large, pBuffer is limited to 7 bits."
+#endif
+
+typedef struct {
+	uint8_t		loginState:1;								// 0 when the console is locked / 1 when the console is unlocked
+	uint8_t		pBuffer:7;									// pointer in the Reception buffer
+	uint8_t		serialBuffer[ITSDK_CONSOLE_LINEBUFFER];		// Reception buffer
+	uint32_t	expire;										// expiration time in S
 
 
+
+} itsdk_console_state_t;
+
+// ==============================================================================
+// API
+// ==============================================================================
+void itsdk_console_loop();
+
+#endif // ITSDK_WITH_CONSOLE
 #endif /* IT_SDK_CONSOLE_CONSOLE_H_ */

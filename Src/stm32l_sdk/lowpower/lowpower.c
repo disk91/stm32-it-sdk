@@ -104,6 +104,10 @@ void stm32l_lowPowerSetup() {
 		 	HAL_UARTEx_EnableStopMode(&hlpuart1);
 		#endif
 
+		#if  ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_UART2 ) > 0
+			#error "STM32 Doesn't support WAKEUP on UART2"
+		#endif
+
 		_stm32l_disableGpios();					// Disable GPIOs based on configuration
 
 		#if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_GPIO ) > 0

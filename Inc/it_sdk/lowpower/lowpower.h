@@ -36,6 +36,16 @@ typedef enum {
 } lowPower_wu_reason_t;
 extern lowPower_wu_reason_t __lowPower_wakeup_reason;
 
+typedef enum {
+	LOWPRW_ENABLE = 0,
+	LOWPRW_DISABLE
+} lowPower_state_e;
+
 void lowPower_switch();
+
+// ------------------------------------------------------------------------
+// LowPower enable / disable
+void lowPower_enable();
+void lowPower_disable();
 
 #endif /* IT_SDK_LOWPOWER_LOWPOWER_H_ */

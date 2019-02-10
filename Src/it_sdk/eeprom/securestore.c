@@ -318,10 +318,6 @@ itsdk_secStoreReturn_e itsdk_secstore_readBlock(itsdk_secStoreBlocks_e blockType
 	// Decode with AES-128
 	itsdk_aes_ecb_decrypt_128B(buffer,buffer,ITSDK_SECSTORE_BLOCKSZ,masterKey);
 
-
-	log_info_array("R Block :",buffer,16);
-	log_info("Offset : %d\r\n",_offset);
-
 	return SS_SUCCESS;
 }
 
@@ -354,9 +350,6 @@ itsdk_secStoreReturn_e itsdk_secstore_writeBlock(itsdk_secStoreBlocks_e blockTyp
 		_head.blockUsed |= ( 1 << _id );
 		_eeprom_write(ITDT_EEPROM_BANK0, ITSDK_SECSTORE_EEPROM_OFFSET, (void *) &_head, sizeof(itsdk_secStoreHead_t));
 	}
-
-	log_info_array("W Block :",buffer,16);
-	log_info("Offset : %d\r\n",_offset);
 
 	return SS_SUCCESS;
 }

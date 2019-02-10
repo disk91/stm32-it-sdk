@@ -53,7 +53,7 @@ Block0 contains the Store configuration, status and dynamic key.
 - The _config.h_ **ITSDK_WITH_SECURESTORE** setting activate the SecureStore when set as **__ENABLE**.
 - You can specify a custom number of USER custom blocks on top of the SDK predefined blocks by setting ITSDK_SECSTORE_USRBLOCK to the expected number of extra blocks. The SDK accepts from 0 to 7 user extra blocks.   
 - The initial dynamic key is set in the _config.h_ file initializing the **ITSDK_SECSTORE_DEFKEY** 12 byte "random" value. Then you will be able to change this value through a console command.
-- The initial console password (this password unlock the serial console) is set with **ITSDK_SECSTORE_CONSOLEKEY** define. The password can be changed from the console cmd later.
+- The initial console password (this password unlock the serial console) is set with **ITSDK_SECSTORE_CONSOLEKEY** define. The password can be changed from the console cmd later. If securestore is disable this define defines the static password.
 
 ## Customizaton
 The MasterKey is derivated from the dynamic key and any source of your choice. To override the standard way to create the MasterKey, your need to write a new function: __void itsdk_secstore_generateMasterKey(uint8_t * dynamicKey,uint8_t * masterKey)__ in your code. This new function will replace the default one at compilation time. This function is called with _dynamicKey_ 12B value set from the secureStore and return the _masterKey_ values. _masterKey_ is an allocated 16B array. 

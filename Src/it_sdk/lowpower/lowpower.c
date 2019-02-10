@@ -33,20 +33,34 @@
 #endif
 
 lowPower_wu_reason_t __lowPower_wakeup_reason = LOWPWR_WAKEUP_UNDEF;
-
+static lowPower_state_e __lowPowerState = LOWPRW_ENABLE;
 /**
  * Switch to low power mode selected for the expected platform
  */
 void lowPower_switch() {
 
+	if (__lowPowerState==LOWPRW_ENABLE) {
 	#if ITSDK_PLATFORM == __PLATFORM_STM32L0
 		stm32l_lowPowerSetup();
 		// sleeping
 		stm32l_lowPowerResume();
 	#endif
+	}
 
 }
 
+/**
+ * Disable LowPower mode
+ */
+void lowPower_enable() {
+	__lowPowerState= LOWPRW_ENABLE;
+}
 
+/**
+ * Enable LowPower mode
+ */
+void lowPower_disable() {
+	__lowPowerState= LOWPRW_DISABLE;
+}
 
 

@@ -63,9 +63,9 @@ itsdk_lorawan_init_t itsdk_lorawan_setup(uint16_t region, itsdk_lorawan_channelI
 	itsdk_lorawan_getAppEUI(appEui);
 	itsdk_lorawan_getAppKEY(appKey);
 
-	log_info_array("DEV :",devEui,8);
-	log_info_array("APP :",appEui,8);
-	log_info_array("KEY :",appKey,16);
+	//log_info_array("DEV :",devEui,8);
+	//log_info_array("APP :",appEui,8);
+	//log_info_array("KEY :",appKey,16);
 
 	Radio.IoInit();
 

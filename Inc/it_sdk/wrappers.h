@@ -46,6 +46,15 @@ void serial2_println(char * msg);
 void debug_println(char * msg);
 void logfile_println(char * msg);
 
+typedef enum {
+	SERIAL_READ_SUCCESS=0,		// 1 char has been read, none is pending
+	SERIAL_READ_PENDING_CHAR,	// 1 char has been read, some other are pending
+	SERIAL_READ_NOCHAR,			// No char read, No pending
+	SERIAL_READ_FAILED			// Error during reading
+} serial_read_response_e;
+serial_read_response_e serial1_read(char * c);
+serial_read_response_e serial2_read(char * c);
+
 // ================================================
 // watchdog
 void wdg_setupWithMaxMs(uint32_t ms);

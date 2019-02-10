@@ -65,6 +65,10 @@
 #include <it_sdk/eeprom/securestore.h>
 #endif
 
+#if ITSDK_WITH_CONSOLE == __ENABLE
+#include <it_sdk/console/console.h>
+#endif
+
 
 /**
  * The setup function is called on every MCU Reset but not on wakeup from sleep
@@ -107,6 +111,9 @@ void itsdk_restart() {
 void itsdk_loop() {
 	#if ITSDK_WDG_MS > 0
 	   wdg_refresh();
+	#endif
+	#if ITSDK_WITH_CONSOLE == __ENABLE
+	   itsdk_console_loop();
 	#endif
 	#if ITSDK_SHEDULER_TASKS > 0
 	   itdt_sched_execute();
