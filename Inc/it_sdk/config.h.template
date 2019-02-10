@@ -132,6 +132,15 @@
 #define ITSDK_STATEMACHINE_TASKS	0										// Maximum number of state machine task (0 will deactivate STM code)
 #define ITSDK_STATEMACHINE_NAMESZ	8										// Maximum size for task name (-1)
 
+#define ITSDK_WITH_SECURESTORE		__ENABLE								// Enable EEPROM secured storage
+#define ITSDK_SECSTORE_USRBLOCK		0										//  Number of USER BLOCK to allocate (from 0 to 7)
+#define ITSDK_SECSTORE_DEFKEY		{   \
+									  0xC0,0xA5,0x84,0xEB,0x36,0x4F, \
+									  0xF4,0x63,0xBE,0x48,0x5A,0x0C  \
+									}										// CHANGE ME
+																			// Default dynamic key for the SECSTORE
+#define ITSDK_SECSTORE_CONSOLEKEY   "changeme"								// Default console passwd string (max 15 char)
+
 #define ITSDK_WITH_SIGFOX_LIB		__DISABLE								// Include the sigfox code when 1 disabled when 0
 #define ITSDK_SIGFOX_LIB			__SIGFOX_NONE							// Type of Sigfox module
 

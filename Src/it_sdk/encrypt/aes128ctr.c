@@ -43,7 +43,7 @@
 #include <string.h>
 #include <it_sdk/config.h>
 
-#if ( ITSDK_SIGFOX_ENCRYPTION & __PAYLOAD_ENCRYPT_AESCTR ) > 0 || ( ITSDK_LORAWAN_ENCRYPTION & __PAYLOAD_ENCRYPT_AESCTR ) > 0
+#if ( ITSDK_SIGFOX_ENCRYPTION & __PAYLOAD_ENCRYPT_AESCTR ) > 0 || ( ITSDK_LORAWAN_ENCRYPTION & __PAYLOAD_ENCRYPT_AESCTR ) > 0 || ITSDK_WITH_SECURESTORE == __ENABLE
 #include <it_sdk/itsdk.h>
 #include <it_sdk/encrypt/encrypt.h>
 #include <it_sdk/logger/logger.h>
@@ -57,6 +57,8 @@
 
 #include <it_sdk/time/time.h>
 
+
+#if ( ITSDK_SIGFOX_ENCRYPTION & __PAYLOAD_ENCRYPT_AESCTR ) > 0 || ( ITSDK_LORAWAN_ENCRYPTION & __PAYLOAD_ENCRYPT_AESCTR ) > 0
 /**
  * Encrypt a 128B block of Data with the given key
  * The key is protected by the ITSDK_PROTECT_KEY
@@ -138,6 +140,60 @@ void itsdk_aes_crt_encrypt_128B(
 
 	bzero(aesResult,16);
 }
+
+#endif
+
+
+#if ITSDK_WITH_SECURESTORE == __ENABLE
+
+/**
+ * ECB encryption with Iv = 0
+ * clearData and encryptedData ca be the same buffer
+ */
+void itsdk_aes_ecb_encrypt_128B(
+		uint8_t	* clearData,			// Data to be encrypted
+		uint8_t * encryptedData,		// Can be the same as clearData
+		uint8_t   dataLen,				// Size of data to be encrypted
+		uint8_t * masterKey				// 128B key used for encryption (hidden with ITSDK_PROTECT_KEY)
+) {
+	uint8_t aesResult[16];
+	itsdk_encrypt_unCifferKey(masterKey,16);
+	struct AES_ctx ctx;
+	memcpy(aesResult,clearData,16);
+	bzero(ctx.Iv,16);
+	tiny_AES_init_ctx(&ctx,masterKey);
+	tiny_AES_CBC_encrypt_buffer(&ctx, aesResult, 16);
+	itsdk_encrypt_cifferKey(masterKey,16);
+	memcpy(encryptedData,aesResult,16);
+	bzero(aesResult,16);
+}
+
+/**
+ * ECB encryption with Iv = 0
+ * clearData and encryptedData ca be the same buffer
+ * Rq : it use CBC encryption but we just encrypt 1 block... so it is like ECB
+ */
+void itsdk_aes_ecb_decrypt_128B(
+		uint8_t	* clearData,			// Data to be encrypted
+		uint8_t * encryptedData,		// Can be the same as clearData
+		uint8_t   dataLen,				// Size of data to be encrypted
+		uint8_t * masterKey				// 128B key used for encryption (hidden with ITSDK_PROTECT_KEY)
+) {
+	uint8_t aesResult[16];
+	itsdk_encrypt_unCifferKey(masterKey,16);
+	struct AES_ctx ctx;
+	memcpy(aesResult,clearData,16);
+	bzero(ctx.Iv,16);
+	tiny_AES_init_ctx(&ctx,masterKey);
+	tiny_AES_CBC_decrypt_buffer(&ctx, aesResult, 16);
+	itsdk_encrypt_cifferKey(masterKey,16);
+	memcpy(encryptedData,aesResult,16);
+	bzero(aesResult,16);
+}
+
+
+#endif
+
 
 
 

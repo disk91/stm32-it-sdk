@@ -21,7 +21,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  * ----------------------------------------------------------
- * 
+ * The data are stored after the SecureStore when activated.
  *
  * ==========================================================
  */
@@ -30,6 +30,9 @@
 #include <it_sdk/eeprom/eeprom.h>
 #include <it_sdk/wrappers.h>
 #include <stdbool.h>
+#if ITSDK_WITH_SECURESTORE == __ENABLE
+#include <it_sdk/eeprom/securestore.h>
+#endif
 
 /**
  * Store a data block into eeprom with the given len in byte
@@ -42,11 +45,15 @@ bool eeprom_write(void * data, uint16_t len, uint8_t version) {
 	t.size = len;
 	t.version = version;
 	t.crc32 = calculateCRC32((uint8_t*)data, len);
+	uint16_t offset = 0;
+  #if ITSDK_WITH_SECURESTORE == __ENABLE
+	itsdk_secstore_getStoreSize(&offset);
+  #endif
 
 	// Write the data header
-	_eeprom_write(ITDT_EEPROM_BANK0, 0, (void *) &t, sizeof(t));
+	_eeprom_write(ITDT_EEPROM_BANK0, offset, (void *) &t, sizeof(t));
 	// Write data
-	_eeprom_write(ITDT_EEPROM_BANK0, sizeof(t), (void *) data, len);
+	_eeprom_write(ITDT_EEPROM_BANK0, offset+sizeof(t), (void *) data, len);
 
 	_LOG_EEPROM(("[NVM][I] Write %d bytes crc %0X\r\n",len,t.crc32));
 
@@ -59,9 +66,13 @@ bool eeprom_write(void * data, uint16_t len, uint8_t version) {
  */
 bool eeprom_read(void * data, uint16_t len, uint8_t version, uint8_t * versionR) {
 	t_eeprom_entry t;
+	uint16_t offset = 0;
+  #if ITSDK_WITH_SECURESTORE == __ENABLE
+	itsdk_secstore_getStoreSize(&offset);
+  #endif
 
 	// Read the data header
-	_eeprom_read(ITDT_EEPROM_BANK0, 0, (void *) &t, sizeof(t));
+	_eeprom_read(ITDT_EEPROM_BANK0, offset, (void *) &t, sizeof(t));
 
 	// Verify different element
 	if ( t.magic != ITDT_EEPROM_MAGIC ) {
@@ -80,7 +91,7 @@ bool eeprom_read(void * data, uint16_t len, uint8_t version, uint8_t * versionR)
 	}
 
 	// Read the data
-	_eeprom_read(ITDT_EEPROM_BANK0, sizeof(t), (void *) data, len);
+	_eeprom_read(ITDT_EEPROM_BANK0, offset+sizeof(t), (void *) data, len);
 	uint32_t _crc = calculateCRC32((uint8_t*)data, len);
 
 	if ( t.crc32 != _crc ) {

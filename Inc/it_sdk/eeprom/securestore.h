@@ -35,20 +35,24 @@
 // ================================================================================
 // Function return
 
-enum {
+typedef enum {
 	SS_SUCCESS=0,
 	SS_FAILED_NOTEXISTING,
+	SS_FAILED_NOTINITIALIZED,
+	SS_FAILED_NOTSET,
 
 	SS_FAILED
-} itsdk_secStoreReturn;
+} itsdk_secStoreReturn_e;
 
 
 
 // ================================================================================
 // Block ID defined regarding the configuration
 
+#define ITSDK_SECSTORE_MAGIC1	0xC
 
-enum {
+
+typedef enum {
 	ITSDK_SS_CONSOLEKEY = 0,
 	ITSDK_SS_SIGFOXKEY,
 	ITSDK_SS_LORA_ABP_NETIDDEVID,
@@ -69,20 +73,30 @@ enum {
 	ITSDK_SS_USER5,
 	ITSDK_SS_USER6,
 	ITSDK_SS_USER7
-} itsdk_secStoreBlocks;
+} itsdk_secStoreBlocks_e;
 
-#define ITSDK_SECSTORE_BLOCKSZ		16
+#define ITSDK_SECSTORE_BLOCKSZ			16
+#define ITSDK_SECSTORE_EEPROM_OFFSET	0
+#define ITSDK_SECSTORE_EEPROM_MAGIC		0xC
+
+#define ITSDK_SECSTORE_CRYPT_SHARED_ID	0
+#define ITSDK_SECSTORE_CRYPT_NONCE_ID	4
+#define ITSDK_SECSTORE_CRYPT_SPECK_ID	8
+
+#define ITSDK_SECSTORE_OTAA_DEV_ID		0
+#define ITSDK_SECSTORE_OTAA_APP_ID		8
+
 
 typedef struct __itsdk_secureStoreHead_s {
 
-	uint8_t		reserved1:4;				// reserved for later use
-	uint8_t		blockCount:4;				// number of block initialized in the structure
+	uint8_t		magic1:4;					// reserved for later use / magic to detect if structure has been initialized value ITSDK_SECSTORE_MAGIC1
+	uint8_t		blockCount:4;				// number of block initialized in the structure (as size is static, the magic is magic1 / size
 	uint16_t	blockUsed;					// block initialization status bit field - bit 0 (low) = block0
 	uint8_t		reserved2;					// reserved for later use;
 	uint8_t		dynamicKey[12];				// dynamic key use for MasterKey generation
 											// First block is starting at this address.
 
-} __attribute__((packed)) itsdk_secureStoreHead_t;
+} __attribute__((packed)) itsdk_secStoreHead_t;
 
 
 
@@ -112,13 +126,27 @@ typedef struct {
     #if ( defined(ITSDK_SIGFOX_ENCRYPTION) && ( ITSDK_SIGFOX_ENCRYPTION & __PAYLOAD_ENCRYPT_AESCTR ) > 0 ) || ( defined(ITSDK_LORAWAN_ENCRYPTION) && (( ITSDK_LORAWAN_ENCRYPTION & __PAYLOAD_ENCRYPT_AESCTR ) > 0) )
 		uint8_t	aesMasterKey[ITSDK_SECSTORE_BLOCKSZ];						// AES-CTR Key
 	#endif
-    #if ( defined(ITSDK_SIGFOX_ENCRYPTION) && ( ITSDK_SIGFOX_ENCRYPTION > 0 )) || ( defined(ITSDK_LORAWAN_ENCRYPTION) && ( ITSDK_LORAWAN_ENCRYPTION > 0 )) )
-		uint8_t encryptSharedNonceSpeck[ITSDK_SECSTORE_BLOCKSZ];			// AES-CTR / Dynamic element for CTR (Shared 4B), (Nonce 1B) , 4B not used, 8B SPECK KEY
+    #if ( defined(ITSDK_SIGFOX_ENCRYPTION) && ( ITSDK_SIGFOX_ENCRYPTION > 0 )) || ( defined(ITSDK_LORAWAN_ENCRYPTION) && ( ITSDK_LORAWAN_ENCRYPTION > 0 ))
+		uint8_t encryptSharedNonceSpeck[ITSDK_SECSTORE_BLOCKSZ];			// AES-CTR / Dynamic element for CTR (Shared 4B), (Nonce 1B) , 3B not used, 8B SPECK KEY
     #endif
-	#if ITSDK_SECURESTORE_USRBLOCK > 0
+	#if ITSDK_SECSTORE_USRBLOCK > 0
 		uint8_t user[ITSDK_SECSTORE_USRBLOCK][ITSDK_SECSTORE_BLOCKSZ];	// User defined blocks
 	#endif
 } itsdk_secStoreBlocks_t;
+
+
+// ====================================================================================================
+// API
+// ====================================================================================================
+itsdk_secStoreReturn_e itsdk_secstore_getStoreSize(uint16_t * sz);
+itsdk_secStoreReturn_e itsdk_secstore_init();
+itsdk_secStoreReturn_e itsdk_secstore_isInit();
+itsdk_secStoreReturn_e itsdk_secstore_writeBlock(itsdk_secStoreBlocks_e blockType, uint8_t * buffer);
+itsdk_secStoreReturn_e itsdk_secstore_readBlock(itsdk_secStoreBlocks_e blockType, uint8_t * buffer);
+
+// ----------------------------
+// Function to Override
+void itsdk_secstore_generateMasterKey(uint8_t * dynamicKey,uint8_t * masterKey);
 
 
 #endif // ITSDK_WITH_SECURESTORE

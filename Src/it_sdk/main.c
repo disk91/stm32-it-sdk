@@ -61,6 +61,11 @@
 #include <it_sdk/time/timer.h>
 #include <it_sdk/logger/logger.h>
 
+#if ITSDK_WITH_SECURESTORE == __ENABLE
+#include <it_sdk/eeprom/securestore.h>
+#endif
+
+
 /**
  * The setup function is called on every MCU Reset but not on wakeup from sleep
  * This function init the SDK library and underlaying hardware.
@@ -71,6 +76,12 @@ void itsdk_setup() {
 	itsdk_time_init();
 	#if ITSDK_WDG_MS > 0
 	  wdg_setupWithMaxMs(ITSDK_WDG_MS);
+	#endif
+	#if ITSDK_WITH_SECURESTORE == __ENABLE
+	  // Init the secure store if not yet initialized
+	  if ( itsdk_secstore_isInit() != SS_SUCCESS ) {
+		  itsdk_secstore_init();
+	  }
 	#endif
 	project_setup();
 

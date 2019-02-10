@@ -38,6 +38,10 @@
 #include <drivers/lorawan/phy/radio.h>
 #include <it_sdk/lorawan/lorawan.h>
 
+#if ITSDK_WITH_SECURESTORE == __ENABLE
+#include <it_sdk/eeprom/securestore.h>
+#endif
+
 
 // =================================================================================
 // INIT
@@ -58,6 +62,10 @@ itsdk_lorawan_init_t itsdk_lorawan_setup(uint16_t region, itsdk_lorawan_channelI
 	itsdk_lorawan_getDeviceEUI(devEui);
 	itsdk_lorawan_getAppEUI(appEui);
 	itsdk_lorawan_getAppKEY(appKey);
+
+	log_info_array("DEV :",devEui,8);
+	log_info_array("APP :",appEui,8);
+	log_info_array("KEY :",appKey,16);
 
 	Radio.IoInit();
 
@@ -390,8 +398,25 @@ __weak itsdk_lorawan_return_t itsdk_lorawan_getDeviceId(uint64_t * devId) {
  */
 __weak itsdk_lorawan_return_t itsdk_lorawan_getDeviceEUI(uint8_t * devEui){
 	LOG_INFO_LORAWANSTK(("itsdk_lorawan_getDeviceEUI\r\n"));
-	uint8_t d[8] = ITSDK_LORAWAN_DEVEUI;
-	bcopy(d,devEui,8);
+	#if ITSDK_WITH_SECURESTORE == __ENABLE
+		uint8_t d[8];
+		uint8_t buffer[16];
+		if ( itsdk_secstore_readBlock(ITSDK_SS_LORA_OTAA_DEVEUIAPPEUI, buffer) != SS_SUCCESS ) {
+			uint8_t de[8] = ITSDK_LORAWAN_DEVEUI;
+			uint8_t ap[8] = ITSDK_LORAWAN_APPEUI;
+			for ( int i = 0 ; i< 8 ; i++) {
+				buffer[ITSDK_SECSTORE_OTAA_DEV_ID+i] = de[i];
+				buffer[ITSDK_SECSTORE_OTAA_APP_ID+i] = ap[i];
+				d[i] = de[i];
+			}
+			itsdk_secstore_writeBlock(ITSDK_SS_LORA_OTAA_DEVEUIAPPEUI, buffer);
+		} else {
+			memcpy(d,buffer,8);
+		}
+	#else
+		uint8_t d[8] = ITSDK_LORAWAN_DEVEUI;
+	#endif
+	memcpy(devEui,d,8);
 	return LORAWAN_RETURN_SUCESS;
 }
 
@@ -400,8 +425,25 @@ __weak itsdk_lorawan_return_t itsdk_lorawan_getDeviceEUI(uint8_t * devEui){
  */
 __weak itsdk_lorawan_return_t itsdk_lorawan_getAppEUI(uint8_t * appEui){
 	LOG_INFO_LORAWANSTK(("itsdk_lorawan_getAppEUI\r\n"));
+#if ITSDK_WITH_SECURESTORE == __ENABLE
+	uint8_t d[8];
+	uint8_t buffer[16];
+	if ( itsdk_secstore_readBlock(ITSDK_SS_LORA_OTAA_DEVEUIAPPEUI, buffer) != SS_SUCCESS ) {
+		uint8_t de[8] = ITSDK_LORAWAN_DEVEUI;
+		uint8_t ap[8] = ITSDK_LORAWAN_APPEUI;
+		for ( int i = 0 ; i< 8 ; i++) {
+			buffer[ITSDK_SECSTORE_OTAA_DEV_ID+i] = de[i];
+			buffer[ITSDK_SECSTORE_OTAA_APP_ID+i] = ap[i];
+			d[i] = ap[i];
+		}
+		itsdk_secstore_writeBlock(ITSDK_SS_LORA_OTAA_DEVEUIAPPEUI, buffer);
+	} else {
+		memcpy(d,buffer+8,8);
+	}
+#else
 	uint8_t d[8] = ITSDK_LORAWAN_APPEUI;
-	bcopy(d,appEui,8);
+#endif
+	memcpy(appEui,d,8);
 	return LORAWAN_RETURN_SUCESS;
 }
 
@@ -410,8 +452,17 @@ __weak itsdk_lorawan_return_t itsdk_lorawan_getAppEUI(uint8_t * appEui){
  */
 __weak itsdk_lorawan_return_t itsdk_lorawan_getAppKEY(uint8_t * appKey){
 	LOG_INFO_LORAWANSTK(("itsdk_lorawan_getAppKEY\r\n"));
+#if ITSDK_WITH_SECURESTORE == __ENABLE
+	uint8_t d[16];
+	if ( itsdk_secstore_readBlock(ITSDK_SS_LORA_OTAA_APPKEY, d) != SS_SUCCESS ) {
+		uint8_t de[16] = ITSDK_LORAWAN_APPKEY;
+		memcpy(d,de,16);
+		itsdk_secstore_writeBlock(ITSDK_SS_LORA_OTAA_APPKEY, de);
+	}
+#else
 	uint8_t d[16] = ITSDK_LORAWAN_APPKEY;
-	bcopy(d,appKey,16);
+#endif
+	memcpy(appKey,d,16);
 	return LORAWAN_RETURN_SUCESS;
 }
 
@@ -477,7 +528,16 @@ void itsdk_lorawan_loop() {
  * to return a dynamic value
  */
 __weak  itsdk_lorawan_return_t itsdk_lorawan_aes_getNonce(uint8_t * nonce) {
+#if ITSDK_WITH_SECURESTORE == __ENABLE
+	uint8_t d[16];
+	if ( itsdk_secstore_readBlock(ITSDK_SS_AES_SHARED_NONCE_SPECKKEY, d) != SS_SUCCESS ) {
+		*nonce = ITSDK_LORAWAN_AES_INITALNONCE;
+	} else {
+		*nonce = d[ITSDK_SECSTORE_CRYPT_NONCE_ID];
+	}
+#else
 	*nonce = ITSDK_LORAWAN_AES_INITALNONCE;
+#endif
 	return LORAWAN_RETURN_SUCESS;
 }
 
@@ -486,7 +546,19 @@ __weak  itsdk_lorawan_return_t itsdk_lorawan_aes_getNonce(uint8_t * nonce) {
  * to return a dynamic value
  */
 __weak  itsdk_lorawan_return_t itsdk_lorawan_aes_getSharedKey(uint32_t * sharedKey) {
+#if ITSDK_WITH_SECURESTORE == __ENABLE
+	uint8_t d[16];
+	if ( itsdk_secstore_readBlock(ITSDK_SS_AES_SHARED_NONCE_SPECKKEY, d) != SS_SUCCESS ) {
+		*sharedKey = ITSDK_LORAWAN_AES_SHAREDKEY;
+	} else {
+		*sharedKey = 0;
+		for (int i = 0 ; i<4 ; i++) {
+			*sharedKey = (*sharedKey)*256 + d[ITSDK_SECSTORE_CRYPT_SHARED_ID+i];
+		}
+	}
+#else
 	*sharedKey = ITSDK_LORAWAN_AES_SHAREDKEY;
+#endif
 	return LORAWAN_RETURN_SUCESS;
 }
 
@@ -496,16 +568,22 @@ __weak  itsdk_lorawan_return_t itsdk_lorawan_aes_getSharedKey(uint32_t * sharedK
  * to return a dynamic value when needed
  */
 __weak  itsdk_lorawan_return_t itsdk_lorawan_aes_getMasterKey(uint8_t * masterKey) {
-	uint64_t h = ITSDK_LORAWAN_AES_MASTERKEYH;
-	uint64_t l = ITSDK_LORAWAN_AES_MASTERKEYL;
+#if ITSDK_WITH_SECURESTORE == __ENABLE
 	uint8_t tmp[16];
-	for ( int i = 0 ; i < 8 ; i++) {
-		tmp[i] = (h >> ((8-i)*8-8)) & 0xFF;
+	if ( itsdk_secstore_readBlock(ITSDK_SS_AES_MASTERK, tmp) != SS_SUCCESS ) {
+#endif
+		uint64_t h = ITSDK_LORAWAN_AES_MASTERKEYH;
+		uint64_t l = ITSDK_LORAWAN_AES_MASTERKEYL;
+		for ( int i = 0 ; i < 8 ; i++) {
+			tmp[i] = (h >> ((8-i)*8-8)) & 0xFF;
+		}
+		for ( int i = 0 ; i < 8 ; i++) {
+			tmp[8+i] = (l >> ((8-i)*8-8)) & 0xFF;
+		}
+#if ITSDK_WITH_SECURESTORE == __ENABLE
 	}
-	for ( int i = 0 ; i < 8 ; i++) {
-		tmp[8+i] = (l >> ((8-i)*8-8)) & 0xFF;
-	}
-	bcopy((void *)tmp,(void *)masterKey,16);
+#endif
+	memcpy(masterKey,tmp,16);
 	return LORAWAN_RETURN_SUCESS;
 }
 
@@ -514,7 +592,19 @@ __weak  itsdk_lorawan_return_t itsdk_lorawan_aes_getMasterKey(uint8_t * masterKe
  * ro return a dynamic value when needed
  */
 __weak  itsdk_lorawan_return_t itsdk_lorawan_speck_getMasterKey(uint64_t * masterKey) {
+#if ITSDK_WITH_SECURESTORE == __ENABLE
+	uint8_t d[16];
+	if ( itsdk_secstore_readBlock(ITSDK_SS_AES_SHARED_NONCE_SPECKKEY, d) != SS_SUCCESS ) {
+		*masterKey = ITSDK_LORAWAN_SPECKKEY;
+	} else {
+		*masterKey = 0;
+		for (int i = 0 ; i<8 ; i++) {
+			*masterKey = (*masterKey)*256 + d[ITSDK_SECSTORE_CRYPT_SPECK_ID+i];
+		}
+	}
+#else
 	*masterKey = ITSDK_LORAWAN_SPECKKEY;
+#endif
 	return LORAWAN_RETURN_SUCESS;
 }
 
