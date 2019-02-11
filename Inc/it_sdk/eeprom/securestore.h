@@ -143,7 +143,7 @@ itsdk_secStoreReturn_e itsdk_secstore_init();
 itsdk_secStoreReturn_e itsdk_secstore_isInit();
 itsdk_secStoreReturn_e itsdk_secstore_writeBlock(itsdk_secStoreBlocks_e blockType, uint8_t * buffer);
 itsdk_secStoreReturn_e itsdk_secstore_readBlock(itsdk_secStoreBlocks_e blockType, uint8_t * buffer);
-
+itsdk_secStoreReturn_e itsdk_secStore_RegisterConsole();
 // ----------------------------
 // Function to Override
 void itsdk_secstore_generateMasterKey(uint8_t * dynamicKey,uint8_t * masterKey);

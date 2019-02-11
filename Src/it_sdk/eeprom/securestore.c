@@ -48,6 +48,9 @@
 #include <it_sdk/encrypt/encrypt.h>
 #include <string.h>
 
+#if ITSDK_WITH_CONSOLE == __ENABLE
+#include <it_sdk/console/console.h>
+#endif
 
 
 /**
@@ -355,6 +358,7 @@ itsdk_secStoreReturn_e itsdk_secstore_writeBlock(itsdk_secStoreBlocks_e blockTyp
 }
 
 
+
 /**
  * Init the Secure Store - create the store structure with the default values
  */
@@ -387,6 +391,496 @@ itsdk_secStoreReturn_e itsdk_secstore_isInit() {
 	itsdk_secStoreHead_t	_head;
 	// Control header validity
 	return _itsdk_secstore_controlHeader(&_head);
+}
+
+
+// ===========================================================================================
+// CONSOLE EXTENSION
+// ===========================================================================================
+
+#if ITSDK_WITH_CONSOLE == __ENABLE
+
+#define __console_print_hex(b,off,sz) {												\
+								   	    for ( int __i = off; __i<off+sz ; __i++ ) {	\
+										     _itsdk_console_printf("%02X",b[__i]);	\
+									    }											\
+									    _itsdk_console_printf("\r\n");				\
+								      }
+
+/**
+ * Write a block with a specified MasterKey
+ */
+static itsdk_secStoreReturn_e _itsdk_secstore_writeBlockKey(itsdk_secStoreBlocks_e blockType, uint8_t * buffer, uint8_t * masterKey) {
+
+	// Control the blockId validity
+	uint32_t _offset = 0;
+	uint8_t  _id = 0;
+	if ( _itsdk_secstore_getOffset(&_offset,&_id, blockType) != SS_SUCCESS ) return SS_FAILED_NOTEXISTING;
+
+	// Encode with AES-128
+	itsdk_aes_ecb_encrypt_128B(buffer,buffer,ITSDK_SECSTORE_BLOCKSZ,masterKey);
+
+	// Write block
+	_eeprom_write(ITDT_EEPROM_BANK0, ITSDK_SECSTORE_EEPROM_OFFSET+_offset, (void *) buffer, ITSDK_SECSTORE_BLOCKSZ);
+
+	return SS_SUCCESS;
+}
+
+
+/**
+ * Change the dyn key and update all the encrypted elements
+ */
+static itsdk_console_return_e _itsk_secstore_rekey(uint8_t * newKey){
+
+	itsdk_secStoreHead_t	_head;
+	uint8_t _b[ITSDK_SECSTORE_BLOCKSZ];
+
+	// Control Header validity & load previous header
+	if ( _itsdk_secstore_controlHeader(&_head) != SS_SUCCESS ) {
+		_itsdk_console_printf("KO\r\n");
+		return ITSDK_CONSOLE_FAILED;
+	}
+
+	// Generate the Master key
+	uint8_t masterKey[16];
+	itsdk_secstore_generateMasterKey(newKey,masterKey);
+
+	if ( itsdk_secstore_readBlock(ITSDK_SS_CONSOLEKEY, _b) != SS_FAILED_NOTSET ) {
+		_itsdk_secstore_writeBlockKey(ITSDK_SS_CONSOLEKEY,_b,masterKey);
+	}
+#if defined(ITSDK_WITH_SIGFOX_LIB) && ITSDK_WITH_SIGFOX_LIB == __ENABLE
+	if ( itsdk_secstore_readBlock(ITSDK_SS_SIGFOXKEY, _b) != SS_FAILED_NOTSET ) {
+		_itsdk_secstore_writeBlockKey(ITSDK_SS_SIGFOXKEY,_b,masterKey);
+	}
+#endif
+#if defined(ITSDK_WITH_LORAWAN_LIB) && ITSDK_WITH_LORAWAN_LIB == __ENABLE
+	// we have more ABP in the UNION ...
+	if ( itsdk_secstore_readBlock(ITSDK_SS_LORA_ABP_NETIDDEVID, _b) != SS_FAILED_NOTSET ) {
+		_itsdk_secstore_writeBlockKey(ITSDK_SS_LORA_ABP_NETIDDEVID,_b,masterKey);
+	}
+
+	if ( itsdk_secstore_readBlock(ITSDK_SS_LORA_ABP_NETKEYF, _b) != SS_FAILED_NOTSET ) {
+		_itsdk_secstore_writeBlockKey(ITSDK_SS_LORA_ABP_NETKEYF,_b,masterKey);
+	}
+
+	if ( itsdk_secstore_readBlock(ITSDK_SS_LORA_ABP_NETKEYS, _b) != SS_FAILED_NOTSET ) {
+		_itsdk_secstore_writeBlockKey(ITSDK_SS_LORA_ABP_NETKEYS,_b,masterKey);
+	}
+
+	if ( itsdk_secstore_readBlock(ITSDK_SS_LORA_ABP_NETSKEY, _b) != SS_FAILED_NOTSET ) {
+		_itsdk_secstore_writeBlockKey(ITSDK_SS_LORA_ABP_NETSKEY,_b,masterKey);
+	}
+
+	if ( itsdk_secstore_readBlock(ITSDK_SS_LORA_ABP_APPSKEY, _b) != SS_FAILED_NOTSET ) {
+		_itsdk_secstore_writeBlockKey(ITSDK_SS_LORA_ABP_APPSKEY,_b,masterKey);
+	}
+
+	// ITSDK_SS_LORA_OTAA_DEVEUIAPPEUI
+	// ITSDK_SS_LORA_OTAA_APPKEY
+	// ITSDK_SS_LORA_OTAA_NWKKEY
+#endif
+#if ( defined(ITSDK_SIGFOX_ENCRYPTION) && ( ITSDK_SIGFOX_ENCRYPTION & __PAYLOAD_ENCRYPT_AESCTR ) > 0 ) || ( defined(ITSDK_LORAWAN_ENCRYPTION) && (( ITSDK_LORAWAN_ENCRYPTION & __PAYLOAD_ENCRYPT_AESCTR ) > 0) )
+	if ( itsdk_secstore_readBlock(ITSDK_SS_AES_MASTERK, _b) != SS_FAILED_NOTSET ) {
+		_itsdk_secstore_writeBlockKey(ITSDK_SS_AES_MASTERK,_b,masterKey);
+	}
+#endif
+#if ( defined(ITSDK_SIGFOX_ENCRYPTION) && ( ITSDK_SIGFOX_ENCRYPTION > 0 )) || ( defined(ITSDK_LORAWAN_ENCRYPTION) && ( ITSDK_LORAWAN_ENCRYPTION > 0 ))
+	if ( itsdk_secstore_readBlock(ITSDK_SS_AES_SHARED_NONCE_SPECKKEY, _b) != SS_FAILED_NOTSET ) {
+		_itsdk_secstore_writeBlockKey(ITSDK_SS_AES_SHARED_NONCE_SPECKKEY,_b,masterKey);
+	}
+#endif
+#if ITSDK_SECSTORE_USRBLOCK >= 1
+	if ( itsdk_secstore_readBlock(ITSDK_SS_USER0, _b) != SS_FAILED_NOTSET ) {
+		_itsdk_secstore_writeBlockKey(ITSDK_SS_USER0,_b,masterKey);
+	}
+#endif
+#if ITSDK_SECSTORE_USRBLOCK >= 2
+	if ( itsdk_secstore_readBlock(ITSDK_SS_USER1, _b) != SS_FAILED_NOTSET ) {
+		_itsdk_secstore_writeBlockKey(ITSDK_SS_USER1,_b,masterKey);
+	}
+#endif
+#if ITSDK_SECSTORE_USRBLOCK >= 3
+	if ( itsdk_secstore_readBlock(ITSDK_SS_USER2, _b) != SS_FAILED_NOTSET ) {
+		_itsdk_secstore_writeBlockKey(ITSDK_SS_USER2,_b,masterKey);
+	}
+#endif
+#if ITSDK_SECSTORE_USRBLOCK >= 4
+	if ( itsdk_secstore_readBlock(ITSDK_SS_USER3, _b) != SS_FAILED_NOTSET ) {
+		_itsdk_secstore_writeBlockKey(ITSDK_SS_USER3,_b,masterKey);
+	}
+#endif
+#if ITSDK_SECSTORE_USRBLOCK >= 5
+	if ( itsdk_secstore_readBlock(ITSDK_SS_USER4, _b) != SS_FAILED_NOTSET ) {
+		_itsdk_secstore_writeBlockKey(ITSDK_SS_USER4,_b,masterKey);
+	}
+#endif
+#if ITSDK_SECSTORE_USRBLOCK >= 6
+	if ( itsdk_secstore_readBlock(ITSDK_SS_USER5, _b) != SS_FAILED_NOTSET ) {
+		_itsdk_secstore_writeBlockKey(ITSDK_SS_USER5,_b,masterKey);
+	}
+#endif
+#if ITSDK_SECSTORE_USRBLOCK >= 7
+	if ( itsdk_secstore_readBlock(ITSDK_SS_USER6, _b) != SS_FAILED_NOTSET ) {
+		_itsdk_secstore_writeBlockKey(ITSDK_SS_USER6,_b,masterKey);
+	}
+#endif
+#if ITSDK_SECSTORE_USRBLOCK >= 8
+	if ( itsdk_secstore_readBlock(ITSDK_SS_USER7, _b) != SS_FAILED_NOTSET ) {
+		_itsdk_secstore_writeBlockKey(ITSDK_SS_USER7,_b,masterKey);
+	}
+#endif
+
+	// Write Header
+	for ( int i = 0 ; i < 12 ; i++) {
+		_head.dynamicKey[i] = newKey[i];
+	}
+	_eeprom_write(ITDT_EEPROM_BANK0, ITSDK_SECSTORE_EEPROM_OFFSET, (void *) &_head, sizeof(itsdk_secStoreHead_t));
+	_itsdk_console_printf("OK\r\n");
+	return ITSDK_CONSOLE_SUCCES;
+}
+
+/**
+ * convert and verify a char * hex string into a uint8_t array
+ * verify : size of the string regarding the sz
+ * verify : format of the char to match Hex number
+ */
+static bool __checkAndConvert(char * str,uint8_t start,uint8_t stop,uint8_t sz,uint8_t * buf) {
+	if ( (stop - start) < 2*sz ) return false;
+	int k = 0;
+	for ( int i = start ; i < stop ; i+=2 ) {
+		if ( itdt_isHexChar(str[i],false) && itdt_isHexChar(str[i+1],false) ) {
+			buf[k] = itdt_convertHexChar2Int(&str[i]);
+			k++;
+		} else return false;
+	}
+	return true;
+}
+
+static itsdk_console_return_e __updateField(char * buffer, uint8_t sz, uint8_t *b, itsdk_secStoreBlocks_e type) {
+	if ( __checkAndConvert(buffer,5,sz,16,b) ) {
+		if ( itsdk_secstore_writeBlock(type, b) == SS_SUCCESS ) {
+			_itsdk_console_printf("OK\r\n");
+			return ITSDK_CONSOLE_SUCCES;
+		} else {
+			_itsdk_console_printf("KO\r\n");
+			return ITSDK_CONSOLE_FAILED;
+		}
+	} else {
+		_itsdk_console_printf("KO\r\n");
+		return ITSDK_CONSOLE_FAILED;
+	}
+}
+
+static itsdk_console_return_e __updateField2(char * buffer, uint8_t sz, uint8_t *b, itsdk_secStoreBlocks_e type, uint8_t offset,uint8_t size) {
+	if ( __checkAndConvert(buffer,5,sz,size,b) ) {
+		uint8_t _b[ITSDK_SECSTORE_BLOCKSZ];
+		if ( itsdk_secstore_readBlock(type, _b) != SS_SUCCESS ) {
+			_itsdk_console_printf("KO\r\n");
+			return ITSDK_CONSOLE_FAILED;
+		}
+		for ( int i = 0 ; i < size ; i++) {
+			_b[i+offset] = b[i];
+		}
+		if ( itsdk_secstore_writeBlock(type, _b) == SS_SUCCESS ) {
+			_itsdk_console_printf("OK\r\n");
+			return ITSDK_CONSOLE_SUCCES;
+		} else {
+			_itsdk_console_printf("KO\r\n");
+			return ITSDK_CONSOLE_FAILED;
+		}
+	} else {
+		_itsdk_console_printf("KO\r\n");
+		return ITSDK_CONSOLE_FAILED;
+	}
+}
+
+/**
+ * Extends the console function
+ */
+static itsdk_console_return_e _itsdk_secStore_consolePriv(char * buffer, uint8_t sz) {
+	if ( sz == 1 ) {
+		switch(buffer[0]){
+		case '?':
+			// help
+			_itsdk_console_printf("--- SecureStore\r\n");
+			_itsdk_console_printf("SS:0:xxxx  : change the secure store dyn Key (12B)\r\n");
+			_itsdk_console_printf("SS:1:xxxx  : change the console password (max 15 char)\r\n");
+		 #if defined(ITSDK_WITH_SIGFOX_LIB) && ITSDK_WITH_SIGFOX_LIB == __ENABLE
+			_itsdk_console_printf("SS:2:xxxx  : change the sigfox key (16B hex)\r\n");
+		 #endif
+		 #if defined(ITSDK_WITH_LORAWAN_LIB) && ITSDK_WITH_LORAWAN_LIB == __ENABLE
+			_itsdk_console_printf("ss:3       : LoRa ABP print NetworkID\r\n");
+			_itsdk_console_printf("SS:3:xxxx  : LoRa ABP change NetworkID (8B hex)\r\n");
+			_itsdk_console_printf("ss:4       : LoRa ABP print DevID\r\n");
+			_itsdk_console_printf("SS:4:xxxx  : LoRa ABP change DevID (8B hex)\r\n");
+			_itsdk_console_printf("SS:5:xxxx  : LoRa ABP change Forwarding Network K (16B hex)\r\n");
+			_itsdk_console_printf("SS:6:xxxx  : LoRa ABP change Serving Network K (16B hex)\r\n");
+			_itsdk_console_printf("SS:7:xxxx  : LoRa ABP change Session Network K (16B hex)\r\n");
+			_itsdk_console_printf("SS:8:xxxx  : LoRa ABP change Session Application K (16B hex)\r\n");
+			_itsdk_console_printf("ss:9       : LoRa OTAA print DevEUI (8B hex)\r\n");
+			_itsdk_console_printf("SS:9:xxxx  : LoRa OTAA change DevEUI (8B hex)\r\n");
+			_itsdk_console_printf("ss:A       : LoRa OTAA print AppEUI (8B hex)\r\n");
+			_itsdk_console_printf("SS:A:xxxx  : LoRa OTAA change AppEUI (8B hex)\r\n");
+			_itsdk_console_printf("SS:B:xxxx  : LoRa OTAA change AppKey (16B hex)\r\n");
+			_itsdk_console_printf("SS:C:xxxx  : LoRa OTAA change NwkKey (16B hex)\r\n");
+		  #endif
+		  #if ( defined(ITSDK_SIGFOX_ENCRYPTION) && ( ITSDK_SIGFOX_ENCRYPTION & __PAYLOAD_ENCRYPT_AESCTR ) > 0 ) || ( defined(ITSDK_LORAWAN_ENCRYPTION) && (( ITSDK_LORAWAN_ENCRYPTION & __PAYLOAD_ENCRYPT_AESCTR ) > 0) )
+			_itsdk_console_printf("SS:E:xxxx  : Encrypt change AES Master Key (16B hex)\r\n");
+		  #endif
+		  #if ( defined(ITSDK_SIGFOX_ENCRYPTION) && ( ITSDK_SIGFOX_ENCRYPTION > 0 )) || ( defined(ITSDK_LORAWAN_ENCRYPTION) && ( ITSDK_LORAWAN_ENCRYPTION > 0 ))
+			_itsdk_console_printf("SS:F:xxxx  : Encrypt change Shared Key (4B hex)\r\n");
+			_itsdk_console_printf("SS:G:xxxx  : Encrypt change Nonce (1B hex)\r\n");
+			_itsdk_console_printf("SS:H:xxxx  : Encrypt change Speck Key (8B hex)\r\n");
+		  #endif
+		  #if ITSDK_SECSTORE_USRBLOCK >= 1
+			_itsdk_console_printf("SS:I:xxxx  : User changer key 0 (16B hex)\r\n");
+		  #endif
+ 		  #if ITSDK_SECSTORE_USRBLOCK >= 2
+			_itsdk_console_printf("ss:J       : User print key 1 (16B)\r\n");
+			_itsdk_console_printf("SS:J:xxxx  : User changer key 1 (16B hex)\r\n");
+		  #endif
+		  #if ITSDK_SECSTORE_USRBLOCK >= 3
+			_itsdk_console_printf("SS:K:xxxx  : User changer key 2 (16B hex)\r\n");
+		  #endif
+ 	 	  #if ITSDK_SECSTORE_USRBLOCK >= 4
+			_itsdk_console_printf("SS:L:xxxx  : User changer key 3 (16B hex)\r\n");
+		  #endif
+ 		  #if ITSDK_SECSTORE_USRBLOCK >= 5
+			_itsdk_console_printf("SS:M:xxxx  : User changer key 4 (16B hex)\r\n");
+		  #endif
+		  #if ITSDK_SECSTORE_USRBLOCK >= 6
+			_itsdk_console_printf("SS:N:xxxx  : User changer key 5 (16B hex)\r\n");
+		  #endif
+		  #if ITSDK_SECSTORE_USRBLOCK >= 7
+			_itsdk_console_printf("SS:O:xxxx  : User changer key 6 (16B hex)\r\n");
+		  #endif
+		  #if ITSDK_SECSTORE_USRBLOCK >= 8
+			_itsdk_console_printf("SS:P:xxxx  : User changer key 7 (16B hex)\r\n");
+		  #endif
+		  return ITSDK_CONSOLE_SUCCES;
+		  break;
+		default:
+			break;
+		}
+	} else if ( sz >= 4 ) {
+		uint8_t b[ITSDK_SECSTORE_BLOCKSZ];
+		// READ CASE
+		if ( buffer[0] == 's' && buffer[1] == 's' && buffer[2] == ':' ) {
+			switch(buffer[3]) {
+			  #if defined(ITSDK_WITH_LORAWAN_LIB) && ITSDK_WITH_LORAWAN_LIB == __ENABLE
+			  case '3':
+				  // ITSDK_SS_LORA_ABP_NETIDDEVID
+				  if ( itsdk_secstore_readBlock(ITSDK_SS_LORA_ABP_NETIDDEVID, b) == SS_SUCCESS ) {
+					  __console_print_hex(b,0,8);
+					  return ITSDK_CONSOLE_SUCCES;
+				  } else {
+					  _itsdk_console_printf("KO\r\n");
+					  return ITSDK_CONSOLE_FAILED;
+				  }
+			  case '4':
+				  // ITSDK_SS_LORA_ABP_NETIDDEVID
+				  if ( itsdk_secstore_readBlock(ITSDK_SS_LORA_ABP_NETIDDEVID, b) == SS_SUCCESS ) {
+					  __console_print_hex(b,8,8);
+					  return ITSDK_CONSOLE_SUCCES;
+				  } else {
+					  _itsdk_console_printf("KO\r\n");
+					  return ITSDK_CONSOLE_FAILED;
+				  }
+			  case '9':
+				  // ITSDK_SS_LORA_OTAA_DEVEUIAPPEUI
+				  if ( itsdk_secstore_readBlock(ITSDK_SS_LORA_OTAA_DEVEUIAPPEUI, b) == SS_SUCCESS ) {
+					  __console_print_hex(b,0,8);
+					  return ITSDK_CONSOLE_SUCCES;
+				  } else {
+					  _itsdk_console_printf("KO\r\n");
+					  return ITSDK_CONSOLE_FAILED;
+				  }
+			  case 'A':
+			  case 'a':
+				  // ITSDK_SS_LORA_OTAA_DEVEUIAPPEUI
+				  if ( itsdk_secstore_readBlock(ITSDK_SS_LORA_OTAA_DEVEUIAPPEUI, b) == SS_SUCCESS ) {
+					  __console_print_hex(b,8,8);
+					  return ITSDK_CONSOLE_SUCCES;
+				  } else {
+					  _itsdk_console_printf("KO\r\n");
+					  return ITSDK_CONSOLE_FAILED;
+				  }
+				  return ITSDK_CONSOLE_SUCCES;
+			  #endif
+			  #if ITSDK_SECSTORE_USRBLOCK >= 2
+			  case 'J':
+			  case 'j':
+				  // ITSDK_SS_USER1
+				  if ( itsdk_secstore_readBlock(ITSDK_SS_USER1, b) == SS_SUCCESS ) {
+					  __console_print_hex(b,16);
+					  return ITSDK_CONSOLE_SUCCES;
+				  } else {
+					  _itsdk_console_printf("KO\r\n");
+					  return ITSDK_CONSOLE_FAILED;
+				  }
+				  return ITSDK_CONSOLE_SUCCES;
+			  #endif
+			  default:
+				  break;
+			}
+		}
+		// WRITE CASE
+		if ( buffer[0] == 'S' && buffer[1] == 'S' && buffer[2] == ':' && buffer[4] == ':' ) {
+			int ssz = sz-5;
+			switch(buffer[3]) {
+			case '0':
+				// DYNKEY
+				if ( __checkAndConvert(buffer,5,sz,12,b) ) {
+					return _itsk_secstore_rekey(b);
+				} else {
+					_itsdk_console_printf("KO\r\n");
+					return ITSDK_CONSOLE_FAILED;
+				}
+			case '1':
+				// ITSDK_SS_CONSOLEKEY
+				if ( ssz > 15 ) {
+					  _itsdk_console_printf("KO\r\n");
+					  return ITSDK_CONSOLE_FAILED;
+				}
+				for ( int i = 0 ; i < ssz ; i++) {
+					b[i] = buffer[i+5];
+				}
+				for ( int i = ssz ; i < ITSDK_SECSTORE_BLOCKSZ ; i++) {
+					b[i] = 0;
+				}
+				if ( itsdk_secstore_writeBlock(ITSDK_SS_CONSOLEKEY, b) == SS_SUCCESS ) {
+					_itsdk_console_printf("OK\r\n");
+					return ITSDK_CONSOLE_SUCCES;
+				} else {
+					_itsdk_console_printf("KO\r\n");
+					return ITSDK_CONSOLE_FAILED;
+				}
+				return ITSDK_CONSOLE_SUCCES;
+	#if defined(ITSDK_WITH_SIGFOX_LIB) && ITSDK_WITH_SIGFOX_LIB == __ENABLE
+			case '2':
+				// ITSDK_SS_SIGFOXKEY
+				return __updateField(buffer, sz, b, ITSDK_SS_SIGFOXKEY);
+	#endif
+	#if defined(ITSDK_WITH_LORAWAN_LIB) && ITSDK_WITH_LORAWAN_LIB == __ENABLE
+			case '3':
+				// ITSDK_SS_LORA_ABP_NETIDDEVID
+				return __updateField2(buffer,sz,b,ITSDK_SS_LORA_ABP_NETIDDEVID,0,8);
+			case '4':
+				// ITSDK_SS_LORA_ABP_NETIDDEVID
+				return __updateField2(buffer,sz,b,ITSDK_SS_LORA_ABP_NETIDDEVID,8,8);
+			case '5':
+				// ITSDK_SS_LORA_ABP_NETKEYF
+				return __updateField(buffer, sz, b, ITSDK_SS_LORA_ABP_NETKEYF);
+			case '6':
+				// ITSDK_SS_LORA_ABP_NETKEYS
+				return __updateField(buffer, sz, b, ITSDK_SS_LORA_ABP_NETKEYS);
+			case '7':
+				// ITSDK_SS_LORA_ABP_NETSKEY
+				return __updateField(buffer, sz, b, ITSDK_SS_LORA_ABP_NETSKEY);
+			case '8':
+				// ITSDK_SS_LORA_ABP_APPSKEY
+				return __updateField(buffer, sz, b, ITSDK_SS_LORA_ABP_APPSKEY);
+			case '9':
+				// ITSDK_SS_LORA_OTAA_DEVEUIAPPEUI
+				return __updateField2(buffer,sz,b,ITSDK_SS_LORA_OTAA_DEVEUIAPPEUI,0,8);
+			case 'a':
+			case 'A':
+				// ITSDK_SS_LORA_OTAA_DEVEUIAPPEUI
+				return __updateField2(buffer,sz,b,ITSDK_SS_LORA_OTAA_DEVEUIAPPEUI,8,8);
+			case 'b':
+			case 'B':
+				// ITSDK_SS_LORA_OTAA_APPKEY
+				return __updateField(buffer, sz, b, ITSDK_SS_LORA_OTAA_APPKEY);
+			case 'c':
+			case 'C':
+				// ITSDK_SS_LORA_OTAA_NWKKEY
+				return __updateField(buffer, sz, b, ITSDK_SS_LORA_OTAA_NWKKEY);
+	#endif
+	#if ( defined(ITSDK_SIGFOX_ENCRYPTION) && ( ITSDK_SIGFOX_ENCRYPTION & __PAYLOAD_ENCRYPT_AESCTR ) > 0 ) || ( defined(ITSDK_LORAWAN_ENCRYPTION) && (( ITSDK_LORAWAN_ENCRYPTION & __PAYLOAD_ENCRYPT_AESCTR ) > 0) )
+			case 'e':
+			case 'E':
+				// ITSDK_SS_AES_MASTERK
+				return __updateField(buffer, sz, b, ITSDK_SS_AES_MASTERK);
+	#endif
+	#if ( defined(ITSDK_SIGFOX_ENCRYPTION) && ( ITSDK_SIGFOX_ENCRYPTION > 0 )) || ( defined(ITSDK_LORAWAN_ENCRYPTION) && ( ITSDK_LORAWAN_ENCRYPTION > 0 ))
+			case 'f':
+			case 'F':
+				// ITSDK_SS_AES_SHARED_NONCE_SPECKKEY
+				return __updateField2(buffer,sz,b,ITSDK_SS_AES_SHARED_NONCE_SPECKKEY,0,4);
+			case 'g':
+			case 'G':
+				// ITSDK_SS_AES_SHARED_NONCE_SPECKKEY
+				return __updateField2(buffer,sz,b,ITSDK_SS_AES_SHARED_NONCE_SPECKKEY,4,1);
+			case 'h':
+			case 'H':
+				// ITSDK_SS_AES_SHARED_NONCE_SPECKKEY
+				return __updateField2(buffer,sz,b,ITSDK_SS_AES_SHARED_NONCE_SPECKKEY,8,8);
+	#endif
+	#if ITSDK_SECSTORE_USRBLOCK >= 1
+			case 'i':
+			case 'I':
+				// ITSDK_SS_USER0
+				return __updateField(buffer, sz, b, ITSDK_SS_USER0);
+	#endif
+	 #if ITSDK_SECSTORE_USRBLOCK >= 2
+			case 'j':
+			case 'J':
+				// ITSDK_SS_USER1
+				return __updateField(buffer, sz, b, ITSDK_SS_USER1);
+	#endif
+	#if ITSDK_SECSTORE_USRBLOCK >= 3
+			case 'k':
+			case 'K':
+				// ITSDK_SS_USER2
+				return __updateField(buffer, sz, b, ITSDK_SS_USER2);
+	#endif
+	  #if ITSDK_SECSTORE_USRBLOCK >= 4
+			case 'l':
+			case 'L':
+				// ITSDK_SS_USER3
+				return __updateField(buffer, sz, b, ITSDK_SS_USER3);
+	#endif
+	#if ITSDK_SECSTORE_USRBLOCK >= 5
+			case 'm':
+			case 'M':
+				// ITSDK_SS_USER4
+				return __updateField(buffer, sz, b, ITSDK_SS_USER4);
+	#endif
+	#if ITSDK_SECSTORE_USRBLOCK >= 6
+			case 'n':
+			case 'N':
+				// ITSDK_SS_USER5
+				return __updateField(buffer, sz, b, ITSDK_SS_USER5);
+	#endif
+	#if ITSDK_SECSTORE_USRBLOCK >= 7
+			case 'o':
+			case 'O':
+				// ITSDK_SS_USER6
+				return __updateField(buffer, sz, b, ITSDK_SS_USER6);
+	#endif
+	#if ITSDK_SECSTORE_USRBLOCK >= 8
+			case 'p':
+			case 'P':
+				// ITSDK_SS_USER7
+				return __updateField(buffer, sz, b, ITSDK_SS_USER7);
+	#endif
+			} // switch
+		} // Write case end
+  } //Sz > 4
+  return ITSDK_CONSOLE_NOTFOUND;
+}
+static itsdk_console_chain_t __console_secStore;
+
+#endif // ITSDK_WITH_CONSOLE
+
+itsdk_secStoreReturn_e itsdk_secStore_RegisterConsole() {
+#if ITSDK_WITH_CONSOLE == __ENABLE
+	__console_secStore.console_private = _itsdk_secStore_consolePriv;
+	__console_secStore.console_public = NULL;
+	__console_secStore.next = NULL;
+	itsdk_console_registerCommand(&__console_secStore);
+#endif
+	return SS_SUCCESS;
 }
 
 

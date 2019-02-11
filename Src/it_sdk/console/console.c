@@ -33,6 +33,7 @@
 
 #include <it_sdk/config.h>
 #if ITSDK_WITH_CONSOLE == __ENABLE
+#include <it_sdk/itsdk.h>
 #include <it_sdk/console/console.h>
 #include <it_sdk/logger/logger.h>
 #include <it_sdk/wrappers.h>
@@ -133,8 +134,8 @@ static itsdk_console_return_e _itsdk_console_private(char * buffer, uint8_t sz) 
 		}
 	}
 	return ITSDK_CONSOLE_NOTFOUND;
-
 }
+
 static itsdk_console_return_e _itsdk_console_public(char * buffer, uint8_t sz) {
 
 	if ( sz == 1 ) {
@@ -177,6 +178,8 @@ void itsdk_console_setup() {
 	__console_head_chain.console_private = _itsdk_console_private;
 	__console_head_chain.console_public = _itsdk_console_public;
 	__console_head_chain.next = NULL;
+
+
 }
 
 
@@ -280,15 +283,19 @@ static void _itsdk_console_processLine() {
 			// Login Failed This can be a public operation request
 			itsdk_console_chain_t * c = &__console_head_chain;
 			itsdk_console_return_e  ret = ITSDK_CONSOLE_NOTFOUND;
+			itsdk_console_return_e  lret;
 			while ( c != NULL ) {
-			   switch ( c->console_public((char*)__console.serialBuffer,(uint8_t)__console.pBuffer) ) {
-				   case ITSDK_CONSOLE_SUCCES:
-				   case ITSDK_CONSOLE_FAILED:
-					   ret = ITSDK_CONSOLE_SUCCES;
-					   break;
-				   default:
-					   break;
-			   }
+				if ( c->console_public != NULL ) {
+  				   lret= c->console_public((char*)__console.serialBuffer,(uint8_t)__console.pBuffer);
+				   switch ( lret ) {
+					  case ITSDK_CONSOLE_SUCCES:
+					  case ITSDK_CONSOLE_FAILED:
+						  ret = ITSDK_CONSOLE_SUCCES;
+						  break;
+					  default:
+					      break;
+				   }
+				}
 			   c = c->next;
 			}
 			// Print the password prompt only when it was not a command
@@ -306,10 +313,33 @@ static void _itsdk_console_processLine() {
 
 			// Process command
 			itsdk_console_chain_t * c = &__console_head_chain;
+			itsdk_console_return_e  ret = ITSDK_CONSOLE_NOTFOUND;
+			itsdk_console_return_e  lret;
 			while ( c != NULL ) {
-			   c->console_public((char*)__console.serialBuffer,(uint8_t)__console.pBuffer);
-			   c->console_private((char*)__console.serialBuffer,(uint8_t)__console.pBuffer);
-			   c = c->next;
+			  if ( c->console_public != NULL ) {
+				  lret = c->console_public((char*)__console.serialBuffer,(uint8_t)__console.pBuffer);
+				  switch ( lret ) {
+					  case ITSDK_CONSOLE_SUCCES:
+					  case ITSDK_CONSOLE_FAILED:
+						  ret = ITSDK_CONSOLE_SUCCES;
+						  break;
+					  default:break;
+				   }
+			  }
+			  if ( c->console_private != NULL ) {
+				  lret = c->console_private((char*)__console.serialBuffer,(uint8_t)__console.pBuffer);
+				  switch ( lret ) {
+					  case ITSDK_CONSOLE_SUCCES:
+					  case ITSDK_CONSOLE_FAILED:
+						  ret = ITSDK_CONSOLE_SUCCES;
+						  break;
+					  default:break;
+				   }
+			  }
+			  c = c->next;
+			}
+			if ( ret == ITSDK_CONSOLE_NOTFOUND ) {
+				_itsdk_console_printf("KO\r\n");
 			}
 		}
 	}
@@ -345,6 +375,11 @@ static void _itsdk_console_processChar(char c) {
  */
 void itsdk_console_registerCommand(itsdk_console_chain_t * chain) {
 	itsdk_console_chain_t * c = &__console_head_chain;
+	if ( c->console_private != _itsdk_console_private ) {
+		log_error("[Console] setup console first!\r\n");
+		itsdk_error_handler(__FILE__, __LINE__);
+	}
+
 	while ( c->next != NULL && c->next != chain ) {
 	  c = c->next;
 	}

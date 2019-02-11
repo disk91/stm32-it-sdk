@@ -81,14 +81,15 @@ void itsdk_setup() {
 	#if ITSDK_WDG_MS > 0
 	  wdg_setupWithMaxMs(ITSDK_WDG_MS);
 	#endif
+	#if ITSDK_WITH_CONSOLE == __ENABLE
+	  itsdk_console_setup();
+	#endif
 	#if ITSDK_WITH_SECURESTORE == __ENABLE
 	  // Init the secure store if not yet initialized
-	  if ( itsdk_secstore_isInit() != SS_SUCCESS ) {
+	 // if ( itsdk_secstore_isInit() != SS_SUCCESS ) {
 		  itsdk_secstore_init();
-	  }
-	#endif
-    #if ITSDK_WITH_CONSOLE == __ENABLE
-	  itsdk_console_setup();
+	 // }
+	  itsdk_secStore_RegisterConsole();
 	#endif
 	project_setup();
 

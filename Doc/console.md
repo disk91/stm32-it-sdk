@@ -65,4 +65,32 @@ typedef enum {
 
 The console command are registered in the command chain with the **void itsdk_console_registerCommand(itsdk_console_chain_t * chain)** function. The corresponding chain will be added at end of the chain.
 
+## Console default commands
+The following list of commands are the one accessible once logged
+```
+--- Common
+?          : print help
+!          : print copyright
+v          : print version
+X          : exit console
+R          : reset device
+l / L      : switch LowPower ON / OFF
+c          : print device config
+s          : print device state
+t          : print current time in S
+T          : print current temperature in oC
+b          : print battery level
+B          : print VCC level
+r          : print last Reset Cause
+```
+
+This list is reduced when disconnected
+```
+--- Common
+?          : print help
+!          : print copyright
+v          : print version
+```
+
+
 
