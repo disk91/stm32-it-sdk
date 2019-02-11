@@ -87,6 +87,9 @@ void itsdk_setup() {
 		  itsdk_secstore_init();
 	  }
 	#endif
+    #if ITSDK_WITH_CONSOLE == __ENABLE
+	  itsdk_console_setup();
+	#endif
 	project_setup();
 
 }

@@ -26,3 +26,43 @@ void project_loop() {
 ## Password
 The password can be any char. The maximum size is 15 chars and it is ending by a 0.
 
+
+## Console behavior
+- Until the session is unlocked, the string __password:__ is print in the console after a carriage return or any invalid password.
+- Once the console is unlocked, the string __OK__ will be printed.
+- The console will print __OK__ when a command is correctly executed
+- The console will print __KO__ when a command is invalid or failed
+- The session will end after **ITSDK_CONSOLE_EXPIRE_S** seconds from the last received command and automaticalli lock. 
+
+## Console commands
+There are two groups of console commands:
+* The public command: they are accessible even if the console is locked
+* The private command: tehy are accessible only when the console is unlocked
+When a string is received in the console, the system will call a chain of operation processing. Any component of the SDK can register new actions to one of the two chains ( private and public ) this way the console code can be extended without modifying it. For this you define a static structure like the following one:
+
+```C
+typedef struct itsdk_console_chain_s {
+	itsdk_console_return_e (*console_private)(char * buffer, uint8_t sz);	// function to proceed operations when console is unlocked
+	itsdk_console_return_e (*console_public)(char * buffer, uint8_t sz);	// function to proceed operation whatever
+	struct itsdk_console_chain_s * next;									// next in chain
+} itsdk_console_chain_t;
+```
+
+- If one type of operation is not needed the corresponding function point will be NULL.
+- The function must not modify the buffer content: it will be pushed to the next function in the chain
+- Multiple function can respond to the same command. Like **?** command corresponding to help printing. Every function should add its help documentation as part of the chain. 
+- Make sure the same command will not have two distincts operations.
+- The size of the string is transmitted over _sz_ parameter. The string is ending with \0
+- The function returns the execution status of the function:
+
+```C
+typedef enum {
+	ITSDK_CONSOLE_SUCCES = 0,								// console command proceed with success
+	ITSDK_CONSOLE_NOTFOUND,									// console command corresponding to no operation
+	ITSDK_CONSOLE_FAILED									// console command corresponding to an operation but failed
+} itsdk_console_return_e;
+```
+
+The console command are registered in the command chain with the **void itsdk_console_registerCommand(itsdk_console_chain_t * chain)** function. The corresponding chain will be added at end of the chain.
+
+
