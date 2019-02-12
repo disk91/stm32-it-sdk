@@ -276,16 +276,16 @@ __weak void itsdk_secstore_generateMasterKey(uint8_t * dynamicKey,uint8_t * mast
 	itsdk_getUniqId(_devId,4);
 
 	for ( int i = 0 ; i < 16 ; i++ ) {
-		if ( i < 2 ) {
+		if ( i < 2 ) {											// 0, 1
 			masterKey[i] = _devId[i];
 			masterKey[i] ^= dynamicKey[i];
 			masterKey[i] += (ITSDK_PROTECT_KEY >> 9) & 0xFF;
-		} else if ( i < 14 ) {
-			masterKey[i] = dynamicKey[i];
+		} else if ( i < 14 ) {									// 2 .. 13
+			masterKey[i] = dynamicKey[i-2];
 			masterKey[i] ^= _devId[i & 3];
 			masterKey[i] ^= (ITSDK_PROTECT_KEY >> 13) & 0xFF;
 			masterKey[i] ^= masterKey[i-1];
-		} else {
+		} else {												 // 14 .. 15
 			masterKey[i] = _devId[3-(15-i)];
 			masterKey[i] ^= dynamicKey[i-5];
 			masterKey[i] -= (ITSDK_PROTECT_KEY >> 6) & 0xFF;
@@ -454,7 +454,7 @@ static itsdk_console_return_e _itsk_secstore_rekey(uint8_t * newKey){
 	}
 #endif
 #if defined(ITSDK_WITH_LORAWAN_LIB) && ITSDK_WITH_LORAWAN_LIB == __ENABLE
-	// we have more ABP in the UNION ...
+	// we have more ABP in the UNION when Staticly compiled
 	if ( itsdk_secstore_readBlock(ITSDK_SS_LORA_ABP_NETIDDEVID, _b) != SS_FAILED_NOTSET ) {
 		_itsdk_secstore_writeBlockKey(ITSDK_SS_LORA_ABP_NETIDDEVID,_b,masterKey);
 	}
@@ -474,6 +474,19 @@ static itsdk_console_return_e _itsk_secstore_rekey(uint8_t * newKey){
 	if ( itsdk_secstore_readBlock(ITSDK_SS_LORA_ABP_APPSKEY, _b) != SS_FAILED_NOTSET ) {
 		_itsdk_secstore_writeBlockKey(ITSDK_SS_LORA_ABP_APPSKEY,_b,masterKey);
 	}
+	#if (ITSDK_LORAWAN_ACTTYPE == __LORAWAN_ACTIVATION_DYNAMIC)
+	if ( itsdk_secstore_readBlock(ITSDK_SS_LORA_OTAA_DEVEUIAPPEUI, _b) != SS_FAILED_NOTSET ) {
+		_itsdk_secstore_writeBlockKey(ITSDK_SS_LORA_OTAA_DEVEUIAPPEUI,_b,masterKey);
+	}
+
+	if ( itsdk_secstore_readBlock(ITSDK_SS_LORA_OTAA_APPKEY, _b) != SS_FAILED_NOTSET ) {
+		_itsdk_secstore_writeBlockKey(ITSDK_SS_LORA_OTAA_APPKEY,_b,masterKey);
+	}
+
+	if ( itsdk_secstore_readBlock(ITSDK_SS_LORA_OTAA_NWKKEY, _b) != SS_FAILED_NOTSET ) {
+		_itsdk_secstore_writeBlockKey(ITSDK_SS_LORA_OTAA_NWKKEY,_b,masterKey);
+	}
+	#endif
 
 	// ITSDK_SS_LORA_OTAA_DEVEUIAPPEUI
 	// ITSDK_SS_LORA_OTAA_APPKEY
@@ -609,6 +622,7 @@ static itsdk_console_return_e _itsdk_secStore_consolePriv(char * buffer, uint8_t
 			_itsdk_console_printf("SS:2:xxxx  : change the sigfox key (16B hex)\r\n");
 		 #endif
 		 #if defined(ITSDK_WITH_LORAWAN_LIB) && ITSDK_WITH_LORAWAN_LIB == __ENABLE
+		   #if (ITSDK_LORAWAN_ACTTYPE == __LORAWAN_ACTIVATION_STATIC && ITSDK_LORAWAN_ACTIVATION == __LORAWAN_ABP) || ITSDK_LORAWAN_ACTTYPE == __LORAWAN_ACTIVATION_DYNAMIC
 			_itsdk_console_printf("ss:3       : LoRa ABP print NetworkID\r\n");
 			_itsdk_console_printf("SS:3:xxxx  : LoRa ABP change NetworkID (8B hex)\r\n");
 			_itsdk_console_printf("ss:4       : LoRa ABP print DevID\r\n");
@@ -617,12 +631,15 @@ static itsdk_console_return_e _itsdk_secStore_consolePriv(char * buffer, uint8_t
 			_itsdk_console_printf("SS:6:xxxx  : LoRa ABP change Serving Network K (16B hex)\r\n");
 			_itsdk_console_printf("SS:7:xxxx  : LoRa ABP change Session Network K (16B hex)\r\n");
 			_itsdk_console_printf("SS:8:xxxx  : LoRa ABP change Session Application K (16B hex)\r\n");
+		   #endif
+		   #if (ITSDK_LORAWAN_ACTTYPE == __LORAWAN_ACTIVATION_STATIC && ITSDK_LORAWAN_ACTIVATION == __LORAWAN_OTAA )  || ITSDK_LORAWAN_ACTTYPE == __LORAWAN_ACTIVATION_DYNAMIC
 			_itsdk_console_printf("ss:9       : LoRa OTAA print DevEUI (8B hex)\r\n");
 			_itsdk_console_printf("SS:9:xxxx  : LoRa OTAA change DevEUI (8B hex)\r\n");
 			_itsdk_console_printf("ss:A       : LoRa OTAA print AppEUI (8B hex)\r\n");
 			_itsdk_console_printf("SS:A:xxxx  : LoRa OTAA change AppEUI (8B hex)\r\n");
 			_itsdk_console_printf("SS:B:xxxx  : LoRa OTAA change AppKey (16B hex)\r\n");
 			_itsdk_console_printf("SS:C:xxxx  : LoRa OTAA change NwkKey (16B hex)\r\n");
+           #endif
 		  #endif
 		  #if ( defined(ITSDK_SIGFOX_ENCRYPTION) && ( ITSDK_SIGFOX_ENCRYPTION & __PAYLOAD_ENCRYPT_AESCTR ) > 0 ) || ( defined(ITSDK_LORAWAN_ENCRYPTION) && (( ITSDK_LORAWAN_ENCRYPTION & __PAYLOAD_ENCRYPT_AESCTR ) > 0) )
 			_itsdk_console_printf("SS:E:xxxx  : Encrypt change AES Master Key (16B hex)\r\n");
@@ -667,7 +684,8 @@ static itsdk_console_return_e _itsdk_secStore_consolePriv(char * buffer, uint8_t
 		// READ CASE
 		if ( buffer[0] == 's' && buffer[1] == 's' && buffer[2] == ':' ) {
 			switch(buffer[3]) {
-			  #if defined(ITSDK_WITH_LORAWAN_LIB) && ITSDK_WITH_LORAWAN_LIB == __ENABLE
+			 #if defined(ITSDK_WITH_LORAWAN_LIB) && ITSDK_WITH_LORAWAN_LIB == __ENABLE
+              #if (ITSDK_LORAWAN_ACTTYPE == __LORAWAN_ACTIVATION_STATIC && ITSDK_LORAWAN_ACTIVATION == __LORAWAN_ABP) || ITSDK_LORAWAN_ACTTYPE == __LORAWAN_ACTIVATION_DYNAMIC
 			  case '3':
 				  // ITSDK_SS_LORA_ABP_NETIDDEVID
 				  if ( itsdk_secstore_readBlock(ITSDK_SS_LORA_ABP_NETIDDEVID, b) == SS_SUCCESS ) {
@@ -686,6 +704,8 @@ static itsdk_console_return_e _itsdk_secStore_consolePriv(char * buffer, uint8_t
 					  _itsdk_console_printf("KO\r\n");
 					  return ITSDK_CONSOLE_FAILED;
 				  }
+              #endif
+              #if (ITSDK_LORAWAN_ACTTYPE == __LORAWAN_ACTIVATION_STATIC && ITSDK_LORAWAN_ACTIVATION == __LORAWAN_OTAA )  || ITSDK_LORAWAN_ACTTYPE == __LORAWAN_ACTIVATION_DYNAMIC
 			  case '9':
 				  // ITSDK_SS_LORA_OTAA_DEVEUIAPPEUI
 				  if ( itsdk_secstore_readBlock(ITSDK_SS_LORA_OTAA_DEVEUIAPPEUI, b) == SS_SUCCESS ) {
@@ -707,7 +727,8 @@ static itsdk_console_return_e _itsdk_secStore_consolePriv(char * buffer, uint8_t
 				  }
 				  return ITSDK_CONSOLE_SUCCES;
 			  #endif
-			  #if ITSDK_SECSTORE_USRBLOCK >= 2
+			 #endif
+			 #if ITSDK_SECSTORE_USRBLOCK >= 2
 			  case 'J':
 			  case 'j':
 				  // ITSDK_SS_USER1
@@ -762,6 +783,7 @@ static itsdk_console_return_e _itsdk_secStore_consolePriv(char * buffer, uint8_t
 				return __updateField(buffer, sz, b, ITSDK_SS_SIGFOXKEY);
 	#endif
 	#if defined(ITSDK_WITH_LORAWAN_LIB) && ITSDK_WITH_LORAWAN_LIB == __ENABLE
+         #if (ITSDK_LORAWAN_ACTTYPE == __LORAWAN_ACTIVATION_STATIC && ITSDK_LORAWAN_ACTIVATION == __LORAWAN_ABP) || ITSDK_LORAWAN_ACTTYPE == __LORAWAN_ACTIVATION_DYNAMIC
 			case '3':
 				// ITSDK_SS_LORA_ABP_NETIDDEVID
 				return __updateField2(buffer,sz,b,ITSDK_SS_LORA_ABP_NETIDDEVID,0,8);
@@ -780,6 +802,8 @@ static itsdk_console_return_e _itsdk_secStore_consolePriv(char * buffer, uint8_t
 			case '8':
 				// ITSDK_SS_LORA_ABP_APPSKEY
 				return __updateField(buffer, sz, b, ITSDK_SS_LORA_ABP_APPSKEY);
+		#endif
+		#if (ITSDK_LORAWAN_ACTTYPE == __LORAWAN_ACTIVATION_STATIC && ITSDK_LORAWAN_ACTIVATION == __LORAWAN_OTAA )  || ITSDK_LORAWAN_ACTTYPE == __LORAWAN_ACTIVATION_DYNAMIC
 			case '9':
 				// ITSDK_SS_LORA_OTAA_DEVEUIAPPEUI
 				return __updateField2(buffer,sz,b,ITSDK_SS_LORA_OTAA_DEVEUIAPPEUI,0,8);
@@ -795,6 +819,7 @@ static itsdk_console_return_e _itsdk_secStore_consolePriv(char * buffer, uint8_t
 			case 'C':
 				// ITSDK_SS_LORA_OTAA_NWKKEY
 				return __updateField(buffer, sz, b, ITSDK_SS_LORA_OTAA_NWKKEY);
+		#endif
 	#endif
 	#if ( defined(ITSDK_SIGFOX_ENCRYPTION) && ( ITSDK_SIGFOX_ENCRYPTION & __PAYLOAD_ENCRYPT_AESCTR ) > 0 ) || ( defined(ITSDK_LORAWAN_ENCRYPTION) && (( ITSDK_LORAWAN_ENCRYPTION & __PAYLOAD_ENCRYPT_AESCTR ) > 0) )
 			case 'e':

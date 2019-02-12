@@ -466,6 +466,9 @@ __weak itsdk_lorawan_return_t itsdk_lorawan_getAppKEY(uint8_t * appKey){
 	return LORAWAN_RETURN_SUCESS;
 }
 
+// @TODO add the ABP configuration extraction ...
+#warning "The ABP Configuration and setup is missing"
+
 
 itsdk_lorawan_return_t itsdk_lorawan_changeDefaultRate(uint8_t newRate) {
 	LOG_INFO_LORAWANSTK(("itsdk_lorawan_changeDefaultRate\r\n"));

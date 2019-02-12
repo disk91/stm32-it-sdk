@@ -86,9 +86,9 @@ void itsdk_setup() {
 	#endif
 	#if ITSDK_WITH_SECURESTORE == __ENABLE
 	  // Init the secure store if not yet initialized
-	 // if ( itsdk_secstore_isInit() != SS_SUCCESS ) {
+	  if ( itsdk_secstore_isInit() != SS_SUCCESS ) {
 		  itsdk_secstore_init();
-	 // }
+	  }
 	  itsdk_secStore_RegisterConsole();
 	#endif
 	project_setup();

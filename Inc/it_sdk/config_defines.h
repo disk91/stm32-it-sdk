@@ -255,6 +255,9 @@
 #define __LORAWAN_DEVEUI_STATIC		0x01			// Device EUI is static
 #define __LORAWAN_DEVEUI_GENERATED	0x02			// Device EUI stored is generated from the boardId
 
+#define __LORAWAN_ACTIVATION_STATIC	 0x01			// Activation type is decided at compilation time
+#define __LORAWAN_ACTIVATION_DYNAMIC 0x02			// Activation type can be changed dynamically (not yet supported)
+
 /**
  * LoRaWAN Region to be compiled
  */

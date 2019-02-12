@@ -107,7 +107,11 @@ typedef struct {
 		uint8_t		sigfoxKey[ITSDK_SECSTORE_BLOCKSZ];
 	#endif
 	#if defined(ITSDK_WITH_LORAWAN_LIB) && ITSDK_WITH_LORAWAN_LIB == __ENABLE
+      #if (ITSDK_LORAWAN_ACTTYPE == __LORAWAN_ACTIVATION_STATIC)
 		union {
+	  #else
+	    struct {
+      #endif
 			struct {
 				uint8_t		netID_devID[ITSDK_SECSTORE_BLOCKSZ];			// NETID - 8B & DEVID - 8B
 				uint8_t		netkeyf[ITSDK_SECSTORE_BLOCKSZ];				// Forwarding Network Key
