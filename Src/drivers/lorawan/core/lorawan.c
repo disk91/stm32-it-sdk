@@ -100,7 +100,9 @@ static void MlmeIndication( MlmeIndication_t *MlmeIndication );
  */
 void lorawan_driver_loop() {
 
-	while ( __loraWanState.reqPending ) {
+	while (    __loraWanState.joinState != LORAWAN_STATE_NONE
+			&& __loraWanState.joinState != LORAWAN_STATE_INITIALIZED
+			&& __loraWanState.reqPending ) {
 		__loraWanState.reqPending=false;
         LoRaMacProcess( );
 	}

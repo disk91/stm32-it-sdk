@@ -35,8 +35,8 @@
 // | SDK SETTING                   | USER SELECTED VALUE                  | SETTING DESCRIPTION                   |
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-#define ITSDK_DRIVERS_M95640					1							// this driver is activated in build
-#if ITSDK_DRIVERS_M95640 == 1
+#define ITSDK_DRIVERS_M95640					__DISABLE					// this driver is not activated in build
+#if ITSDK_DRIVERS_M95640 == __ENABLE
 	#include "spi.h"
 #endif
 #define ITSDK_DRIVERS_M95640_SPI				hspi1						// Spi port to be used for communications

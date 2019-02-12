@@ -113,6 +113,7 @@ void itsdk_restart() {
  * Then is calls the project specific loop function.
  */
 void itsdk_loop() {
+
 	#if ITSDK_WDG_MS > 0
 	   wdg_refresh();
 	#endif

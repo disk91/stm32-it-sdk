@@ -44,6 +44,7 @@
 #if ITSDK_WITH_LORAWAN_LIB == __ENABLE
 
 #define ITSDK_LORAWAN_STACK			__LORAWAN_SEMTECH					   // Select the SEMTECH lorawan stack
+#define ITSDK_LORAWAN_ACTTYPE		__LORAWAN_ACTIVATION_STATIC			   // Activation type selected at compilation time
 #define ITSDK_LORAWAN_ACTIVATION	__LORAWAN_OTAA						   // Activation OTAA or ABP
 #define ITSDK_LORAWAN_NETWORKTYPE   __LORAWAN_NWK_PUBLIC				   // type of network - public / private
 #define ITSDK_LORAWAN_DEVEUI_SRC	__LORAWAN_DEVEUI_STATIC				   // Device EUI is static / generated
