@@ -32,6 +32,7 @@ typedef enum {
 	LOWPWR_WAKEUP_RTC = 0,
 	LOWPWR_WAKEUP_GPIO,
 	LOWPWR_WAKEUP_SYSTICK,
+	LOWPWR_WAKEUP_UART,
 	LOWPWR_WAKEUP_UNDEF = 255,
 } lowPower_wu_reason_t;
 extern lowPower_wu_reason_t __lowPower_wakeup_reason;
