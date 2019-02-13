@@ -91,12 +91,14 @@ itsdk_timer_return_t itsdk_stimer_register(
 		uint32_t value,
 		itsdk_timer_lpAccept allowLowPower
 ) {
+	/* Not needed anymore as the RTC sleep manage timer duration
 	if ( ms < ITSDK_LOWPOWER_RTC_MS ) {
 		#if (ITSDK_LOGGER_MODULE & __LOG_MOD_STIMER) > 0
 		  log_error("STimer try to register too short timer\r\n");
 		#endif
 		return TIMER_TOO_SHORT;
 	}
+	*/
 
 	int i = 0;
 	while ( i < ITSDK_TIMER_SLOTS) {
