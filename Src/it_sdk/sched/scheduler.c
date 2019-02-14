@@ -85,7 +85,7 @@ void itdt_sched_execute() {
 /**
  * Disable a task
  */
-void itdf_sched_haltSched(uint8_t schedId) {
+void itdt_sched_haltSched(uint8_t schedId) {
 	__scheds[schedId].halt = 1;
 	_LOG_SCHED(("[sched] (%d) halted\r\n",schedId));
 }
@@ -93,11 +93,31 @@ void itdf_sched_haltSched(uint8_t schedId) {
 /**
  * Enable a task
  */
-void itdf_sched_runSched(uint8_t schedId) {
+void itdt_sched_runSched(uint8_t schedId) {
 	__scheds[schedId].halt = 0;
 	_LOG_SCHED(("[sched] (%d) restarted\r\n",schedId));
 }
 
-
+/**
+ * Return time in ms to the next task running
+ */
+uint32_t itdt_sched_nextRun() {
+	uint64_t min = 0;
+	for (int i = 0 ; i < __sNum ; i++) {
+		if (  !__scheds[i].halt && (min == 0 || min > __scheds[i].nextRun) ) {
+			min = __scheds[i].nextRun;
+		}
+	}
+	if ( min > 0 ) {
+		uint64_t t = itsdk_time_get_ms();
+		if ( min >= t ){
+			return (uint32_t)(min - t);
+		} else {
+			return 0;
+		}
+	} else {
+		return (365*24*3600*1000); // 1 year
+	}
+}
 
 #endif

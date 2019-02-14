@@ -61,8 +61,8 @@ typedef struct s_sched {
  */
 void itdt_sched_execute();
 uint8_t itdt_sched_registerSched(uint32_t periodMs,uint16_t mode, void (*f)(void));
-void itdf_sched_haltSched(uint8_t schedId);
-void itdf_sched_runSched(uint8_t schedId);
-
+void itdt_sched_haltSched(uint8_t schedId);
+void itdt_sched_runSched(uint8_t schedId);
+uint32_t itdt_sched_nextRun();
 
 #endif 	// IT_SDK_SCHEDULER_H_

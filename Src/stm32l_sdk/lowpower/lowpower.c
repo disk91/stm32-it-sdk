@@ -41,6 +41,9 @@
 #if ITSDK_TIMER_SLOTS > 0
 #include <it_sdk/time/timer.h>
 #endif
+#if ITSDK_SHEDULER_TASKS > 0
+#include <it_sdk/sched/scheduler.h>
+#endif
 
 #if (ITSDK_DEVICE == __DEVICE_STM32L072XX) && (ITSDK_LOWPOWER_MOD &__LOWPWR_MODE_WAKE_LPUART) > 0
 #error "STM32L0172 does not support LPUART WakeUp (or tells me what's wrong)"
@@ -69,13 +72,16 @@ void stm32l_lowPowerSetup() {
 		HAL_SuspendTick();
 		#if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_RTC )
 			// Ensure we will wake up at next softTimer end.
+			uint32_t duration = ITSDK_LOWPOWER_RTC_MS;
+			#if ITSDK_SHEDULER_TASKS > 0
+			   uint32_t schedDur = itdt_sched_nextRun();
+			   if ( schedDur < duration ) duration = schedDur;
+			#endif
 			#if ITSDK_TIMER_SLOTS > 0
 			   uint32_t maxDur = itsdk_stimer_nextTimeoutMs();
-			   maxDur = ( maxDur < ITSDK_LOWPOWER_RTC_MS)?maxDur:ITSDK_LOWPOWER_RTC_MS;
-			   rtc_configure4LowPower(maxDur);						// Setup RTC wake Up
-			#else
-			   rtc_configure4LowPower(ITSDK_LOWPOWER_RTC_MS);		// Setup RTC wake Up
+			   if ( maxDur < duration ) duration = maxDur;
 			#endif
+			   rtc_configure4LowPower(duration);						// Setup RTC wake Up
 		#endif
 	    __HAL_RCC_PWR_CLK_ENABLE();				// Enable Power Control clock
  	    HAL_PWREx_EnableUltraLowPower();		// Ultra low power mode
