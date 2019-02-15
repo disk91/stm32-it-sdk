@@ -38,13 +38,6 @@
 #include "usart.h"
 #include "gpio.h"
 
-#if ITSDK_TIMER_SLOTS > 0
-#include <it_sdk/time/timer.h>
-#endif
-#if ITSDK_SHEDULER_TASKS > 0
-#include <it_sdk/sched/scheduler.h>
-#endif
-
 #if (ITSDK_DEVICE == __DEVICE_STM32L072XX) && (ITSDK_LOWPOWER_MOD &__LOWPWR_MODE_WAKE_LPUART) > 0
 #error "STM32L0172 does not support LPUART WakeUp (or tells me what's wrong)"
 #endif
@@ -61,28 +54,27 @@
 
 
 /**
- * Setup the STM32L Low Power mode
+ * Setup the STM32L Low Power mode for the given amount of ms
+ * 0 ms when no time limit
  */
-void stm32l_lowPowerSetup() {
+stm32l_lowPowerReturn_e stm32l_lowPowerSetup(uint32_t durationMs) {
 
 	if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_STOP ) {
 		// -------------------------------------------------------------
 		// Configure the STM32L0x1 for switching to low power stop mode
 		// -------------------------------------------------------------
-		HAL_SuspendTick();
 		#if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_RTC )
 			// Ensure we will wake up at next softTimer end.
-			uint32_t duration = ITSDK_LOWPOWER_RTC_MS;
-			#if ITSDK_SHEDULER_TASKS > 0
-			   uint32_t schedDur = itdt_sched_nextRun();
-			   if ( schedDur < duration ) duration = schedDur;
-			#endif
-			#if ITSDK_TIMER_SLOTS > 0
-			   uint32_t maxDur = itsdk_stimer_nextTimeoutMs();
-			   if ( maxDur < duration ) duration = maxDur;
-			#endif
-			   rtc_configure4LowPower(duration);						// Setup RTC wake Up
+			if ( durationMs == 0 ) {
+				durationMs = STM32L_LOWPOWER_MAXDURATION_MS;
+			}
+		    if ( durationMs > STM32L_MINIMUM_SLEEPDURATION_MS ) {
+			   rtc_configure4LowPower(durationMs);						// Setup RTC wake Up
+		    } else {
+			   return STM32L_LOWPOWER_TOOSHORT;
+			}
 		#endif
+		HAL_SuspendTick();
 	    __HAL_RCC_PWR_CLK_ENABLE();				// Enable Power Control clock
  	    HAL_PWREx_EnableUltraLowPower();		// Ultra low power mode
  	    HAL_PWREx_EnableFastWakeUp();			// Fast wake-up for ultra low power mode
@@ -152,12 +144,11 @@ void stm32l_lowPowerSetup() {
 
  	    HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
 	}
-
-
+	return STM32L_LOWPOWER_SUCCESS;
 }
 
 
-void stm32l_lowPowerResume() {
+stm32l_lowPowerReturn_e stm32l_lowPowerResume() {
 
 	if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_STOP ) {
 		// ------------------------------------------------------------
@@ -202,6 +193,7 @@ void stm32l_lowPowerResume() {
 //	} else {
 //		log_info("|");
 //	}
+	return STM32L_LOWPOWER_SUCCESS;
 }
 
 /**

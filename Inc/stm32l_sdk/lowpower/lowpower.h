@@ -27,10 +27,21 @@
 
 #ifndef STM32L_SDK_LOWPOWER_LOWPOWER_H_
 #define STM32L_SDK_LOWPOWER_LOWPOWER_H_
+#include <stdint.h>
+
+typedef enum {
+	STM32L_LOWPOWER_SUCCESS = 0,
+	STM32L_LOWPOWER_TOOSHORT,		// The sleep delay sound too short it is better to keep awake
+
+	STM32L_LOWPOWER_ERROR
+} stm32l_lowPowerReturn_e;
+
+#define STM32L_MINIMUM_SLEEPDURATION_MS		5
+#define STM32L_LOWPOWER_MAXDURATION_MS		(8*3600*1000)		// wake up every 8h
 
 // Public functions
-void stm32l_lowPowerSetup();
-void stm32l_lowPowerResume();
+stm32l_lowPowerReturn_e stm32l_lowPowerSetup(uint32_t durationMs);
+stm32l_lowPowerReturn_e stm32l_lowPowerResume();
 void stm32l_lowPowerRestoreGpioConfig();
 
 // Private functions

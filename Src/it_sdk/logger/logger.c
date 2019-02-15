@@ -56,14 +56,14 @@ __t_log __log;
  */
 bool log_init(uint16_t config) {
 
-  __log.logError  = ( config & LOGGER_CONFIG_ERROR_LVL_MASK  );
-  __log.logWarn   = ( config & LOGGER_CONFIG_WARN_LVL_MASK   );
-  __log.logInfo   = ( config & LOGGER_CONFIG_INFO_LVL_MASK   );
-  __log.logDebug  = ( config & LOGGER_CONFIG_DEBUG_LVL_MASK  );
-  __log.onSerial1 = ( config & LOGGER_CONFIG_SERIAL1_MASK    );
-  __log.onSerial2 = ( config & LOGGER_CONFIG_SERIAL2_MASK    );
-  __log.onDebug   = ( config & LOGGER_CONFIG_DEBUGLNK_MASK   );
-  __log.onFile    = ( config & LOGGER_CONFIG_FILE_MASK       );
+  __log.logError  = (( config & LOGGER_CONFIG_ERROR_LVL_MASK  ) > 0)?1:0;
+  __log.logWarn   = (( config & LOGGER_CONFIG_WARN_LVL_MASK   ) > 0)?1:0;
+  __log.logInfo   = (( config & LOGGER_CONFIG_INFO_LVL_MASK   ) > 0)?1:0;
+  __log.logDebug  = (( config & LOGGER_CONFIG_DEBUG_LVL_MASK  ) > 0)?1:0;
+  __log.onSerial1 = (( config & LOGGER_CONFIG_SERIAL1_MASK    ) > 0)?1:0;
+  __log.onSerial2 = (( config & LOGGER_CONFIG_SERIAL2_MASK    ) > 0)?1:0;
+  __log.onDebug   = (( config & LOGGER_CONFIG_DEBUGLNK_MASK   ) > 0)?1:0;
+  __log.onFile    = (( config & LOGGER_CONFIG_FILE_MASK       ) > 0)?1:0;
 
   // Init the loggers
   if (__log.onFile) {
@@ -74,6 +74,7 @@ bool log_init(uint16_t config) {
   __log.ready = true;
   return true;
 }
+
 
 /**
  * Terminate the logging. This should be called before going deep-sleep to flush
@@ -130,19 +131,19 @@ void log_error(char *format, ...) {
     vsnprintf(fmtBuffer,LOGGER_MAX_BUF_SZ,format,args);
     va_end(args);
 
-    if ( __log.logConf & LOGGER_CONFIG_SERIAL1_MASK & LOGGER_CONFIG_ERROR_LVL_MASK ) {
+    if ( __log.onSerial1 ) {
       serial1_print(fmtBuffer);
     }
 
-    if ( __log.logConf & LOGGER_CONFIG_SERIAL2_MASK & LOGGER_CONFIG_ERROR_LVL_MASK ) {
+    if ( __log.onSerial2 ) {
       serial2_print(fmtBuffer);
     }
 
-    if ( __log.logConf & LOGGER_CONFIG_DEBUGLNK_MASK & LOGGER_CONFIG_ERROR_LVL_MASK ) {
+    if ( __log.onDebug  ) {
       debug_print(fmtBuffer);
     }
 
-    if ( __log.logConf & LOGGER_CONFIG_FILE_MASK & LOGGER_CONFIG_ERROR_LVL_MASK ) {
+    if ( __log.onFile ) {
       // @ TODO logfile_printf("%lu [error] ",time_get_ms());
       //logfile_print(fmtBuffer);
     }
@@ -164,19 +165,19 @@ void log_warn(char *format, ...) {
     vsnprintf(fmtBuffer,LOGGER_MAX_BUF_SZ,format,args);
     va_end(args);
 
-    if ( __log.logConf & LOGGER_CONFIG_SERIAL1_MASK & LOGGER_CONFIG_WARN_LVL_MASK ) {
+    if ( __log.onSerial1 ) {
     	serial1_print(fmtBuffer);
     }
 
-    if ( __log.logConf & LOGGER_CONFIG_SERIAL2_MASK & LOGGER_CONFIG_WARN_LVL_MASK ) {
+    if ( __log.onSerial2 ) {
     	serial2_print(fmtBuffer);
     }
 
-    if ( __log.logConf & LOGGER_CONFIG_DEBUGLNK_MASK & LOGGER_CONFIG_WARN_LVL_MASK ) {
+    if ( __log.onDebug ) {
     	debug_print(fmtBuffer);
     }
 
-    if ( __log.logConf & LOGGER_CONFIG_FILE_MASK & LOGGER_CONFIG_WARN_LVL_MASK ) {
+    if ( __log.onFile ) {
         // @ TODO logfile_printf("%lu [warn] ",time_get_ms());
         //logfile_print(fmtBuffer);
     }
@@ -198,19 +199,19 @@ void log_info(char *format, ...) {
     vsnprintf(fmtBuffer,LOGGER_MAX_BUF_SZ,format,args);
     va_end(args);
 
-    if ( __log.logConf & LOGGER_CONFIG_SERIAL1_MASK & LOGGER_CONFIG_INFO_LVL_MASK ) {
+    if ( __log.onSerial1 ) {
     	serial1_print(fmtBuffer);
     }
 
-    if ( __log.logConf & LOGGER_CONFIG_SERIAL2_MASK & LOGGER_CONFIG_INFO_LVL_MASK ) {
+    if ( __log.onSerial2 ) {
     	serial2_print(fmtBuffer);
     }
 
-    if ( __log.logConf & LOGGER_CONFIG_DEBUGLNK_MASK & LOGGER_CONFIG_INFO_LVL_MASK ) {
+    if ( __log.onDebug ) {
     	debug_print(fmtBuffer);
     }
 
-    if ( __log.logConf & LOGGER_CONFIG_FILE_MASK & LOGGER_CONFIG_INFO_LVL_MASK ) {
+    if ( __log.onFile ) {
         // @ TODO logfile_printf("%lu [info] ",time_get_ms());
         //logfile_print(__log.fmtBuffer);
     }
@@ -231,19 +232,19 @@ void log_debug(char *format, ...) {
     vsnprintf(fmtBuffer,LOGGER_MAX_BUF_SZ,format,args);
     va_end(args);
 
-    if ( __log.logConf & LOGGER_CONFIG_SERIAL1_MASK & LOGGER_CONFIG_DEBUG_LVL_MASK ) {
+    if ( __log.onSerial1 ) {
     	serial1_print(fmtBuffer);
     }
 
-    if ( __log.logConf & LOGGER_CONFIG_SERIAL2_MASK & LOGGER_CONFIG_DEBUG_LVL_MASK ) {
+    if ( __log.onSerial2 ) {
     	serial2_print(fmtBuffer);
     }
 
-    if ( __log.logConf & LOGGER_CONFIG_DEBUGLNK_MASK & LOGGER_CONFIG_DEBUG_LVL_MASK ) {
+    if ( __log.onDebug ) {
     	debug_print(fmtBuffer);
     }
 
-    if ( __log.logConf & LOGGER_CONFIG_FILE_MASK & LOGGER_CONFIG_DEBUG_LVL_MASK ) {
+    if ( __log.onFile ) {
         // @ TODO logfile_printf("%lu [debg] ",time_get_ms());
         //logfile_print(__log.fmtBuffer);
     }
@@ -264,19 +265,19 @@ void log_any(char *format, ...) {
   vsnprintf(fmtBuffer,LOGGER_MAX_BUF_SZ,format,args);
   va_end(args);
 
-  if ( __log.logConf & LOGGER_CONFIG_SERIAL1_MASK ) {
+  if ( __log.onSerial1 ) {
 	  serial1_print(fmtBuffer);
   }
 
-  if ( __log.logConf & LOGGER_CONFIG_SERIAL2_MASK ) {
+  if ( __log.onSerial2 ) {
 	  serial2_print(fmtBuffer);
   }
 
-  if ( __log.logConf & LOGGER_CONFIG_DEBUGLNK_MASK ) {
+  if ( __log.onDebug ) {
 	  debug_print(fmtBuffer);
   }
 
-  if ( __log.logConf & LOGGER_CONFIG_FILE_MASK ) {
+  if ( __log.onFile ) {
 	  // @ TODO logfile_printf("%lu [any ] ",time_get_ms());
 	  //logfile_print(__log.fmtBuffer);
   }

@@ -78,6 +78,9 @@
 void itsdk_setup() {
 
 	itsdk_time_init();
+	#if ITSDK_LOGGER_CONF > 0
+	log_init(ITSDK_LOGGER_CONF);
+	#endif
 	#if ITSDK_WDG_MS > 0
 	  wdg_setupWithMaxMs(ITSDK_WDG_MS);
 	#endif
