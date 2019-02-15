@@ -116,7 +116,7 @@ uint32_t itdt_sched_nextRun() {
 			return 0;
 		}
 	} else {
-		return (365*24*3600*1000); // 1 year
+		return __INFINITE_32B; // max duration
 	}
 }
 

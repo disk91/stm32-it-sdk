@@ -151,6 +151,66 @@ void spi_reset(
 		ITSDK_SPI_HANDLER_TYPE * spi
 );
 
+// ================================================
+// I2C
+typedef enum
+{
+  I2C_OK       = 0x00U,
+  I2C_ERROR    = 0x01U,
+  I2C_BUSY     = 0x02U,
+  I2C_TIMEOUT  = 0x03U
+} _I2C_Status;
+
+_I2C_Status i2c_write(
+		ITSDK_I2C_HANDLER_TYPE * i2c,
+		uint16_t  devAdr,
+		uint8_t * values,
+		uint16_t  size
+);
+
+_I2C_Status i2c_write8BRegister(
+		ITSDK_I2C_HANDLER_TYPE * i2c,
+		uint16_t  devAdr,			// Non shifted device address
+		uint16_t  regAdr,			// Register address (8b or 16bà
+		uint8_t   value,			// 8B value to be written
+		uint16_t  regSize			// Register address size 1B or 2B
+);
+
+_I2C_Status i2c_write16BRegister(
+		ITSDK_I2C_HANDLER_TYPE * i2c,
+		uint16_t  devAdr,			// Non shifted device address
+		uint16_t  regAdr,			// Register address (8b or 16bà
+		uint16_t  value,			// 16B value to be written
+		uint16_t  regSize			// Register address size 1B or 2B
+);
+
+_I2C_Status i2c_read(
+		ITSDK_I2C_HANDLER_TYPE * i2c,
+		uint16_t  devAdr,
+		uint8_t * values,
+		uint16_t  size
+);
+
+_I2C_Status i2c_read8BRegister(
+		ITSDK_I2C_HANDLER_TYPE * i2c,
+		uint16_t  devAdr,			// Non shifted device address
+		uint16_t  regAdr,			// Register address (8b or 16bà
+		uint8_t * value,			// 8B value to be read
+		uint16_t  regSize			// Register address size 1B or 2B
+);
+
+_I2C_Status i2c_read16BRegister(
+		ITSDK_I2C_HANDLER_TYPE * i2c,
+		uint16_t  devAdr,			// Non shifted device address
+		uint16_t  regAdr,			// Register address (8b or 16bà
+		uint16_t * value,			// 8B value to be read
+		uint16_t  regSize			// Register address size 1B or 2B
+);
+
+void i2c_reset(
+		ITSDK_I2C_HANDLER_TYPE * i2c
+);
+
 
 // ================================================
 // Reset Cause

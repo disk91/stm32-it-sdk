@@ -97,6 +97,13 @@
 #define __SPI_ENABLED				0x01			// with SPI
 
 /**
+ * I2C configuration
+ */
+#define __I2C_NONE					0x00			// No SPI
+#define __I2C_ENABLED				0x01			// with SPI
+
+
+/**
  * TIMER configuration
  */
 #define __TIMER_NONE				0x00			// No hw timer code
@@ -107,6 +114,13 @@
  */
 #define __DISABLE					0x00
 #define __ENABLE					0x01
+
+/**
+ * Some MaxValues
+ */
+
+#define __INFINITE_32B				0xFFFFFFFF
+#define __INFINITE_64B				0xFFFFFFFFFFFFFFFF
 
 /**
  * GPIO to keep activated on low power mode

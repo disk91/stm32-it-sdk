@@ -218,17 +218,17 @@ void itsdk_stimer_run() {
  */
 uint32_t itsdk_stimer_nextTimeoutMs(){
 	uint64_t t = itsdk_time_get_ms();
-	uint64_t min = ITSDK_STIMER_INFINITE_64;
+	uint64_t min = __INFINITE_64B;
 	for ( int i = 0 ; i < ITSDK_TIMER_SLOTS ; i++ ) {
 		if ( __stimer_slots[i].inUse && __stimer_slots[i].timeoutMs >= t ) {
 			if ( __stimer_slots[i].timeoutMs < min ) min = __stimer_slots[i].timeoutMs;
 		}
 	}
-	if ( min < ITSDK_STIMER_INFINITE_64 ) {
+	if ( min < __INFINITE_64B ) {
 		min = min - t;
 		return min;
 	}
-	return ITSDK_STIMER_INFINITE;
+	return __INFINITE_64B;
 }
 
 #endif

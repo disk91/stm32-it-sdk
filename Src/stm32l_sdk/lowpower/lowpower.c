@@ -55,7 +55,7 @@
 
 /**
  * Setup the STM32L Low Power mode for the given amount of ms
- * 0 ms when no time limit
+ * 0xFFFFFFFF ms when no time limit
  */
 stm32l_lowPowerReturn_e stm32l_lowPowerSetup(uint32_t durationMs) {
 
@@ -63,10 +63,14 @@ stm32l_lowPowerReturn_e stm32l_lowPowerSetup(uint32_t durationMs) {
 		// -------------------------------------------------------------
 		// Configure the STM32L0x1 for switching to low power stop mode
 		// -------------------------------------------------------------
-		#if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_RTC )
-			// Ensure we will wake up at next softTimer end.
-			if ( durationMs == 0 ) {
+		#if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_RTC ) > 0
+			if ( durationMs == __INFINITE_32B ) {
 				durationMs = STM32L_LOWPOWER_MAXDURATION_MS;
+				#if ITSDK_WDG_MS > 0
+				  if ( durationMs > ITSDK_WDG_MS ) {
+					  durationMs = ITSDK_WDG_MS - 5;
+				  }
+				#endif
 			}
 		    if ( durationMs > STM32L_MINIMUM_SLEEPDURATION_MS ) {
 			   rtc_configure4LowPower(durationMs);						// Setup RTC wake Up

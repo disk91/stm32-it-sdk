@@ -47,7 +47,7 @@ void lowPower_switch() {
 
 	if (__lowPowerState==LOWPRW_ENABLE) {
 		// Ensure we will wake up at next softTimer end or Task end.
-		uint32_t duration = 0;
+		uint32_t duration = __INFINITE_32B;
 		#if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_RTC ) > 0
 			duration = ITSDK_LOWPOWER_RTC_MS;
 		#endif
@@ -60,13 +60,13 @@ void lowPower_switch() {
 			if ( maxDur < duration ) duration = maxDur;
 		#endif
 		#if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_RTC ) == 0
-			if ( duration > 0 ) {
+			if ( duration != __INFINITE_32B ) {
 				// We have RTC disable but we need to verify time for timer or task
 				// so we can't jump into sleep mode until the timer end.
 				return;
 			}
 		#endif
-		if ( duration == 0 || duration > ITSDK_LOWPOWER_MINDUR_MS ) {
+		if ( duration > ITSDK_LOWPOWER_MINDUR_MS ) {
 			#if ITSDK_PLATFORM == __PLATFORM_STM32L0
 			// sleeping
 			if ( stm32l_lowPowerSetup(duration) == STM32L_LOWPOWER_SUCCESS ) {
