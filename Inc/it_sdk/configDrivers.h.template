@@ -35,13 +35,26 @@
 // | SDK SETTING                   | USER SELECTED VALUE                  | SETTING DESCRIPTION                   |
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-#define ITSDK_DRIVERS_M95640					__DISABLE					// this driver is not activated in build
+#define ITSDK_DRIVERS_M95640					__DISABLE					// this driver is activated in build
 #if ITSDK_DRIVERS_M95640 == __ENABLE
+	#define __SPI_INCLUDED
 	#include "spi.h"
 #endif
 #define ITSDK_DRIVERS_M95640_SPI				hspi1						// Spi port to be used for communications
 #define ITSDK_DRIVERS_M95640_SPI_CS_BANK		__BANK_B					// EEPROM Chip Select PIN LAYOUT (Activ Low)
 #define ITSDK_DRIVERS_M95640_SPI_CS_PIN			__LP_GPIO_4					//   Config as output, pull-up init High
+
+
+#define ITSDK_DRIVERS_BME280					__DISABLE					// BOSH BME 280 Temp / Hygro / Pressure
+#if ITSDK_DRIVERS_BME280 == __ENABLE
+	#define __I2C_INCLUDED
+	#include "i2c.h"
+	#include <drivers/temphygropressure/bosh_bme280/bme280.h>
+#endif
+#define ITSDK_DRIVERS_BME280_I2C				hi2c1						// I2C port to be used for communications
+#define __BME280_SDO_HIGH						0x1
+#define __BME280_SDO_LOW						0x0
+#define ITSDK_DRIVERS_BME280_ADDRESS			(DRIVER_BME280_DEVICE_ADR | __BME280_SDO_LOW)	//   Device address base on electrical conf
 
 
 

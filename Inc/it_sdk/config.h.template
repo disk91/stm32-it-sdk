@@ -55,6 +55,9 @@
 #define ITSDK_WITH_SPI				__SPI_ENABLED							// Use SPI (inludes the strutures)
 #define ITSDK_SPI_HANDLER_TYPE		SPI_HandleTypeDef						// The name of the Spi structure to be used for the targeted MCU
 #define ITSDK_SPI_TIMEOUT			100										// SPI transaction timeout in ms
+#define ITSDK_WITH_I2C				__I2C_ENABLED							// I2C is enabled (__I2C_NONE / __I2C_ENABLED )
+#define ITSDK_I2C_HANDLER_TYPE		I2C_HandleTypeDef						//    The name of the I2C structure to be used for the targeted MCU
+#define ITSDK_I2C_TIMEOUT			100										//    I2C transaction timeout in ms
 #define ITSDK_WITH_HW_TIMER			__TIMER_ENABLED							// Use Hardware Timer
 #define ITSDK_HW_TIMER1_HANDLE		htim21									// Timer handler to be used as primary timer
 #define ITSDK_HW_TIMER1_ID			21										// Timer hadware 1 - id/name
@@ -79,6 +82,7 @@
 									| __LOWPWR_MODE_WAKE_GPIO  \
 								/*	| __LOWPWR_MODE_WAKE_LPUART */\
 									)										// Mode Stop + wakeup RTC + GPIO
+#define ITSDK_LOWPOWER_MINDUR_MS	5										// Under 5 ms sleep request, no need to sleep
 #define ITSDK_LOWPOWER_RTC_MS		500										// RTC wake up after 500ms
 #define ITSDK_LOWPOWER_GPIO_A_KEEP	(  __LP_GPIO_1  \
 									 | __LP_GPIO_2  \

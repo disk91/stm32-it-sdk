@@ -72,6 +72,7 @@ typedef struct {
 	int16_t						h4;
 	int16_t						h5;
 	int8_t						h6;
+	int32_t 					t_fine;		// Intermediate Temp computation used by other sensor computation
 } drivers_bme280_conf_t;
 
 
@@ -82,7 +83,18 @@ typedef struct {
  */
 drivers_bme280_ret_e drivers_bme280_setup(drivers_bme280_mode_e mode);
 
-
+/**
+ * Depends on mode, get the last sensor values or request a new value and get it
+ * Get the sensors value.
+ * Temperature is in m°C
+ * Humidity is in m%RH
+ * Pressure is in Pa
+ */
+drivers_bme280_ret_e drivers_bme280_getSensors(
+		int32_t  * temperature,			// Temp in m°C
+		uint32_t * pressure,			// Pressure un Pa
+		uint32_t * humidity				// Humidity in m%RH
+);
 
 // ====================================================================
 // REGISTERS
@@ -106,7 +118,7 @@ drivers_bme280_ret_e drivers_bme280_setup(drivers_bme280_mode_e mode);
 #define DRIVER_BME280_REG_CTRLHUM_OSRD_X16		0x05			//	  x16
 
 #define DRIVER_BME280_REG_STATUS_ADR			0xF3			// RD - Status register
-#define DRIVER_BME280_REG_STATUS_MEASURING_MASK 0x04			//  set when the device is running a conversion
+#define DRIVER_BME280_REG_STATUS_MEASURING_MASK 0x08			//  set when the device is running a conversion
 #define DRIVER_BME280_REG_STATUS_UPDATING_MASK  0x01			//  set during NVM data transfer is in progress
 
 #define DRIVER_BME280_REG_CTRLMEAS_ADR			0xF4			// RD/WR - Pressure & Temperature control register

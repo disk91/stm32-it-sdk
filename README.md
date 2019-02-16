@@ -39,7 +39,9 @@ Made for being compiled with open-source environment GCC / AC6
   * sigfox
      * s2lp
   * lorawan
-       * murata cmwx1zzabz (sx1276)
+    * murata cmwx1zzabz (sx1276)
+  * T / H / P
+     * bosh bme280
        
 * Supported stacks
   * lorawan

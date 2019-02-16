@@ -29,6 +29,7 @@
 #define STM32L_SDK_WRAPPERS_H_
 
 #include <stdbool.h>
+#include <it_sdk/config.h>
 
 // ================================================
 // Serial wrappers
@@ -116,6 +117,7 @@ void gpio_removeWakeUpAction();
 
 // ================================================
 // spi
+#if ITSDK_WITH_SPI == __SPI_ENABLED
 typedef enum
 {
   SPI_OK       = 0x00U,
@@ -150,9 +152,10 @@ void spi_wait4TransactionEnd(
 void spi_reset(
 		ITSDK_SPI_HANDLER_TYPE * spi
 );
-
+#endif
 // ================================================
 // I2C
+#if ITSDK_WITH_I2C == __I2C_ENABLED
 typedef enum
 {
   I2C_OK       = 0x00U,
@@ -210,7 +213,7 @@ _I2C_Status i2c_read16BRegister(
 void i2c_reset(
 		ITSDK_I2C_HANDLER_TYPE * i2c
 );
-
+#endif
 
 // ================================================
 // Reset Cause
