@@ -126,7 +126,7 @@ uint32_t itsdk_getRandomSeed() {
 /**
  * Generate a uniq ID based on the object ID. The id struct is
  * initialized based on this. This size of the id table is given
- * as a parameter
+ * as a parameter. size is in Byte
  */
 void itsdk_getUniqId(uint8_t * id, int8_t size){
 

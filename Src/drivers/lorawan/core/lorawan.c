@@ -100,7 +100,9 @@ static void MlmeIndication( MlmeIndication_t *MlmeIndication );
  */
 void lorawan_driver_loop() {
 
-	while ( __loraWanState.reqPending ) {
+	while (    __loraWanState.joinState != LORAWAN_STATE_NONE
+			&& __loraWanState.joinState != LORAWAN_STATE_INITIALIZED
+			&& __loraWanState.reqPending ) {
 		__loraWanState.reqPending=false;
         LoRaMacProcess( );
 	}
@@ -534,8 +536,9 @@ itsdk_lorawan_join_t lorawan_driver_LORA_Join(
 
     	    LoRaMacStatus_t r = LoRaMacMlmeRequest( &mlmeReq );
 			if ( r != LORAMAC_STATUS_OK ) {
-				log_warn("LoRaMacMlmeRequest return error(%d)\r\n",r);
-				__loraWanState.joinState = LORAWAN_JOIN_FAILED;
+				LOG_WARN_LORAWAN(("LoRaMacMlmeRequest return error(%d)\r\n",r));
+				__loraWanState.joinState = LORAWAN_STATE_JOIN_FAILED;
+				lorawan_driver_onJoinFailed();
 			} else {
 				__loraWanState.joinState = LORAWAN_STATE_JOINING;
 			}

@@ -1,11 +1,11 @@
 /* ==========================================================
- * lowpower.h - stm32L0x1 low power header
+ * spi.h - stm32L0x1 i2c header
  * Project : Disk91 SDK
  * ----------------------------------------------------------
- * Created on: 2 sept. 2018
+ * Created on: 16 fev. 2019
  *     Author: Paul Pinault aka Disk91
  * ----------------------------------------------------------
- * Copyright (C) 2018 Disk91
+ * Copyright (C) 2019 Disk91
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU LESSER General Public License as published by
@@ -20,32 +20,14 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  * ----------------------------------------------------------
- * 
+ *
  *
  * ==========================================================
  */
+#ifndef STM32L_SDK_I2C_SPI_H_
+#define STM32L_SDK_I2C_SPI_H_
 
-#ifndef STM32L_SDK_LOWPOWER_LOWPOWER_H_
-#define STM32L_SDK_LOWPOWER_LOWPOWER_H_
-#include <stdint.h>
+// Every think is in wrappers.h header file
+// to be common across platforms
 
-typedef enum {
-	STM32L_LOWPOWER_SUCCESS = 0,
-	STM32L_LOWPOWER_TOOSHORT,		// The sleep delay sound too short it is better to keep awake
-
-	STM32L_LOWPOWER_ERROR
-} stm32l_lowPowerReturn_e;
-
-#define STM32L_MINIMUM_SLEEPDURATION_MS		5
-#define STM32L_LOWPOWER_MAXDURATION_MS		(8*3600*1000)		// wake up every 8h
-
-// Public functions
-stm32l_lowPowerReturn_e stm32l_lowPowerSetup(uint32_t durationMs);
-stm32l_lowPowerReturn_e stm32l_lowPowerResume();
-void stm32l_lowPowerRestoreGpioConfig();
-
-// Private functions
-void _stm32l_disableGpios();
-
-
-#endif /* STM32L_SDK_LOWPOWER_LOWPOWER_H_ */
+#endif /* STM32L_SDK_I2C_SPI_H_ */

@@ -58,6 +58,8 @@
 #define __LOWPWR_MODE_WAKE_LPUART	0x0001
 #define __LOWPWR_MODE_WAKE_GPIO		0x0002
 #define __LOWPWR_MODE_WAKE_RTC		0x0004
+#define __LOWPWR_MODE_WAKE_UART2	0x0008
+#define __LOWPWR_MODE_WAKE_UART1	0x0010
 
 
 /**
@@ -95,6 +97,13 @@
 #define __SPI_ENABLED				0x01			// with SPI
 
 /**
+ * I2C configuration
+ */
+#define __I2C_NONE					0x00			// No SPI
+#define __I2C_ENABLED				0x01			// with SPI
+
+
+/**
  * TIMER configuration
  */
 #define __TIMER_NONE				0x00			// No hw timer code
@@ -105,6 +114,13 @@
  */
 #define __DISABLE					0x00
 #define __ENABLE					0x01
+
+/**
+ * Some MaxValues
+ */
+
+#define __INFINITE_32B				0xFFFFFFFF
+#define __INFINITE_64B				0xFFFFFFFFFFFFFFFF
 
 /**
  * GPIO to keep activated on low power mode
@@ -253,6 +269,9 @@
 
 #define __LORAWAN_DEVEUI_STATIC		0x01			// Device EUI is static
 #define __LORAWAN_DEVEUI_GENERATED	0x02			// Device EUI stored is generated from the boardId
+
+#define __LORAWAN_ACTIVATION_STATIC	 0x01			// Activation type is decided at compilation time
+#define __LORAWAN_ACTIVATION_DYNAMIC 0x02			// Activation type can be changed dynamically (not yet supported)
 
 /**
  * LoRaWAN Region to be compiled

@@ -28,6 +28,6 @@
 #define STM32L_SDK_SPI_SPI_H_
 
 // Every think is in wrappers.h header file
-// to be common accross platforms
+// to be common across platforms
 
 #endif /* STM32L_SDK_SPI_SPI_H_ */

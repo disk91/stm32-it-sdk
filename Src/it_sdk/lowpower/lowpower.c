@@ -31,22 +31,66 @@
 	#include <stm32l_sdk/lowpower/lowpower.h>
 	#include <stm32l_sdk/rtc/rtc.h>
 #endif
+#if ITSDK_TIMER_SLOTS > 0
+	#include <it_sdk/time/timer.h>
+#endif
+#if ITSDK_SHEDULER_TASKS > 0
+	#include <it_sdk/sched/scheduler.h>
+#endif
 
 lowPower_wu_reason_t __lowPower_wakeup_reason = LOWPWR_WAKEUP_UNDEF;
-
+static lowPower_state_e __lowPowerState = LOWPRW_ENABLE;
 /**
  * Switch to low power mode selected for the expected platform
  */
 void lowPower_switch() {
 
-	#if ITSDK_PLATFORM == __PLATFORM_STM32L0
-		stm32l_lowPowerSetup();
-		// sleeping
-		stm32l_lowPowerResume();
-	#endif
+	if (__lowPowerState==LOWPRW_ENABLE) {
+		// Ensure we will wake up at next softTimer end or Task end.
+		uint32_t duration = __INFINITE_32B;
+		#if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_RTC ) > 0
+			duration = ITSDK_LOWPOWER_RTC_MS;
+		#endif
+		#if ITSDK_SHEDULER_TASKS > 0
+			uint32_t schedDur = itdt_sched_nextRun();
+			if ( schedDur < duration ) duration = schedDur;
+		#endif
+		#if ITSDK_TIMER_SLOTS > 0
+			uint32_t maxDur = itsdk_stimer_nextTimeoutMs();
+			if ( maxDur < duration ) duration = maxDur;
+		#endif
+		#if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_RTC ) == 0
+			if ( duration != __INFINITE_32B ) {
+				// We have RTC disable but we need to verify time for timer or task
+				// so we can't jump into sleep mode until the timer end.
+				return;
+			}
+		#endif
+		if ( duration > ITSDK_LOWPOWER_MINDUR_MS ) {
+			#if ITSDK_PLATFORM == __PLATFORM_STM32L0
+			// sleeping
+			if ( stm32l_lowPowerSetup(duration) == STM32L_LOWPOWER_SUCCESS ) {
+				// waking up
+				stm32l_lowPowerResume();
+			}
+			#endif
+		}
+	}
 
 }
 
+/**
+ * Disable LowPower mode
+ */
+void lowPower_enable() {
+	__lowPowerState= LOWPRW_ENABLE;
+}
 
+/**
+ * Enable LowPower mode
+ */
+void lowPower_disable() {
+	__lowPowerState= LOWPRW_DISABLE;
+}
 
 

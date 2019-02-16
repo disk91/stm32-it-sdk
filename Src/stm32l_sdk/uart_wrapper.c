@@ -60,6 +60,29 @@ void serial1_println(char * msg) {
   #endif
 }
 
+serial_read_response_e serial1_read(char * ch) {
+#if ( ITSDK_WITH_UART & __UART_LPUART1 ) > 0
+
+	// buffer overflow
+	if (__HAL_UART_GET_FLAG(&hlpuart1, UART_FLAG_ORE)) {
+		__HAL_UART_CLEAR_FLAG(&hlpuart1, UART_FLAG_ORE);
+	}
+
+	// get one of the pending char if some.
+	if (__HAL_UART_GET_FLAG(&hlpuart1, UART_FLAG_RXNE)){
+		*ch = hlpuart1.Instance->RDR & 0x1FF;
+		if (__HAL_UART_GET_FLAG(&hlpuart1, UART_FLAG_RXNE)) {
+			return SERIAL_READ_PENDING_CHAR;
+		} else {
+			return SERIAL_READ_SUCCESS;
+		}
+	}
+	return SERIAL_READ_NOCHAR;
+#else
+	return SERIAL_READ_FAILED;
+#endif
+}
+
 
 // ---------------------------------------------------------------------------
 // serial 2 - is mapped to USART2
@@ -85,6 +108,28 @@ void serial2_println(char * msg) {
   #endif
 }
 
+serial_read_response_e serial2_read(char * ch) {
+#if ( ITSDK_WITH_UART & __UART_USART2 ) > 0
+
+	// buffer overflow
+	if (__HAL_UART_GET_FLAG(&huart2, UART_FLAG_ORE)) {
+		__HAL_UART_CLEAR_FLAG(&huart2, UART_FLAG_ORE);
+	}
+
+	// get one of the pending char if some.
+	if (__HAL_UART_GET_FLAG(&huart2, UART_FLAG_RXNE)){
+		*ch = huart2.Instance->RDR & 0x1FF;
+		if (__HAL_UART_GET_FLAG(&huart2, UART_FLAG_RXNE)) {
+			return SERIAL_READ_PENDING_CHAR;
+		} else {
+			return SERIAL_READ_SUCCESS;
+		}
+	}
+	return SERIAL_READ_NOCHAR;
+#else
+	return SERIAL_READ_FAILED;
+#endif
+}
 
 // ---------------------------------------------------------------------------
 // debug - is not mapped

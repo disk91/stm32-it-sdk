@@ -68,6 +68,12 @@ typedef struct __s_log {
 	  uint16_t  logConf;  	   	 // Detailed log level
 } __t_log;
 
-
+#define log_info_array(name,array,sz)	{												\
+									      log_info(name);								\
+									      for ( int __i = 0; __i < sz ; __i++ ) {       \
+									    	  log_info(" %02X",array[__i]);				\
+									      }												\
+										  log_info("\r\n");								\
+										}
 
 #endif /* IT_SDK_LOGGER_LOGGER_H_ */

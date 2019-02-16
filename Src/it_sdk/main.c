@@ -61,6 +61,15 @@
 #include <it_sdk/time/timer.h>
 #include <it_sdk/logger/logger.h>
 
+#if ITSDK_WITH_SECURESTORE == __ENABLE
+#include <it_sdk/eeprom/securestore.h>
+#endif
+
+#if ITSDK_WITH_CONSOLE == __ENABLE
+#include <it_sdk/console/console.h>
+#endif
+
+
 /**
  * The setup function is called on every MCU Reset but not on wakeup from sleep
  * This function init the SDK library and underlaying hardware.
@@ -69,8 +78,21 @@
 void itsdk_setup() {
 
 	itsdk_time_init();
+	#if ITSDK_LOGGER_CONF > 0
+	log_init(ITSDK_LOGGER_CONF);
+	#endif
 	#if ITSDK_WDG_MS > 0
 	  wdg_setupWithMaxMs(ITSDK_WDG_MS);
+	#endif
+	#if ITSDK_WITH_CONSOLE == __ENABLE
+	  itsdk_console_setup();
+	#endif
+	#if ITSDK_WITH_SECURESTORE == __ENABLE
+	  // Init the secure store if not yet initialized
+	  if ( itsdk_secstore_isInit() != SS_SUCCESS ) {
+		  itsdk_secstore_init();
+	  }
+	  itsdk_secStore_RegisterConsole();
 	#endif
 	project_setup();
 
@@ -94,8 +116,12 @@ void itsdk_restart() {
  * Then is calls the project specific loop function.
  */
 void itsdk_loop() {
+
 	#if ITSDK_WDG_MS > 0
 	   wdg_refresh();
+	#endif
+	#if ITSDK_WITH_CONSOLE == __ENABLE
+	   itsdk_console_loop();
 	#endif
 	#if ITSDK_SHEDULER_TASKS > 0
 	   itdt_sched_execute();

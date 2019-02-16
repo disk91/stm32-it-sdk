@@ -9,15 +9,19 @@ Made for being compiled with open-source environment GCC / AC6
 * Supported MCU functions
   * Low Power switch with regular auto-wakeup / LPUART / GPIO Wake-up
   * RTC with calibration
-  * Logger
   * EEprom for configuration backup
-  * Task Scheduler
-  * State Machine 
   * Watchdog 
   * Timers with calibration (harwdare & software)
   * GPIO abstraction
   * Time update
   * Generic Interrupt Handler (hardware independant)
+
+* Supported Advanced features
+  * Task Scheduler
+  * State Machine 
+  * Logger
+  * Secured debug & configuration Console
+  * Secured Storage in EEPROM for keys
   
 * Communication protocols interface
   * Sigfox ( clear-text, AES128-CTR, SPECK32, Sigfox-EAS128-CTR-Encryption )
@@ -27,6 +31,7 @@ Made for being compiled with open-source environment GCC / AC6
   * STM32L011
   * STM32L053
   * STM32L072
+  * MURATA CMWX1ZZABZ
 
 * Supported drivers
   * eeprom
@@ -34,7 +39,9 @@ Made for being compiled with open-source environment GCC / AC6
   * sigfox
      * s2lp
   * lorawan
-       * murata cmwx1zzabz (sx1276)
+    * murata cmwx1zzabz (sx1276)
+  * T / H / P
+     * bosh bme280
        
 * Supported stacks
   * lorawan
