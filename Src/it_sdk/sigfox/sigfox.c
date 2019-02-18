@@ -89,8 +89,7 @@ itsdk_sigfox_init_t itsdk_sigfox_setup() {
 		__sigfox_state.default_speed = 100;
 		break;
 	default:
-		LOG_WARN_SIGFOX(("RCZ5 implementation is actually supported"));
-		itsdk_error_handler(__FILE__, __LINE__);
+		ITSDK_ERROR_REPORT(ITSDK_ERROR_SIGFOX_RCZ_NOTSUPPORTED,(uint16_t)__sigfox_state.rcz);
 	}
 
 	__sigfox_state.initialized = true;
@@ -284,8 +283,7 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendOob(
 			ret = SIGFOX_API_send_outofband(SFX_OOB_RC_SYNC);
 			break;
 		default:
-			LOG_ERROR_SIGFOX(("sendOob - unsupported type"));
-			itsdk_error_handler(__FILE__, __LINE__);
+			ITSDK_ERROR_REPORT(ITSDK_ERROR_SIGFOX_OOB_NOTSUPPORTED,(uint16_t)oobType);
 		}
 		switch (ret&0xFF) {
 		case SFX_ERR_NONE:

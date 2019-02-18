@@ -116,21 +116,6 @@ Things to not forget once a cubeMx project has been created
   	/* USER CODE END 3 */
 ```
 
-   => error handler
-```C
-  void _Error_Handler(char *file, int line)
-  {
-	  /* USER CODE BEGIN Error_Handler_Debug */
-	  #if ITSDK_LOGGER_CONF > 0
-	     log_debug("Error : %s (%d)\r\n",file,line);
-	  #endif
-	  /* User can add his own implementation to report the HAL error return state */
-	  while(1)
-	  {
-	  }
-	  /* USER CODE END Error_Handler_Debug */
-  }
-```
   
 Other modifications (need to be done on every CubeMx project regeneration):
   - GPIO - (in gpio.c) Cube Mx is setting/resetting the Gpio state on init. You need to manually comment the line in *gpio.c* to avoid the pin to be modified on MCU wake-up. The other solution is to let the gpio init as-is and add a function *void stm32l_lowPowerRestoreGpioConfig()* containing the gpio reconfiguration after wakeup.

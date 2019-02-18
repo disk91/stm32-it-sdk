@@ -30,6 +30,7 @@
 #include <it_sdk/time/time.h>
 #include <it_sdk/lowpower/lowpower.h>
 #include <it_sdk/logger/logger.h>
+#include <it_sdk/logger/error.h>
 #include <stm32l0xx_hal.h>
 #if ITSDK_CLK_BEST_SOURCE == __CLK_BEST_SRC_RTC
 	#include <stm32l_sdk/rtc/rtc.h>
@@ -100,7 +101,7 @@ void systick_adjustTime() {
 
 	// Protection against value too bad, sounds like a problem
 	if ( ratio > 1400 || ratio < 600 ) {
-		log_error("rtc_calcClockRatio ratio looks invalid %d\r\n",(uint32_t)ratio);
+		ITSDK_ERROR_REPORT(ITSDK_ERROR_TICKS_INVALID_CLKRATIO,(uint16_t)ratio);
 		ratio = 1000;
 	}
 	__systick_ratio=(uint32_t)ratio;

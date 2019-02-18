@@ -36,6 +36,7 @@
 #include <it_sdk/itsdk.h>
 #include <it_sdk/console/console.h>
 #include <it_sdk/logger/logger.h>
+#include <it_sdk/logger/error.h>
 #include <it_sdk/wrappers.h>
 #include <it_sdk/time/time.h>
 #include <it_sdk/lowpower/lowpower.h>
@@ -376,8 +377,7 @@ static void _itsdk_console_processChar(char c) {
 void itsdk_console_registerCommand(itsdk_console_chain_t * chain) {
 	itsdk_console_chain_t * c = &__console_head_chain;
 	if ( c->console_private != _itsdk_console_private ) {
-		log_error("[Console] setup console first!\r\n");
-		itsdk_error_handler(__FILE__, __LINE__);
+		ITSDK_ERROR_REPORT(ITSDK_ERROR_CONSOLE_NOTSETUP,0);
 	}
 
 	while ( c->next != NULL && c->next != chain ) {

@@ -248,7 +248,7 @@ static itsdk_secStoreReturn_e _itsdk_secstore_controlHeader(itsdk_secStoreHead_t
  * Return the store size in byte.
  * This function is use to determine the configuration starting address => after the secureStore
  */
-itsdk_secStoreReturn_e itsdk_secstore_getStoreSize(uint16_t * sz) {
+itsdk_secStoreReturn_e itsdk_secstore_getStoreSize(uint32_t * sz) {
 	*sz=sizeof(itsdk_secStoreHead_t)+sizeof(itsdk_secStoreBlocks_t);
 	return SS_SUCCESS;
 }

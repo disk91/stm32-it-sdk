@@ -120,7 +120,7 @@
  */
 
 #define __INFINITE_32B				0xFFFFFFFF
-#define __INFINITE_64B				0xFFFFFFFFFFFFFFFF
+#define __INFINITE_64B				0xFFFFFFFFFFFFFFFFLu
 
 /**
  * GPIO to keep activated on low power mode

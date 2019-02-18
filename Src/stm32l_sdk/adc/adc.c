@@ -29,6 +29,7 @@
 #include <it_sdk/config.h>
 #if ITSDK_PLATFORM == __PLATFORM_STM32L0
 #include <it_sdk/itsdk.h>
+#include <it_sdk/logger/error.h>
 #include <it_sdk/debug.h>
 #include "stm32l0xx_hal.h"
 
@@ -184,18 +185,18 @@ uint32_t __getAdcValue(uint32_t channel) {
 	  hadc.Init.LowPowerFrequencyMode = DISABLE;
 	  hadc.Init.LowPowerAutoPowerOff = ENABLE;
 	  if (HAL_ADC_Init(&hadc) != HAL_OK) {
-		  _ERROR_HANDLER((__FILE__, __LINE__));
+		  ITSDK_ERROR_REPORT(ITSDK_ERROR_ADC_INIT_FAILED,0);
 	  }
 
 	  if ( HAL_ADCEx_Calibration_Start(&hadc, ADC_SINGLE_ENDED) != HAL_OK) {
-		  _ERROR_HANDLER((__FILE__, __LINE__));
+		  ITSDK_ERROR_REPORT(ITSDK_ERROR_ADC_CALIBRATION_FAILED,0);
 	  }
 
 	  // Configure for the selected ADC regular channel to be converted.
 	  sConfig.Channel = channel;
 	  sConfig.Rank = 1;
 	  if (HAL_ADC_ConfigChannel(&hadc, &sConfig) != HAL_OK) {
-		  _ERROR_HANDLER((__FILE__, __LINE__));
+		  ITSDK_ERROR_REPORT(ITSDK_ERROR_ADC_CONFCHANNEL_FAILED,0);
 	  }
 
 	  HAL_ADC_Start(&hadc);
@@ -311,8 +312,7 @@ uint16_t adc_getValue(uint32_t pin) {
 		channel = ADC_CHSELR_CHSEL17;
 		break;
 	default:
-		 _ERROR_HANDLER((__FILE__, __LINE__));
-		 while(1);
+  	    ITSDK_ERROR_REPORT(ITSDK_ERROR_ADC_INVALID_PIN,(uint16_t)pin);
 	}
 #elif ITSDK_DEVICE == __DEVICE_STM32L053R8
 	switch (pin) {
@@ -335,8 +335,7 @@ uint16_t adc_getValue(uint32_t pin) {
 		channel = ADC_CHSELR_CHSEL17;
 		break;
 	default:
-		 _ERROR_HANDLER((__FILE__, __LINE__));
-		 while(1);
+  	    ITSDK_ERROR_REPORT(ITSDK_ERROR_ADC_INVALID_PIN,(uint16_t)pin);
 	}
 #elif  ITSDK_DEVICE == __DEVICE_STM32L072XX
 #warning "We may define the pin association with ADC properly for this MCU"
@@ -345,8 +344,7 @@ uint16_t adc_getValue(uint32_t pin) {
 		channel = ADC_CHSELR_CHSEL17;
 		break;
 	default:
-		 _ERROR_HANDLER((__FILE__, __LINE__));
-		 while(1);
+  	    ITSDK_ERROR_REPORT(ITSDK_ERROR_ADC_INVALID_PIN,(uint16_t)pin);
 	}
 #else
 	#error DEVICE NOT DEFINED

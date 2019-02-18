@@ -69,6 +69,9 @@
 #include <it_sdk/console/console.h>
 #endif
 
+#if ITSDK_WITH_ERROR_RPT == __ENABLE
+#include <it_sdk/logger/error.h>
+#endif
 
 /**
  * The setup function is called on every MCU Reset but not on wakeup from sleep
@@ -86,6 +89,11 @@ void itsdk_setup() {
 	#endif
 	#if ITSDK_WITH_CONSOLE == __ENABLE
 	  itsdk_console_setup();
+	#endif
+	#if ITSDK_WITH_ERROR_RPT == __ENABLE
+	  itsdk_error_setup();
+	  ITSDK_ERROR_REPORT(ITSDK_ERROR_RESET,(uint16_t)itsdk_getResetCause());
+  	  itsdk_cleanResetCause();
 	#endif
 	#if ITSDK_WITH_SECURESTORE == __ENABLE
 	  // Init the secure store if not yet initialized
@@ -139,16 +147,6 @@ void itsdk_loop() {
 	#endif
 }
 
-/**
- * Error Handler for ItSdk internal
- * (The STM32 prototype is not stable over FW version)
- */
-void itsdk_error_handler(char * file, int line) {
-  #if ITSDK_LOGGER_CONF > 0
-   log_debug("Error : %s (%d)\r\n",file,line);
-  #endif
-   while(1);
-}
 
 
 

@@ -43,7 +43,10 @@ void project_loop();
 void itsdk_setup();
 void itsdk_loop();
 void itsdk_restart();
-void itsdk_error_handler(char * file, int line);
+
+// Deprecated !!! DO NOT USE
+// replaced by ITSDK_ERROR_REPORT
+//void itsdk_error_handler(char * file, int line);
 
 // ------------------------------------------------------------------------
 // Tool.c

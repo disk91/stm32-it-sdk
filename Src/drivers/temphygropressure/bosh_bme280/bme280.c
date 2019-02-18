@@ -28,6 +28,8 @@
 #if ITSDK_DRIVERS_BME280 == __ENABLE
 #include <drivers/temphygropressure/bosh_bme280/bme280.h>
 #include <it_sdk/wrappers.h>
+#include <it_sdk/logger/error.h>
+
 
 static drivers_bme280_conf_t __bme280_config;
 
@@ -61,9 +63,11 @@ drivers_bme280_ret_e drivers_bme280_setup(drivers_bme280_mode_e mode) {
 	// Check device presence
 	uint8_t v,w;
 	if (  __readRegister(DRIVER_BME280_REG_ID_ADR,&v) != I2C_OK ) {
+		ITSDK_ERROR_REPORT(ITSDK_ERROR_DRV_BME280_NOTFOUND,0);
 		return BME280_NOTFOUND;
 	}
 	if ( v != DRIVER_BME280_REG_ID_VALUE ) {
+		ITSDK_ERROR_REPORT(ITSDK_ERROR_DRV_BME280_NOTFOUND,0);
 		return BME280_NOTFOUND;
 	}
 
@@ -303,6 +307,12 @@ drivers_bme280_ret_e drivers_bme280_getSensors(
 		uint32_t * humidity				// Humidity in m%RH
 ) {
 	uint8_t v;
+	// Verify I2C
+	if (  __readRegister(DRIVER_BME280_REG_ID_ADR,&v) != I2C_OK ) {
+		ITSDK_ERROR_REPORT(ITSDK_ERROR_DRV_BME280_I2CERROR,0);
+		return BME280_FAILED;
+	}
+
 	switch (__bme280_config.mode) {
 	default:
 	case BME280_MODE_WEATHER_MONITORING:

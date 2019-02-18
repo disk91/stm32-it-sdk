@@ -27,6 +27,8 @@
 #include <it_sdk/config.h>
 #include <it_sdk/itsdk.h>
 #include <it_sdk/logger/logger.h>
+#include <it_sdk/logger/error.h>
+
 
 /**
  * Protect inMemory key with a simple XOR with a hardcoded
@@ -35,7 +37,9 @@
  */
 void itsdk_encrypt_cifferKey(uint8_t * key, int len) {
 
-	if ( (len & 3 ) > 0 ) itsdk_error_handler(__FILE__,__LINE__);
+	if ( (len & 3 ) > 0 ) {
+		ITSDK_ERROR_REPORT(ITSDK_ERROR_ENCRYP_INVALID_DATALEN,(uint16_t)len);
+	}
 	for ( int i = 0 ; i < len ; i+=4 ) {
 		key[i]   ^= (ITSDK_PROTECT_KEY & 0xFF000000) >> 24;
 		key[i+1] ^= (ITSDK_PROTECT_KEY & 0x00FF0000) >> 16;

@@ -33,6 +33,7 @@
 
 #include <it_sdk/itsdk.h>
 #include <it_sdk/wrappers.h>
+#include <it_sdk/logger/error.h>
 #include "stm32l0xx_hal.h"
 
 
@@ -50,7 +51,7 @@ GPIO_TypeDef * getPortFromBankId(uint8_t bankId) {
 #endif
 	case __BANK_H: return GPIOH;
 	default:
-		itsdk_error_handler(__FILE__, __LINE__);
+		ITSDK_ERROR_REPORT(ITSDK_ERROR_GPIO_UNSUPPORTED_BANK,(uint16_t)bankId);
 	}
 	return NULL;
 }

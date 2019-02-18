@@ -36,6 +36,7 @@
 #include <it_sdk/wrappers.h>
 #include <it_sdk/debug.h>
 #include <stm32l_sdk/rtc/rtc.h>
+#include <it_sdk/logger/error.h>
 #include "iwdg.h"
 
 
@@ -46,7 +47,7 @@
 void wdg_setupWithMaxMs(uint32_t ms) {
 
 	if ( ms > 28000 || ms < 10 ) {
-		_ERROR_HANDLER((__FILE__, __LINE__));
+	    ITSDK_ERROR_REPORT(ITSDK_ERROR_WDG_OUTOFBOUNDS,(uint16_t)ms);
 	}
   #if ITSDK_WDG_MS >0
 	int32_t uwLsiFreq;
@@ -61,7 +62,7 @@ void wdg_setupWithMaxMs(uint32_t ms) {
 	if(HAL_IWDG_Init(&hiwdg) != HAL_OK)
 	{
 		/* Initialization Error */
-		_ERROR_HANDLER((__FILE__, __LINE__));
+	    ITSDK_ERROR_REPORT(ITSDK_ERROR_WDG_INIT_FAILED,(uint16_t)ms);
 	}
 	// To enable IWDG freeze during debug session
 	//__HAL_DBGMCU_FREEZE_IWDG();

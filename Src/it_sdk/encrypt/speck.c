@@ -39,6 +39,8 @@
 
 #include <it_sdk/time/time.h>
 #include <it_sdk/logger/logger.h>
+#include <it_sdk/logger/error.h>
+
 
 /**
  * Encrypt a block of Data with the given key
@@ -53,13 +55,11 @@ void itsdk_speck_encrypt(
 ) {
 
 	if ( (dataLen & 0x3) != 0 ) {
-		LOG_ERROR_SIGFOX(("Speck Encryption require a 32B multiple data len\r\n"));
-		itsdk_error_handler(__FILE__, __LINE__);
+		ITSDK_ERROR_REPORT(ITSDK_ERROR_ENCRYP_INVALID_DATALEN,dataLen);
 	}
 
 	if ( dataLen > ITSDK_ENCRYPT_MAX_FRAME_SIZE ) {
-		LOG_ERROR_SIGFOX(("Speck Encryption only supports frame lower than %dB\r\n",ITSDK_ENCRYPT_MAX_FRAME_SIZE));
-		itsdk_error_handler(__FILE__, __LINE__);
+		ITSDK_ERROR_REPORT(ITSDK_ERROR_ENCRYP_DATA_TOOLARGE,dataLen);
 	}
 
 	uint64_t _masterKey = itsdk_encrypt_unCifferKey64(masterKey);

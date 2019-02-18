@@ -30,6 +30,7 @@
 #include <it_sdk/sched/scheduler.h>
 #include <it_sdk/time/time.h>
 #include <it_sdk/logger/logger.h>
+#include <it_sdk/logger/error.h>
 #include <it_sdk/debug.h>
 
 #if ITSDK_SHEDULER_TASKS > 0
@@ -45,7 +46,7 @@ uint8_t __sNum = 0;
 uint8_t itdt_sched_registerSched(uint32_t periodMs,uint16_t mode, void (*f)(void)) {
 
 	if ( periodMs > ITSDK_SCHED_MAX_PERIOD ) {
-		log_error("[Sched] Period exceed Max\r\n");
+		ITSDK_ERROR_REPORT(ITSDK_ERROR_SCHED_DURATION_OVERFLOW,0);
 		return ITSDK_SCHED_ERROR;
 	}
 	if ( __sNum < ITSDK_SHEDULER_TASKS ) {
