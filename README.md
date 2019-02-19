@@ -43,6 +43,8 @@ Made for being compiled with open-source environment GCC / AC6
     * murata cmwx1zzabz (sx1276)
   * T / H / P
      * bosh bme280
+  * Light
+     * Maxim Max44009
        
 * Supported stacks
   * lorawan

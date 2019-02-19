@@ -96,7 +96,7 @@ drivers_max44009_ret_e drivers_max44009_getSensors(
 ) {
 	uint8_t h,l;
 	// Verify I2C
-	if (  __readRegister(DRIVER_BME280_REG_ID_ADR,&h) != I2C_OK ) {
+	if (  __readRegister(DRIVER_MAX44009_REG_LUX_HIGH_ADR,&h) != I2C_OK ) {
 		ITSDK_ERROR_REPORT(DRIVER_MAX44009_REG_LUX_HIGH_ADR,0);
 		return MAX44009_FAILED;
 	}
@@ -108,12 +108,8 @@ drivers_max44009_ret_e drivers_max44009_getSensors(
 	uint32_t exp = (h & DRIVER_MAX44009_REG_LUXHIGH_EXP_MSK) >> DRIVER_MAX44009_REG_LUXHIGH_EXP_SHIFT;
 	uint32_t man = (h & DRIVER_MAX44009_REG_LUXHIGH_MAN_MSK) >> DRIVER_MAX44009_REG_LUXHIGH_MAN_SHIFT;
 	man = (man << 4) | (( l & DRIVER_MAX44009_REG_LUXLOW_MAN_MSK ) >> DRIVER_MAX44009_REG_LUXLOW_MAN_SHIFT);
-log_info("h %02X l %02X \r\n",h,l);
-log_info("exp : %d\r\n",exp);
-log_info("man : %02X\r\n",man);
 
 	*mlux = (2 << exp) * man * 45;
-log_info("mlux %d\r\n",*mlux);
 	return MAX44009_SUCCESS;
 }
 
