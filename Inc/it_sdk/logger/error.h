@@ -33,7 +33,7 @@
 #if ITSDK_WITH_ERROR_RPT == __ENABLE
 
 #define ITSDK_ERROR_LASTBLOCK		0xFFFF
-#define ITSDK_ERROR_FIRSTBLOCK		0xFFFF
+#define ITSDK_ERROR_FIRSTBLOCK		0xFFFE
 #define ITSDK_ERROR_STRUCT_MAGIC	0xAE73		// random value for magic
 
 typedef enum {

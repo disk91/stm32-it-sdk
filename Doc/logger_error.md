@@ -2,6 +2,10 @@
 
 The ItSdk has different modules to manage the errors and trace.
 
+## Serial Logger
+
+
+
 ## Error report
 The errors can be reported and store in e NVM memory for being consulted later for analysis. The type of error is composed by a list of 64b error blocks. Each block is composed by a 32b time entry in S followed by a 32b error code. 
 
@@ -28,7 +32,7 @@ The error capture code is activated in the *config.h* file with the following de
 #define ITSDK_ERROR_BLOCKS			64										//  Max number of error block / 1 block stores 1 error and needs 8 Byte for storage.
 																			//  The first block is header
 ```
-The size of the buffer in the NVM is given in number of 64b blocks. There is one more block for headers. The maximum value is 65534 blocks. The usual first limitation is the eeprom size.
+The size of the buffer in the NVM is given in number of 64b blocks. There is one more block for headers. The maximum value is 65533 blocks. The usual first limitation is the eeprom size.
 
 
 The error code list can be extended at the application level with the following define:
@@ -51,6 +55,27 @@ The EEPROM have first the secure store when actuvated, then the ERROR code block
 
 It is possible to choose a different storage for the error codes. In this case the **ITSDK_ERROR_USE_EPROM** can be **__DISABLE** and the following functions needs to be overide:
 
+You can replace the default EEPROM NVM storage with your own NVM storage solution. For doing this you need to override 4 functions declared as _weak_ in the source code.
+
+```C
+itsdk_error_ret_e _itsdk_error_readHeader(itsdk_error_head_t * header);
+itsdk_error_ret_e _itsdk_error_writeHeader(itsdk_error_head_t * header);
+itsdk_error_ret_e _itsdk_error_write(uint16_t blockId, itsdk_error_entry_t * entry);
+itsdk_error_ret_e _itsdk_error_read(uint16_t blockId,itsdk_error_entry_t * e);
+```
+
+### Acces the error report history
+The simpler way to access the error report is to activate the console. Two shortcut are available in the private part of the console:
+- e : print the log history in the following format:
+```C
+//I 000000000000000 : 0x10001001 (0x001 / 0x0001)
+  |     |                  |        |       |
+  |     + Time in S        |        |       + associated value
+  |                        |        + Error code (just the error code)
+  |                        + 32b Error code
+  + Level (Info)
+```
+- E : clean the log history
 
 
 

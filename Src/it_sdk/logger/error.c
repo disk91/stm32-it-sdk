@@ -257,7 +257,7 @@ static itsdk_console_return_e _itsdk_error_consolePriv(char * buffer, uint8_t sz
 			{
 				uint16_t blockId = ITSDK_ERROR_FIRSTBLOCK;
 				itsdk_error_entry_t e;
-				while ( itsdk_error_get(&blockId,&e) == ITSDK_ERROR_SUCCESS && blockId != ITSDK_ERROR_LASTBLOCK) {
+				while ( itsdk_error_get(&blockId,&e) == ITSDK_ERROR_SUCCESS ) {
 					char l;
 					switch (e.error & ITSDK_ERROR_LEVEL_MASK) {
 					default:
@@ -274,6 +274,7 @@ static itsdk_console_return_e _itsdk_error_consolePriv(char * buffer, uint8_t sz
 						( ((e.error & ITSDK_ERROR_WITH_VALUE) > 0)? (e.error & ITSDK_ERROR_VALUE_MASK) >> ITSDK_ERROR_VALUE_SHIFT:0)
 					);
 				}
+				_itsdk_console_printf("OK\r\n");
 			}
   		    return ITSDK_CONSOLE_SUCCES;
 			break;

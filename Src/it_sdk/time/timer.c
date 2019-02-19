@@ -229,7 +229,7 @@ uint32_t itsdk_stimer_nextTimeoutMs(){
 		min = min - t;
 		return min;
 	}
-	return __INFINITE_64B;
+	return __INFINITE_32B;
 }
 
 #endif

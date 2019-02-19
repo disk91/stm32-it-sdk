@@ -19,7 +19,8 @@ Made for being compiled with open-source environment GCC / AC6
 * Supported Advanced features
   * Task Scheduler
   * State Machine 
-  * Logger
+  * Multiple Serial console logger
+  * Error logger with NVM storage
   * Secured debug & configuration Console
   * Secured Storage in EEPROM for keys
   
