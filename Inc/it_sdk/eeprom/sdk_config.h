@@ -30,7 +30,7 @@
 #include <it_sdk/config.h>
 #include <stdint.h>
 
-#if ITSDK_WITH_CONFIGURATION_NVM == __ENABLE
+#if ITSDK_WITH_CONFIGURATION_APP == __ENABLE
 	#include <it_sdk/configNvm.h>
 #endif
 
@@ -56,13 +56,14 @@ typedef struct {
 	} lorawan;
 #endif
 
+	uint32_t			reserved[2];		// reserve space for later use
 
 } itsdk_configuration_internal_t;
 
 
 typedef struct {
 	itsdk_configuration_internal_t	sdk;
-#if ITSDK_WITH_CONFIGURATION_NVM == __ENABLE
+#if ITSDK_WITH_CONFIGURATION_APP == __ENABLE
 	itsdk_configuration_app_t		app;
 #endif
 } itsdk_configuration_nvm_t;
@@ -78,6 +79,7 @@ typedef struct {
 // ===========================================================================
 
 extern itsdk_configuration_nvm_t itsdk_config;
+extern itsdk_configuration_nvm_t itsdk_config_shadow;
 
 typedef enum {
 	CONFIG_NORMAL_LOAD = 0,
@@ -85,18 +87,35 @@ typedef enum {
 } itsdk_config_load_mode_e;
 
 typedef enum {
+	CONFIG_COMMIT_ONLY = 0,			// copy shadow to config, not more
+	CONFIG_COMMIT_SAVE,				// copy shadow to config, save the config
+	CONFIG_COMMIT_SAVE_REBOOT		// copy, save, reboot device
+} itsdk_config_commit_mode_e;
+
+typedef enum {
 	CONFIG_SUCCESS = 0,
 	CONFIG_LOADED,
 	CONFIG_RESTORED_FROM_FACTORY,
-
 
 	CONFIG_FAILED
 } itsdk_config_ret_e;
 
 
-// This function need to be override when the app mode is enabled
+// These functions need to be override when the app mode is enabled
 itsdk_config_ret_e itsdk_config_app_resetToFactory();
+#if ITSDK_WITH_CONSOLE == __ENABLE
+void itsdk_config_app_printConfig();
+#endif
 
+// Init Config
 itsdk_config_ret_e itsdk_config_loadConfiguration(itsdk_config_load_mode_e mode);
+
+// Commit the shadow configuration into configuration
+itsdk_config_ret_e itsdk_config_commitConfiguration(itsdk_config_commit_mode_e mode);
+
+// ===========================================================================
+// MISC INTERNAL
+// ===========================================================================
+
 
 #endif /* IT_SDK_EEPROM_SDK_CONFIG_H_ */

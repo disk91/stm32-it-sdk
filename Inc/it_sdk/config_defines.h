@@ -115,6 +115,14 @@
 #define __DISABLE					0x00
 #define __ENABLE					0x01
 
+
+/**
+ * Config mode
+ */
+#define __CONFIG_STATIC				0x00			// Non config in memory, all is static
+#define __CONFIG_MEMORY				0x01			// Config init at boot and store in memory - reset on reboot
+#define __CONFIG_EEPROM				0x02			// Config loaded from EEPROM
+
 /**
  * Some MaxValues
  */

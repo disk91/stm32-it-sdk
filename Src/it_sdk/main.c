@@ -60,6 +60,7 @@
 #include <it_sdk/time/time.h>
 #include <it_sdk/time/timer.h>
 #include <it_sdk/logger/logger.h>
+#include <it_sdk/eeprom/sdk_config.h>
 
 #if ITSDK_WITH_SECURESTORE == __ENABLE
 #include <it_sdk/eeprom/securestore.h>
@@ -72,6 +73,7 @@
 #if ITSDK_WITH_ERROR_RPT == __ENABLE
 #include <it_sdk/logger/error.h>
 #endif
+
 
 /**
  * The setup function is called on every MCU Reset but not on wakeup from sleep
@@ -102,6 +104,11 @@ void itsdk_setup() {
 	  }
 	  itsdk_secStore_RegisterConsole();
 	#endif
+
+	// load the configuration according to setting
+	itsdk_config_loadConfiguration(CONFIG_NORMAL_LOAD);
+
+	// Application setup
 	project_setup();
 
 }

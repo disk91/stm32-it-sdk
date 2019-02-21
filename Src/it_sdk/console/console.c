@@ -63,7 +63,6 @@ static itsdk_console_return_e _itsdk_console_private(char * buffer, uint8_t sz) 
 			_itsdk_console_printf("X          : exit console\r\n");
 			_itsdk_console_printf("R          : reset device\r\n");
 			_itsdk_console_printf("l / L      : switch LowPower ON / OFF\r\n");
-			_itsdk_console_printf("c          : print device config\r\n");
 			_itsdk_console_printf("s          : print device state\r\n");
 			_itsdk_console_printf("t          : print current time in S\r\n");
 			_itsdk_console_printf("T          : print current temperature in oC\r\n");

@@ -28,7 +28,7 @@ The configuration is loaded at MCU setup and accessible from the RAM in the **it
 ```C
 typedef struct {
 	itsdk_configuration_internal_t	sdk;
-#if ITSDK_WITH_CONFIGURATION_NVM == __ENABLE
+#if ITSDK_WITH_CONFIGURATION_APP == __ENABLE
 	itsdk_configuration_app_t		app;
 #endif
 } itsdk_configuration_nvm_t;
@@ -51,4 +51,27 @@ This structure will be initialized from the factory default by overriding the fo
 itsdk_config_ret_e itsdk_config_app_resetToFactory();
 ```
 
+## Console usage
+
+The console allows to print and change the configuration. When the console is activated, some new functions are added to print and change the configuration.
+
+To print the configuration of the application specific part you need to override the following procedure
+
+```C
+void itsdk_config_app_printConfig();
+```
+
+You can extend the console operation to add configuration like any console extension. See *console.md* file.
+
+## Configuration change
+
+The console allows to change the configuration dynamically. When a setting has been changed it is not changed directly in the *itsdk_config* structure but in a **itsdk_config_shadow** structure. This is ensuring we have a stable configuration before to commit it.
+
+Once the configuration has been completed, the commit to the **itsdk_config** structure is made by calling the following function:
+
+```C
+itsdk_config_commitConfiguration(itsdk_config_commit_mode_e mode);
+```
+
+This function, depending on the mode, will save the new config in the EEPROM, eventually reboot the device. From the console, commit is saving. Reboot is manual.
 
