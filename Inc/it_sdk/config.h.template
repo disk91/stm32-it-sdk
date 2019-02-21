@@ -34,7 +34,11 @@
 // | SDK SETTING                   | USER SELECTED VALUE                  | SETTING DESCRIPTION                   |
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #define ITSDK_VERSION				"1.3.1-devel"							// SDK Version String (do not change it)
+#define ITSDK_VERSION_BYTE			0x13									//  SDK 1 Byte version corresponding to previous on (do not change it)
+
 #define ITSDK_USER_VERSION			"0.1"									// CHANGE ME - Version of your firwmare
+#define ITSDK_USER_VERSION_BYTE		0x01									// CHANGE ME - Version of your firwmare 4bits MAJOR / 4bits MINOR
+																			//   You may change it anytime the NVM configuration is impacted
 
 #define ITSDK_CUBEMX_VERSION	    __CUBEMX_VERSION500						// Version of cube MX
 #define ITSDK_PLATFORM 				__PLATFORM_STM32L0						// Hardware platform selection
@@ -151,6 +155,20 @@
 #define ITSDK_STATEMACHINE_NAMESZ	8										// Maximum size for task name (-1)
 
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// APP SPECIFIC NVM CONFIG
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+#define ITSDK_CONFIGURATION_MODE		__CONFIG_EEPROM						// Select the type of configuration used
+																			// EEPROM = Store the config in EEPROM
+																			// MEMORY = The config is reinit at boottime but store in memory
+																			// STATIC = No config use in memory, only static settings
+
+#define ITSDK_WITH_CONFIGURATION_APP	__ENABLE							// The application have a configuration stored in NVM
+																			// This is enable the app specific part of NVM config
+																			// The file it_sdk/configNvm.h will be included and
+																			//  contains the application specific configuration
+
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // SECURE STORE & CONSOLE
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -200,6 +218,10 @@
 
 #if ITSDK_WITH_DRIVERS == __ENABLE
    #include <it_sdk/configDrivers.h>
+#endif
+
+#if ITSDK_WITH_CONFIGURATION_APP == __ENABLE
+	#include <it_sdk/configNvm.h>
 #endif
 
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
