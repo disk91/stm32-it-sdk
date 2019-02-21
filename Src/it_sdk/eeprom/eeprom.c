@@ -1,6 +1,7 @@
 /* ==========================================================
  * eeprom.c - Save and Restore data in EEPROM memory
  * 			  Abstraction for underlaying MCU implementation
+ * 			  Store configuration structure
  * Project : Disk91 SDK
  * ----------------------------------------------------------
  * Created on: 16 sept. 2018
@@ -115,4 +116,27 @@ bool eeprom_read(void * data, uint16_t len, uint8_t version, uint8_t * versionR)
 	}
 
 	return true;
+}
+
+/**
+ * Returns the offset of the first byte following the configuration & other SDK
+ * EEPROM reserved zone. Make sure your data post this zone will be preserved if you
+ * change the config area size.
+ */
+bool eeprom_getPostConfigOffset(uint32_t * _offset) {
+	t_eeprom_entry t;
+	uint32_t offset = 0, sstore=0, ssError=0;
+  #if ITSDK_WITH_SECURESTORE == __ENABLE
+	itsdk_secstore_getStoreSize(&sstore);
+  #endif
+  #if (ITSDK_WITH_ERROR_RPT == __ENABLE) && (ITSDK_ERROR_USE_EPROM == __ENABLE)
+	itsdk_error_getSize(&ssError);
+  #endif
+	offset += sstore + ssError;
+	// Read the data header
+	_eeprom_read(ITDT_EEPROM_BANK0, offset, (void *) &t, sizeof(t));
+
+	*_offset = offset + sizeof(t) + t.size;
+	return true;
+
 }
