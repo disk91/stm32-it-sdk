@@ -106,6 +106,7 @@ itsdk_config_ret_e itsdk_config_app_resetToFactory();
 #if ITSDK_WITH_CONSOLE == __ENABLE
 void itsdk_config_app_printConfig();
 #endif
+itsdk_config_ret_e itsdk_config_app_commitConfiguration();
 
 // Init Config
 itsdk_config_ret_e itsdk_config_loadConfiguration(itsdk_config_load_mode_e mode);

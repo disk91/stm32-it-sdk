@@ -75,3 +75,8 @@ itsdk_config_commitConfiguration(itsdk_config_commit_mode_e mode);
 
 This function, depending on the mode, will save the new config in the EEPROM, eventually reboot the device. From the console, commit is saving. Reboot is manual.
 
+This function calls a function you can overide in your application as Pre processing on config update. 
+```C
+itsdk_config_ret_e itsdk_config_app_commitConfiguration();
+```
+This function will return SUCCESS to accept the new configuration in shadow structure or FAILED. If Failed the configuration will not be applied.

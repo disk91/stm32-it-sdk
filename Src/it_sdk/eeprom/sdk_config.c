@@ -147,11 +147,19 @@ itsdk_config_ret_e itsdk_config_loadConfiguration(itsdk_config_load_mode_e mode)
 
 #if ITSDK_CONFIGURATION_MODE != __CONFIG_STATIC
 
+__weak itsdk_config_ret_e itsdk_config_app_commitConfiguration() {
+	return CONFIG_SUCCESS;
+}
+
+
 /**
  * Commit a shadow configuration into the standard config.
  * Save it
  */
 itsdk_config_ret_e itsdk_config_commitConfiguration(itsdk_config_commit_mode_e mode) {
+
+ itsdk_config_ret_e r = itsdk_config_app_commitConfiguration();
+ if ( r != CONFIG_SUCCESS ) return r;
 
  bcopy(&itsdk_config_shadow,&itsdk_config,sizeof(itsdk_configuration_nvm_t));
 #if ITSDK_CONFIGURATION_MODE == __CONFIG_EEPROM
