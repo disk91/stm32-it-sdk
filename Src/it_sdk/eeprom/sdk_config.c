@@ -187,7 +187,7 @@ itsdk_config_ret_e itsdk_config_commitConfiguration(itsdk_config_commit_mode_e m
 		/**
 		 * This function need to be overrided
 		 */
-		__weak void itsdk_config_app_printConfig() {
+		__weak void itsdk_config_app_printConfig(itsdk_configuration_nvm_t * c) {
 			ITSDK_ERROR_REPORT(ITSDK_ERROR_CONFIG_OVERRIDE_MISS,0);
 			return;
 		}
@@ -218,6 +218,7 @@ itsdk_config_ret_e itsdk_config_commitConfiguration(itsdk_config_commit_mode_e m
 					_itsdk_console_printf("sdk.lora.networkType : %d\r\n",ITSDK_LORAWAN_NETWORKTYPE);
 					_itsdk_console_printf("sdk.lora.retries : %d\r\n",ITSDK_LORAWAN_CNF_RETRY);
 					#endif
+					itsdk_config_app_printConfig(NULL);
 				  #else
 					itsdk_configuration_nvm_t * _c = &itsdk_config;
 					if (buffer[0]=='C') _c = &itsdk_config_shadow;
@@ -229,6 +230,7 @@ itsdk_config_ret_e itsdk_config_commitConfiguration(itsdk_config_commit_mode_e m
 					_itsdk_console_printf("sdk.lora.networkType : %d\r\n",_c->sdk.lorawan.networkType);
 					_itsdk_console_printf("sdk.lora.retries : %d\r\n",_c->sdk.lorawan.retries);
 				    #endif
+					itsdk_config_app_printConfig(_c);
 				  #endif
 				  _itsdk_console_printf("OK\r\n");
 				}

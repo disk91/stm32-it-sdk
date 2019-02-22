@@ -104,7 +104,7 @@ typedef enum {
 // These functions need to be override when the app mode is enabled
 itsdk_config_ret_e itsdk_config_app_resetToFactory();
 #if ITSDK_WITH_CONSOLE == __ENABLE
-void itsdk_config_app_printConfig();
+void itsdk_config_app_printConfig(itsdk_configuration_nvm_t * c);
 #endif
 itsdk_config_ret_e itsdk_config_app_commitConfiguration();
 
