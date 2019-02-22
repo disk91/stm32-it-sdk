@@ -36,6 +36,12 @@ This is allowing the following features:
 - Change the configuration at production level or later with the device specific configuration. 
 - Later change the configuration on the field from a serial console or any communication channel.  
 
+The other parameters are set from the *configLoRaWan.h* file. Based on the configuration mode:
+```C
+ITSDK_CONFIGURATION_MODE == __CONFIG_STATIC		//  __CONFIG_MEMORY or __CONFIG_EEPROM
+```
+The setting will come from the static definition or the dynamic configuration given by the *sdk_config* structure. In this second situation the LoRaWan setting can be modified dynamicly thanks to the *console*. The keys and the other configuration mode are separated: you can have a dynamic key with the *secureStore* and a static configuration for mode like OTAA, ADR ... It's up to you.  
+
 ## Asynchronous / Synchronous approach
 The join and transmission can be done as synchronous process or asynchronous process.
 - with synchronous approach, the function will return once the join or communication is complete. Succeeding or failing. 

@@ -241,6 +241,7 @@ static itsdk_console_return_e _itsdk_config_consolePriv(char * buffer, uint8_t s
 			// help
  			#if ITSDK_CONFIGURATION_MODE != __CONFIG_STATIC
 			  _itsdk_console_printf("S          : commit configuration\r\n");
+			  _itsdk_console_printf("F          : restore factory defaults\r\n");
 			#endif
 			#if ITSDK_WITH_LORAWAN_LIB == __ENABLE
 			  _itsdk_console_printf("SC:0:x     : lora.adrmode 1:OFF/2:ON\r\n");
@@ -253,10 +254,25 @@ static itsdk_console_return_e _itsdk_config_consolePriv(char * buffer, uint8_t s
 		  break;
   	    #if ITSDK_CONFIGURATION_MODE != __CONFIG_STATIC
 		case 'S':
+			// Commit the new configuration
+			ITSDK_ERROR_REPORT(ITSDK_ERROR_CONFIG_COMMIT_NEW_CONF,0);
 			itsdk_config_commitConfiguration(CONFIG_COMMIT_SAVE);
 			_itsdk_console_printf("OK\r\n");
 			return ITSDK_CONSOLE_SUCCES;
 			break;
+		case'F':
+			  // Reset to factory default
+			  ITSDK_ERROR_REPORT(ITSDK_ERROR_CONFIG_FACTORY_DEFAULT,3);
+			  itsdk_config_sdk_resetToFactory();
+			 #if ITSDK_WITH_CONFIGURATION_APP == __ENABLE
+			  itsdk_config_app_resetToFactory();
+			 #endif
+			 #if ITSDK_CONFIGURATION_MODE == __CONFIG_EEPROM
+		     eeprom_write(&itsdk_config, sizeof(itsdk_configuration_nvm_t), ITSDK_CONFIGURATION_MNG_VERSION);
+			 #endif
+		     bcopy(&itsdk_config,&itsdk_config_shadow,sizeof(itsdk_configuration_nvm_t));
+ 			 _itsdk_console_printf("OK\r\n");
+			 return ITSDK_CONSOLE_SUCCES;
 		#endif
 		default:
 			break;

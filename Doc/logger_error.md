@@ -68,10 +68,11 @@ itsdk_error_ret_e _itsdk_error_read(uint16_t blockId,itsdk_error_entry_t * e);
 The simpler way to access the error report is to activate the console. Two shortcut are available in the private part of the console:
 - e : print the log history in the following format:
 ```C
-//I 000000000000000 : 0x10001001 (0x001 / 0x0001)
-  |     |                  |        |       |
-  |     + Time in S        |        |       + associated value
-  |                        |        + Error code (just the error code)
+//I 000000000000000 : 0x10001001 ( S 0x001 / 0x0001 )
+  |     |                  |       |   |       |
+  |     + Time in S        |       |   |       + associated value
+  |                        |       |   + Error code (just the error code)
+  |                        |       + S for SDK error code / A for APP error code
   |                        + 32b Error code
   + Level (Info)
 ```

@@ -266,10 +266,11 @@ static itsdk_console_return_e _itsdk_error_consolePriv(char * buffer, uint8_t sz
 					case ITSDK_ERROR_LEVEL_ERROR: l = 'E'; break;
 					case ITSDK_ERROR_LEVEL_FATAL: l = 'F'; break;
 					}
-					_itsdk_console_printf("%c %015d : 0x%08X (0x%03X / 0x%04X)\r\n",
+					_itsdk_console_printf("%c %015d : 0x%08X ( %c 0x%03X / 0x%04X )\r\n",
 						l,
 						e.timeS,
 						e.error,
+						(((e.error & ITSDK_ERROR_TYPE_APP) > 0) ? 'A' : 'S'),
 						(e.error & ITSDK_ERROR_ERROR_MASK) >> ITSDK_ERROR_ERROR_SHIFT,
 						( ((e.error & ITSDK_ERROR_WITH_VALUE) > 0)? (e.error & ITSDK_ERROR_VALUE_MASK) >> ITSDK_ERROR_VALUE_SHIFT:0)
 					);
