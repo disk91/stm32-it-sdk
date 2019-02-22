@@ -34,6 +34,9 @@
 #define STATE_LAST			254
 #define STATE_MACHINE_SZ	ITSDK_STATEMACHINE_TASKS
 
+#define STATE_IMMEDIATE_JUMP 0x8000				// when this flag is set the next state is immedialty executed
+												//  we do not wait for next iteration
+
 #define LOOP_INIT_VALUE 		1
 #define TOTAL_LOOP_INIT_VALUE	0
 #define LOOP_TIMEOUT_VALUE		(10*60)			// trop de boucle tue la boucle ...
@@ -44,7 +47,7 @@ typedef struct st_state {
 
 	uint8_t stuid;					// State uniq ID use to identify it and jump to it
 	void (*reset)(void);			// Function to be called before first loop in this step to reset
-	uint8_t (*process)(void *, uint8_t, uint16_t, uint32_t);
+	uint16_t (*process)(void *, uint8_t, uint16_t, uint32_t);
 									// State function to execute:
 									// receive a static void * as parameter
 									// uint8_t - The current stateId

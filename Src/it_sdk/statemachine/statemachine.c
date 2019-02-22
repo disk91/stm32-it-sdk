@@ -35,6 +35,7 @@
 void statem(machine_t * machine) {
 
 	int previousState;
+	uint16_t stateRet;
 
 #if ITSDK_DEBUG_STATEM >= 1
 	// In debug mode we ensure never jump on a not existing state
@@ -69,7 +70,8 @@ void statem(machine_t * machine) {
     machine->totalLoop++;
 	previousState = machine->currentState;
 	if( machine->precall != NULL ) machine->precall();
-	machine->currentState = st->process(st->param, machine->currentState, machine->loopCurrentStep, machine->totalLoop);
+	stateRet = st->process(st->param, machine->currentState, machine->loopCurrentStep, machine->totalLoop);
+	machine->currentState = (uint8_t)(stateRet & 0xFF);
 
 	// Do we have change state of are we on the same one ?
 	if ( previousState == machine->currentState ) {
@@ -98,8 +100,11 @@ void statem(machine_t * machine) {
 #ifdef ITSDK_DEBUG_STATEM
 	if ( machine->currentState == STATE_UNKNOWN || machine->currentState >= machine->lastState ) {
 		_LOG_STATEM(("[STM][E] Invalid next state (%d)\r\n",machine->currentState));
-		return;
 	}
 #endif
+	// If the IMMEDIATE_JUMP is set, we reenter the next state execution
+	if ( ((stateRet & STATE_IMMEDIATE_JUMP) > 0) && previousState != machine->currentState ) {
+		statem(machine);
+	}
 }
 
