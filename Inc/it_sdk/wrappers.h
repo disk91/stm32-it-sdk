@@ -164,6 +164,15 @@ typedef enum
   I2C_TIMEOUT  = 0x03U
 } _I2C_Status;
 
+_I2C_Status i2c_memWrite(
+		ITSDK_I2C_HANDLER_TYPE * i2c,				// i2c handler
+		uint16_t  devAdr,							// Device Address => 7 bits non shifted
+		uint16_t  memAdr,							// Memory address to access
+		uint16_t  memAdrSize,						// 8 for 8b, 16 for 16 bits ...
+		uint8_t * values,							// Data to be written
+		uint16_t  size								// Size of the data to be written
+);
+
 _I2C_Status i2c_write(
 		ITSDK_I2C_HANDLER_TYPE * i2c,
 		uint16_t  devAdr,
@@ -185,6 +194,15 @@ _I2C_Status i2c_write16BRegister(
 		uint16_t  regAdr,			// Register address (8b or 16bà
 		uint16_t  value,			// 16B value to be written
 		uint16_t  regSize			// Register address size 1B or 2B
+);
+
+_I2C_Status i2c_memRead(
+		ITSDK_I2C_HANDLER_TYPE * i2c,				// i2c handler
+		uint16_t  devAdr,							// Device Address => 7 bits non shifted
+		uint16_t  memAdr,							// Memory address to access
+		uint16_t  memAdrSize,						// 8 for 8b, 16 for 16 bits ...
+		uint8_t * values,							// Data to be written
+		uint16_t  size								// Size of the data to be written
 );
 
 _I2C_Status i2c_read(
