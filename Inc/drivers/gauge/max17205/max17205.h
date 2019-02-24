@@ -40,9 +40,18 @@ typedef enum {
 
 
 typedef enum __attribute__ ((__packed__)) {
-	MAX17205_TYPE_172X1 = 1,
-	MAX17205_TYPE_172X5 = 5
+	MAX17205_TYPE_SINGLE_CELL = 1,
+	MAX17205_TYPE_MULTI_CELL2 = 4,			// I don't know why ut this is the returned value ...
+	MAX17205_TYPE_MULTI_CELL = 5,
 } drivers_max17205_type_e;
+
+typedef enum {
+	MAX17205_CELL1 = 0,
+	MAX17205_CELL2,
+	MAX17205_CELL3,
+	MAX17205_CELLX,
+	MAX17205_VBAT,
+} drivers_max17205_cell_select_e;
 
 typedef struct {
 	drivers_max17205_mode_e 		mode;		// Setup mode
@@ -60,20 +69,33 @@ typedef enum {
 } drivers_max17205_ret_e;
 
 drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode);
-
+drivers_max17205_ret_e drivers_max17205_getTemperature(int32_t * mTemp);
+drivers_max17205_ret_e drivers_max17205_getVoltage(drivers_max17205_cell_select_e cell, uint16_t * mVolt);
 
 // ====================================================================
 // Registers
 // ====================================================================
 
 #define ITSDK_DRIVERS_MAX17205_ADDRESS_000_0FF	0x36			// Non shifted address for memory 0x000 -> 0x0FF
-#define ITSDK_DRIVERS_MAX17205_ADDRESS_100_17F	0x0B			// Non shifted address for memory 0x100	-> 0x17F
+#define ITSDK_DRIVERS_MAX17205_ADDRESS_100_1FF	0x0B			// Non shifted address for memory 0x100	-> 0x17F
 
 
 
 #define ITSDK_DRIVERS_MAX17205_REG_DEVNAME_ADR			0x21	// Device type identification
-#define ITSDK_DRIVERS_MAX17205_REG_DEVNAME_MAX172X1		0x01	//  17201 / 17211 chip
-#define ITSDK_DRIVERS_MAX17205_REG_DEVNAME_MAX172X5		0x05	//  17205 / 17215 chip
+#define ITSDK_DRIVERS_MAX17205_REG_DEVNAME_MAX172X1		0x01	//  17201 / 17211 chip (single Cell)
+#define ITSDK_DRIVERS_MAX17205_REG_DEVNAME_MAX172X5		0x05	//  17205 / 17215 chip (multi Cell)
+
+#define ITSDK_DRIVERS_MAX17205_REG_TEMP_ADR				0x08	// Temperature
+
+#define ITSDK_DRIVERS_MAX17205_REG_CELL1_VOLT_ADR		0xD8	// CELL1 Voltage
+#define ITSDK_DRIVERS_MAX17205_REG_CELL2_VOLT_ADR		0xD7	// CELL2 Voltage
+#define ITSDK_DRIVERS_MAX17205_REG_CELL3_VOLT_ADR		0xD7	// CELL3 Voltage
+#define ITSDK_DRIVERS_MAX17205_REG_CELLX_VOLT_ADR		0xD9	// CELLX Voltage
+#define ITSDK_DRIVERS_MAX17205_REG_VBAT_VOLT_ADR		0XDA	// VBAT Voltage
+
+#define ITSDK_DRIVERS_MAX17205_REG_COMMAND_ADR			0x60	// Command register
+#define ITSDK_DRIVERS_MAX17205_REG_CONFIG2_ADR			0xBB	// Config 2 register
+
 
 #define ITSDK_DRIVERS_MAX17205_REG_NRSENSE				0x1CF	//  setup the Rsense value
 

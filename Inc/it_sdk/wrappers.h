@@ -188,7 +188,7 @@ _I2C_Status i2c_write8BRegister(
 		uint16_t  regSize			// Register address size 1B or 2B
 );
 
-_I2C_Status i2c_write16BRegister(
+_I2C_Status i2c_write16BRegister(		// 16B Word => LSB first on I2C
 		ITSDK_I2C_HANDLER_TYPE * i2c,
 		uint16_t  devAdr,			// Non shifted device address
 		uint16_t  regAdr,			// Register address (8b or 16bà
@@ -220,7 +220,7 @@ _I2C_Status i2c_read8BRegister(
 		uint16_t  regSize			// Register address size 1B or 2B
 );
 
-_I2C_Status i2c_read16BRegister(
+_I2C_Status i2c_read16BRegister(    // 16B Word => LSB first on I2C
 		ITSDK_I2C_HANDLER_TYPE * i2c,
 		uint16_t  devAdr,			// Non shifted device address
 		uint16_t  regAdr,			// Register address (8b or 16bà

@@ -38,37 +38,46 @@ static drivers_max17205_conf_t __max17205_config;
 
 /**
  * Read 16b values
+ * The MAX17201/5 use a Restart between Reg Address and Read/Write operations, like a Memory
  */
 static _I2C_Status __readRegister(uint16_t addr, uint16_t * value) {
 	uint8_t devAdr = ITSDK_DRIVERS_MAX17205_ADDRESS_000_0FF;
 	if ( addr >= 0x100 ) {
-		devAdr = ITSDK_DRIVERS_MAX17205_ADDRESS_100_17F;
+		devAdr = ITSDK_DRIVERS_MAX17205_ADDRESS_100_1FF;
 	}
-	_I2C_Status r = i2c_read16BRegister(
-			&ITSDK_DRIVERS_MAX17205_I2C,
-			devAdr,
-			addr,
-			value,
-			1
-		   );
+	uint8_t b[2];
+	_I2C_Status r = i2c_memRead(
+			&ITSDK_DRIVERS_MAX17205_I2C,				// i2c handler
+			devAdr,										// Device Address => 7 bits non shifted
+			addr,										// Memory address to access
+			8,											// 8 for 8b, 16 for 16 bits ...
+			b,											// Data to be read
+			2
+	);
+	*value = b[0] + (uint16_t)b[1]*256;
 	return r;
 }
 
 /**
  * Write 16b values
+ * The MAX17201/5 use a Restart between Reg Address and Read/Write operations, like a Memory
  */
 static _I2C_Status __writeRegister(uint16_t addr, uint16_t value) {
 	uint8_t devAdr = ITSDK_DRIVERS_MAX17205_ADDRESS_000_0FF;
 	if ( addr >= 0x100 ) {
-		devAdr = ITSDK_DRIVERS_MAX17205_ADDRESS_100_17F;
+		devAdr = ITSDK_DRIVERS_MAX17205_ADDRESS_100_1FF;
 	}
-	return i2c_write16BRegister(
-			&ITSDK_DRIVERS_MAX17205_I2C,
-			devAdr,
-			addr,
-			value,
-			1
-		   );
+	uint8_t b[2];
+	b[0] = value & 0xFF;
+	b[1] = value >> 8;
+	return i2c_memWrite(
+			&ITSDK_DRIVERS_MAX17205_I2C,				// i2c handler
+			devAdr,										// Device Address => 7 bits non shifted
+			addr,										// Memory address to access
+			8,											// 8 for 8b, 16 for 16 bits ...
+			b,											// Data to be read
+			2
+	);
 }
 
 /**
@@ -100,7 +109,11 @@ drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode) {
 		return MAX17205_NOTFOUND;
 	}
 	__max17205_config.devType = v;
-	if ( __max17205_config.devType != MAX17205_TYPE_172X1 && __max17205_config.devType != MAX17205_TYPE_172X5 ) {
+
+
+	if (    __max17205_config.devType != MAX17205_TYPE_SINGLE_CELL
+		 && __max17205_config.devType != MAX17205_TYPE_MULTI_CELL
+		 && __max17205_config.devType != MAX17205_TYPE_MULTI_CELL2 ) {
 		ITSDK_ERROR_REPORT(ITSDK_ERROR_DRV_MAX17205_NOTFOUND,0);
 		return MAX17205_NOTFOUND;
 	}
@@ -110,7 +123,88 @@ drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode) {
 		gpio_registerIrqAction(&__max17205_gpio_irq);
 	}
 
+	// Reset the device
+	__writeRegister(ITSDK_DRIVERS_MAX17205_REG_COMMAND_ADR,0x000F);
+	itsdk_delayMs(50);
+	__writeRegister(ITSDK_DRIVERS_MAX17205_REG_CONFIG2_ADR,0x0001);
+
+
+	// test
+	itsdk_delayMs(200);
+
+	int32_t t;
+	drivers_max17205_getTemperature(&t);
+	log_info("__max17205_config.devType : %02X\r\n",__max17205_config.devType);
+
+	drivers_max17205_getVoltage(MAX17205_VBAT,&v);
+	drivers_max17205_getVoltage(MAX17205_CELL1,&v);
+	drivers_max17205_getVoltage(MAX17205_CELL2,&v);
+	drivers_max17205_getVoltage(MAX17205_CELL3,&v);
+	drivers_max17205_getVoltage(MAX17205_CELLX,&v);
+
+
 	return MAX17205_SUCCESS;
 }
+
+/**
+ * Return the temperature in m°C
+ */
+drivers_max17205_ret_e drivers_max17205_getTemperature(int32_t * mTemp) {
+	int16_t v;
+	if ( __readRegister(ITSDK_DRIVERS_MAX17205_REG_TEMP_ADR,(uint16_t*)&v) != I2C_OK ) {
+		return MAX17205_FAILED;
+	}
+	*mTemp = ((int32_t)v*1000) / 256;
+	return MAX17205_SUCCESS;
+}
+
+/**
+ * Return the temperature in m°C
+ */
+drivers_max17205_ret_e drivers_max17205_getVoltage(drivers_max17205_cell_select_e cell, uint16_t * mVolt) {
+
+	uint16_t regAdr = 0;
+	switch (cell) {
+	case MAX17205_CELL1:
+		regAdr = ITSDK_DRIVERS_MAX17205_REG_CELL1_VOLT_ADR;
+		break;
+	case MAX17205_CELL2:
+		regAdr = ITSDK_DRIVERS_MAX17205_REG_CELL2_VOLT_ADR;
+		break;
+	case MAX17205_CELL3:
+		regAdr = ITSDK_DRIVERS_MAX17205_REG_CELL3_VOLT_ADR;
+		break;
+	case MAX17205_CELLX:
+		regAdr = ITSDK_DRIVERS_MAX17205_REG_CELLX_VOLT_ADR;
+		break;
+	case MAX17205_VBAT:
+		regAdr = ITSDK_DRIVERS_MAX17205_REG_VBAT_VOLT_ADR;
+		break;
+	default:
+		return MAX17205_FAILED;
+	}
+
+	uint16_t v;
+	if ( __readRegister(regAdr,&v) != I2C_OK ) {
+		return MAX17205_FAILED;
+	}
+	switch (cell) {
+	default:
+	case MAX17205_CELL1:
+	case MAX17205_CELL2:
+	case MAX17205_CELL3:
+	case MAX17205_CELLX:
+		*mVolt = (uint16_t)((((uint32_t)v)*1000000)/78125); // Ratio 0.000078125 V / LSB
+		break;
+	case MAX17205_VBAT:
+		*mVolt = v + v / 4;	// 1.25mV / LSB
+		break;
+	}
+	log_info("mVolt : %d\r\n",*mVolt);
+	return MAX17205_SUCCESS;
+}
+
+
+
 
 #endif // ITSDK_DRIVERS_MAX17205
