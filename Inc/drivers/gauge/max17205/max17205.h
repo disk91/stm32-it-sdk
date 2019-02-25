@@ -73,6 +73,8 @@ typedef enum {
 drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode);
 drivers_max17205_ret_e drivers_max17205_getTemperature(int32_t * mTemp);
 drivers_max17205_ret_e drivers_max17205_getVoltage(drivers_max17205_cell_select_e cell, uint16_t * mVolt);
+drivers_max17205_ret_e drivers_max17205_getCurrent(int32_t * uAmp);
+drivers_max17205_ret_e drivers_max17205_getCoulomb(uint16_t * coulomb);
 
 // ====================================================================
 // Registers
@@ -95,12 +97,15 @@ drivers_max17205_ret_e drivers_max17205_getVoltage(drivers_max17205_cell_select_
 #define ITSDK_DRIVERS_MAX17205_REG_CELL3_VOLT_ADR		0xD6	// CELL3 Voltage
 #define ITSDK_DRIVERS_MAX17205_REG_CELL4_VOLT_ADR		0xD5	// CELL4 Voltage
 #define ITSDK_DRIVERS_MAX17205_REG_CELLX_VOLT_ADR		0xD9	// CELLX Voltage
-#define ITSDK_DRIVERS_MAX17205_REG_VBAT_VOLT_ADR		0XDA	// VBAT Voltage
+#define ITSDK_DRIVERS_MAX17205_REG_VBAT_VOLT_ADR		0xDA	// VBAT Voltage
+#define ITSDK_DRIVERS_MAX17205_REG_CURRENT_ADR			0x0A	// Current
+#define ITSDK_DRIVERS_MAX17205_REG_QH_ADR				0x4D	// Coulomb
 
 #define ITSDK_DRIVERS_MAX17205_REG_COMMAND_ADR			0x60	// Command register
 #define ITSDK_DRIVERS_MAX17205_REG_CONFIG2_ADR			0xBB	// Config 2 register
 
 #define ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_ADR			0x1B5	// Config 2 register
+#define ITSDK_DRIVERS_MAX17205_REG_BNPACKCFG_ADR		0x0BD	// Config 2 Persistant
 #define ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_NCELL_MSK	0x000F	// Number of cells
 #define ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_NCELL_SHIFT	0
 
