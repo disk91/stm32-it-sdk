@@ -108,7 +108,8 @@ drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode) {
 		ITSDK_ERROR_REPORT(ITSDK_ERROR_DRV_MAX17205_NOTFOUND,0);
 		return MAX17205_NOTFOUND;
 	}
-	__max17205_config.devType = v;
+	v &= ITSDK_DRIVERS_MAX17205_REG_DEVNAME_MSK;
+	__max17205_config.devType = ( v & 0xFF );
 
 
 	if (    __max17205_config.devType != MAX17205_TYPE_SINGLE_CELL
@@ -128,20 +129,26 @@ drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode) {
 	itsdk_delayMs(50);
 	__writeRegister(ITSDK_DRIVERS_MAX17205_REG_CONFIG2_ADR,0x0001);
 
+	switch ( mode ) {
+	case MAX17205_MODE_3CELLS_INT_TEMP:
+		// 3 cells + internal temperature management
+		__readRegister(ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_ADR,&v);	// read conf
+		v &= ~ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_NCELL_MSK;
+		v |= 3 << ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_NCELL_SHIFT;		// 3 cells
+		v &= ~ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_TEMP_MSK;
+		v |= MAX17205_REG_NPACKCFG_TEMP_INTERNAL_DIETEMP;
+		v &= ~ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_CELLX_MSK;
+		v &= ~ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_VBAT_MSK;
+		v &= ~ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_CHEN_MSK;
+		v |= ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_CHEN_ENABLE;
+		__writeRegister(ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_ADR,v);
+		break;
 
-	// test
-	itsdk_delayMs(200);
+	default:
+	case MAX17205_MODE_DEFAULT:
+		break;
 
-	int32_t t;
-	drivers_max17205_getTemperature(&t);
-	log_info("__max17205_config.devType : %02X\r\n",__max17205_config.devType);
-
-	drivers_max17205_getVoltage(MAX17205_VBAT,&v);
-	drivers_max17205_getVoltage(MAX17205_CELL1,&v);
-	drivers_max17205_getVoltage(MAX17205_CELL2,&v);
-	drivers_max17205_getVoltage(MAX17205_CELL3,&v);
-	drivers_max17205_getVoltage(MAX17205_CELLX,&v);
-
+	}
 
 	return MAX17205_SUCCESS;
 }
@@ -174,6 +181,9 @@ drivers_max17205_ret_e drivers_max17205_getVoltage(drivers_max17205_cell_select_
 	case MAX17205_CELL3:
 		regAdr = ITSDK_DRIVERS_MAX17205_REG_CELL3_VOLT_ADR;
 		break;
+	case MAX17205_CELL4:
+		regAdr = ITSDK_DRIVERS_MAX17205_REG_CELL4_VOLT_ADR;
+		break;
 	case MAX17205_CELLX:
 		regAdr = ITSDK_DRIVERS_MAX17205_REG_CELLX_VOLT_ADR;
 		break;
@@ -193,14 +203,15 @@ drivers_max17205_ret_e drivers_max17205_getVoltage(drivers_max17205_cell_select_
 	case MAX17205_CELL1:
 	case MAX17205_CELL2:
 	case MAX17205_CELL3:
+	case MAX17205_CELL4:
 	case MAX17205_CELLX:
-		*mVolt = (uint16_t)((((uint32_t)v)*1000000)/78125); // Ratio 0.000078125 V / LSB
+		*mVolt = (uint16_t)((((uint64_t)v)*78125)/1000000); // Ratio 0.000078125 V / LSB
 		break;
 	case MAX17205_VBAT:
 		*mVolt = v + v / 4;	// 1.25mV / LSB
 		break;
 	}
-	log_info("mVolt : %d\r\n",*mVolt);
+	log_info("mVolt : %d (v %d)\r\n",*mVolt,v);
 	return MAX17205_SUCCESS;
 }
 
