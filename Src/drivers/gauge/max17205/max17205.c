@@ -84,7 +84,7 @@ static _I2C_Status __writeRegister(uint16_t addr, uint16_t value) {
  * Interrupt handler
  */
 static void __max17205_interrupt(uint16_t GPIO_Pin) {
-	log_info("ST25DV Int\r\n");
+	log_info("MAX17205 Int\r\n");
 
 }
 
@@ -101,6 +101,7 @@ static gpio_irq_chain_t __max17205_gpio_irq = {
 drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode) {
 
 	__max17205_config.mode = mode;
+	__max17205_config.initialized = 0;
 
 	// Search for the device type
 	uint16_t v;
@@ -111,13 +112,22 @@ drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode) {
 	v &= ITSDK_DRIVERS_MAX17205_REG_DEVNAME_MSK;
 	__max17205_config.devType = ( v & 0xFF );
 
-
-//	if (    __max17205_config.devType != MAX17205_TYPE_SINGLE_CELL
-//		 && __max17205_config.devType != MAX17205_TYPE_MULTI_CELL
-//		 && __max17205_config.devType != MAX17205_TYPE_MULTI_CELL2 ) {
-//		ITSDK_ERROR_REPORT(ITSDK_ERROR_DRV_MAX17205_NOTFOUND,0);
-//		return MAX17205_NOTFOUND;
-//	}
+	if (    __max17205_config.devType != MAX17205_TYPE_SINGLE_CELL
+		 && __max17205_config.devType != MAX17205_TYPE_MULTI_CELL
+	) {
+		// This can be due to undervoltage powering.
+		// When the power supply is under 5V ( level not tested but higher the spec minimal documented level )
+		//  the devId returned is just shit ; The device works but really badly
+		uint16_t vbat;
+		drivers_max17205_getVoltage(MAX17205_VBAT,&vbat);
+		if ( vbat < ITSDK_DRIVERS_MAX17205_UNDERVOLTAGE ) {
+			// assuming this is the undervoltage condition
+			ITSDK_ERROR_REPORT(ITSDK_ERROR_DRV_MAX17205_UNDERVOLT,(uint8_t)(vbat/100));
+			return MAX17205_UNDERVOLT;
+		}
+		ITSDK_ERROR_REPORT(ITSDK_ERROR_DRV_MAX17205_NOTFOUND,0);
+		return MAX17205_NOTFOUND;
+	}
 
 	if (ITSDK_DRIVERS_MAX17205_ALRT1_PIN != __LP_GPIO_NONE ) {
 		gpio_configure(ITSDK_DRIVERS_MAX17205_ALRT1_BANK,ITSDK_DRIVERS_MAX17205_ALRT1_PIN,GPIO_INTERRUPT_RISING);
@@ -131,6 +141,7 @@ drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode) {
 	itsdk_delayMs(15);
 
 
+	// Configure device
 	switch ( mode ) {
 	case MAX17205_MODE_3CELLS_INT_TEMP:
 		// 3 cells + internal temperature management
@@ -154,7 +165,7 @@ drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode) {
 		break;
 
 	}
-
+	__max17205_config.initialized = 1;
 	return MAX17205_SUCCESS;
 }
 
@@ -214,14 +225,19 @@ drivers_max17205_ret_e drivers_max17205_getVoltage(drivers_max17205_cell_select_
 		break;
 	case MAX17205_VBAT:
 		*mVolt = v + v / 4;	// 1.25mV / LSB
+		// We know that MAX17205_TYPE_MULTI_CELL need at least 5V to work properly
+		if ( __max17205_config.devType == MAX17205_TYPE_MULTI_CELL && mVolt < ITSDK_DRIVERS_MAX17205_UNDERVOLTAGE ) {
+			__max17205_config.initialized = 0;
+		}
 		break;
 	}
-	log_info("mVolt : %d (v %d)\r\n",*mVolt,v);
 	return MAX17205_SUCCESS;
 }
 
 /**
  * Return Current in uA
+ * The value is negative when consuming the power from the batteries.
+ * The value is positive when charging the batteries.
  */
 drivers_max17205_ret_e drivers_max17205_getCurrent(int32_t * uAmp) {
 
@@ -237,7 +253,8 @@ drivers_max17205_ret_e drivers_max17205_getCurrent(int32_t * uAmp) {
 
 
 /**
- * Return Current in uA
+ * Return Current in Coulomb
+ * The counter decrease when the battery is consumed and increased when the battery is charging
  */
 drivers_max17205_ret_e drivers_max17205_getCoulomb(uint16_t * coulomb) {
 
@@ -245,13 +262,19 @@ drivers_max17205_ret_e drivers_max17205_getCoulomb(uint16_t * coulomb) {
 	if ( __readRegister(ITSDK_DRIVERS_MAX17205_REG_QH_ADR,&v) != I2C_OK ) {
 		return MAX17205_FAILED;
 	}
-
 	*coulomb = v;
-	log_info("coulomb : %d\r\n",*coulomb);
 	return MAX17205_SUCCESS;
 }
 
-
+/**
+ * Return success when the max17205 is ready for being used
+ * Failed if not ready.
+ * As the state can dynamically change regarding the battery level it is recommanded to
+ * call this function before calling any other function (this is not concerning setup)
+ */
+drivers_max17205_ret_e drivers_max17205_isReady() {
+	return (__max17205_config.initialized == 1)?MAX17205_SUCCESS:MAX17205_FAILED;
+}
 
 
 #endif // ITSDK_DRIVERS_MAX17205

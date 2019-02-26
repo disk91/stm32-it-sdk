@@ -42,7 +42,6 @@ typedef enum {
 
 typedef enum __attribute__ ((__packed__)) {
 	MAX17205_TYPE_SINGLE_CELL = 1,
-	MAX17205_TYPE_MULTI_CELL2 = 4,			// I don't know why ut this is the returned value ...
 	MAX17205_TYPE_MULTI_CELL = 5,
 } drivers_max17205_type_e;
 
@@ -58,12 +57,13 @@ typedef enum {
 typedef struct {
 	drivers_max17205_mode_e 		mode;		// Setup mode
 	drivers_max17205_type_e			devType;	// 172X1 or 172X5
-
+	uint8_t							initialized:1;
 
 } drivers_max17205_conf_t;
 
 typedef enum {
 	MAX17205_SUCCESS =0,
+	MAX17205_UNDERVOLT,
 	MAX17205_NOTFOUND,
 
 	MAX17205_FAILED
@@ -75,6 +75,7 @@ drivers_max17205_ret_e drivers_max17205_getTemperature(int32_t * mTemp);
 drivers_max17205_ret_e drivers_max17205_getVoltage(drivers_max17205_cell_select_e cell, uint16_t * mVolt);
 drivers_max17205_ret_e drivers_max17205_getCurrent(int32_t * uAmp);
 drivers_max17205_ret_e drivers_max17205_getCoulomb(uint16_t * coulomb);
+drivers_max17205_ret_e drivers_max17205_isReady();
 
 // ====================================================================
 // Registers
@@ -83,6 +84,7 @@ drivers_max17205_ret_e drivers_max17205_getCoulomb(uint16_t * coulomb);
 #define ITSDK_DRIVERS_MAX17205_ADDRESS_000_0FF	0x36			// Non shifted address for memory 0x000 -> 0x0FF
 #define ITSDK_DRIVERS_MAX17205_ADDRESS_100_1FF	0x0B			// Non shifted address for memory 0x100	-> 0x17F
 
+#define ITSDK_DRIVERS_MAX17205_UNDERVOLTAGE		5000			// Limit in mV for MAX17205 to work properly
 
 
 #define ITSDK_DRIVERS_MAX17205_REG_DEVNAME_ADR			0x21	// Device type identification
