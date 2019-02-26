@@ -45,6 +45,8 @@ Made for being compiled with open-source environment GCC / AC6
      * bosh bme280
   * Light
      * Maxim Max44009
+  * Current / Battery Pack
+     * Maxim Max17205 / Max17201
        
 * Supported stacks
   * lorawan
