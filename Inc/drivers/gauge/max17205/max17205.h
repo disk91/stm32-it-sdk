@@ -57,16 +57,16 @@ typedef enum {
 typedef struct {
 	drivers_max17205_mode_e 		mode;		// Setup mode
 	drivers_max17205_type_e			devType;	// 172X1 or 172X5
-	uint8_t							initialized:1;
+	uint8_t							initialized:3;
 
 } drivers_max17205_conf_t;
 
 typedef enum {
-	MAX17205_SUCCESS =0,
-	MAX17205_UNDERVOLT,
-	MAX17205_NOTFOUND,
+	MAX17205_SUCCESS=0,
+	MAX17205_UNDERVOLT=1,
+	MAX17205_NOTFOUND=2,
 
-	MAX17205_FAILED
+	MAX17205_FAILED=7
 
 } drivers_max17205_ret_e;
 

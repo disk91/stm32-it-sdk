@@ -101,7 +101,7 @@ static gpio_irq_chain_t __max17205_gpio_irq = {
 drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode) {
 
 	__max17205_config.mode = mode;
-	__max17205_config.initialized = 0;
+	__max17205_config.initialized = MAX17205_FAILED;
 
 	// Search for the device type
 	uint16_t v;
@@ -123,6 +123,7 @@ drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode) {
 		if ( vbat < ITSDK_DRIVERS_MAX17205_UNDERVOLTAGE ) {
 			// assuming this is the undervoltage condition
 			ITSDK_ERROR_REPORT(ITSDK_ERROR_DRV_MAX17205_UNDERVOLT,(uint8_t)(vbat/100));
+			__max17205_config.initialized = MAX17205_UNDERVOLT;
 			return MAX17205_UNDERVOLT;
 		}
 		ITSDK_ERROR_REPORT(ITSDK_ERROR_DRV_MAX17205_NOTFOUND,0);
@@ -165,7 +166,7 @@ drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode) {
 		break;
 
 	}
-	__max17205_config.initialized = 1;
+	__max17205_config.initialized = MAX17205_SUCCESS;
 	return MAX17205_SUCCESS;
 }
 
@@ -247,7 +248,6 @@ drivers_max17205_ret_e drivers_max17205_getCurrent(int32_t * uAmp) {
 	}
 
 	*uAmp = (int32_t)(((int64_t)(v) * 15625)/(10*ITSDK_DRIVERS_MAX17205_RSENSE_MOHM));
-	log_info("uA : %d (v %d)\r\n",*uAmp,v);
 	return MAX17205_SUCCESS;
 }
 
@@ -269,11 +269,11 @@ drivers_max17205_ret_e drivers_max17205_getCoulomb(uint16_t * coulomb) {
 /**
  * Return success when the max17205 is ready for being used
  * Failed if not ready.
- * As the state can dynamically change regarding the battery level it is recommanded to
+ * As the state can dynamically change regarding the battery level it is recommended to
  * call this function before calling any other function (this is not concerning setup)
  */
 drivers_max17205_ret_e drivers_max17205_isReady() {
-	return (__max17205_config.initialized == 1)?MAX17205_SUCCESS:MAX17205_FAILED;
+	return __max17205_config.initialized;
 }
 
 
