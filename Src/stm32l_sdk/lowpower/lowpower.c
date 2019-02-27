@@ -183,7 +183,7 @@ stm32l_lowPowerReturn_e stm32l_lowPowerResume() {
 		 // remove the WakeUp Handler and fire the pending irq to the normal IRQ handler
 		 gpio_removeWakeUpAction();
  		 if ( __lowPower_wakeup_reason == LOWPWR_WAKEUP_GPIO && __lowPower_wakeup_pin != 0 ) {
-			HAL_GPIO_EXTI_Callback(__lowPower_wakeup_pin);
+		 	HAL_GPIO_EXTI_Callback(__lowPower_wakeup_pin);
 		 }
 		#endif
 

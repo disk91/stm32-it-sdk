@@ -58,14 +58,16 @@ static _I2C_Status __writeRegister(uint8_t addr, uint8_t value) {
 */
 
 static _I2C_Status __writeMemory(drivers_st25dv_addr_e adrType, uint16_t memAdr, uint8_t * data, uint8_t size) {
-	return i2c_memWrite(
+	_I2C_Status r =  i2c_memWrite(
 			&ITSDK_DRIVERS_ST25DV_I2C,				// i2c handler
 			(uint16_t)adrType,							// Device Address => 7 bits non shifted
 			memAdr,										// Memory address to access
-			16,											// 16 bits data
+			16,											// 16 bits address
 			data,										// Data to be written
 			size										// Size of the data to be written
 	);
+	itsdk_delayMs(5*((size/4)+1));						// Wait EEPROM Write 5ms per 32b blocks
+	return r;
 }
 
 static _I2C_Status __readMemory(drivers_st25dv_addr_e adrType, uint16_t memAdr, uint8_t * data, uint8_t size) {
@@ -73,7 +75,7 @@ static _I2C_Status __readMemory(drivers_st25dv_addr_e adrType, uint16_t memAdr, 
 			&ITSDK_DRIVERS_ST25DV_I2C,				// i2c handler
 			(uint16_t)adrType,							// Device Address => 7 bits non shifted
 			memAdr,										// Memory address to access
-			16,											// 16 bits data
+			16,											// 16 bits address
 			data,										// Data to be written
 			size										// Size of the data to be written
 	);
@@ -119,11 +121,94 @@ drivers_st25dv_ret_e drivers_st25dv_setup(drivers_st25dv_mode_e mode) {
 		gpio_reset(ITSDK_DRIVERS_ST25DV_LPD_BANK,ITSDK_DRIVERS_ST25DV_LPD_PIN);	// power On
     }
 
+    // Configure the I2C password
+    if ( _drivers_st25dv_presentI2CPassword(0) == ST25DV_SUCCESS ) {
+    	// test default password success
+    	if ( ITSDK_DRIVERS_ST25DV_I2C_PASSWORD != 0 ) {
+    		uint8_t v;
+    		// Change the system config bits so that FTM can be turned off/on Mailbox R/W bit set to 1
+    		v= ST25DV_MB_MODE_RW_MASK;
+    		__writeMemory(ST25DV_ADDR_SYST,ST25DV_MB_MODE_REG,&v,1);
+    		__readMemory(ST25DV_ADDR_SYST,ST25DV_MB_MODE_REG,&v,1);
+    		if ( (v & ST25DV_MB_MODE_RW_MASK ) > 0 ) {
+    			// success - now deactivate fast transfer mode
+        		__readMemory(ST25DV_ADDR_DATA,ST25DV_MB_CTRL_DYN_REG,&v,1);
+        		v &= ~ST25DV_MB_CTRL_DYN_MBEN_MASK;	// disable FTM
+    			__writeMemory(ST25DV_ADDR_DATA,ST25DV_MB_CTRL_DYN_REG,&v,1);
+    			// Change password
+    			if ( _drivers_st25dv_changeI2CPassword(ITSDK_DRIVERS_ST25DV_I2C_PASSWORD) != ST25DV_SUCCESS ) {
+    				ITSDK_ERROR_REPORT(ITSDK_ERROR_DRV_ST25DV_PASSCHGKO,0);
+    			} else {
+    				ITSDK_ERROR_REPORT(ITSDK_ERROR_DRV_ST25DV_PASSCHGOK,0);
+    			}
+    		}
+    	}
+    } else if (_drivers_st25dv_presentI2CPassword(ITSDK_DRIVERS_ST25DV_I2C_PASSWORD) != ST25DV_SUCCESS ) {
+    	// failed to login with I2C password
+		ITSDK_ERROR_REPORT(ITSDK_ERROR_DRV_ST25DV_PASSCHGKO,0);
+    	return ST25DV_INVALIDPASS;
+    }
 
+    // We are login
+    uint8_t v;
+    switch (mode) {
+    default:
+    case ST25DV_MODE_DEFAULT:
+    	// init FTM
+		v= ST25DV_MB_MODE_RW_MASK;
+		__writeMemory(ST25DV_ADDR_SYST,ST25DV_MB_MODE_REG,&v,1);
+   		__readMemory(ST25DV_ADDR_DATA,ST25DV_MB_CTRL_DYN_REG,&v,1);
+   		v |= ST25DV_MB_CTRL_DYN_MBEN_MASK;	// enable FTM
+		__writeMemory(ST25DV_ADDR_DATA,ST25DV_MB_CTRL_DYN_REG,&v,1);
+    	break;
+    }
+
+
+    // going low power
+    if ((ITSDK_DRIVERS_ST25DV_LPD_PIN) != __LP_GPIO_NONE) {
+		gpio_set(ITSDK_DRIVERS_ST25DV_LPD_BANK,ITSDK_DRIVERS_ST25DV_LPD_PIN);	// low power
+    }
 	return ST25DV_SUCCESS;
 }
 
+/**
+ * Send the I2C Password to unlock the features.
+ */
+drivers_st25dv_ret_e _drivers_st25dv_presentI2CPassword(uint64_t pass) {
+	// Send password
+	uint8_t d[17];
+	for (int i = 0 ; i < 8 ; i++ ) {
+		d[i] = (pass >> (56-8*i)) & 0xFF;
+		d[i+9] = (pass >> (56-8*i)) & 0xFF;
+	}
+	d[8] = ST25DV_I2CPASSWD_VALID_BYTE;
+	if ( __writeMemory(ST25DV_ADDR_SYST,ST25DV_I2CPASSWD_REG,d,17) == I2C_OK ) {
+		// Verify login sucess
+		if ( __readMemory(ST25DV_ADDR_DATA,ST25DV_I2C_SSO_DYN_REG,d,1) == I2C_OK ) {
+			if ( (d[0] & ST25DV_I2C_SSO_DYN_I2CSSO_MASK) > 0 ) {
+				return ST25DV_SUCCESS;
+			}
+		}
+	}
+	return ST25DV_FAILED;
+}
 
+/**
+ * Set a new I2C password
+ */
+drivers_st25dv_ret_e _drivers_st25dv_changeI2CPassword(uint64_t pass) {
+	// Send password
+	uint8_t d[17];
+	for (int i = 0 ; i < 8 ; i++ ) {
+		d[i] = (pass >> (56-8*i)) & 0xFF;
+		d[i+9] = (pass >> (56-8*i)) & 0xFF;
+	}
+	d[8] = ST25DV_I2CPASSWD_VALID_BYTE_WR;
+	if ( __writeMemory(ST25DV_ADDR_SYST,ST25DV_I2CPASSWD_REG,d,17) == I2C_OK ) {
+		return ST25DV_SUCCESS;
+	}
+	return ST25DV_FAILED;
+}
 
 
 

@@ -55,7 +55,7 @@
 // ====================================================================
 
 typedef enum {
-	ST25DV_MODE_DEFAULT = 0,
+	ST25DV_MODE_DEFAULT = 0,				// FTM activated
 
 
 } drivers_st25dv_mode_e;
@@ -71,6 +71,7 @@ typedef struct {
 typedef enum {
 	ST25DV_SUCCESS =0,
 	ST25DV_NOTFOUND,
+	ST25DV_INVALIDPASS,		// I2C Password is invalid
 
 	ST25DV_FAILED
 
@@ -636,11 +637,17 @@ typedef struct
 // INTERNAL USE
 // ====================================================================
 
+drivers_st25dv_ret_e _drivers_st25dv_presentI2CPassword(uint64_t pass);
+drivers_st25dv_ret_e _drivers_st25dv_changeI2CPassword(uint64_t pass);
 
 typedef enum {
 	ST25DV_ADDR_DATA = (ST25DV_ADDR_DATA_I2C>>1),
 	ST25DV_ADDR_SYST = (ST25DV_ADDR_SYST_I2C>>1)
 
 } drivers_st25dv_addr_e;
+
+
+#define ST25DV_I2CPASSWD_VALID_BYTE			0x09
+#define ST25DV_I2CPASSWD_VALID_BYTE_WR		0x07
 
 #endif /* DRIVERS_NFC_ST25DV_ST25DV_H_ */

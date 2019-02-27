@@ -227,7 +227,7 @@ drivers_max17205_ret_e drivers_max17205_getVoltage(drivers_max17205_cell_select_
 	case MAX17205_VBAT:
 		*mVolt = v + v / 4;	// 1.25mV / LSB
 		// We know that MAX17205_TYPE_MULTI_CELL need at least 5V to work properly
-		if ( __max17205_config.devType == MAX17205_TYPE_MULTI_CELL && mVolt < ITSDK_DRIVERS_MAX17205_UNDERVOLTAGE ) {
+		if ( __max17205_config.devType == MAX17205_TYPE_MULTI_CELL && *mVolt < ITSDK_DRIVERS_MAX17205_UNDERVOLTAGE ) {
 			__max17205_config.initialized = 0;
 		}
 		break;
