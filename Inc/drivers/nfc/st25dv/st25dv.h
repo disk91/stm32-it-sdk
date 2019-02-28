@@ -57,13 +57,16 @@
 typedef enum {
 	ST25DV_MODE_DEFAULT = 0,				// FTM activated
 
-
 } drivers_st25dv_mode_e;
 
+typedef enum {
+	ST25DV_SLEEPING = 0,
+	ST25DV_WAKEUP
+} drivers_st25dv_sleep_e;
 
 typedef struct {
 	drivers_st25dv_mode_e 		mode;		// Setup mode
-
+	drivers_st25dv_sleep_e		state;		// Sleep state
 	uint8_t						devId;		// Device Id (type)
 
 } drivers_st25dv_conf_t;
@@ -83,6 +86,8 @@ drivers_st25dv_ret_e drivers_st25dv_setup(drivers_st25dv_mode_e mode);
 drivers_st25dv_ret_e drivers_st25dv_ftmAvailableToRead();
 drivers_st25dv_ret_e drivers_st25dv_ftmFreeForWriting();
 drivers_st25dv_ret_e drivers_st25dv_ftmWrite(uint8_t * messages, uint16_t sz);
+drivers_st25dv_ret_e drivers_st25dv_goLowPower();
+drivers_st25dv_ret_e drivers_st25dv_goWakeUp();
 
 // =============================================================================
 // ST CODE UNDER THIS LINE
@@ -642,8 +647,6 @@ typedef struct
 
 drivers_st25dv_ret_e _drivers_st25dv_presentI2CPassword(uint64_t pass);
 drivers_st25dv_ret_e _drivers_st25dv_changeI2CPassword(uint64_t pass);
-drivers_st25dv_ret_e _drivers_st25dv_goLowPower();
-drivers_st25dv_ret_e _drivers_st25dv_goWakeUp();
 
 typedef enum {
 	ST25DV_ADDR_DATA = (ST25DV_ADDR_DATA_I2C>>1),

@@ -151,7 +151,8 @@ drivers_st25dv_ret_e drivers_st25dv_setup(drivers_st25dv_mode_e mode) {
 
     // We are login
     uint8_t v;
-    switch (mode) {
+    __st25dv_config.mode = mode;
+    switch (__st25dv_config.mode) {
     default:
     case ST25DV_MODE_DEFAULT:
     	// init FTM
@@ -168,7 +169,7 @@ drivers_st25dv_ret_e drivers_st25dv_setup(drivers_st25dv_mode_e mode) {
 
 
     // going low power
-    _drivers_st25dv_goLowPower();
+    drivers_st25dv_goLowPower();
 	return ST25DV_SUCCESS;
 }
 
@@ -215,16 +216,29 @@ drivers_st25dv_ret_e _drivers_st25dv_changeI2CPassword(uint64_t pass) {
 /**
  * Sleep / WakeUp
  */
-drivers_st25dv_ret_e _drivers_st25dv_goLowPower() {
-    if ((ITSDK_DRIVERS_ST25DV_LPD_PIN) != __LP_GPIO_NONE) {
+drivers_st25dv_ret_e drivers_st25dv_goLowPower() {
+    if ((ITSDK_DRIVERS_ST25DV_LPD_PIN) != __LP_GPIO_NONE && __st25dv_config.state == ST25DV_WAKEUP ) {
+    	__st25dv_config.state = ST25DV_SLEEPING;
 		gpio_set(ITSDK_DRIVERS_ST25DV_LPD_BANK,ITSDK_DRIVERS_ST25DV_LPD_PIN);	// low power
     }
 	return ST25DV_SUCCESS;
 }
 
-drivers_st25dv_ret_e _drivers_st25dv_goWakeUp() {
-    if ((ITSDK_DRIVERS_ST25DV_LPD_PIN) != __LP_GPIO_NONE) {
+drivers_st25dv_ret_e drivers_st25dv_goWakeUp() {
+	uint8_t v;
+    if ((ITSDK_DRIVERS_ST25DV_LPD_PIN) != __LP_GPIO_NONE && __st25dv_config.state == ST25DV_SLEEPING) {
 		gpio_reset(ITSDK_DRIVERS_ST25DV_LPD_BANK,ITSDK_DRIVERS_ST25DV_LPD_PIN);	// wakeup
+    	__st25dv_config.state = ST25DV_WAKEUP;
+		itsdk_delayMs(1);
+	    switch (__st25dv_config.mode) {
+	    default:
+	    case ST25DV_MODE_DEFAULT:
+	    	// re-init FTM
+			__readMemory(ST25DV_ADDR_DATA,ST25DV_MB_CTRL_DYN_REG,&v,1);
+	   		v |= ST25DV_MB_CTRL_DYN_MBEN_MASK;	// enable FTM
+			__writeMemory(ST25DV_ADDR_DATA,ST25DV_MB_CTRL_DYN_REG,&v,1);
+	    	break;
+	    }
     }
 	return ST25DV_SUCCESS;
 }
@@ -238,18 +252,16 @@ drivers_st25dv_ret_e _drivers_st25dv_goWakeUp() {
  * Send bytes to the FTM-MB
  */
 drivers_st25dv_ret_e drivers_st25dv_ftmWrite(uint8_t * messages, uint16_t sz) {
-	drivers_st25dv_ret_e ret = ST25DV_FAILED;
 	if ( sz > ST25DV_I2C_MB_SIZE ) return ST25DV_FAILED;
+	if ( __st25dv_config.state == ST25DV_SLEEPING ) return ST25DV_FAILED;
 
-	_drivers_st25dv_goWakeUp();
 	if ( drivers_st25dv_ftmFreeForWriting() == ST25DV_EMPTYFTM ) {
 		// allgood
 		if ( __writeMemory(ST25DV_ADDR_DATA, ST25DV_MAILBOX_RAM_REG, messages, sz) == I2C_OK ) {
-			ret = ST25DV_SUCCESS;
+			return ST25DV_SUCCESS;
 		}
 	}
-	_drivers_st25dv_goLowPower();
-	return ret;
+	return ST25DV_FAILED;
 }
 
 
@@ -262,6 +274,8 @@ drivers_st25dv_ret_e drivers_st25dv_ftmWrite(uint8_t * messages, uint16_t sz) {
 drivers_st25dv_ret_e drivers_st25dv_ftmAvailableToRead() {
 
 	uint8_t v;
+	if ( __st25dv_config.state == ST25DV_SLEEPING ) return ST25DV_FAILED;
+
  	__readMemory(ST25DV_ADDR_DATA,ST25DV_MB_CTRL_DYN_REG,&v,1);
  	if ( (v & ST25DV_MB_CTRL_DYN_HOSTPUTMSG_MASK) > 0 ) {
  		return ST25DV_SUCCESS;
@@ -277,8 +291,10 @@ drivers_st25dv_ret_e drivers_st25dv_ftmAvailableToRead() {
  * - ST25DV_NONEMPTYFTM when we have pending data in the FTM
  */
 drivers_st25dv_ret_e drivers_st25dv_ftmFreeForWriting() {
-#warning - ajouter la gestion wakeup / sleep
+
 	uint8_t v;
+	if ( __st25dv_config.state == ST25DV_SLEEPING ) return ST25DV_FAILED;
+
  	__readMemory(ST25DV_ADDR_DATA,ST25DV_MB_CTRL_DYN_REG,&v,1);
  	if ( (v & ST25DV_MB_CTRL_DYN_MBEN_MASK) > 0 ) {
  	 	if ( (v & ( ST25DV_MB_CTRL_DYN_HOSTPUTMSG_MASK | ST25DV_MB_CTRL_DYN_RFPUTMSG_MASK ) ) > 0 ) {
