@@ -72,13 +72,17 @@ typedef enum {
 	ST25DV_SUCCESS =0,
 	ST25DV_NOTFOUND,
 	ST25DV_INVALIDPASS,		// I2C Password is invalid
+	ST25DV_EMPTYFTM,		// No pending message in the FTM
+	ST25DV_NONEMPTYFTM,		// Pending message in the FTM
 
 	ST25DV_FAILED
 
 } drivers_st25dv_ret_e;
 
 drivers_st25dv_ret_e drivers_st25dv_setup(drivers_st25dv_mode_e mode);
-
+drivers_st25dv_ret_e drivers_st25dv_ftmAvailableToRead();
+drivers_st25dv_ret_e drivers_st25dv_ftmFreeForWriting();
+drivers_st25dv_ret_e drivers_st25dv_ftmWrite(uint8_t * messages, uint16_t sz);
 
 // =============================================================================
 // ST CODE UNDER THIS LINE
@@ -632,13 +636,14 @@ typedef struct
 // ====================================================================
 
 
-
 // ====================================================================
 // INTERNAL USE
 // ====================================================================
 
 drivers_st25dv_ret_e _drivers_st25dv_presentI2CPassword(uint64_t pass);
 drivers_st25dv_ret_e _drivers_st25dv_changeI2CPassword(uint64_t pass);
+drivers_st25dv_ret_e _drivers_st25dv_goLowPower();
+drivers_st25dv_ret_e _drivers_st25dv_goWakeUp();
 
 typedef enum {
 	ST25DV_ADDR_DATA = (ST25DV_ADDR_DATA_I2C>>1),
@@ -649,5 +654,10 @@ typedef enum {
 
 #define ST25DV_I2CPASSWD_VALID_BYTE			0x09
 #define ST25DV_I2CPASSWD_VALID_BYTE_WR		0x07
+
+#define ST25DV_I2C_MB_WDG_DEF_VALUE			0x7			// Time to clear unread FTM MB data 2^(v-1) * 30 ms => 2s
+#define ST25DV_I2C_MB_SIZE					256			// Malbox size
+
+
 
 #endif /* DRIVERS_NFC_ST25DV_ST25DV_H_ */

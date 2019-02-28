@@ -155,9 +155,12 @@ drivers_st25dv_ret_e drivers_st25dv_setup(drivers_st25dv_mode_e mode) {
     default:
     case ST25DV_MODE_DEFAULT:
     	// init FTM
-		v= ST25DV_MB_MODE_RW_MASK;
+		v= ST25DV_MB_MODE_RW_MASK;			// Enable RW for FTM EN bit
 		__writeMemory(ST25DV_ADDR_SYST,ST25DV_MB_MODE_REG,&v,1);
-   		__readMemory(ST25DV_ADDR_DATA,ST25DV_MB_CTRL_DYN_REG,&v,1);
+		v = ST25DV_I2C_MB_WDG_DEF_VALUE;	// Clear pending data not read after 2s
+		__writeMemory(ST25DV_ADDR_SYST,ST25DV_MB_WDG_REG,&v,1);
+
+		__readMemory(ST25DV_ADDR_DATA,ST25DV_MB_CTRL_DYN_REG,&v,1);
    		v |= ST25DV_MB_CTRL_DYN_MBEN_MASK;	// enable FTM
 		__writeMemory(ST25DV_ADDR_DATA,ST25DV_MB_CTRL_DYN_REG,&v,1);
     	break;
@@ -165,9 +168,7 @@ drivers_st25dv_ret_e drivers_st25dv_setup(drivers_st25dv_mode_e mode) {
 
 
     // going low power
-    if ((ITSDK_DRIVERS_ST25DV_LPD_PIN) != __LP_GPIO_NONE) {
-		gpio_set(ITSDK_DRIVERS_ST25DV_LPD_BANK,ITSDK_DRIVERS_ST25DV_LPD_PIN);	// low power
-    }
+    _drivers_st25dv_goLowPower();
 	return ST25DV_SUCCESS;
 }
 
@@ -210,6 +211,84 @@ drivers_st25dv_ret_e _drivers_st25dv_changeI2CPassword(uint64_t pass) {
 	return ST25DV_FAILED;
 }
 
+
+/**
+ * Sleep / WakeUp
+ */
+drivers_st25dv_ret_e _drivers_st25dv_goLowPower() {
+    if ((ITSDK_DRIVERS_ST25DV_LPD_PIN) != __LP_GPIO_NONE) {
+		gpio_set(ITSDK_DRIVERS_ST25DV_LPD_BANK,ITSDK_DRIVERS_ST25DV_LPD_PIN);	// low power
+    }
+	return ST25DV_SUCCESS;
+}
+
+drivers_st25dv_ret_e _drivers_st25dv_goWakeUp() {
+    if ((ITSDK_DRIVERS_ST25DV_LPD_PIN) != __LP_GPIO_NONE) {
+		gpio_reset(ITSDK_DRIVERS_ST25DV_LPD_BANK,ITSDK_DRIVERS_ST25DV_LPD_PIN);	// wakeup
+    }
+	return ST25DV_SUCCESS;
+}
+
+
+// =========================================================================================
+// Fast Transfer Mode - FTP (MailBox) communication
+// =========================================================================================
+
+/**
+ * Send bytes to the FTM-MB
+ */
+drivers_st25dv_ret_e drivers_st25dv_ftmWrite(uint8_t * messages, uint16_t sz) {
+	drivers_st25dv_ret_e ret = ST25DV_FAILED;
+	if ( sz > ST25DV_I2C_MB_SIZE ) return ST25DV_FAILED;
+
+	_drivers_st25dv_goWakeUp();
+	if ( drivers_st25dv_ftmFreeForWriting() == ST25DV_EMPTYFTM ) {
+		// allgood
+		if ( __writeMemory(ST25DV_ADDR_DATA, ST25DV_MAILBOX_RAM_REG, messages, sz) == I2C_OK ) {
+			ret = ST25DV_SUCCESS;
+		}
+	}
+	_drivers_st25dv_goLowPower();
+	return ret;
+}
+
+
+/**
+ * Check if we have pending bytes in the FTM queue
+ * Returns:
+ * - ST25DV_SUCCESS when we have some
+ * - ST25DV_EMPTYFTM when none
+ */
+drivers_st25dv_ret_e drivers_st25dv_ftmAvailableToRead() {
+
+	uint8_t v;
+ 	__readMemory(ST25DV_ADDR_DATA,ST25DV_MB_CTRL_DYN_REG,&v,1);
+ 	if ( (v & ST25DV_MB_CTRL_DYN_HOSTPUTMSG_MASK) > 0 ) {
+ 		return ST25DV_SUCCESS;
+ 	}
+ 	return ST25DV_EMPTYFTM;
+
+}
+
+/**
+ * Check if we have pending bytes in the FTM queue to read
+ * Returns:
+ * - ST25DV_EMPTYFTM when we can use the FTM
+ * - ST25DV_NONEMPTYFTM when we have pending data in the FTM
+ */
+drivers_st25dv_ret_e drivers_st25dv_ftmFreeForWriting() {
+#warning - ajouter la gestion wakeup / sleep
+	uint8_t v;
+ 	__readMemory(ST25DV_ADDR_DATA,ST25DV_MB_CTRL_DYN_REG,&v,1);
+ 	if ( (v & ST25DV_MB_CTRL_DYN_MBEN_MASK) > 0 ) {
+ 	 	if ( (v & ( ST25DV_MB_CTRL_DYN_HOSTPUTMSG_MASK | ST25DV_MB_CTRL_DYN_RFPUTMSG_MASK ) ) > 0 ) {
+ 	 		return ST25DV_NONEMPTYFTM;
+ 	 	}
+ 	 	return ST25DV_EMPTYFTM;
+ 	}
+ 	return ST25DV_FAILED;			// MBEN = 0 - FTM is unactivated
+
+}
 
 
 #endif
