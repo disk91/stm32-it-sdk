@@ -54,6 +54,11 @@
 // API
 // ====================================================================
 
+#define _ST25DV_ACCESS_RW_OPEN		(0 << 2)		// Access type, shifted to map the bit in the configuration register
+#define _ST25DV_ACCESS_RW_WSECURED	(1 << 2)
+#define _ST25DV_ACCESS_RW_RWSECURED	(2 << 2)
+#define _ST25DV_ACCESS_RO_OPEN		(3 << 2)
+
 typedef enum {
 	ST25DV_MODE_DEFAULT = 0,				// FTM activated
 
@@ -63,6 +68,12 @@ typedef enum {
 	ST25DV_SLEEPING = 0,
 	ST25DV_WAKEUP
 } drivers_st25dv_sleep_e;
+
+typedef enum {
+	ST25DV_WITHDELAY = 0,
+	ST25DV_NODELAY
+} drivers_st25dv_delay_e;
+
 
 typedef struct {
 	drivers_st25dv_mode_e 		mode;		// Setup mode
@@ -77,10 +88,18 @@ typedef enum {
 	ST25DV_INVALIDPASS,		// I2C Password is invalid
 	ST25DV_EMPTYFTM,		// No pending message in the FTM
 	ST25DV_NONEMPTYFTM,		// Pending message in the FTM
+	ST25DV_OUTOFBOUNDS,		// Memory zone configuration
 
 	ST25DV_FAILED
 
 } drivers_st25dv_ret_e;
+
+typedef enum {
+	ST25DV_USERZONE_1	= 0,
+	ST25DV_USERZONE_2	= 1,
+	ST25DV_USERZONE_3	= 2,
+	ST25DV_USERZONE_4	= 3,
+} drivers_st25dv_zone_e;
 
 drivers_st25dv_ret_e drivers_st25dv_setup(drivers_st25dv_mode_e mode);
 drivers_st25dv_ret_e drivers_st25dv_ftmAvailableToRead();
@@ -88,6 +107,10 @@ drivers_st25dv_ret_e drivers_st25dv_ftmFreeForWriting();
 drivers_st25dv_ret_e drivers_st25dv_ftmWrite(uint8_t * messages, uint16_t sz);
 drivers_st25dv_ret_e drivers_st25dv_goLowPower();
 drivers_st25dv_ret_e drivers_st25dv_goWakeUp();
+drivers_st25dv_ret_e drivers_st25dv_blocWrite(drivers_st25dv_zone_e zone, uint8_t blockId, uint8_t * data, uint8_t sz);
+drivers_st25dv_ret_e drivers_st25dv_blocRead(drivers_st25dv_zone_e zone, uint8_t blockId, uint8_t * data, uint8_t sz);
+drivers_st25dv_ret_e drivers_st25dv_enableFTM();
+drivers_st25dv_ret_e drivers_st25dv_disableFTM();
 
 // =============================================================================
 // ST CODE UNDER THIS LINE
@@ -640,6 +663,15 @@ typedef struct
 // ST CODE BEFORE THIS LINE
 // ====================================================================
 
+#define ST25DV_ST25DV04K_LAST_ADDRESS		0x01FF
+#define ST25DV_ST25DV04K_MAX_ENDA			0x0F
+#define ST25DV_ST25DV64K_LAST_ADDRESS		0x1FFF
+#define ST25DV_ST25DV64K_MAX_ENDA			0xFF
+
+#define ST25DV_RFAxSS_NOPASSWORD			0x0
+#define ST25DV_RFAxSS_RFPASS1				0x1
+#define ST25DV_RFAxSS_RFPASS2				0x2
+#define ST25DV_RFAxSS_RFPASS3				0x3
 
 // ====================================================================
 // INTERNAL USE
