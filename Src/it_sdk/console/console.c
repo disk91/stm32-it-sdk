@@ -183,6 +183,7 @@ void itsdk_console_setup() {
 }
 
 
+
 /**
  * This function is call on every wake-up to proceed the pending characters on the serial
  * port and call the associated services.
@@ -217,12 +218,29 @@ void itsdk_console_loop() {
 		 }
 	} while ( r == SERIAL_READ_PENDING_CHAR );
   #endif
+  #if ( ITSDK_CONSOLE_SERIAL & __UART_CUSTOM ) > 0
+	do {
+		 r = itsdk_console_customSerial_read(&c);
+		 if ( r == SERIAL_READ_SUCCESS || r == SERIAL_READ_PENDING_CHAR) {
+			 _itsdk_console_processChar(c);
+		 }
+	} while ( r == SERIAL_READ_PENDING_CHAR );
+  #endif
 
 }
 
 // =================================================================================================
 // Processing output
 // =================================================================================================
+
+#if ( ITSDK_CONSOLE_SERIAL & __UART_CUSTOM ) > 0
+__weak void itsdk_console_customSerial_print(char * msg) {
+	return;
+}
+__weak serial_read_response_e itsdk_console_customSerial_read(char * ch) {
+	return SERIAL_READ_NOCHAR;
+}
+#endif
 
 void _itsdk_console_printf(char *format, ...) {
 	va_list args;
@@ -235,6 +253,9 @@ void _itsdk_console_printf(char *format, ...) {
 #endif
 #if ( ITSDK_CONSOLE_SERIAL & __UART_USART2 ) > 0
 	serial2_print(fmtBuffer);
+#endif
+#if ( ITSDK_CONSOLE_SERIAL & __UART_CUSTOM ) > 0
+	itsdk_console_customSerial_print(fmtBuffer);
 #endif
 }
 

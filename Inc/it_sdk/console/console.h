@@ -70,6 +70,11 @@ void itsdk_console_removeCommand(itsdk_console_chain_t * chain);
 bool itsdk_console_existCommand(itsdk_console_chain_t * chain);
 void _itsdk_console_printf(char *format, ...);
 
+#if ( ITSDK_CONSOLE_SERIAL & __UART_CUSTOM ) > 0
+void itsdk_console_customSerial_print(char * msg);
+serial_read_response_e itsdk_console_customSerial_read(char * ch);
+#endif
+
 // ==============================================================================
 // INTERNAL
 // ==============================================================================

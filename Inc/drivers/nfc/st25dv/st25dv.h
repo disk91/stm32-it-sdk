@@ -49,6 +49,32 @@
 
 
 #include <stdint.h>
+#include <it_sdk/configDrivers.h>
+#include <it_sdk/wrappers.h>
+
+// ====================================================================
+// SERIAL COM OVER USER ZONE
+// ====================================================================
+
+typedef struct {
+	uint16_t	magic;
+	uint8_t		hostRfu:4;
+	uint8_t		hostIsWriting:1;
+	uint8_t		hostWriteDone:1;
+	uint8_t		hostReadDone:1;
+
+	uint8_t		mcuRfu:4;
+	uint8_t		mcuIsWriting:1;
+	uint8_t		mcuWriteDone:1;
+	uint8_t		mcuReadDone:1;
+} drivers_st25dv_serial_header_t;
+
+#define ST25DV_SERIALUZ_HOSTBUF_SIZE	44		// size for Host to write command (have to be a multiple of 4Bytes)
+#define ST25DV_SERIALUZ_MCUBUF_SIZE		84		// size for MCU to write response (have to be a multiple of 4Bytes)
+
+#define ST25DV_SERIALUZ_MAGIC		0xCAFE
+#define ST25DV_SERIALUZ_EMPTYBUF		-1
+#define ST25DV_SERIALUZ_MAXTRY			10
 
 // ====================================================================
 // API
@@ -60,25 +86,46 @@
 #define _ST25DV_ACCESS_RO_OPEN		(3 << 2)
 
 typedef enum {
-	ST25DV_MODE_DEFAULT = 0,				// FTM activated
+	ST25DV_MODE_FTM = 0,				// FTM activated
+	ST25DV_MODE_SERIALUZ,				// No FTM but serial communication over User Land
+	ST25DV_MODE_SIMPLE,					// No FTM, no serial
 
 } drivers_st25dv_mode_e;
 
 typedef enum {
 	ST25DV_SLEEPING = 0,
-	ST25DV_WAKEUP
+	ST25DV_WAKEUP,
+	ST25DV_PROCESSING					// can't be switched to low power
 } drivers_st25dv_sleep_e;
+
+typedef enum {
+	ST25DV_NOTREADY = 0,
+	ST25DV_READY
+} drivers_st25dv_init_e;
 
 typedef enum {
 	ST25DV_WITHDELAY = 0,
 	ST25DV_NODELAY
 } drivers_st25dv_delay_e;
 
+typedef enum {
+	ST25DV_OUT_OF_FIELD = 0,
+	ST25DV_IN_THE_FIELD
+} drivers_st25dv_field_e;
+
 
 typedef struct {
+	drivers_st25dv_init_e		ready;		// device is ready or not yet
 	drivers_st25dv_mode_e 		mode;		// Setup mode
 	drivers_st25dv_sleep_e		state;		// Sleep state
+	drivers_st25dv_field_e		field;		// let us know if we are in the RF field or not
 	uint8_t						devId;		// Device Id (type)
+
+#if ITSDK_DRIVERS_ST25DV_WITH_SERIALUZ == __ENABLE
+	uint8_t						readBuf[ST25DV_SERIALUZ_HOSTBUF_SIZE];
+	uint8_t						readSz;
+	int16_t						readIndex;
+#endif
 
 } drivers_st25dv_conf_t;
 
@@ -89,6 +136,7 @@ typedef enum {
 	ST25DV_EMPTYFTM,		// No pending message in the FTM
 	ST25DV_NONEMPTYFTM,		// Pending message in the FTM
 	ST25DV_OUTOFBOUNDS,		// Memory zone configuration
+	ST25DV_INVALIDMODE,		// Selected mode is not supported
 
 	ST25DV_FAILED
 
@@ -111,6 +159,13 @@ drivers_st25dv_ret_e drivers_st25dv_blocWrite(drivers_st25dv_zone_e zone, uint8_
 drivers_st25dv_ret_e drivers_st25dv_blocRead(drivers_st25dv_zone_e zone, uint8_t blockId, uint8_t * data, uint8_t sz);
 drivers_st25dv_ret_e drivers_st25dv_enableFTM();
 drivers_st25dv_ret_e drivers_st25dv_disableFTM();
+
+#if ITSDK_DRIVERS_ST25DV_WITH_SERIALUZ == __ENABLE
+drivers_st25dv_ret_e drivers_st25dv_enableSerialUz(drivers_st25dv_mode_e mode);
+void drivers_st25dv_serialUz_println(char * msg);
+void drivers_st25dv_serialUz_print(char * msg);
+serial_read_response_e drivers_st25dv_serialUz_read(char * ch);
+#endif
 
 // =============================================================================
 // ST CODE UNDER THIS LINE
