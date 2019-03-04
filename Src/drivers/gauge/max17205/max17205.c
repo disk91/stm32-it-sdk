@@ -115,6 +115,20 @@ drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode) {
 	if (    __max17205_config.devType != MAX17205_TYPE_SINGLE_CELL
 		 && __max17205_config.devType != MAX17205_TYPE_MULTI_CELL
 	) {
+		// Reset the device to try to save it from bad shape
+		__writeRegister(ITSDK_DRIVERS_MAX17205_REG_COMMAND_ADR,0x000F);
+		itsdk_delayMs(15);
+		__writeRegister(ITSDK_DRIVERS_MAX17205_REG_CONFIG2_ADR,0x0001);
+		itsdk_delayMs(15);
+		__readRegister(ITSDK_DRIVERS_MAX17205_REG_DEVNAME_ADR,&v);
+		v &= ITSDK_DRIVERS_MAX17205_REG_DEVNAME_MSK;
+		__max17205_config.devType = ( v & 0xFF );
+	}
+
+	// Retry to identify the device, eventually fail
+	if (    __max17205_config.devType != MAX17205_TYPE_SINGLE_CELL
+		 && __max17205_config.devType != MAX17205_TYPE_MULTI_CELL
+	) {
 		// This can be due to undervoltage powering.
 		// When the power supply is under 5V ( level not tested but higher the spec minimal documented level )
 		//  the devId returned is just shit ; The device works but really badly

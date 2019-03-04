@@ -168,7 +168,8 @@ void st25dv_process() {
 			log_info("GetMsg");
 		}
 		if ( (v & ST25DV_ITSTS_RFWRITE_MASK) > 0 ) {
-			log_info("RfWrite");
+			// call on RF Write operation into the UserLand
+			//log_info("RfWrite");
 		}
 		if ( (v & ST25DV_ITSTS_RFINTERRUPT_MASK) > 0 ) {
 			log_info("RfInt");
@@ -725,7 +726,7 @@ drivers_st25dv_ret_e drivers_st25dv_enableSerialUz(drivers_st25dv_mode_e mode) {
 	head.magic = ST25DV_SERIALUZ_MAGIC;
 	head.hostRfu = 0;
 	head.hostIsWriting = 0;
-	head.hostReadDone = 0;
+	head.hostReadDone = 1;
 	head.hostWriteDone = 0;
 	head.mcuRfu = 0;
 	head.mcuIsWriting = 0;
@@ -781,24 +782,33 @@ serial_read_response_e drivers_st25dv_serialUz_read(char * ch) {
 		if ( head.hostWriteDone == 1 ) {
 			// read the host buffer
 		    ret = SERIAL_READ_SUCCESS;
-			for ( int i = 0 ; i < ST25DV_SERIALUZ_HOSTBUF_SIZE ; i+=4 ) {
-				// @TODO => Gestion de retry
+			for ( int i = 0 ; i < ST25DV_SERIALUZ_HOSTBUF_SIZE/4 ; i++ ) {
 				if ( drivers_st25dv_blocRead(
 						ITSDK_DRIVERS_ST25DV_SERIALUZ_ZONE,
-						ITSDK_DRIVERS_ST25DV_SERIALUZ_OFFSET+sizeof(drivers_st25dv_serial_header_t)+i,
-						(uint8_t*)& __st25dv_config.readBuf[i],
+						ITSDK_DRIVERS_ST25DV_SERIALUZ_OFFSET+(sizeof(drivers_st25dv_serial_header_t)/4)+i,
+						(uint8_t*)& __st25dv_config.readBuf[4*i],
 						4 ) != ST25DV_SUCCESS ) {
 					ret = SERIAL_READ_FAILED;
 					break;
 				} else {
-					for ( int k = i ; k < i+4 ; k++ ) {
+					int found = 0;
+					for ( int k = 4*i ; k < 4*i+4 ; k++ ) {
 						if ( __st25dv_config.readBuf[k] == 0 ) {
 						   // We have finished to read the string
 						   __st25dv_config.readIndex = 0;
 						   __st25dv_config.readSz = k;
+						   found=1;
 						   break;
+						} else {
+							if (    ( __st25dv_config.readBuf[k] < 7 )
+								 || ( __st25dv_config.readBuf[k] > 13 && __st25dv_config.readBuf[k] < 32 )
+								 || ( __st25dv_config.readBuf[k] > 126 )
+							) {
+								__st25dv_config.readBuf[k] = ' ';
+							}
 						}
 					}
+					if ( found == 1 ) break;
 				}
 			}
 			// check status
@@ -807,6 +817,7 @@ serial_read_response_e drivers_st25dv_serialUz_read(char * ch) {
 					// Buffer is full but this is not the end of line yet
 					__st25dv_config.readIndex = 0;
 					__st25dv_config.readSz = ST25DV_SERIALUZ_HOSTBUF_SIZE;
+					__st25dv_config.readBuf[ST25DV_SERIALUZ_HOSTBUF_SIZE-1]=0;
 				}
 				head.mcuReadDone=1;
 				*ch = __st25dv_config.readBuf[__st25dv_config.readIndex];
@@ -853,9 +864,12 @@ static void _drivers_st25dv_serialUz_print(char * msg) {
 		return;
 	}
 	try = 0;
-	while ( head.mcuWriteDone == 1 && head.hostReadDone == 0 && try < ST25DV_SERIALUZ_MAXRDTRY) {
+	while ( head.mcuWriteDone == 1 && head.hostReadDone == 0 && try < (ST25DV_SERIALUZ_MAXRDTRY/50)) {
 		// previously written data pending - need to wait a bit.
-		itsdk_delayMs(100);
+		#if ITSDK_WDG_MS > 0
+		   wdg_refresh();
+		#endif
+		itsdk_delayMs(50);
 		drivers_st25dv_blocRead(ITSDK_DRIVERS_ST25DV_SERIALUZ_ZONE, ITSDK_DRIVERS_ST25DV_SERIALUZ_OFFSET, (uint8_t*)&head, sizeof(drivers_st25dv_serial_header_t));
 		try++;
 	}
@@ -865,6 +879,7 @@ static void _drivers_st25dv_serialUz_print(char * msg) {
 	}
 	head.mcuIsWriting = 1;
 	head.hostReadDone = 0;
+	drivers_st25dv_blocWrite(ITSDK_DRIVERS_ST25DV_SERIALUZ_ZONE, ITSDK_DRIVERS_ST25DV_SERIALUZ_OFFSET, (uint8_t*)&head, sizeof(head));
 
 	// Write the data to the buffer
 	uint8_t len = 0;
@@ -873,14 +888,15 @@ static void _drivers_st25dv_serialUz_print(char * msg) {
 		if ( msg[len+0]==0||msg[len+1]==0||msg[len+2]==0||msg[len+3]==0 ) end = 1;
 		if (drivers_st25dv_blocWrite(
 				ITSDK_DRIVERS_ST25DV_SERIALUZ_ZONE,
-				ITSDK_DRIVERS_ST25DV_SERIALUZ_OFFSET+sizeof(drivers_st25dv_serial_header_t)+len/4,
+				ITSDK_DRIVERS_ST25DV_SERIALUZ_OFFSET+(sizeof(drivers_st25dv_serial_header_t)/4)+len/4,
 				(uint8_t*)&msg[len],
 				4
 			   ) != ST25DV_SUCCESS )  return;
 		len += 4;
 	} while ( len < ST25DV_SERIALUZ_HOSTBUF_SIZE && end == 0 );
 
-
+	head.mcuIsWriting = 0;
+	head.mcuWriteDone = 1;
 	drivers_st25dv_blocWrite(ITSDK_DRIVERS_ST25DV_SERIALUZ_ZONE, ITSDK_DRIVERS_ST25DV_SERIALUZ_OFFSET, (uint8_t*)&head, sizeof(head));
 	return;
 }

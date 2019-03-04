@@ -56,7 +56,7 @@
 // SERIAL COM OVER USER ZONE
 // ====================================================================
 
-typedef struct {
+typedef struct {								// Size %4 must be == 0
 	uint16_t	magic;
 	uint8_t		hostRfu:4;
 	uint8_t		hostIsWriting:1;
@@ -69,9 +69,9 @@ typedef struct {
 	uint8_t		mcuReadDone:1;
 } drivers_st25dv_serial_header_t;
 
-#define ST25DV_SERIALUZ_HOSTBUF_SIZE	44		// size for Host to write command (have to be a multiple of 4Bytes)
+#define ST25DV_SERIALUZ_HOSTBUF_SIZE	84		// size for Host to write command (have to be a multiple of 4Bytes)
 #define ST25DV_SERIALUZ_MCUBUF_SIZE		84		// size for MCU to write response (have to be a multiple of 4Bytes)
-#define ST25DV_SERIALUZ_MAXRDTRY		10		// max try to wait for the host to write something
+#define ST25DV_SERIALUZ_MAXRDTRY	  3000		// in Ms max try to wait for the host to write something equivalent to 3s wait.
 
 
 #define ST25DV_SERIALUZ_MAGIC		0xCAFE

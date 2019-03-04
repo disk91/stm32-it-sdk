@@ -322,6 +322,7 @@ static void _itsdk_console_processLine() {
 			// Print the password prompt only when it was not a command
 			if ( ret == ITSDK_CONSOLE_NOTFOUND ) {
 				_itsdk_console_printf("password:\r\n");
+				_itsdk_console_printf("KO\r\n");
 			}
 		}
 	} else {
