@@ -135,16 +135,16 @@ void itsdk_loop() {
 	#if ITSDK_WDG_MS > 0
 	   wdg_refresh();
 	#endif
-	#if ITSDK_WITH_CONSOLE == __ENABLE
-	   itsdk_console_loop();
+	#if ITSDK_TIMER_SLOTS > 0
+	   itsdk_stimer_run();
 	#endif
 	#if ITSDK_SHEDULER_TASKS > 0
 	   itdt_sched_execute();
 	#endif
-	#if ITSDK_TIMER_SLOTS > 0
-	   itsdk_stimer_run();
-	#endif
 	project_loop();
+	#if ITSDK_WITH_CONSOLE == __ENABLE
+	   itsdk_console_loop();
+	#endif
 	#if ITSDK_TIMER_SLOTS > 0
 		if ( itsdk_stimer_isLowPowerSwitchAutorized() ) {
 	#endif

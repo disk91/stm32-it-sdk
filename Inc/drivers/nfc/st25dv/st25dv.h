@@ -71,10 +71,13 @@ typedef struct {
 
 #define ST25DV_SERIALUZ_HOSTBUF_SIZE	44		// size for Host to write command (have to be a multiple of 4Bytes)
 #define ST25DV_SERIALUZ_MCUBUF_SIZE		84		// size for MCU to write response (have to be a multiple of 4Bytes)
+#define ST25DV_SERIALUZ_MAXRDTRY		10		// max try to wait for the host to write something
+
 
 #define ST25DV_SERIALUZ_MAGIC		0xCAFE
 #define ST25DV_SERIALUZ_EMPTYBUF		-1
-#define ST25DV_SERIALUZ_MAXTRY			10
+#define ST25DV_I2C_MAXTRY				10
+#define ST25DV_I2C_RETRY_WAIT_MS		20
 
 // ====================================================================
 // API
@@ -100,13 +103,9 @@ typedef enum {
 
 typedef enum {
 	ST25DV_NOTREADY = 0,
-	ST25DV_READY
+	ST25DV_READY,
+	ST25DV_IRQ_PENDING
 } drivers_st25dv_init_e;
-
-typedef enum {
-	ST25DV_WITHDELAY = 0,
-	ST25DV_NODELAY
-} drivers_st25dv_delay_e;
 
 typedef enum {
 	ST25DV_OUT_OF_FIELD = 0,
@@ -149,7 +148,9 @@ typedef enum {
 	ST25DV_USERZONE_4	= 3,
 } drivers_st25dv_zone_e;
 
+
 drivers_st25dv_ret_e drivers_st25dv_setup(drivers_st25dv_mode_e mode);
+void st25dv_process();
 drivers_st25dv_ret_e drivers_st25dv_ftmAvailableToRead();
 drivers_st25dv_ret_e drivers_st25dv_ftmFreeForWriting();
 drivers_st25dv_ret_e drivers_st25dv_ftmWrite(uint8_t * messages, uint16_t sz);
