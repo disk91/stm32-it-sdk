@@ -61,6 +61,15 @@
 #define __LOWPWR_MODE_WAKE_UART2	0x0008
 #define __LOWPWR_MODE_WAKE_UART1	0x0010
 
+/**
+ * Module to keep activated during sleep
+ */
+#define __LP_HALT_NONE				0x0000
+#define __LP_HALT_I2C1				0x0001
+#define __LP_HALT_I2C2				0x0002
+#define __LP_HALT_SPI1				0x0010
+#define __LP_HALT_SPI2				0x0020
+
 
 /**
  * UART configuration
