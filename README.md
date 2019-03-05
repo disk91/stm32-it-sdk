@@ -46,7 +46,9 @@ Made for being compiled with open-source environment GCC / AC6
   * Light
      * Maxim Max44009
   * Current / Battery Pack
-     * Maxim Max17205 / Max17201
+    * Maxim Max17205 / Max17201
+  * NFC
+  	 * ST25DV
        
 * Supported stacks
   * lorawan
