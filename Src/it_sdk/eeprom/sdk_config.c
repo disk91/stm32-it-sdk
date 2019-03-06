@@ -78,7 +78,36 @@
 		}
 	#endif
 
+	/**
+	 * Reset to factory default update eeprom & shadow
+	 */
+	itsdk_config_ret_e itsdk_config_resetToFactory() {
+		 itsdk_config_sdk_resetToFactory();
+		 #if ITSDK_WITH_CONFIGURATION_APP == __ENABLE
+		 itsdk_config_app_resetToFactory();
+		 #endif
+		 #if ITSDK_CONFIGURATION_MODE == __CONFIG_EEPROM
+	     eeprom_write(&itsdk_config, sizeof(itsdk_configuration_nvm_t), ITSDK_CONFIGURATION_MNG_VERSION);
+		 #endif
+	     bcopy(&itsdk_config,&itsdk_config_shadow,sizeof(itsdk_configuration_nvm_t));
+	     return CONFIG_SUCCESS;
+	}
+
+	/**
+	 * Flush the current config into eeprom & shadow
+	 */
+	itsdk_config_ret_e itsdk_config_flushConfig() {
+		 #if ITSDK_CONFIGURATION_MODE == __CONFIG_EEPROM
+	     eeprom_write(&itsdk_config, sizeof(itsdk_configuration_nvm_t), ITSDK_CONFIGURATION_MNG_VERSION);
+		 #endif
+	     bcopy(&itsdk_config,&itsdk_config_shadow,sizeof(itsdk_configuration_nvm_t));
+	     return CONFIG_SUCCESS;
+	}
+
 #endif
+
+
+
 
 /**
  * Load the configuration from the NVM, eventually from factory default when the NVM is disabled
@@ -273,15 +302,8 @@ static itsdk_console_return_e _itsdk_config_consolePriv(char * buffer, uint8_t s
 		case'F':
 			  // Reset to factory default
 			  ITSDK_ERROR_REPORT(ITSDK_ERROR_CONFIG_FACTORY_DEFAULT,3);
-			  itsdk_config_sdk_resetToFactory();
-			 #if ITSDK_WITH_CONFIGURATION_APP == __ENABLE
-			  itsdk_config_app_resetToFactory();
-			 #endif
-			 #if ITSDK_CONFIGURATION_MODE == __CONFIG_EEPROM
-		     eeprom_write(&itsdk_config, sizeof(itsdk_configuration_nvm_t), ITSDK_CONFIGURATION_MNG_VERSION);
-			 #endif
-		     bcopy(&itsdk_config,&itsdk_config_shadow,sizeof(itsdk_configuration_nvm_t));
- 			 _itsdk_console_printf("OK\r\n");
+			  itsdk_config_resetToFactory();
+			  _itsdk_console_printf("OK\r\n");
 			 return ITSDK_CONSOLE_SUCCES;
 		#endif
 		default:

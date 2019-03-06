@@ -95,7 +95,6 @@ void itsdk_setup() {
 	#if ITSDK_WITH_ERROR_RPT == __ENABLE
 	  itsdk_error_setup();
 	  ITSDK_ERROR_REPORT(ITSDK_ERROR_RESET,(uint16_t)itsdk_getResetCause());
-  	  itsdk_cleanResetCause();
 	#endif
 	#if ITSDK_WITH_SECURESTORE == __ENABLE
 	  // Init the secure store if not yet initialized
@@ -110,6 +109,9 @@ void itsdk_setup() {
 
 	// Application setup
 	project_setup();
+    #if ITSDK_WITH_ERROR_RPT == __ENABLE
+      itsdk_cleanResetCause();
+    #endif
 
 }
 

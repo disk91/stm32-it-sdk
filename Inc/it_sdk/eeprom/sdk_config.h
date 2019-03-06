@@ -114,6 +114,12 @@ itsdk_config_ret_e itsdk_config_loadConfiguration(itsdk_config_load_mode_e mode)
 // Commit the shadow configuration into configuration
 itsdk_config_ret_e itsdk_config_commitConfiguration(itsdk_config_commit_mode_e mode);
 
+// Store the current config into the eeprom & update shadow
+itsdk_config_ret_e itsdk_config_flushConfig();
+
+// Factory default
+itsdk_config_ret_e itsdk_config_resetToFactory();
+
 // ===========================================================================
 // MISC INTERNAL
 // ===========================================================================
