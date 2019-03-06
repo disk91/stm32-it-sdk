@@ -164,13 +164,20 @@ stm32l_lowPowerReturn_e stm32l_lowPowerSetup(uint32_t durationMs) {
 		#if ( ITSDK_LOWPOWER_MISC_HALT & __LP_HALT_SPI2 ) > 0
 			__HAL_RCC_SPI1_CLK_DISABLE();
 		#endif
+		#if( ITSDK_LOWPOWER_MISC_HALT & __LP_HALT_TIM21 ) > 0
+			__HAL_RCC_TIM21_CLK_DISABLE();
+		#endif
+		#if( ITSDK_LOWPOWER_MISC_HALT & __LP_HALT_ADC1 ) > 0
+			__HAL_RCC_ADC1_CLK_DISABLE();
+		#endif
+
+
 
  	    // Switch to STOPMode
 		__lowPower_wakeup_reason=LOWPWR_WAKEUP_UNDEF;
 		#if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_GPIO ) > 0
 			__lowPower_wakeup_pin=0;
 		#endif
-
  	    HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
 	}
 	return STM32L_LOWPOWER_SUCCESS;
@@ -200,6 +207,12 @@ stm32l_lowPowerReturn_e stm32l_lowPowerResume() {
 		#endif
 		#if ( ITSDK_LOWPOWER_MISC_HALT & __LP_HALT_SPI2 ) > 0
 		    HAL_SPI_MspInit(&hspi2);
+		#endif
+		#if( ITSDK_LOWPOWER_MISC_HALT & __LP_HALT_TIM21 ) > 0
+		    HAL_TIM_Base_MspInit(&htim21);
+		#endif
+		#if( ITSDK_LOWPOWER_MISC_HALT & __LP_HALT_ADC1 ) > 0
+		    __HAL_RCC_ADC1_CLK_ENABLE();
 		#endif
 		#if (( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_LPUART ) == 0) && (( ITSDK_WITH_UART & __UART_LPUART1 ) > 0)
 			// Reinit LPUart

@@ -69,6 +69,8 @@
 #define __LP_HALT_I2C2				0x0002
 #define __LP_HALT_SPI1				0x0010
 #define __LP_HALT_SPI2				0x0020
+#define __LP_HALT_TIM21				0x0080
+#define __LP_HALT_ADC1				0x0100
 
 
 /**
