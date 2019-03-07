@@ -60,6 +60,7 @@
 #include <it_sdk/time/time.h>
 #include <it_sdk/time/timer.h>
 #include <it_sdk/logger/logger.h>
+#include <it_sdk/eeprom/sdk_config.h>
 
 #if ITSDK_WITH_SECURESTORE == __ENABLE
 #include <it_sdk/eeprom/securestore.h>
@@ -67,6 +68,10 @@
 
 #if ITSDK_WITH_CONSOLE == __ENABLE
 #include <it_sdk/console/console.h>
+#endif
+
+#if ITSDK_WITH_ERROR_RPT == __ENABLE
+#include <it_sdk/logger/error.h>
 #endif
 
 
@@ -87,6 +92,10 @@ void itsdk_setup() {
 	#if ITSDK_WITH_CONSOLE == __ENABLE
 	  itsdk_console_setup();
 	#endif
+	#if ITSDK_WITH_ERROR_RPT == __ENABLE
+	  itsdk_error_setup();
+	  ITSDK_ERROR_REPORT(ITSDK_ERROR_RESET,(uint16_t)itsdk_getResetCause());
+	#endif
 	#if ITSDK_WITH_SECURESTORE == __ENABLE
 	  // Init the secure store if not yet initialized
 	  if ( itsdk_secstore_isInit() != SS_SUCCESS ) {
@@ -94,7 +103,15 @@ void itsdk_setup() {
 	  }
 	  itsdk_secStore_RegisterConsole();
 	#endif
+
+	// load the configuration according to setting
+	itsdk_config_loadConfiguration(CONFIG_NORMAL_LOAD);
+
+	// Application setup
 	project_setup();
+    #if ITSDK_WITH_ERROR_RPT == __ENABLE
+      itsdk_cleanResetCause();
+    #endif
 
 }
 
@@ -120,16 +137,16 @@ void itsdk_loop() {
 	#if ITSDK_WDG_MS > 0
 	   wdg_refresh();
 	#endif
-	#if ITSDK_WITH_CONSOLE == __ENABLE
-	   itsdk_console_loop();
+	#if ITSDK_TIMER_SLOTS > 0
+	   itsdk_stimer_run();
 	#endif
 	#if ITSDK_SHEDULER_TASKS > 0
 	   itdt_sched_execute();
 	#endif
-	#if ITSDK_TIMER_SLOTS > 0
-	   itsdk_stimer_run();
-	#endif
 	project_loop();
+	#if ITSDK_WITH_CONSOLE == __ENABLE
+	   itsdk_console_loop();
+	#endif
 	#if ITSDK_TIMER_SLOTS > 0
 		if ( itsdk_stimer_isLowPowerSwitchAutorized() ) {
 	#endif
@@ -139,16 +156,6 @@ void itsdk_loop() {
 	#endif
 }
 
-/**
- * Error Handler for ItSdk internal
- * (The STM32 prototype is not stable over FW version)
- */
-void itsdk_error_handler(char * file, int line) {
-  #if ITSDK_LOGGER_CONF > 0
-   log_debug("Error : %s (%d)\r\n",file,line);
-  #endif
-   while(1);
-}
 
 
 

@@ -33,6 +33,7 @@
 #include <drivers/sigfox/sigfox_api.h>
 #include <drivers/s2lp/sigfox_helper.h>
 #include <it_sdk/logger/logger.h>
+#include <it_sdk/logger/error.h>
 #include <it_sdk/encrypt/encrypt.h>
 #include <string.h>
 
@@ -59,7 +60,7 @@ bool s2lp_sigfox_init(s2lp_config_t * conf) {
 		sfx_u32 config_words1[3]={1,0,0};
 		SIGFOX_API_set_std_config(config_words1,1);
 		log_error("RCZ2 implementation is actually not working");
-		itsdk_error_handler(__FILE__, __LINE__);
+		ITSDK_ERROR_REPORT(ITSDK_ERROR_SIGFOX_RCZ_NOTSUPPORTED,(uint16_t)conf->rcz);
 		break;
 	case 3:
 		SIGFOX_API_open(&(sfx_rc_t)RC3C);
@@ -71,11 +72,11 @@ bool s2lp_sigfox_init(s2lp_config_t * conf) {
 		sfx_u32 config_words3[3]={0,0x40000000,0};
 		SIGFOX_API_set_std_config(config_words3,1);
 		log_error("RCZ4 implementation is actually not working");
-		itsdk_error_handler(__FILE__, __LINE__);
+		ITSDK_ERROR_REPORT(ITSDK_ERROR_SIGFOX_RCZ_NOTSUPPORTED,(uint16_t)conf->rcz);
 		break;
 	case 5:
 		log_error("RCZ5 implementation is actually supported");
-		itsdk_error_handler(__FILE__, __LINE__);
+		ITSDK_ERROR_REPORT(ITSDK_ERROR_SIGFOX_RCZ_NOTSUPPORTED,(uint16_t)conf->rcz);
 		break;
 
 	}

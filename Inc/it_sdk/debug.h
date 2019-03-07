@@ -36,12 +36,6 @@
 #define ITSDK_DEBUG_STATEM	0
 #define ITSDK_DEBUG_EEPROM	0
 
-#if ITSDK_DEBUG_ERROR > 0
-#define _ERROR_HANDLER(x)	itsdk_error_handler x
-#else
-#define _ERROR_HANDLER(x)
-#endif
-
 
 #if ITSDK_DEBUG_SCHED > 0
 #define _LOG_SCHED(x)	log_debug x

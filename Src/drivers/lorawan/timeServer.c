@@ -34,6 +34,7 @@ Maintainer: Miguel Luis, Gregory Cristian and Wael Guibene
 #include <it_sdk/itsdk.h>
 #include <it_sdk/time/timer.h>
 #include <it_sdk/logger/logger.h>
+#include <it_sdk/logger/error.h>
 
 #include <time.h>
 #include <drivers/lorawan/timeServer.h>
@@ -145,8 +146,7 @@ static void TimerCallback( uint32_t value ) {
 	if (obj->Callback != NULL) {
 		obj->Callback(obj->Context);
 	} else {
-		log_error("Callback function is NULL \r\n");
-		itsdk_error_handler(__FILE__,__LINE__);
+		ITSDK_ERROR_REPORT(ITSDK_ERROR_LORAWAN_TIME_NOCALLBACK,0);
 	}
 	removeFromList(obj);
 }
@@ -221,7 +221,7 @@ void TimerStart( TimerEvent_t *obj )
 	// do not add a timer already existing
 	if( ( obj == NULL ) || ( TimerExists( obj ) == true ) ) {
 		itsdk_leaveCriticalSection();
-		log_error("Timer error\r\n");
+		ITSDK_ERROR_REPORT(ITSDK_ERROR_STIMER_ALREADY_SET,0);
 	    return;
 	}
 	obj->Timestamp = obj->ReloadValue;
@@ -242,8 +242,7 @@ void TimerStart( TimerEvent_t *obj )
 									TIMER_ACCEPT_LOWPOWER
 		 	 	 	 	 	   );
 	if ( ret != TIMER_INIT_SUCCESS ) {
-		log_error("Error during timer initialization %d \r\n",ret);
-		itsdk_error_handler(__FILE__,__LINE__);
+		ITSDK_ERROR_REPORT(ITSDK_ERROR_LORAWAN_TIME_INITFLD,(uint16_t)ret);
 	}
 	itsdk_leaveCriticalSection();
 

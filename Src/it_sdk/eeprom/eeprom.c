@@ -1,6 +1,7 @@
 /* ==========================================================
  * eeprom.c - Save and Restore data in EEPROM memory
  * 			  Abstraction for underlaying MCU implementation
+ * 			  Store configuration structure
  * Project : Disk91 SDK
  * ----------------------------------------------------------
  * Created on: 16 sept. 2018
@@ -33,6 +34,9 @@
 #if ITSDK_WITH_SECURESTORE == __ENABLE
 #include <it_sdk/eeprom/securestore.h>
 #endif
+#if (ITSDK_WITH_ERROR_RPT == __ENABLE) && (ITSDK_ERROR_USE_EPROM == __ENABLE)
+#include <it_sdk/logger/error.h>
+#endif
 
 /**
  * Store a data block into eeprom with the given len in byte
@@ -45,10 +49,14 @@ bool eeprom_write(void * data, uint16_t len, uint8_t version) {
 	t.size = len;
 	t.version = version;
 	t.crc32 = calculateCRC32((uint8_t*)data, len);
-	uint16_t offset = 0;
+	uint32_t offset = 0, sstore=0, ssError=0;
   #if ITSDK_WITH_SECURESTORE == __ENABLE
-	itsdk_secstore_getStoreSize(&offset);
+	itsdk_secstore_getStoreSize(&sstore);
   #endif
+  #if (ITSDK_WITH_ERROR_RPT == __ENABLE) && (ITSDK_ERROR_USE_EPROM == __ENABLE)
+	itsdk_error_getSize(&ssError);
+  #endif
+	offset += sstore + ssError;
 
 	// Write the data header
 	_eeprom_write(ITDT_EEPROM_BANK0, offset, (void *) &t, sizeof(t));
@@ -63,13 +71,21 @@ bool eeprom_write(void * data, uint16_t len, uint8_t version) {
 /**
  * Read the EEPROM area to access the data according to the given parameters
  * Verification of magic, size, version and crc to ensure the read data are valid.
+ * In the EEPROM we have
+ * ---> SecureStore
+ * ---> ErrorReport
+ * ---> Configuration
  */
 bool eeprom_read(void * data, uint16_t len, uint8_t version, uint8_t * versionR) {
 	t_eeprom_entry t;
-	uint16_t offset = 0;
+	uint32_t offset = 0, sstore=0, ssError=0;
   #if ITSDK_WITH_SECURESTORE == __ENABLE
-	itsdk_secstore_getStoreSize(&offset);
+	itsdk_secstore_getStoreSize(&sstore);
   #endif
+  #if (ITSDK_WITH_ERROR_RPT == __ENABLE) && (ITSDK_ERROR_USE_EPROM == __ENABLE)
+	itsdk_error_getSize(&ssError);
+  #endif
+	offset += sstore + ssError;
 
 	// Read the data header
 	_eeprom_read(ITDT_EEPROM_BANK0, offset, (void *) &t, sizeof(t));
@@ -100,4 +116,27 @@ bool eeprom_read(void * data, uint16_t len, uint8_t version, uint8_t * versionR)
 	}
 
 	return true;
+}
+
+/**
+ * Returns the offset of the first byte following the configuration & other SDK
+ * EEPROM reserved zone. Make sure your data post this zone will be preserved if you
+ * change the config area size.
+ */
+bool eeprom_getPostConfigOffset(uint32_t * _offset) {
+	t_eeprom_entry t;
+	uint32_t offset = 0, sstore=0, ssError=0;
+  #if ITSDK_WITH_SECURESTORE == __ENABLE
+	itsdk_secstore_getStoreSize(&sstore);
+  #endif
+  #if (ITSDK_WITH_ERROR_RPT == __ENABLE) && (ITSDK_ERROR_USE_EPROM == __ENABLE)
+	itsdk_error_getSize(&ssError);
+  #endif
+	offset += sstore + ssError;
+	// Read the data header
+	_eeprom_read(ITDT_EEPROM_BANK0, offset, (void *) &t, sizeof(t));
+
+	*_offset = offset + sizeof(t) + t.size;
+	return true;
+
 }

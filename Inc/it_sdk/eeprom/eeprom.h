@@ -47,5 +47,6 @@ typedef struct s_eeprom_entry {
 
 bool eeprom_write(void * data, uint16_t len, uint8_t version);
 bool eeprom_read(void * data, uint16_t len, uint8_t version, uint8_t * versionR);
+bool eeprom_getPostConfigOffset(uint32_t * _offset);
 
 #endif /* IT_SDK_EEPROM_EEPROM_H_ */

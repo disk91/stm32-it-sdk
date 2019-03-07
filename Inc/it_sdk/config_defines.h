@@ -61,6 +61,17 @@
 #define __LOWPWR_MODE_WAKE_UART2	0x0008
 #define __LOWPWR_MODE_WAKE_UART1	0x0010
 
+/**
+ * Module to keep activated during sleep
+ */
+#define __LP_HALT_NONE				0x0000
+#define __LP_HALT_I2C1				0x0001
+#define __LP_HALT_I2C2				0x0002
+#define __LP_HALT_SPI1				0x0010
+#define __LP_HALT_SPI2				0x0020
+#define __LP_HALT_TIM21				0x0080
+#define __LP_HALT_ADC1				0x0100
+
 
 /**
  * UART configuration
@@ -70,6 +81,7 @@
 #define __UART_LPUART2				0x0002			// Use of LPUART2 peripheral
 #define __UART_USART1				0x0004			// Use of UART1 peripheral
 #define __UART_USART2				0x0008			// Use of UART2 peripheral
+#define __UART_CUSTOM				0x0080			// Use of custom defined UART (the print & read function will be overide in the user pgm)
 
 /**
  * RTC configuration
@@ -115,12 +127,20 @@
 #define __DISABLE					0x00
 #define __ENABLE					0x01
 
+
+/**
+ * Config mode
+ */
+#define __CONFIG_STATIC				0x00			// Non config in memory, all is static
+#define __CONFIG_MEMORY				0x01			// Config init at boot and store in memory - reset on reboot
+#define __CONFIG_EEPROM				0x02			// Config loaded from EEPROM
+
 /**
  * Some MaxValues
  */
 
 #define __INFINITE_32B				0xFFFFFFFF
-#define __INFINITE_64B				0xFFFFFFFFFFFFFFFF
+#define __INFINITE_64B				0xFFFFFFFFFFFFFFFFLu
 
 /**
  * GPIO to keep activated on low power mode

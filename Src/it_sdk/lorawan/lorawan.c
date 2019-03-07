@@ -42,6 +42,10 @@
 #include <it_sdk/eeprom/securestore.h>
 #endif
 
+#if ITSDK_CONFIGURATION_MODE != __CONFIG_STATIC
+#include <it_sdk/eeprom/sdk_config.h>
+#endif
+
 
 // =================================================================================
 // INIT
@@ -69,29 +73,48 @@ itsdk_lorawan_init_t itsdk_lorawan_setup(uint16_t region, itsdk_lorawan_channelI
 
 	Radio.IoInit();
 
-	#if (ITSDK_LORAWAN_DEVEUI_SRC == __LORAWAN_DEVEUI_GENERATED)
-	  itsdk_getUniqId(DevEui, 8);
-	#endif
-
-
-	#if ITSDK_LORAWAN_ADR == __LORAWAN_ADR_ON
-	__config.adrEnable =LORAWAN_ADR_ON;
-	#elif ITSDK_LORAWAN_ADR == __LORAWAN_ADR_OFF
-	__config.adrEnable =LORAWAN_ADR_OFF;
+	#if ITSDK_CONFIGURATION_MODE == __CONFIG_STATIC
+		#if (ITSDK_LORAWAN_DEVEUI_SRC == __LORAWAN_DEVEUI_GENERATED)
+		  itsdk_getUniqId(devEui, 8);
+		#endif
 	#else
-   	  #error Invalid ITSDK_LORAWAN_ADR configuration
+	   if ( itsdk_config.sdk.lorawan.devEuiType == __LORAWAN_DEVEUI_GENERATED ) {
+		  itsdk_getUniqId(devEui, 8);
+	   }
 	#endif
 
+    #if ITSDK_CONFIGURATION_MODE == __CONFIG_STATIC
+		#if ITSDK_LORAWAN_ADR == __LORAWAN_ADR_ON
+		__config.adrEnable =LORAWAN_ADR_ON;
+		#elif ITSDK_LORAWAN_ADR == __LORAWAN_ADR_OFF
+		__config.adrEnable =LORAWAN_ADR_OFF;
+		#else
+		  #error Invalid ITSDK_LORAWAN_ADR configuration
+		#endif
+    #else
+		__config.adrEnable = (itsdk_config.sdk.lorawan.networkType == __LORAWAN_ADR_ON)?LORAWAN_ADR_ON:LORAWAN_ADR_OFF;
+	#endif
+
+	#if ITSDK_CONFIGURATION_MODE == __CONFIG_STATIC
 	__config.JoinType = ITSDK_LORAWAN_ACTIVATION;
-	__config.devEui = devEui;
-	#if ITSDK_LORAWAN_NETWORKTYPE == __LORAWAN_NWK_PUBLIC
-	__config.enablePublicNetwork = true;
 	#else
-	__config.enablePublicNetwork = false;
+	__config.JoinType = itsdk_config.sdk.lorawan.joinMode;
 	#endif
+	__config.devEui = devEui;
+	#if ITSDK_CONFIGURATION_MODE == __CONFIG_STATIC
+		#if ITSDK_LORAWAN_NETWORKTYPE == __LORAWAN_NWK_PUBLIC
+		__config.enablePublicNetwork = true;
+		#else
+		__config.enablePublicNetwork = false;
+		#endif
+	#else
+	__config.enablePublicNetwork = (itsdk_config.sdk.lorawan.networkType == __LORAWAN_NWK_PUBLIC);
+	#endif
+
+
 	__config.region = region;
 	__config.txDatarate = ITSDK_LORAWAN_DEFAULT_DR;
-	#if ITSDK_LORAWAN_ACTIVATION ==  __LORAWAN_OTAA
+	#if ( ITSDK_LORAWAN_ACTIVATION &  __LORAWAN_OTAA )> 0
 	__config.config.otaa.appEui = appEui;
 	__config.config.otaa.appKey = appKey;
 	__config.config.otaa.nwkKey = appKey;

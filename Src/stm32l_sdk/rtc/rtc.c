@@ -27,6 +27,7 @@
 #include <it_sdk/config.h>
 #include <it_sdk/time/time.h>
 #include <it_sdk/logger/logger.h>
+#include <it_sdk/logger/error.h>
 #include <it_sdk/lowpower/lowpower.h>
 #include <stm32l_sdk/rtc/rtc.h>
 #include "time.h"
@@ -322,7 +323,7 @@ uint32_t rtc_calcClockRatio() {
 
 	// Protection against value too bad, sounds like a problem
 	if ( ratio > 1400 || ratio < 600 ) {
-		log_error("rtc_calcClockRatio ratio looks invalid %d\r\n",(uint32_t)ratio);
+		ITSDK_ERROR_REPORT(ITSDK_ERROR_RTC_INVALID_CLKRATIO,(uint16_t)ratio);
 		ratio = 1000;
 	}
 

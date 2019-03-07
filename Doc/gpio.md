@@ -28,7 +28,8 @@ During the Low Power period, the GPIO capable to imediatly wake the system up ar
 									 			| __LP_GPIO_2  
 									 		 )
 ```
-There are one define per GPIO bank.
+There are one define per GPIO bank. Actually this define is not used in the code. That said it is a reminder for the Pin configured as wakeup pin.
+It is important to have these pin correctly setup as EXTI for having the correct Interrupt callback affected
 
 
 ### GPIO state after low power wake up

@@ -30,6 +30,8 @@
 #include <stm32l_sdk/eeprom/eeprom.h>
 #include <it_sdk/debug.h>
 #include <stdbool.h>
+#include <it_sdk/logger/error.h>
+
 
 /**
  * Write in the eeprom the given data.
@@ -45,7 +47,7 @@ bool _eeprom_write(uint8_t bank, uint32_t offset, void * data, int len) {
 	uint32_t   v;
 
 	if ( bank != 0 || len > EEPROM_SIZE) {
-		_ERROR_HANDLER((__FILE__, __LINE__));
+	    ITSDK_ERROR_REPORT(ITSDK_ERROR_EEPROM_OUTOFBOUNDS,len);
 	}
 	_eepromAddr = (uint32_t)(EEPROM_START_ADDR+offset);
 
@@ -78,7 +80,7 @@ bool _eeprom_read(uint8_t bank, uint32_t offset, void * data, int len) {
 	uint32_t   v;
 
 	if ( bank != 0 || len > EEPROM_SIZE) {
-		_ERROR_HANDLER((__FILE__, __LINE__));
+	    ITSDK_ERROR_REPORT(ITSDK_ERROR_EEPROM_OUTOFBOUNDS,len);
 	}
 	_eepromAddr = (uint32_t)(EEPROM_START_ADDR+offset);
 

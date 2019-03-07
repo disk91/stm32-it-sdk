@@ -142,7 +142,7 @@ typedef struct {
 // ====================================================================================================
 // API
 // ====================================================================================================
-itsdk_secStoreReturn_e itsdk_secstore_getStoreSize(uint16_t * sz);
+itsdk_secStoreReturn_e itsdk_secstore_getStoreSize(uint32_t * sz);
 itsdk_secStoreReturn_e itsdk_secstore_init();
 itsdk_secStoreReturn_e itsdk_secstore_isInit();
 itsdk_secStoreReturn_e itsdk_secstore_writeBlock(itsdk_secStoreBlocks_e blockType, uint8_t * buffer);

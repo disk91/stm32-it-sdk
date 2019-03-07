@@ -36,6 +36,7 @@
 #include <it_sdk/itsdk.h>
 #include <it_sdk/wrappers.h>
 #include <it_sdk/logger/logger.h>
+#include <it_sdk/logger/error.h>
 #include <it_sdk/time/timer.h>
 #include <it_sdk/lorawan/lorawan.h>
 #include <drivers/lorawan/core/lorawan.h>
@@ -245,8 +246,7 @@ static uint8_t __convertDR(uint8_t itsdkDr) {
 	case __LORAWAN_DR_14: return DR_14;
 	case __LORAWAN_DR_15: return DR_15;
 	default:
-		log_error("[LoRaWan] Invalid DR configuration %d \r\n",itsdkDr);
-		itsdk_error_handler(__FILE__,__LINE__);
+		ITSDK_ERROR_REPORT(ITSDK_ERROR_LORAWAN_INVALID_DR,(uint16_t)itsdkDr);
 	}
 	return 0;	// never reached
 }
@@ -271,8 +271,7 @@ static uint8_t __convertTxPower(uint8_t pwr) {
 	case LORAWAN_TXPOWER_14 : return TX_POWER_14;
 	case LORAWAN_TXPOWER_15 : return TX_POWER_15;
 	default:
-		log_error("[LoRaWan] Invalid TxPower configuration %d \r\n",pwr);
-		itsdk_error_handler(__FILE__,__LINE__);
+		ITSDK_ERROR_REPORT(ITSDK_ERROR_LORAWAN_INVALID_TXPWR,(uint16_t)pwr);
 	}
 	return 0;	// never reached
 }
@@ -297,8 +296,7 @@ static uint8_t __unconvertTxPower(uint8_t pwr) {
 	case TX_POWER_14 : return LORAWAN_TXPOWER_14;
 	case TX_POWER_15 : return LORAWAN_TXPOWER_15;
 	default:
-		log_error("[LoRaWan] Invalid TxPower configuration %d \r\n",pwr);
-		itsdk_error_handler(__FILE__,__LINE__);
+		ITSDK_ERROR_REPORT(ITSDK_ERROR_LORAWAN_INVALID_TXPWR,(uint16_t)pwr);
 	}
 	return 0;	// never reached
 }
@@ -408,7 +406,7 @@ void lorawan_driver_LORA_Init(
 		#endif
         default:
         	log_error("[LoRaWan] Invalid region selected\r\n");
-    		itsdk_error_handler(__FILE__,__LINE__);
+    		ITSDK_ERROR_REPORT(ITSDK_ERROR_LORAWAN_INVALID_REGION,(uint16_t)config->region);
         	return;
         }
 
@@ -566,8 +564,7 @@ itsdk_lorawan_join_t lorawan_driver_LORA_Join(
     	}
         break;
     default:
-    	log_error("Invalid Join method\r\n");
-    	itsdk_error_handler(__FILE__,__LINE__);
+		ITSDK_ERROR_REPORT(ITSDK_ERROR_LORAWAN_INVALID_JOIN,(uint16_t)__loraWanState.JoinType);
     }
 
     if (runMode==LORAWAN_RUN_SYNC) {

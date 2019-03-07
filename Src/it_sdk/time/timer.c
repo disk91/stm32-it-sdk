@@ -33,6 +33,7 @@
 #include <it_sdk/time/time.h>
 #include <it_sdk/time/timer.h>
 #include <it_sdk/logger/logger.h>
+#include <it_sdk/logger/error.h>
 
 #if ITSDK_PLATFORM == __PLATFORM_STM32L0
    #include <stm32l_sdk/timer/timer.h>
@@ -116,7 +117,7 @@ itsdk_timer_return_t itsdk_stimer_register(
 		return TIMER_INIT_SUCCESS;
 	}
 	#if (ITSDK_LOGGER_MODULE & __LOG_MOD_STIMER) > 0
-	  log_error("STimer list full\r\n");
+	  ITSDK_ERROR_REPORT(ITSDK_ERROR_STIMER_LIST_FULL,0);
 	#endif
 	return TIMER_LIST_FULL;
 }
@@ -228,7 +229,7 @@ uint32_t itsdk_stimer_nextTimeoutMs(){
 		min = min - t;
 		return min;
 	}
-	return __INFINITE_64B;
+	return __INFINITE_32B;
 }
 
 #endif

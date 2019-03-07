@@ -36,6 +36,7 @@
 #include <it_sdk/itsdk.h>
 #include <it_sdk/console/console.h>
 #include <it_sdk/logger/logger.h>
+#include <it_sdk/logger/error.h>
 #include <it_sdk/wrappers.h>
 #include <it_sdk/time/time.h>
 #include <it_sdk/lowpower/lowpower.h>
@@ -62,7 +63,6 @@ static itsdk_console_return_e _itsdk_console_private(char * buffer, uint8_t sz) 
 			_itsdk_console_printf("X          : exit console\r\n");
 			_itsdk_console_printf("R          : reset device\r\n");
 			_itsdk_console_printf("l / L      : switch LowPower ON / OFF\r\n");
-			_itsdk_console_printf("c          : print device config\r\n");
 			_itsdk_console_printf("s          : print device state\r\n");
 			_itsdk_console_printf("t          : print current time in S\r\n");
 			_itsdk_console_printf("T          : print current temperature in oC\r\n");
@@ -183,6 +183,7 @@ void itsdk_console_setup() {
 }
 
 
+
 /**
  * This function is call on every wake-up to proceed the pending characters on the serial
  * port and call the associated services.
@@ -217,12 +218,29 @@ void itsdk_console_loop() {
 		 }
 	} while ( r == SERIAL_READ_PENDING_CHAR );
   #endif
+  #if ( ITSDK_CONSOLE_SERIAL & __UART_CUSTOM ) > 0
+	do {
+		 r = itsdk_console_customSerial_read(&c);
+		 if ( r == SERIAL_READ_SUCCESS || r == SERIAL_READ_PENDING_CHAR) {
+			 _itsdk_console_processChar(c);
+		 }
+	} while ( r == SERIAL_READ_PENDING_CHAR );
+  #endif
 
 }
 
 // =================================================================================================
 // Processing output
 // =================================================================================================
+
+#if ( ITSDK_CONSOLE_SERIAL & __UART_CUSTOM ) > 0
+__weak void itsdk_console_customSerial_print(char * msg) {
+	return;
+}
+__weak serial_read_response_e itsdk_console_customSerial_read(char * ch) {
+	return SERIAL_READ_NOCHAR;
+}
+#endif
 
 void _itsdk_console_printf(char *format, ...) {
 	va_list args;
@@ -235,6 +253,9 @@ void _itsdk_console_printf(char *format, ...) {
 #endif
 #if ( ITSDK_CONSOLE_SERIAL & __UART_USART2 ) > 0
 	serial2_print(fmtBuffer);
+#endif
+#if ( ITSDK_CONSOLE_SERIAL & __UART_CUSTOM ) > 0
+	itsdk_console_customSerial_print(fmtBuffer);
 #endif
 }
 
@@ -301,6 +322,7 @@ static void _itsdk_console_processLine() {
 			// Print the password prompt only when it was not a command
 			if ( ret == ITSDK_CONSOLE_NOTFOUND ) {
 				_itsdk_console_printf("password:\r\n");
+				_itsdk_console_printf("KO\r\n");
 			}
 		}
 	} else {
@@ -376,8 +398,7 @@ static void _itsdk_console_processChar(char c) {
 void itsdk_console_registerCommand(itsdk_console_chain_t * chain) {
 	itsdk_console_chain_t * c = &__console_head_chain;
 	if ( c->console_private != _itsdk_console_private ) {
-		log_error("[Console] setup console first!\r\n");
-		itsdk_error_handler(__FILE__, __LINE__);
+		ITSDK_ERROR_REPORT(ITSDK_ERROR_CONSOLE_NOTSETUP,0);
 	}
 
 	while ( c->next != NULL && c->next != chain ) {

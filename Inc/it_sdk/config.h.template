@@ -34,12 +34,18 @@
 // | SDK SETTING                   | USER SELECTED VALUE                  | SETTING DESCRIPTION                   |
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #define ITSDK_VERSION				"1.3.1-devel"							// SDK Version String (do not change it)
+#define ITSDK_VERSION_BYTE			0x13									//  SDK 1 Byte version corresponding to previous on (do not change it)
+
 #define ITSDK_USER_VERSION			"0.1"									// CHANGE ME - Version of your firwmare
+#define ITSDK_USER_VERSION_BYTE		0x01									// CHANGE ME - Version of your firwmare 4bits MAJOR / 4bits MINOR
+																			//   You may change it anytime the NVM configuration is impacted
 
 #define ITSDK_CUBEMX_VERSION	    __CUBEMX_VERSION500						// Version of cube MX
 #define ITSDK_PLATFORM 				__PLATFORM_STM32L0						// Hardware platform selection
 #define ITSDK_DEVICE				__DEVICE_STM32L072XX					// Specific device
+#define ITSDK_WITH_DRIVERS			__ENABLE								// Includes configDrivers.h
 #define ITSDK_RAM_SIZE				(20*1024)								// RAM Memory size
+#define ITSDK_EPROM_SIZE			(6*1024)								// EEPROM size
 #define ITSDK_WITH_UART				( __UART_USART2 | __UART_LPUART1 )		// Use LPUART1 and USART2 for debug
 #define ITSDK_WITH_RTC				__RTC_ENABLED							// The Rtc is usd in the firmware
 #define ITSDK_WITH_CLK_ADJUST		__ENABLE								// The RTC (and wtachdog) is calibrated
@@ -76,6 +82,11 @@
 								/*	| __LOG_MOD_LOWLORADBG */ \
 								/*	| __LOG_MOD_LOWLORAINF */ \
 									)										// list the module to be activated in log see config_defines.h
+#define ITSDK_WITH_ERROR_RPT		__ENABLE								// Enable the Error reporting code. The allow to store error code in the EEPROM
+#define ITSDK_ERROR_USE_EPROM		__ENABLE								//  Error reports are stored in the EEPROM
+#define ITSDK_WITH_ERROR_EXTENTION	__ENABLE								//  Add an application extension for error code in configError.h file
+#define ITSDK_ERROR_BLOCKS			64										//  Max number of error block / 1 block stores 1 error and needs 8 Byte for storage.
+																			//  The first block is header
 
 #define ITSDK_LOWPOWER_MOD			( __LOWPWR_MODE_STOP       \
 									| __LOWPWR_MODE_WAKE_RTC   \
@@ -84,6 +95,12 @@
 									)										// Mode Stop + wakeup RTC + GPIO
 #define ITSDK_LOWPOWER_MINDUR_MS	5										// Under 5 ms sleep request, no need to sleep
 #define ITSDK_LOWPOWER_RTC_MS		500										// RTC wake up after 500ms
+#define ITSDK_LOWPOWER_MISC_HALT    (  __LP_HALT_NONE					\
+									 | __LP_HALT_I2C1					\
+								/*	 | __LP_HALT_I2C2	*/				\
+									 | __LP_HALT_SPI1					\
+									 | __LP_HALT_SPI2					\
+									)										// extra module to stop during low power phase
 #define ITSDK_LOWPOWER_GPIO_A_KEEP	(  __LP_GPIO_1  \
 									 | __LP_GPIO_2  \
 									 | __LP_GPIO_3  \
@@ -144,6 +161,20 @@
 #define ITSDK_STATEMACHINE_NAMESZ	8										// Maximum size for task name (-1)
 
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// APP SPECIFIC NVM CONFIG
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+#define ITSDK_CONFIGURATION_MODE		__CONFIG_EEPROM						// Select the type of configuration used
+																			// EEPROM = Store the config in EEPROM
+																			// MEMORY = The config is reinit at boottime but store in memory
+																			// STATIC = No config use in memory, only static settings
+
+#define ITSDK_WITH_CONFIGURATION_APP	__ENABLE							// The application have a configuration stored in NVM
+																			// This is enable the app specific part of NVM config
+																			// The file it_sdk/configNvm.h will be included and
+																			//  contains the application specific configuration
+
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // SECURE STORE & CONSOLE
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -191,6 +222,17 @@
 	#include <it_sdk/configLoRaWan.h>
 #endif
 
-#include <it_sdk/configDrivers.h>
+#if ITSDK_WITH_DRIVERS == __ENABLE
+   #include <it_sdk/configDrivers.h>
+#endif
+
+#if ITSDK_WITH_CONFIGURATION_APP == __ENABLE
+	#include <it_sdk/configNvm.h>
+#endif
+
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// VERIFICATIONS
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 
 #endif /* IT_SDK_CONFIG_H_ */

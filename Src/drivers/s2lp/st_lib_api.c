@@ -33,6 +33,7 @@
 
 #include <it_sdk/itsdk.h>
 #include <it_sdk/logger/logger.h>
+#include <it_sdk/logger/error.h>
 #include <it_sdk/time/timer.h>
 #include <it_sdk/lowpower/lowpower.h>
 #include <stm32l_sdk/rtc/rtc.h>
@@ -643,7 +644,7 @@ sfx_u8 MCU_API_timer_start(sfx_u32 time_duration_in_s)
 				0,
 				TIMER_ACCEPT_LOWPOWER
 			) != TIMER_INIT_SUCCESS ) {
-		itsdk_error_handler(__FILE__, __LINE__);
+		ITSDK_ERROR_REPORT(ITSDK_ERROR_STIMER_INIT_FLD,0);
 	}
 	return SFX_ERR_NONE;
 }
@@ -708,7 +709,7 @@ sfx_u8 MCU_API_timer_start_carrier_sense(sfx_u16 time_duration_in_ms)
 			0,
 			TIMER_ACCEPT_LOWPOWER
 		) != TIMER_INIT_SUCCESS ) {
-			itsdk_error_handler(__FILE__, __LINE__);
+			ITSDK_ERROR_REPORT(ITSDK_ERROR_STIMER_INIT_FLD,0);
 		}
 	return SFX_ERR_NONE;
 }

@@ -19,7 +19,8 @@ Made for being compiled with open-source environment GCC / AC6
 * Supported Advanced features
   * Task Scheduler
   * State Machine 
-  * Logger
+  * Multiple Serial console logger
+  * Error logger with NVM storage
   * Secured debug & configuration Console
   * Secured Storage in EEPROM for keys
   
@@ -42,6 +43,12 @@ Made for being compiled with open-source environment GCC / AC6
     * murata cmwx1zzabz (sx1276)
   * T / H / P
      * bosh bme280
+  * Light
+     * Maxim Max44009
+  * Current / Battery Pack
+    * Maxim Max17205 / Max17201
+  * NFC
+  	 * ST25DV
        
 * Supported stacks
   * lorawan
@@ -116,21 +123,6 @@ Things to not forget once a cubeMx project has been created
   	/* USER CODE END 3 */
 ```
 
-   => error handler
-```C
-  void _Error_Handler(char *file, int line)
-  {
-	  /* USER CODE BEGIN Error_Handler_Debug */
-	  #if ITSDK_LOGGER_CONF > 0
-	     log_debug("Error : %s (%d)\r\n",file,line);
-	  #endif
-	  /* User can add his own implementation to report the HAL error return state */
-	  while(1)
-	  {
-	  }
-	  /* USER CODE END Error_Handler_Debug */
-  }
-```
   
 Other modifications (need to be done on every CubeMx project regeneration):
   - GPIO - (in gpio.c) Cube Mx is setting/resetting the Gpio state on init. You need to manually comment the line in *gpio.c* to avoid the pin to be modified on MCU wake-up. The other solution is to let the gpio init as-is and add a function *void stm32l_lowPowerRestoreGpioConfig()* containing the gpio reconfiguration after wakeup.

@@ -29,9 +29,34 @@
 #include <stm32l_sdk/i2c/i2c.h>
 #include <it_sdk/wrappers.h>
 
+/**
+ * I2C Memory write
+ */
+_I2C_Status i2c_memWrite(
+		ITSDK_I2C_HANDLER_TYPE * i2c,				// i2c handler
+		uint16_t  devAdr,							// Device Address => 7 bits non shifted
+		uint16_t  memAdr,							// Memory address to access
+		uint16_t  memAdrSize,						// 8 for 8b, 16 for 16 bits ...
+		uint8_t * values,							// Data to be written
+		uint16_t  size								// Size of the data to be written
+) {
+	devAdr <<= 1;
+	switch (memAdrSize) {
+	case 8:
+		memAdrSize = I2C_MEMADD_SIZE_8BIT;
+		break;
+	case 16:
+		memAdrSize = I2C_MEMADD_SIZE_16BIT;
+		break;
+	default:
+		return I2C_ERROR;
+		break;
+	}
+	return (_I2C_Status)HAL_I2C_Mem_Write( i2c, devAdr, memAdr, memAdrSize, values, size, ITSDK_I2C_TIMEOUT );
+}
 
 /**
- * Witre the given I2C
+ * Write the given I2C
  * The address is the 7 bit device address => No shift in the parameter
  */
 _I2C_Status i2c_write(
@@ -71,7 +96,7 @@ _I2C_Status i2c_write8BRegister(
 }
 
 /**
- * Write the given I2C 16b Register
+ * Write the given I2C 16b Register / LSB First
  * The address is the 7 bit device address => No shift in the parameter
  */
 _I2C_Status i2c_write16BRegister(
@@ -85,18 +110,47 @@ _I2C_Status i2c_write16BRegister(
 	uint8_t sz;
 	if (regSize == 1) {
 		_buffer[0] = (uint8_t)regAdr;
-		_buffer[1] = (uint8_t)(value >> 8);
-		_buffer[2] = (uint8_t)(value & 0xFF);
+		_buffer[1] = (uint8_t)(value & 0xFF);
+		_buffer[2] = (uint8_t)(value >> 8);
 		sz=3;
 	} else if (regSize == 2) {
 		_buffer[0] = (uint8_t)(regAdr >> 8);
 		_buffer[1] = (uint8_t)(regAdr & 0xFF);
-		_buffer[2] = (uint8_t)(value >> 8);
-		_buffer[3] = (uint8_t)(value & 0xFF);
+		_buffer[2] = (uint8_t)(value & 0xFF);
+		_buffer[3] = (uint8_t)(value >> 8);
 		sz=4;
 	} else return I2C_ERROR;
 	return i2c_write(i2c, devAdr, _buffer, sz);
 }
+
+
+/**
+ * I2C Memory read
+ */
+_I2C_Status i2c_memRead(
+		ITSDK_I2C_HANDLER_TYPE * i2c,				// i2c handler
+		uint16_t  devAdr,							// Device Address => 7 bits non shifted
+		uint16_t  memAdr,							// Memory address to access
+		uint16_t  memAdrSize,						// 8 for 8b, 16 for 16 bits ...
+		uint8_t * values,							// Data to be written
+		uint16_t  size								// Size of the data to be read
+) {
+	devAdr <<= 1;
+	switch (memAdrSize) {
+	case 8:
+		memAdrSize = I2C_MEMADD_SIZE_8BIT;
+		break;
+	case 16:
+		memAdrSize = I2C_MEMADD_SIZE_16BIT;
+		break;
+	default:
+		return I2C_ERROR;
+		break;
+	}
+	return (_I2C_Status)HAL_I2C_Mem_Read( i2c, devAdr, memAdr, memAdrSize, values, size, ITSDK_I2C_TIMEOUT );
+}
+
+
 
 /**
  * Read the given I2C
@@ -144,15 +198,15 @@ _I2C_Status i2c_read8BRegister(
 }
 
 /**
- * Read the given I2C 16b Register
+ * Read the given I2C 16b Register / LSB First
  * The address is the 7 bit device address => No shift in the parameter
  */
 _I2C_Status i2c_read16BRegister(
 		ITSDK_I2C_HANDLER_TYPE * i2c,
 		uint16_t  devAdr,			// Non shifted device address
 		uint16_t  regAdr,			// Register address (8b or 16bà
-		uint16_t * value,			// 8B value to be read
-		uint16_t  regSize			// Register address size 1B or 2B
+		uint16_t * value,			// 16b value to be read
+		uint16_t  regSize			// Address's register size 1B or 2B
 ) {
 	uint8_t _buffer[3];
 	uint8_t sz;
@@ -167,7 +221,7 @@ _I2C_Status i2c_read16BRegister(
 	} else return I2C_ERROR;
 	if ( i2c_write(i2c, devAdr, _buffer, sz) == I2C_OK ) {
 		_I2C_Status r = i2c_read(i2c,devAdr,_buffer,2);
-		*value= (_buffer[0] << 8)+_buffer[1];
+		*value= (_buffer[0])+(_buffer[1] << 8);
 		return r;
 	} else return I2C_ERROR;
 }
