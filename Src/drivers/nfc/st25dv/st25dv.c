@@ -105,7 +105,6 @@ static _I2C_Status __readMemory(drivers_st25dv_addr_e adrType, uint16_t memAdr, 
  */
 static void __st25dv_timeout(uint32_t val) {
 	uint8_t v;
-	log_info("On Timeout\r\n");
 	switch ( __st25dv_config.state ) {
 	case ST25DV_SLEEPING:
 		return;
