@@ -73,9 +73,12 @@ typedef struct {								// Size %4 must be == 0
 #define ST25DV_SERIALUZ_MCUBUF_SIZE		84		// size for MCU to write response (have to be a multiple of 4Bytes)
 #define ST25DV_SERIALUZ_MAXRDTRY	  3000		// in Ms max try to wait for the host to write something equivalent to 3s wait.
 
+#define ST25DV_SERIALFTM_HOSTBUF_SIZE	256
+#define ST25DV_SERIALFTM_MCUBUF_SIZE	256
+#define ST25DV_SERIALFTM_MAXRDTRY	  3000
 
 #define ST25DV_SERIALUZ_MAGIC		0xCAFE
-#define ST25DV_SERIALUZ_EMPTYBUF		-1
+#define ST25DV_SERIAL_EMPTYBUF			-1
 #define ST25DV_I2C_MAXTRY				10
 #define ST25DV_I2C_RETRY_WAIT_MS		20
 
@@ -125,6 +128,12 @@ typedef struct {
 	uint8_t						readSz;
 	int16_t						readIndex;
 #endif
+#if ITSDK_DRIVERS_ST25DV_WITH_SERIALFTM == __ENABLE
+	uint8_t						readBufFtm[ST25DV_SERIALFTM_HOSTBUF_SIZE];
+	uint16_t					readSzFtm;
+	int16_t						readIndexFtm;
+#endif
+
 
 } drivers_st25dv_conf_t;
 
@@ -151,9 +160,10 @@ typedef enum {
 
 drivers_st25dv_ret_e drivers_st25dv_setup(drivers_st25dv_mode_e mode);
 void st25dv_process();
-drivers_st25dv_ret_e drivers_st25dv_ftmAvailableToRead();
+drivers_st25dv_ret_e drivers_st25dv_ftmAvailableToRead(uint16_t * len);
 drivers_st25dv_ret_e drivers_st25dv_ftmFreeForWriting();
 drivers_st25dv_ret_e drivers_st25dv_ftmWrite(uint8_t * messages, uint16_t sz);
+drivers_st25dv_ret_e drivers_st25dv_ftmRead(uint8_t * messages, uint16_t sz);
 drivers_st25dv_ret_e drivers_st25dv_goLowPower();
 drivers_st25dv_ret_e drivers_st25dv_goWakeUp();
 drivers_st25dv_ret_e drivers_st25dv_blocWrite(drivers_st25dv_zone_e zone, uint8_t blockId, uint8_t * data, uint8_t sz);

@@ -148,13 +148,13 @@ void st25dv_process() {
 	if ( __readMemory(ST25DV_ADDR_DATA,ST25DV_ITSTS_DYN_REG,&v,1) == I2C_OK ) {
 		if ( (v & ST25DV_ITSTS_FIELDFALLING_MASK) > 0) {
 			// we will go low power after expiration to limit the in/out frequency
-			//log_info("FieldOut");
+			log_info("FieldOut");
 			__st25dv_config.field = ST25DV_OUT_OF_FIELD;
 			itsdk_stimer_stop(__st25dv_timeout,0);
 			itsdk_stimer_register(3000,__st25dv_timeout,0,TIMER_ACCEPT_LOWPOWER);
 		}
 		if ( (v & ST25DV_ITSTS_FIELDRISING_MASK) > 0 ) {
-			//log_info("FieldIn");
+			log_info("FieldIn");
 			__st25dv_config.field = ST25DV_IN_THE_FIELD;
 			drivers_st25dv_goWakeUp();
 			itsdk_stimer_stop(__st25dv_timeout,0);
@@ -168,7 +168,7 @@ void st25dv_process() {
 		}
 		if ( (v & ST25DV_ITSTS_RFWRITE_MASK) > 0 ) {
 			// call on RF Write operation into the UserLand
-			//log_info("RfWrite");
+			log_info("RfWrite");
 		}
 		if ( (v & ST25DV_ITSTS_RFINTERRUPT_MASK) > 0 ) {
 			log_info("RfInt");
@@ -390,49 +390,6 @@ drivers_st25dv_ret_e _drivers_st25dv_changeI2CPassword(uint64_t pass) {
 	return ST25DV_FAILED;
 }
 
-/**
- * The FTM mode is incompatible with User and System Write operations
- * Is needs to be enable / disable regarding this kind of operation
- * FTM will be enabled only if the current mode have FTM enabled
- */
-drivers_st25dv_ret_e drivers_st25dv_enableFTM() {
-	uint8_t v;
-	switch (__st25dv_config.mode) {
-	    default:
-	    case ST25DV_MODE_FTM:
-	    	// enable FTM
-			__readMemory(ST25DV_ADDR_DATA,ST25DV_MB_CTRL_DYN_REG,&v,1);
-	   		v |= ST25DV_MB_CTRL_DYN_MBEN_MASK;	// enable FTM
-			__writeMemory(ST25DV_ADDR_DATA,ST25DV_MB_CTRL_DYN_REG,&v,1);
-	    	break;
-       case ST25DV_MODE_SERIALUZ:
-       case ST25DV_MODE_SIMPLE:
-	       	break;
-	}
-	return ST25DV_SUCCESS;
-}
-
-/**
- * The FTM mode is incompatible with User and System Write operations
- * Is needs to be enable / disable regarding this kind of operation
- * FTM will be enabled only if the current mode have FTM enabled
- */
-drivers_st25dv_ret_e drivers_st25dv_disableFTM() {
-	uint8_t v;
-	switch (__st25dv_config.mode) {
-	    default:
-	    case ST25DV_MODE_FTM:
-	    	// enable FTM
-			__readMemory(ST25DV_ADDR_DATA,ST25DV_MB_CTRL_DYN_REG,&v,1);
-	   		v &= ~ST25DV_MB_CTRL_DYN_MBEN_MASK;	// disable FTM
-			__writeMemory(ST25DV_ADDR_DATA,ST25DV_MB_CTRL_DYN_REG,&v,1);
-	    	break;
-       case ST25DV_MODE_SERIALUZ:
-       case ST25DV_MODE_SIMPLE:
-		    break;
-	}
-	return ST25DV_SUCCESS;
-}
 
 
 /**
@@ -472,9 +429,11 @@ drivers_st25dv_ret_e drivers_st25dv_goWakeUp() {
 	    default:
 	    case ST25DV_MODE_FTM:
 	    	// re-init FTM
-			__readMemory(ST25DV_ADDR_DATA,ST25DV_MB_CTRL_DYN_REG,&v,1);
-	   		v |= ST25DV_MB_CTRL_DYN_MBEN_MASK;	// enable FTM
-			__writeMemory(ST25DV_ADDR_DATA,ST25DV_MB_CTRL_DYN_REG,&v,1);
+			v= ST25DV_MB_MODE_RW_MASK;			// Enable RW for FTM EN bit
+			__writeMemory(ST25DV_ADDR_SYST,ST25DV_MB_MODE_REG,&v,1);
+			v = ST25DV_I2C_MB_WDG_DEF_VALUE;	// Clear pending data not read after 2s
+			__writeMemory(ST25DV_ADDR_SYST,ST25DV_MB_WDG_REG,&v,1);
+			drivers_st25dv_enableFTM();
 	    	break;
         case ST25DV_MODE_SERIALUZ:
         case ST25DV_MODE_SIMPLE:
@@ -627,6 +586,51 @@ drivers_st25dv_ret_e drivers_st25dv_blocRead(drivers_st25dv_zone_e zone, uint8_t
 // =========================================================================================
 
 /**
+ * The FTM mode is incompatible with User and System Write operations
+ * Is needs to be enable / disable regarding this kind of operation
+ * FTM will be enabled only if the current mode have FTM enabled
+ */
+drivers_st25dv_ret_e drivers_st25dv_enableFTM() {
+	uint8_t v;
+	switch (__st25dv_config.mode) {
+	    default:
+	    case ST25DV_MODE_FTM:
+	    	// enable FTM
+			__readMemory(ST25DV_ADDR_DATA,ST25DV_MB_CTRL_DYN_REG,&v,1);
+	   		v |= ST25DV_MB_CTRL_DYN_MBEN_MASK;	// enable FTM
+			__writeMemory(ST25DV_ADDR_DATA,ST25DV_MB_CTRL_DYN_REG,&v,1);
+	    	break;
+       case ST25DV_MODE_SERIALUZ:
+       case ST25DV_MODE_SIMPLE:
+	       	break;
+	}
+	return ST25DV_SUCCESS;
+}
+
+/**
+ * The FTM mode is incompatible with User and System Write operations
+ * Is needs to be enable / disable regarding this kind of operation
+ * FTM will be enabled only if the current mode have FTM enabled
+ */
+drivers_st25dv_ret_e drivers_st25dv_disableFTM() {
+	uint8_t v;
+	switch (__st25dv_config.mode) {
+	    default:
+	    case ST25DV_MODE_FTM:
+	    	// enable FTM
+			__readMemory(ST25DV_ADDR_DATA,ST25DV_MB_CTRL_DYN_REG,&v,1);
+	   		v &= ~ST25DV_MB_CTRL_DYN_MBEN_MASK;	// disable FTM
+			__writeMemory(ST25DV_ADDR_DATA,ST25DV_MB_CTRL_DYN_REG,&v,1);
+	    	break;
+       case ST25DV_MODE_SERIALUZ:
+       case ST25DV_MODE_SIMPLE:
+		    break;
+	}
+	return ST25DV_SUCCESS;
+}
+
+
+/**
  * Send bytes to the FTM-MB
  */
 drivers_st25dv_ret_e drivers_st25dv_ftmWrite(uint8_t * messages, uint16_t sz) {
@@ -642,22 +646,38 @@ drivers_st25dv_ret_e drivers_st25dv_ftmWrite(uint8_t * messages, uint16_t sz) {
 	return ST25DV_FAILED;
 }
 
+/**
+ * Get bytes from the FTM-MB
+ */
+drivers_st25dv_ret_e drivers_st25dv_ftmRead(uint8_t * messages, uint16_t sz) {
+	if ( sz > ST25DV_I2C_MB_SIZE ) return ST25DV_FAILED;
+	if ( __st25dv_config.state == ST25DV_SLEEPING ) return ST25DV_FAILED;
+
+	if ( __readMemory(ST25DV_ADDR_DATA,ST25DV_MAILBOX_RAM_REG, messages, sz) == I2C_OK ) {
+		return ST25DV_SUCCESS;
+	}
+	return ST25DV_FAILED;
+}
+
 
 /**
- * Check if we have pending bytes in the FTM queue
+ * Check if we have pending bytes in the FTM queue, the len is return when data are pending
  * Returns:
  * - ST25DV_SUCCESS when we have some
  * - ST25DV_EMPTYFTM when none
  */
-drivers_st25dv_ret_e drivers_st25dv_ftmAvailableToRead() {
+drivers_st25dv_ret_e drivers_st25dv_ftmAvailableToRead(uint16_t * len) {
 
 	uint8_t v;
 	if ( __st25dv_config.state == ST25DV_SLEEPING ) return ST25DV_FAILED;
 
  	__readMemory(ST25DV_ADDR_DATA,ST25DV_MB_CTRL_DYN_REG,&v,1);
- 	if ( (v & ST25DV_MB_CTRL_DYN_HOSTPUTMSG_MASK) > 0 ) {
+ 	if ( (v & ST25DV_MB_CTRL_DYN_RFPUTMSG_MASK) > 0 ) {
+ 		__readMemory(ST25DV_ADDR_DATA,ST25DV_MBLEN_DYN_REG,&v,1);
+ 		*len = ((uint16_t)v)+1;
  		return ST25DV_SUCCESS;
  	}
+ 	*len=0;
  	return ST25DV_EMPTYFTM;
 
 }
@@ -683,6 +703,149 @@ drivers_st25dv_ret_e drivers_st25dv_ftmFreeForWriting() {
  	return ST25DV_FAILED;			// MBEN = 0 - FTM is unactivated
 
 }
+
+
+#if ITSDK_DRIVERS_ST25DV_WITH_SERIALFTM == __ENABLE
+
+
+/**
+ * Get if pending a char for the buffer.
+ * We read all the Host data once at a time and fill a local buffer
+ * this function will read the local buffer then try to get data
+ * from the host.
+ */
+serial_read_response_e drivers_st25dv_serialFtm_read(char * ch) {
+#warning "... la on peut avoir à lire les bout de messages et pas tout d'un coup ..."
+	// We have char to read in the local buffer
+	if ( __st25dv_config.readIndexFtm != ST25DV_SERIAL_EMPTYBUF ) {
+		if ( __st25dv_config.readIndexFtm < __st25dv_config.readSzFtm ) {
+			*ch = __st25dv_config.readBufFtm[__st25dv_config.readIndexFtm];
+			__st25dv_config.readIndexFtm++;
+			if ( __st25dv_config.readIndexFtm == __st25dv_config.readSzFtm ) {
+				__st25dv_config.readIndexFtm = ST25DV_SERIAL_EMPTYBUF;
+				return SERIAL_READ_SUCCESS;
+			} else {
+				return SERIAL_READ_PENDING_CHAR;
+			}
+		} else {
+			// should not be here
+			__st25dv_config.readIndexFtm = ST25DV_SERIAL_EMPTYBUF;
+		}
+	}
+
+	// The local buffer is empty, let's see if we have some in the NFC
+	// but if we are not in the field we have no reason to do it
+	if ( __st25dv_config.field != ST25DV_IN_THE_FIELD ) return SERIAL_READ_NOCHAR;
+
+	drivers_st25dv_goWakeUp();
+	__st25dv_config.state = ST25DV_PROCESSING;
+
+	serial_read_response_e ret = SERIAL_READ_NOCHAR;
+
+	uint16_t len;
+	if ( drivers_st25dv_ftmAvailableToRead(&len) == ST25DV_SUCCESS ) {
+log_info("toRead %d\r\n",len);
+		// We have something to read
+	    ret = SERIAL_READ_SUCCESS;
+		if ( drivers_st25dv_ftmRead(__st25dv_config.readBufFtm, len) == ST25DV_FAILED ) {
+			ret = SERIAL_READ_FAILED;
+		} else {
+			for ( int k = 0 ; k < len ; k++ ) {
+				if ( __st25dv_config.readBufFtm[k] == 0 ) {
+				   // We have finished to read the string
+				   __st25dv_config.readIndexFtm = 0;
+				   __st25dv_config.readSzFtm = k;
+				} else {
+					if (    ( __st25dv_config.readBufFtm[k] < 7 )
+						 || ( __st25dv_config.readBufFtm[k] > 13 && __st25dv_config.readBufFtm[k] < 32 )
+						 || ( __st25dv_config.readBufFtm[k] > 126 )
+					) {
+						__st25dv_config.readBufFtm[k] = ' ';
+					}
+log_info("%c",__st25dv_config.readBufFtm[k]);
+				}
+			}
+			if ( __st25dv_config.readIndexFtm == ST25DV_SERIAL_EMPTYBUF ) {
+				// Buffer is full but this is not the end of line yet
+				__st25dv_config.readIndexFtm = 0;
+				__st25dv_config.readSzFtm = ST25DV_SERIALFTM_HOSTBUF_SIZE;
+				__st25dv_config.readBufFtm[ST25DV_SERIALFTM_HOSTBUF_SIZE-1]=0;
+			}
+			*ch = __st25dv_config.readBufFtm[__st25dv_config.readIndexFtm];
+			__st25dv_config.readIndexFtm++;
+			if (__st25dv_config.readIndexFtm < __st25dv_config.readSzFtm ) {
+				ret = SERIAL_READ_PENDING_CHAR;
+			}
+		}
+	} else {
+		ret = SERIAL_READ_NOCHAR;
+	}
+	__st25dv_config.state = ST25DV_WAKEUP;
+	drivers_st25dv_goLowPower();
+	return ret;
+}
+
+/**
+ * Print a string into the serialFtm buffer.
+ * Directly write the NFC memory if the NFC is ready for this
+ * - Nothing waiting for beeing read by MCU
+ * - Nothing pending to read by Host
+ * If something is pending to read by host, we wait until a timeout, then forget.
+ * The device will poll the RF side to get the response. As a consequence the
+ * I2C interface may be busy, the program try to bypass this by repeating I2C access
+ */
+static void _drivers_st25dv_serialFtm_print(char * msg) {
+
+	int try = 0;
+	while ( drivers_st25dv_ftmFreeForWriting() != ST25DV_EMPTYFTM && try < (ST25DV_SERIALUZ_MAXRDTRY/50)) {
+		// previously written data pending - need to wait a bit.
+		#if ITSDK_WDG_MS > 0
+		   wdg_refresh();
+		#endif
+		itsdk_delayMs(50);
+		try++;
+	}
+	if (try == (ST25DV_SERIALUZ_MAXRDTRY/50) ) {
+		// wait fail
+		return;
+	}
+
+	// Write the data to the buffer
+	uint16_t len = 0;
+	for ( int i = 0 ; i < ST25DV_I2C_MB_SIZE-1 ; i++ ) {
+		if ( msg[i] == 0 ) break;
+		len++;
+	}
+	msg[len]=0;
+	drivers_st25dv_ftmWrite((uint8_t *)msg,len);
+	return;
+
+}
+
+void drivers_st25dv_serialFtm_print(char * msg) {
+	drivers_st25dv_goWakeUp();
+	__st25dv_config.state = ST25DV_PROCESSING;
+	_drivers_st25dv_serialFtm_print(msg);
+	__st25dv_config.state = ST25DV_WAKEUP;
+	drivers_st25dv_goLowPower();
+}
+
+void drivers_st25dv_serialFtm_println(char * msg) {
+	char t[ST25DV_SERIALFTM_HOSTBUF_SIZE];
+	int i;
+	for ( i = 0 ; i < ST25DV_SERIALFTM_HOSTBUF_SIZE - 2 ; i++ ) {
+		if ( msg[i] != 0 ) {
+			t[i]=msg[i];
+		} else break;
+	}
+	t[i]='\n';
+	t[i+1]=0;
+	drivers_st25dv_serialFtm_print(t);
+}
+
+
+#endif // ITSDK_DRIVERS_ST25DV_WITH_SERIALFTM
+
 
 #if ITSDK_DRIVERS_ST25DV_WITH_SERIALUZ == __ENABLE
 // ====================================================================
@@ -735,7 +898,7 @@ drivers_st25dv_ret_e drivers_st25dv_enableSerialUz(drivers_st25dv_mode_e mode) {
 		ITSDK_ERROR_REPORT(ITSDK_ERROR_DRV_ST25DV_SERIALUZWR,0);
 		ret = ST25DV_FAILED;
 	}
-	__st25dv_config.readIndex = ST25DV_SERIALUZ_EMPTYBUF;
+	__st25dv_config.readIndex = ST25DV_SERIAL_EMPTYBUF;
 
 	return ret;
 }
@@ -749,19 +912,19 @@ drivers_st25dv_ret_e drivers_st25dv_enableSerialUz(drivers_st25dv_mode_e mode) {
 serial_read_response_e drivers_st25dv_serialUz_read(char * ch) {
 
 	// We have char to read in the local buffer
-	if ( __st25dv_config.readIndex != ST25DV_SERIALUZ_EMPTYBUF ) {
+	if ( __st25dv_config.readIndex != ST25DV_SERIAL_EMPTYBUF ) {
 		if ( __st25dv_config.readIndex < __st25dv_config.readSz ) {
 			*ch = __st25dv_config.readBuf[__st25dv_config.readIndex];
 			__st25dv_config.readIndex++;
 			if ( __st25dv_config.readIndex == __st25dv_config.readSz ) {
-				__st25dv_config.readIndex = ST25DV_SERIALUZ_EMPTYBUF;
+				__st25dv_config.readIndex = ST25DV_SERIAL_EMPTYBUF;
 				return SERIAL_READ_SUCCESS;
 			} else {
 				return SERIAL_READ_PENDING_CHAR;
 			}
 		} else {
 			// should not be here
-			__st25dv_config.readIndex = ST25DV_SERIALUZ_EMPTYBUF;
+			__st25dv_config.readIndex = ST25DV_SERIAL_EMPTYBUF;
 		}
 	}
 
@@ -812,7 +975,7 @@ serial_read_response_e drivers_st25dv_serialUz_read(char * ch) {
 			}
 			// check status
 			if ( ret == SERIAL_READ_SUCCESS ) {
-				if ( __st25dv_config.readIndex == ST25DV_SERIALUZ_EMPTYBUF ) {
+				if ( __st25dv_config.readIndex == ST25DV_SERIAL_EMPTYBUF ) {
 					// Buffer is full but this is not the end of line yet
 					__st25dv_config.readIndex = 0;
 					__st25dv_config.readSz = ST25DV_SERIALUZ_HOSTBUF_SIZE;
@@ -921,25 +1084,47 @@ void drivers_st25dv_serialUz_println(char * msg) {
 	drivers_st25dv_serialUz_print(t);
 }
 
+#endif	// ITSDK_DRIVERS_ST25DV_WITH_SERIALUZ
+
+#if ITSDK_DRIVERS_ST25DV_WITH_SERIALUZ == __ENABLE || ITSDK_DRIVERS_ST25DV_WITH_SERIALFTM == __ENABLE
 #if ITSDK_WITH_CONSOLE == __ENABLE
 /**
  * Link to the console when activated
  */
 void itsdk_console_customSerial_print(char * msg) {
-    if ( __st25dv_config.ready == ST25DV_NOTREADY && __st25dv_config.mode != ST25DV_MODE_SERIALUZ) return;
-	drivers_st25dv_serialUz_print(msg);
+	if ( __st25dv_config.ready == ST25DV_NOTREADY ) return;
+
+#if ITSDK_DRIVERS_ST25DV_WITH_SERIALUZ == __ENABLE
+    if ( __st25dv_config.mode == ST25DV_MODE_SERIALUZ) {
+    	drivers_st25dv_serialUz_print(msg);
+    }
+#endif
+#if ITSDK_DRIVERS_ST25DV_WITH_SERIALFTM == __ENABLE
+    if ( __st25dv_config.mode == ST25DV_MODE_FTM) {
+    	drivers_st25dv_serialFtm_print(msg);
+    }
+#endif
 }
 
 serial_read_response_e itsdk_console_customSerial_read(char * ch) {
-    if ( __st25dv_config.ready == ST25DV_NOTREADY && __st25dv_config.mode != ST25DV_MODE_SERIALUZ) return SERIAL_READ_NOCHAR;
-    serial_read_response_e r = drivers_st25dv_serialUz_read(ch);
+	serial_read_response_e r = SERIAL_READ_NOCHAR;
+	if ( __st25dv_config.ready == ST25DV_NOTREADY ) return SERIAL_READ_NOCHAR;
+
+#if ITSDK_DRIVERS_ST25DV_WITH_SERIALUZ == __ENABLE
+    if ( __st25dv_config.mode == ST25DV_MODE_SERIALUZ) {
+    	 r = drivers_st25dv_serialUz_read(ch);
+    }
+#endif
+#if ITSDK_DRIVERS_ST25DV_WITH_SERIALFTM == __ENABLE
+    if ( __st25dv_config.mode == ST25DV_MODE_FTM) {
+    	r = drivers_st25dv_serialFtm_read(ch);
+    }
+#endif
     return r;
 }
 
+#endif
 #endif // ITSDK_WITH_CONSOLE
-
-
-#endif	// ITSDK_DRIVERS_ST25DV_WITH_SERIALUZ
 
 
 #endif
