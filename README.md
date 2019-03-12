@@ -48,7 +48,7 @@ Made for being compiled with open-source environment GCC / AC6
   * Current / Battery Pack
     * Maxim Max17205 / Max17201
   * NFC
-  	 * ST25DV
+  	 * ST25DV - block access / serial console over FTM & memory
        
 * Supported stacks
   * lorawan

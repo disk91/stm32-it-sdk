@@ -146,6 +146,11 @@ static itsdk_console_return_e _itsdk_console_public(char * buffer, uint8_t sz) {
 			_itsdk_console_printf("?          : print help\r\n");
 			_itsdk_console_printf("!          : print copyright\r\n");
 			_itsdk_console_printf("v          : print version\r\n");
+			_itsdk_console_printf("o          : print OK\r\n");
+			return ITSDK_CONSOLE_SUCCES;
+			break;
+		case 'o':
+			_itsdk_console_printf("OK\r\n");
 			return ITSDK_CONSOLE_SUCCES;
 			break;
 		case '!':
@@ -373,9 +378,11 @@ static void _itsdk_console_processLine() {
  */
 static void _itsdk_console_processChar(char c) {
 
-	if ( c == '\n' || c == '\r' ) {
-		_itsdk_console_processLine();
-		__console.pBuffer = 0;
+	if ( c == '\n' || c == '\r' || c == '\0' ) {
+		if ( __console.pBuffer > 0 ) {
+			_itsdk_console_processLine();
+			__console.pBuffer = 0;
+		}
 	} else {
 		if ( __console.pBuffer < ITSDK_CONSOLE_LINEBUFFER ) {
 			__console.serialBuffer[__console.pBuffer] = c;

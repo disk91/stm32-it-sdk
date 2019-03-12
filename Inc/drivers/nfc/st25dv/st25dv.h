@@ -75,7 +75,7 @@ typedef struct {								// Size %4 must be == 0
 
 #define ST25DV_SERIALFTM_HOSTBUF_SIZE	256
 #define ST25DV_SERIALFTM_MCUBUF_SIZE	256
-#define ST25DV_SERIALFTM_MAXRDTRY	  3000
+#define ST25DV_SERIALFTM_MAXRDTRY	   3500
 
 #define ST25DV_SERIALUZ_MAGIC		0xCAFE
 #define ST25DV_SERIAL_EMPTYBUF			-1
@@ -142,7 +142,8 @@ typedef enum {
 	ST25DV_NOTFOUND,
 	ST25DV_INVALIDPASS,		// I2C Password is invalid
 	ST25DV_EMPTYFTM,		// No pending message in the FTM
-	ST25DV_NONEMPTYFTM,		// Pending message in the FTM
+	ST25DV_NONEMPTYFTM_HOST,// Pending Host message in the FTM
+	ST25DV_NONEMPTYFTM_RF,	// Pending RF message in the FTM
 	ST25DV_OUTOFBOUNDS,		// Memory zone configuration
 	ST25DV_INVALIDMODE,		// Selected mode is not supported
 
@@ -170,6 +171,13 @@ drivers_st25dv_ret_e drivers_st25dv_blocWrite(drivers_st25dv_zone_e zone, uint8_
 drivers_st25dv_ret_e drivers_st25dv_blocRead(drivers_st25dv_zone_e zone, uint8_t blockId, uint8_t * data, uint8_t sz);
 drivers_st25dv_ret_e drivers_st25dv_enableFTM();
 drivers_st25dv_ret_e drivers_st25dv_disableFTM();
+
+#if ITSDK_DRIVERS_ST25DV_WITH_SERIALFTM == __ENABLE
+drivers_st25dv_ret_e drivers_st25dv_enableSerialFtm(drivers_st25dv_mode_e mode);
+serial_read_response_e drivers_st25dv_serialFtm_read(char * ch);
+void drivers_st25dv_serialFtm_print(char * msg);
+void drivers_st25dv_serialFtm_println(char * msg);
+#endif
 
 #if ITSDK_DRIVERS_ST25DV_WITH_SERIALUZ == __ENABLE
 drivers_st25dv_ret_e drivers_st25dv_enableSerialUz(drivers_st25dv_mode_e mode);
