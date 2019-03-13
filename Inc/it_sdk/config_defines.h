@@ -111,8 +111,8 @@
 /**
  * I2C configuration
  */
-#define __I2C_NONE					0x00			// No SPI
-#define __I2C_ENABLED				0x01			// with SPI
+#define __I2C_NONE					0x00			// No I2C
+#define __I2C_ENABLED				0x01			// with I2C
 
 
 /**
