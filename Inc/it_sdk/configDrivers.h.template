@@ -28,6 +28,8 @@
 #ifndef INC_IT_SDK_CONFIGDRIVERS_H_
 #define INC_IT_SDK_CONFIGDRIVERS_H_
 
+#include <it_sdk/config_defines.h>
+
 
 // *************************************** EEPROM *****************************************************************
 
