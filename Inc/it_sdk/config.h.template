@@ -33,7 +33,7 @@
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // | SDK SETTING                   | USER SELECTED VALUE                  | SETTING DESCRIPTION                   |
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#define ITSDK_VERSION				"1.4.0-master"							// SDK Version String (do not change it)
+#define ITSDK_VERSION				"1.4.1-master"							// SDK Version String (do not change it)
 #define ITSDK_VERSION_BYTE			0x14									//  SDK 1 Byte version corresponding to previous on (do not change it)
 
 #define ITSDK_USER_VERSION			"0.1"									// CHANGE ME - Version of your firwmare
