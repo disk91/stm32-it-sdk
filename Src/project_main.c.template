@@ -122,11 +122,8 @@ void task() {
 
 
 void project_setup() {
-	log_init(ITSDK_LOGGER_CONF);
 	log_info("Booting \r\n");
-	//log_info("Lsi freq : %d",rtc_getRealRtcFrequency());
 	HAL_Delay(2000);
-
 	itdt_sched_registerSched(2000,ITSDK_SCHED_CONF_IMMEDIATE, &task);
 }
 
