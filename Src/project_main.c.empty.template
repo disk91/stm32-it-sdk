@@ -28,25 +28,12 @@
  */
 #include <it_sdk/config.h>
 #include <it_sdk/itsdk.h>
-#include <it_sdk/time/time.h>
 #include <it_sdk/logger/logger.h>
-#include <it_sdk/sched/scheduler.h>
-
-
-void task() {
-	int16_t t = adc_getTemperature();
-	log_debug("Temp : %d\r\n",t);
-	uint16_t v = adc_getVdd();
-	log_debug("Volt : %d\r\n",v);
-	uint16_t k = adc_getValue(ITSDK_ADC1_PIN);
-	log_debug("Ext Volt : %d\r\n",k);
-}
 
 
 void project_setup() {
 	log_info("Booting \r\n");
-	itsdk_delayMs(2000);
-	itdt_sched_registerSched(2000,ITSDK_SCHED_CONF_IMMEDIATE, &task);
+
 }
 
 void project_loop() {

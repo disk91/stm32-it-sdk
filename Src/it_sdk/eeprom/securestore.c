@@ -52,6 +52,10 @@
 #include <it_sdk/console/console.h>
 #endif
 
+#if defined(ITSDK_WITH_LORAWAN_LIB) && ITSDK_WITH_LORAWAN_LIB == __ENABLE
+#include <it_sdk/lorawan/lorawan.h>
+#endif
+
 
 /**
  * Compute the offset of a block in the EEPROM Memory for a given
@@ -475,6 +479,7 @@ static itsdk_console_return_e _itsk_secstore_rekey(uint8_t * newKey){
 		_itsdk_secstore_writeBlockKey(ITSDK_SS_LORA_ABP_APPSKEY,_b,masterKey);
 	}
 	#if (ITSDK_LORAWAN_ACTTYPE == __LORAWAN_ACTIVATION_DYNAMIC)
+	// in this case the secure store have two different parts for storing ABP & OTAA, otherwise one fit all
 	if ( itsdk_secstore_readBlock(ITSDK_SS_LORA_OTAA_DEVEUIAPPEUI, _b) != SS_FAILED_NOTSET ) {
 		_itsdk_secstore_writeBlockKey(ITSDK_SS_LORA_OTAA_DEVEUIAPPEUI,_b,masterKey);
 	}
@@ -622,6 +627,7 @@ static itsdk_console_return_e _itsdk_secStore_consolePriv(char * buffer, uint8_t
 			_itsdk_console_printf("SS:2:xxxx  : change the sigfox key (16B hex)\r\n");
 		 #endif
 		 #if defined(ITSDK_WITH_LORAWAN_LIB) && ITSDK_WITH_LORAWAN_LIB == __ENABLE
+			_itsdk_console_printf("ss:Z       : LoRa restore factory setting\r\n");
 		   #if (ITSDK_LORAWAN_ACTTYPE == __LORAWAN_ACTIVATION_STATIC && ITSDK_LORAWAN_ACTIVATION == __LORAWAN_ABP) || ITSDK_LORAWAN_ACTTYPE == __LORAWAN_ACTIVATION_DYNAMIC
 			_itsdk_console_printf("ss:3       : LoRa ABP print NetworkID\r\n");
 			_itsdk_console_printf("SS:3:xxxx  : LoRa ABP change NetworkID (8B hex)\r\n");
@@ -685,6 +691,14 @@ static itsdk_console_return_e _itsdk_secStore_consolePriv(char * buffer, uint8_t
 		if ( buffer[0] == 's' && buffer[1] == 's' && buffer[2] == ':' ) {
 			switch(buffer[3]) {
 			 #if defined(ITSDK_WITH_LORAWAN_LIB) && ITSDK_WITH_LORAWAN_LIB == __ENABLE
+			  case 'Z':
+				  if ( itsdk_lorawan_resetFactoryDefaults(true) == LORAWAN_RETURN_SUCESS ) {
+					  _itsdk_console_printf("OK\r\n");
+					  return ITSDK_CONSOLE_SUCCES;
+				  } else {
+					  _itsdk_console_printf("KO\r\n");
+					  return ITSDK_CONSOLE_FAILED;
+				  }
               #if (ITSDK_LORAWAN_ACTTYPE == __LORAWAN_ACTIVATION_STATIC && ITSDK_LORAWAN_ACTIVATION == __LORAWAN_ABP) || ITSDK_LORAWAN_ACTTYPE == __LORAWAN_ACTIVATION_DYNAMIC
 			  case '3':
 				  // ITSDK_SS_LORA_ABP_NETIDDEVID

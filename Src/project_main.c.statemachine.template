@@ -31,15 +31,66 @@
 #include <it_sdk/time/time.h>
 #include <it_sdk/logger/logger.h>
 #include <it_sdk/sched/scheduler.h>
+#include <it_sdk/statemachine/statemachine.h>
+#include <it_sdk/eeprom/eeprom.h>
+
+
+
+#define ST_INIT 0
+#define ST_SETUP 1
+#define ST_SLEEP 2
+
+
+void updateTiming() {
+	log_debug("In update timing\r\n");
+}
+
+uint8_t stInit(void * p, uint8_t cState, uint16_t cLoop, uint32_t tLoop) {
+	log_debug("In Init %d,%d\r\n",cLoop,tLoop);
+
+	uint16_t t = adc_getTemperature();
+	log_debug("Temp : %d\r\n",t);
+	return ST_SETUP;
+}
+
+uint8_t stSetup(void * p, uint8_t cState, uint16_t cLoop, uint32_t tLoop) {
+	log_debug("In Setup %d,%d\r\n",cLoop,tLoop);
+
+	return ST_SLEEP;
+}
+
+uint8_t led = GPIO_PIN_SET;
+uint8_t stSleep(void * p, uint8_t cState, uint16_t cLoop, uint32_t tLoop) {
+	log_debug("In Sleep %d,%d\r\n",cLoop,tLoop);
+	led = (led==GPIO_PIN_SET)?GPIO_PIN_RESET:GPIO_PIN_SET;
+	gpio_change(__BANK_A, __LP_GPIO_7,led);
+
+	log_info("time is %d\r\n",(uint32_t)itsdk_time_get_ms());
+	return ST_SLEEP;
+}
+
+
+
+machine_t machine = {
+    ST_INIT,				// currentState
+    LOOP_INIT_VALUE, 		// loopCounter
+    STATE_UNKNOWN,			// lastState
+    TOTAL_LOOP_INIT_VALUE,	// totalLoop
+    &updateTiming,			// Update age each time the machine is running - on each cycles.
+    {
+      //       UID        RESET       PROCE     P0      Name:XXXXXXX
+        { ST_INIT,        NULL,      &stInit,    NULL,   	"Init"   },
+        { ST_SETUP, 	  NULL,	   &stSetup,   	 NULL,   	"Setup"  },
+        { ST_SLEEP, 	  NULL,     &stSleep,    NULL,   	"Sleep"  },
+        { STATE_LAST,	  NULL,         NULL,    NULL,      "Error"  }
+
+    }
+};
+
 
 
 void task() {
-	int16_t t = adc_getTemperature();
-	log_debug("Temp : %d\r\n",t);
-	uint16_t v = adc_getVdd();
-	log_debug("Volt : %d\r\n",v);
-	uint16_t k = adc_getValue(ITSDK_ADC1_PIN);
-	log_debug("Ext Volt : %d\r\n",k);
+	statem(&machine);
 }
 
 
@@ -50,6 +101,7 @@ void project_setup() {
 }
 
 void project_loop() {
+
 
 }
 

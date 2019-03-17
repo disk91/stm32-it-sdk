@@ -73,6 +73,7 @@
 		 * This function need to be overrided
 		 */
 		__weak itsdk_config_ret_e itsdk_config_app_resetToFactory() {
+			itsdk_config.app.version = ITSDK_CONFIGURATION_APP_VERSION;
 			ITSDK_ERROR_REPORT(ITSDK_ERROR_CONFIG_OVERRIDE_MISS,0);
 			return CONFIG_FAILED;
 		}
