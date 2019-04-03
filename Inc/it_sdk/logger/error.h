@@ -30,7 +30,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <it_sdk/config.h>
-#if ITSDK_WITH_ERROR_RPT == __ENABLE
+
+
 
 #define ITSDK_ERROR_LASTBLOCK		0xFFFF
 #define ITSDK_ERROR_FIRSTBLOCK		0xFFFE
@@ -138,6 +139,8 @@ typedef struct {
 #define ITSDK_ERROR_DRV_MAX17205_NOTFOUND	0x00000320 | (ITSDK_ERROR_LEVEL_ERROR | ITSDK_ERROR_TYPE_SDK | ITSDK_ERROR_WOUT_VALUE)	// Device not fount on I2C
 #define ITSDK_ERROR_DRV_MAX17205_I2CERROR	0x00000321 | (ITSDK_ERROR_LEVEL_ERROR | ITSDK_ERROR_TYPE_SDK | ITSDK_ERROR_WOUT_VALUE)	// I2C Read failed
 #define ITSDK_ERROR_DRV_MAX17205_UNDERVOLT	0x00000322 | (ITSDK_ERROR_LEVEL_WARN  | ITSDK_ERROR_TYPE_SDK | ITSDK_ERROR_WITH_VALUE)	// The voltage is under the working limit. As a value the Voltage in dV
+
+#if ITSDK_WITH_ERROR_RPT == __ENABLE
 
 #if ITSDK_WITH_ERROR_EXTENTION == __ENABLE
 #include <it_sdk/configError.h>

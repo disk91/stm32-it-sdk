@@ -31,6 +31,7 @@
 #include <it_sdk/itsdk.h>
 #include <it_sdk/sigfox/sigfox.h>
 #include <it_sdk/logger/logger.h>
+#include <it_sdk/logger/error.h>
 #include <it_sdk/encrypt/encrypt.h>
 
 #if ITSDK_WITH_SIGFOX_LIB > 0

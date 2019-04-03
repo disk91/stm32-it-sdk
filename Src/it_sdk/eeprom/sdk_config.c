@@ -167,7 +167,9 @@ itsdk_config_ret_e itsdk_config_loadConfiguration(itsdk_config_load_mode_e mode)
 	  return CONFIG_LOADED;
   }
 #endif
+#if ITSDK_CONFIGURATION_MODE != __CONFIG_STATIC
   bcopy(&itsdk_config,&itsdk_config_shadow,sizeof(itsdk_configuration_nvm_t));
+#endif
   return CONFIG_RESTORED_FROM_FACTORY;
 }
 
@@ -248,7 +250,9 @@ itsdk_config_ret_e itsdk_config_commitConfiguration(itsdk_config_commit_mode_e m
 					_itsdk_console_printf("sdk.lora.networkType : %d\r\n",ITSDK_LORAWAN_NETWORKTYPE);
 					_itsdk_console_printf("sdk.lora.retries : %d\r\n",ITSDK_LORAWAN_CNF_RETRY);
 					#endif
+					#if ITSDK_WITH_CONFIGURATION_APP == __ENABLE
 					itsdk_config_app_printConfig(NULL);
+					#endif
 				  #else
 					itsdk_configuration_nvm_t * _c = &itsdk_config;
 					if (buffer[0]=='C') _c = &itsdk_config_shadow;
