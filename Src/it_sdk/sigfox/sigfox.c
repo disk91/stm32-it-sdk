@@ -128,7 +128,11 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendFrame(
 
 	#if ( ITSDK_SIGFOX_ENCRYPTION & __PAYLOAD_ENCRYPT_SIGFOX)
 	if ( (encrypt & PAYLOAD_ENCRYPT_SIGFOX) == 0 ) {
-		log_warn("[Sigfox] Sigfox payload encrypted whatever with ITSDK_SIGFOX_ENCRYPTION setting\r\n");
+		log_error("[Sigfox] Sigfox ITSDK_SIGFOX_ENCRYPTION must be set as encryption has been activated\r\n");
+	}
+	#else
+	if ( (encrypt & PAYLOAD_ENCRYPT_SIGFOX) != 0 ) {
+		log_error("[Sigfox] Sigfox ITSDK_SIGFOX_ENCRYPTION can't be set until encryption has been activated\r\n");
 	}
 	#endif
 
