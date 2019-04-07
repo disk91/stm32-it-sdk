@@ -30,26 +30,47 @@
 #include <it_sdk/itsdk.h>
 #include <it_sdk/time/time.h>
 #include <it_sdk/logger/logger.h>
-#include <it_sdk/sched/scheduler.h>
-
-
-void task() {
-	int16_t t = adc_getTemperature();
-	log_debug("Temp : %d\r\n",t);
-	uint16_t v = adc_getVdd();
-	log_debug("Volt : %d\r\n",v);
-	uint16_t k = adc_getValue(ITSDK_ADC1_PIN);
-	log_debug("Ext Volt : %d\r\n",k);
-}
+#include <it_sdk/lorawan/lorawan.h>
+#include <it_sdk/encrypt/encrypt.h>
+#include <it_sdk/eeprom/securestore.h>
+#include <it_sdk/lowpower/lowpower.h>
 
 
 void project_setup() {
 	log_info("Booting \r\n");
-	itsdk_delayMs(2000);
-	itdt_sched_registerSched(2000,ITSDK_SCHED_CONF_IMMEDIATE, &task);
+
+	static itsdk_lorawan_channelInit_t channels= ITSDK_LORAWAN_CHANNEL;
+	#ifdef ITSDK_LORAWAN_CHANNEL
+		itsdk_lorawan_setup(__LORAWAN_REGION_EU868,&channels);
+	#else
+		itsdk_lorawan_setup(__LORAWAN_REGION_EU868,NULL);
+	#endif
+
+
+	while ( !itsdk_lorawan_hasjoined() ) {
+		itsdk_lorawan_join_sync();
+	}
+
+	uint8_t frBuffer[10] = { 0,1,2,3,4,5,6,7,8,9 };
+	uint8_t rPort;
+	uint8_t rSize;
+	uint8_t rData[16];
+	itsdk_lorawan_send_sync(
+				frBuffer,			// payload buffer
+				10,					// payload size
+				1,					// Port
+				__LORAWAN_DR_5,		// speed
+				LORAWAN_SEND_UNCONFIRMED,
+				1,					// retry (not applicable for unconfirmed communications)
+				&rPort,				// downlink port
+				&rSize,				// downlink size
+				rData,				// downlink data
+				/*PAYLOAD_ENCRYPT_AESCTR | PAYLOAD_ENCRYPT_SPECK |*/ PAYLOAD_ENCRYPT_NONE
+	);
+
 }
 
 void project_loop() {
-
+	itsdk_lorawan_loop();
 }
 

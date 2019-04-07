@@ -25,7 +25,7 @@
  * ==========================================================
  */
 #include <it_sdk/configDrivers.h>
-#if ITSDK_DRIVERS_BME280 == __ENABLE
+#if defined ITSDK_DRIVERS_BME280 && ITSDK_DRIVERS_BME280 == __ENABLE
 #include <drivers/temphygropressure/bosh_bme280/bme280.h>
 #include <it_sdk/wrappers.h>
 #include <it_sdk/logger/error.h>

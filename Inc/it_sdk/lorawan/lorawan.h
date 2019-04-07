@@ -180,12 +180,12 @@ itsdk_lorawan_return_t itsdk_lorawan_getTxPower(itsdk_lorawan_txpower * power);
 itsdk_lorawan_return_t itsdk_lorawan_getDownlinkFrameCounter(uint16_t * counter);
 itsdk_lorawan_return_t itsdk_lorawan_getUplinkFrameCounter(uint16_t * counter);
 itsdk_lorawan_return_t itsdk_lorawan_getNextUplinkFrameCounter(uint16_t * counter);
-
+itsdk_lorawan_return_t itsdk_lorawan_resetFactoryDefaults(bool force);
 void itsdk_lorawan_loop();													// LoRaWan stack processing loop - MUST be in project_loop()
 
 
 // ===============================================================
-// TO BE OVERRIDDED
+// CAN BE OVERRIDDED
 // ===============================================================
 
 // Static key access... override to work differently.
@@ -199,6 +199,10 @@ itsdk_lorawan_return_t itsdk_lorawan_getDeviceId(uint64_t * devId);
 itsdk_lorawan_return_t itsdk_lorawan_getDeviceEUI(uint8_t * devEui);
 itsdk_lorawan_return_t itsdk_lorawan_getAppEUI(uint8_t * appEui);
 itsdk_lorawan_return_t itsdk_lorawan_getAppKEY(uint8_t * appKey);
+
+// ===============================================================
+// TO BE OVERRIDDED
+// ===============================================================
 
 // Function automatically fired on data reception
 void itsdk_lorawan_onDataReception(uint8_t port, uint8_t * data, uint8_t size);

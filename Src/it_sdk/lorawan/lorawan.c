@@ -46,6 +46,10 @@
 #include <it_sdk/eeprom/sdk_config.h>
 #endif
 
+#if ITSDK_WITH_ERROR_RPT == __ENABLE
+#include <it_sdk/logger/error.h>
+#endif
+
 
 // =================================================================================
 // INIT
@@ -63,13 +67,16 @@ itsdk_lorawan_init_t itsdk_lorawan_setup(uint16_t region, itsdk_lorawan_channelI
 	static uint8_t appEui[8];
 	static uint8_t appKey[16];
 
+	// On first run we store the configuration into the SecureStore
+	itsdk_lorawan_resetFactoryDefaults(false);
+
 	itsdk_lorawan_getDeviceEUI(devEui);
 	itsdk_lorawan_getAppEUI(appEui);
 	itsdk_lorawan_getAppKEY(appKey);
 
-	//log_info_array("DEV :",devEui,8);
-	//log_info_array("APP :",appEui,8);
-	//log_info_array("KEY :",appKey,16);
+//	log_info_array("DEV :",devEui,8);
+//	log_info_array("APP :",appEui,8);
+//	log_info_array("KEY :",appKey,16);
 
 	Radio.IoInit();
 
@@ -407,13 +414,19 @@ itsdk_lorawan_send_t itsdk_lorawan_getSendState() {
  */
 __weak itsdk_lorawan_return_t itsdk_lorawan_getDeviceId(uint64_t * devId) {
 	LOG_INFO_LORAWANSTK(("itsdk_lorawan_getDeviceId\r\n"));
+	itsdk_lorawan_return_t r = LORAWAN_RETURN_SUCESS;
+#if ITSDK_WITH_SECURESTORE == __ENABLE
+	uint8_t d[8];
+	r = itsdk_lorawan_getDeviceEUI(d);
+#else
 	uint8_t d[8] = ITSDK_LORAWAN_DEVEUI;
+#endif
 	uint64_t di = 0;
 	for ( int i = 0 ; i < 8 ; i++ ){
 		di = (di << 8) | d[i];
 	}
 	*devId = di;
-	return LORAWAN_RETURN_SUCESS;
+	return r;
 }
 
 /**
@@ -425,14 +438,11 @@ __weak itsdk_lorawan_return_t itsdk_lorawan_getDeviceEUI(uint8_t * devEui){
 		uint8_t d[8];
 		uint8_t buffer[16];
 		if ( itsdk_secstore_readBlock(ITSDK_SS_LORA_OTAA_DEVEUIAPPEUI, buffer) != SS_SUCCESS ) {
-			uint8_t de[8] = ITSDK_LORAWAN_DEVEUI;
-			uint8_t ap[8] = ITSDK_LORAWAN_APPEUI;
-			for ( int i = 0 ; i< 8 ; i++) {
-				buffer[ITSDK_SECSTORE_OTAA_DEV_ID+i] = de[i];
-				buffer[ITSDK_SECSTORE_OTAA_APP_ID+i] = ap[i];
-				d[i] = de[i];
-			}
-			itsdk_secstore_writeBlock(ITSDK_SS_LORA_OTAA_DEVEUIAPPEUI, buffer);
+			#if ITSDK_WITH_ERROR_RPT == __ENABLE
+				ITSDK_ERROR_REPORT(ITSDK_ERROR_LORAWAN_SS_INVALID,0);
+			#endif
+			bzero(devEui,8);
+			return LORAWAN_RETURN_FAILED;
 		} else {
 			memcpy(d,buffer,8);
 		}
@@ -452,14 +462,11 @@ __weak itsdk_lorawan_return_t itsdk_lorawan_getAppEUI(uint8_t * appEui){
 	uint8_t d[8];
 	uint8_t buffer[16];
 	if ( itsdk_secstore_readBlock(ITSDK_SS_LORA_OTAA_DEVEUIAPPEUI, buffer) != SS_SUCCESS ) {
-		uint8_t de[8] = ITSDK_LORAWAN_DEVEUI;
-		uint8_t ap[8] = ITSDK_LORAWAN_APPEUI;
-		for ( int i = 0 ; i< 8 ; i++) {
-			buffer[ITSDK_SECSTORE_OTAA_DEV_ID+i] = de[i];
-			buffer[ITSDK_SECSTORE_OTAA_APP_ID+i] = ap[i];
-			d[i] = ap[i];
-		}
-		itsdk_secstore_writeBlock(ITSDK_SS_LORA_OTAA_DEVEUIAPPEUI, buffer);
+		#if ITSDK_WITH_ERROR_RPT == __ENABLE
+			ITSDK_ERROR_REPORT(ITSDK_ERROR_LORAWAN_SS_INVALID,1);
+		#endif
+		bzero(appEui,8);
+		return LORAWAN_RETURN_FAILED;
 	} else {
 		memcpy(d,buffer+8,8);
 	}
@@ -478,9 +485,11 @@ __weak itsdk_lorawan_return_t itsdk_lorawan_getAppKEY(uint8_t * appKey){
 #if ITSDK_WITH_SECURESTORE == __ENABLE
 	uint8_t d[16];
 	if ( itsdk_secstore_readBlock(ITSDK_SS_LORA_OTAA_APPKEY, d) != SS_SUCCESS ) {
-		uint8_t de[16] = ITSDK_LORAWAN_APPKEY;
-		memcpy(d,de,16);
-		itsdk_secstore_writeBlock(ITSDK_SS_LORA_OTAA_APPKEY, de);
+		#if ITSDK_WITH_ERROR_RPT == __ENABLE
+			ITSDK_ERROR_REPORT(ITSDK_ERROR_LORAWAN_SS_INVALID,2);
+		#endif
+		bzero(appKey,16);
+		return LORAWAN_RETURN_FAILED;
 	}
 #else
 	uint8_t d[16] = ITSDK_LORAWAN_APPKEY;
@@ -488,6 +497,38 @@ __weak itsdk_lorawan_return_t itsdk_lorawan_getAppKEY(uint8_t * appKey){
 	memcpy(appKey,d,16);
 	return LORAWAN_RETURN_SUCESS;
 }
+
+
+/**
+ * Configure the SecureStore with the Static values obtained from configLoRaWan.h
+ * When force is false, the secure store will be refreshed only if there is no
+ * configuration already setup.
+ */
+#if ITSDK_WITH_SECURESTORE == __ENABLE
+itsdk_lorawan_return_t itsdk_lorawan_resetFactoryDefaults(bool force) {
+	uint8_t buffer[16];
+	if ( force || itsdk_secstore_readBlock(ITSDK_SS_LORA_OTAA_DEVEUIAPPEUI, buffer) != SS_SUCCESS ) {
+		uint8_t de[8] = ITSDK_LORAWAN_DEVEUI;
+		uint8_t ap[8] = ITSDK_LORAWAN_APPEUI;
+		for ( int i = 0 ; i< 8 ; i++) {
+			buffer[ITSDK_SECSTORE_OTAA_DEV_ID+i] = de[i];
+			buffer[ITSDK_SECSTORE_OTAA_APP_ID+i] = ap[i];
+		}
+		itsdk_secstore_writeBlock(ITSDK_SS_LORA_OTAA_DEVEUIAPPEUI, buffer);
+
+		uint8_t appkey[16] = ITSDK_LORAWAN_APPKEY;
+		itsdk_secstore_writeBlock(ITSDK_SS_LORA_OTAA_APPKEY, appkey);
+	}
+	return LORAWAN_RETURN_SUCESS;
+}
+#else
+itsdk_lorawan_return_t itsdk_lorawan_resetFactoryDefaults(bool force) {
+	return LORAWAN_RETURN_SUCESS;
+}
+#endif
+
+
+
 
 // @TODO add the ABP configuration extraction ...
 #warning "The ABP Configuration and setup is missing"
@@ -633,6 +674,8 @@ __weak  itsdk_lorawan_return_t itsdk_lorawan_speck_getMasterKey(uint64_t * maste
 #endif
 	return LORAWAN_RETURN_SUCESS;
 }
+
+
 
 
 #endif
