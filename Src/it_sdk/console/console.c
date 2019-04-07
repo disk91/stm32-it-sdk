@@ -2,7 +2,7 @@
  * console.c -  debug & config console
  * Project : Disk91 SDK
  * ----------------------------------------------------------
- * Created on: 9 févr. 2019
+ * Created on: 9 fï¿½vr. 2019
  *     Author: Paul Pinault aka Disk91
  * ----------------------------------------------------------
  * Copyright (C) 2019 Disk91
@@ -207,7 +207,7 @@ void itsdk_console_loop() {
 		}
 	}
 
-  #if ( ITSDK_CONSOLE_SERIAL & __UART_LPUART1 ) > 0
+  #if ( ITSDK_CONSOLE_SERIAL & ( __UART_LPUART1 | __UART_USART1 ) ) > 0
 	do {
 		 r = serial1_read(&c);
 		 if ( r == SERIAL_READ_SUCCESS || r == SERIAL_READ_PENDING_CHAR) {
@@ -253,7 +253,7 @@ void _itsdk_console_printf(char *format, ...) {
     va_start(args,format);
 	vsnprintf(fmtBuffer,LOGGER_MAX_BUF_SZ,format,args);
 	va_end(args);
-#if ( ITSDK_CONSOLE_SERIAL & __UART_LPUART1 ) > 0
+#if ( ITSDK_CONSOLE_SERIAL & ( __UART_LPUART1 | __UART_USART1 ) ) > 0
 	serial1_print(fmtBuffer);
 #endif
 #if ( ITSDK_CONSOLE_SERIAL & __UART_USART2 ) > 0
