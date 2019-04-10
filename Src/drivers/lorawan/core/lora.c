@@ -135,7 +135,7 @@ void TraceUpLinkFrame(McpsConfirm_t *mcpsConfirm)
 void TraceDownLinkFrame(McpsIndication_t *mcpsIndication)
 {
  //   const char *slotStrings[] = { "1", "2", "C", "Ping-Slot", "Multicast Ping-Slot" };
-  
+ /*
     TVL2( PRINTF("\r\n" );)
     TVL2( PRINTNOW(); PRINTF("#= D/L FRAME %lu =# RxWin %s, Port %d, data size %d, rssi %d, snr %d\r\n\r\n", \
                              mcpsIndication->DownLinkCounter, \
@@ -144,6 +144,7 @@ void TraceDownLinkFrame(McpsIndication_t *mcpsIndication)
                              mcpsIndication->BufferSize, \
                              mcpsIndication->Rssi, \
                              mcpsIndication->Snr );)
+                             */
 }  
 
 #ifdef LORAMAC_CLASSB_ENABLED

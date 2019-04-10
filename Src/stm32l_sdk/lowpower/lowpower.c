@@ -239,14 +239,14 @@ stm32l_lowPowerReturn_e stm32l_lowPowerResume() {
 
 	}
 	//  useful line of code to identify the wakeup cause when needed...
-//	if (__lowPower_wakeup_reason != LOWPWR_WAKEUP_UNDEF ) {
-//		if ( __lowPower_wakeup_reason == LOWPWR_WAKEUP_GPIO )
-//			log_info("-%d-(%d)-",__lowPower_wakeup_reason,__lowPower_wakeup_pin);
-//		else
-//			log_info("-%d-",__lowPower_wakeup_reason);
-//	} else {
-//		log_info("|");
-//	}
+	//if (__lowPower_wakeup_reason != LOWPWR_WAKEUP_UNDEF ) {
+	//	if ( __lowPower_wakeup_reason == LOWPWR_WAKEUP_GPIO )
+	//		log_info("-%d-(%d)-",__lowPower_wakeup_reason,__lowPower_wakeup_pin);
+	//	else
+	//		log_info("-%d-",__lowPower_wakeup_reason);
+	//} else {
+	//	log_info("|");
+	//}
 	return STM32L_LOWPOWER_SUCCESS;
 }
 
@@ -366,7 +366,7 @@ void __LP_GPIO_IRQHandler(uint16_t GPIO_Pin) {
 
 #endif
 
-#if  ( ITSDK_LOWPOWER_MOD & ( __LOWPWR_MODE_WAKE_LPUART | __LOWPWR_MODE_WAKE_UART2 )  ) > 0
+#if  ( ITSDK_LOWPOWER_MOD & ( __LOWPWR_MODE_WAKE_LPUART | __LOWPWR_MODE_WAKE_UART2 | __LOWPWR_MODE_WAKE_UART1 )  ) > 0
 void HAL_UARTEx_WakeupCallback(UART_HandleTypeDef *huart) {
    __lowPower_wakeup_reason=LOWPWR_WAKEUP_UART;
 }
@@ -416,8 +416,5 @@ void HAL_UARTEx_WakeupCallback(UART_HandleTypeDef *huart) {
  *  - GPIOs C			(?) 1,70uA
  *  - GPIOs H			(?) 0,12uA
  */
-//void stm32l_lowPowerInit2() {
 
-
-//}
 

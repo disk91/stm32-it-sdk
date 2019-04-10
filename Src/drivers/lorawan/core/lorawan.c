@@ -397,6 +397,7 @@ void lorawan_driver_LORA_Init(
 		#endif
 		#if defined( REGION_US915 )
         case __LORAWAN_REGION_US915:
+        	LoRaMacInitialization( &LoRaMacPrimitives, &LoRaMacCallbacks, LORAMAC_REGION_US915 );
         	break;
 		#endif
 		#if defined( REGION_RU864 )
@@ -682,6 +683,7 @@ itsdk_lorawan_send_t lorawan_driver_LORA_Send(
     	    	case LORAWAN_SEND_STATE_NOTACKED:
     	    		return LORAWAN_SEND_SENT;
     	    	default:
+    	    		LOG_INFO_LORAWAN(("Abnormal state : %d\r\n",__loraWanState.sendState));
     	    		return LORAWAN_SEND_FAILED;
     	    	}
    	    		return LORAWAN_SEND_FAILED;	// Never reached
@@ -696,7 +698,7 @@ itsdk_lorawan_send_t lorawan_driver_LORA_Send(
     		return LORAWAN_SEND_NOT_JOINED;
     	default:
     		__loraWanState.sendState = LORAWAN_SEND_STATE_FAILED;
-    		log_debug("[LoRaWan] can't send err(%d)\r\n",r);
+    		log_warn("[LoRaWan] can't send err(%d)\r\n",r);
     		return LORAWAN_SEND_FAILED;
     }
 
@@ -721,7 +723,7 @@ itsdk_lorawan_channel_t lorawan_driver_LORA_AddChannel(
 		uint8_t		maxDataRate,
 		uint8_t		band
 ){
-	LOG_INFO_LORAWAN(("lorawan_driver_LORA_AddChannel (%d)\r\n",channedId));
+	LOG_INFO_LORAWAN(("lorawan_driver_LORA_AddChannel (%d)\r\n",channelId));
 
 	ChannelParams_t params;
 	params.Frequency=frequency;

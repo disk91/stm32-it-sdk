@@ -43,12 +43,16 @@
 void serial1_flush() {
   #if ( ITSDK_WITH_UART & __UART_LPUART1 ) > 0
      while(__HAL_UART_GET_FLAG(&hlpuart1, USART_ISR_BUSY) == SET);
+  #elif ( ITSDK_WITH_UART & __UART_USART1 ) > 0
+   while(__HAL_UART_GET_FLAG(&huart1, USART_ISR_BUSY) == SET);
   #endif
 }
 
 void serial1_print(char * msg) {
   #if ( ITSDK_WITH_UART & __UART_LPUART1 ) > 0
 	HAL_UART_Transmit(&hlpuart1, (uint8_t*)msg, strlen(msg),0xFFFF);
+  #elif ( ITSDK_WITH_UART & __UART_USART1 ) > 0
+	HAL_UART_Transmit(&huart1, (uint8_t*)msg, strlen(msg),0xFFFF);
   #endif
 }
 
@@ -57,6 +61,10 @@ void serial1_println(char * msg) {
 	serial1_print(msg);
 	char * eol = "\r\n";
 	HAL_UART_Transmit(&hlpuart1, (uint8_t*)eol, strlen(eol),0xFFFF);
+  #elif ( ITSDK_WITH_UART & __UART_USART1 ) > 0
+	serial1_print(msg);
+	char * eol = "\r\n";
+	HAL_UART_Transmit(&huart1, (uint8_t*)eol, strlen(eol),0xFFFF);
   #endif
 }
 
@@ -72,6 +80,23 @@ serial_read_response_e serial1_read(char * ch) {
 	if (__HAL_UART_GET_FLAG(&hlpuart1, UART_FLAG_RXNE)){
 		*ch = hlpuart1.Instance->RDR & 0x1FF;
 		if (__HAL_UART_GET_FLAG(&hlpuart1, UART_FLAG_RXNE)) {
+			return SERIAL_READ_PENDING_CHAR;
+		} else {
+			return SERIAL_READ_SUCCESS;
+		}
+	}
+	return SERIAL_READ_NOCHAR;
+#elif ( ITSDK_WITH_UART & __UART_USART1 ) > 0
+
+	// buffer overflow
+	if (__HAL_UART_GET_FLAG(&huart1, UART_FLAG_ORE)) {
+		__HAL_UART_CLEAR_FLAG(&huart1, UART_FLAG_ORE);
+	}
+
+	// get one of the pending char if some.
+	if (__HAL_UART_GET_FLAG(&huart1, UART_FLAG_RXNE)){
+		*ch = huart1.Instance->RDR & 0x1FF;
+		if (__HAL_UART_GET_FLAG(&huart1, UART_FLAG_RXNE)) {
 			return SERIAL_READ_PENDING_CHAR;
 		} else {
 			return SERIAL_READ_SUCCESS;
