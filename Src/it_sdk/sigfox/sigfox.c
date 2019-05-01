@@ -235,9 +235,9 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendBit(
 	itsdk_sigfox_setTxPower(power);
 	itsdk_sigfox_setTxSpeed(speed);
 
+	itdsk_sigfox_txrx_t result = SIGFOX_TXRX_ERROR;
 	#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
 
-		itdsk_sigfox_txrx_t result;
 		uint16_t ret = SIGFOX_API_send_bit( bitValue,dwn,repeat,ack);
 		switch (ret&0xFF) {
 		case SFX_ERR_INT_GET_RECEIVED_FRAMES_TIMEOUT:
@@ -276,9 +276,9 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendOob(
 	itsdk_sigfox_setTxPower(power);
 	itsdk_sigfox_setTxSpeed(speed);
 
+	itdsk_sigfox_txrx_t result = SIGFOX_TXRX_ERROR;
 	#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
 
-		itdsk_sigfox_txrx_t result;
 		uint16_t ret=0;
 		switch (oobType) {
 		case SIGFOX_OOB_SERVICE:

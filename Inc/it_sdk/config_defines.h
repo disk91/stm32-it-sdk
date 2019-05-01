@@ -175,6 +175,11 @@
 #define __BANK_F				5
 #define __BANK_H				7
 
+/**
+ * GPIO State
+ */
+#define __GPIO_VAL_SET			1
+#define __GPIO_VAL_RESET		0
 
 /**
  * LOG MODULE DEFINES
@@ -210,6 +215,7 @@
 #define __SIGFOX_NONE			0
 #define	__SIGFOX_S2LP			1
 #define __SIGFOX_WISOL10		2
+#define __SIGFOX_SX1276		   10
 
 /**
  * NVM source for Sigfox lib

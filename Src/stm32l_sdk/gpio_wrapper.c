@@ -202,7 +202,7 @@ void gpio_reset(uint8_t bank, uint16_t id) {
 }
 
 void gpio_change(uint8_t bank, uint16_t id, uint8_t val) {
-	HAL_GPIO_WritePin(getPortFromBankId(bank), id, val);
+	HAL_GPIO_WritePin(getPortFromBankId(bank), id, ((val==__GPIO_VAL_SET)?GPIO_PIN_SET:GPIO_PIN_RESET));
 }
 
 void gpio_toggle(uint8_t bank, uint16_t id) {
