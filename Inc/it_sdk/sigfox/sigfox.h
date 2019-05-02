@@ -64,13 +64,22 @@ typedef enum
 } itdsk_sigfox_oob_t;
 
 
+#define SIGFOX_RCZ1		1
+#define SIGFOX_RCZ2 	2
+#define SIGFOX_RCZ3C 	3
+#define SIGFOX_RCZ4		4
+#define SIGFOX_RCZ5		5
+
+#define SIGFOX_KEY_PRIVATE	0
+#define SIGFOX_KEY_PUBLIC	1
+
 typedef uint32_t itsdk_sigfox_device_is_t;
 
 typedef struct {
-	bool		initialized;
-	uint8_t		rcz;
-	uint8_t		default_power;
-	uint16_t	default_speed;
+	bool					initialized;
+	uint8_t					rcz;
+	uint8_t					default_power;
+	uint16_t				default_speed;
 } itsdk_sigfox_state;
 
 #define SIGFOX_POWER_DEFAULT	-1
@@ -80,6 +89,7 @@ typedef struct {
 // --------------------------------------------------------------------
 
 itsdk_sigfox_init_t itsdk_sigfox_setup();
+itsdk_sigfox_init_t itsdk_sigfox_getCurrentRcz(uint8_t * rcz);
 itsdk_sigfox_init_t itsdk_sigfox_setTxPower(uint8_t power);
 itsdk_sigfox_init_t itsdk_sigfox_setTxSpeed(itdsk_sigfox_speed_t speed);
 itsdk_sigfox_init_t itsdk_sigfox_getDeviceId(itsdk_sigfox_device_is_t * devId);
@@ -124,6 +134,14 @@ itsdk_sigfox_init_t itsdk_sigfox_continuousModeStart(
 		int8_t 					power
 );
 itsdk_sigfox_init_t itsdk_sigfox_continuousModeStop();
+
+// --------------------------------------------------------------------
+// Public function for internal use
+// --------------------------------------------------------------------
+itsdk_sigfox_init_t itsdk_sigfox_getNvmSize(uint32_t * sz);
+itsdk_sigfox_init_t itsdk_sigfox_getNvmOffset(uint32_t * offset);
+itsdk_sigfox_init_t itsdk_sigfox_getSeNvmOffset(uint32_t * offset);
+itsdk_sigfox_init_t __itsdk_sigfox_resetNvmToFactory();
 
 // --------------------------------------------------------------------
 // Function to be overloaded in the main program

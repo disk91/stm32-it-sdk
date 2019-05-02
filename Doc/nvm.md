@@ -12,6 +12,8 @@ The EEPROM is splet into 3 different zone, these zone will exists or not dependi
           +----------------------------------+
           +            ERROR LOG             +
           +----------------------------------+
+          +          SIGFOX NVM AREA         +
+          +----------------------------------+
           +          CONFIGURATION           +
           +----------------------------------+
           +            USER FREE             +
@@ -25,6 +27,11 @@ The Secure Store allows to store critical informations like credentials. See *se
 ### Error Log
 
 The Error Log allows to store error code persistantly and access them later to debug you firmware.
+
+### SIGFOX NVM AREA
+
+Used by sigfox lib to store internal information like sequence number
+Only activated when sigfox is enable
 
 ### Configuration
 

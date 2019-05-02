@@ -700,7 +700,7 @@ void __TIMER2_Handler(uint32_t v) {
  */
 sfx_u8 MCU_API_timer_start_carrier_sense(sfx_u16 time_duration_in_ms)
 {
-	LOG_DEBUG_S2LP((">> MCU_API_timer_stop_carrier_sense %d \r\n",time_duration_in_ms));
+	LOG_DEBUG_S2LP((">> MCU_API_timer_start_carrier_sense %d \r\n",time_duration_in_ms));
 
 	ST_RF_API_Timer_CB(TIMER_START);
 	if (   itsdk_stimer_register(

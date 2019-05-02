@@ -36,12 +36,18 @@
 
 #if ITSDK_WITH_SIGFOX_LIB > 0
 
+#include <drivers/sigfox/sigfox_api.h>
+#include <drivers/sigfox/se_nvm.h>
+#include <it_sdk/eeprom/securestore.h>
+
 #if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
 	#include <drivers/s2lp/s2lp.h>
 	#include <drivers/s2lp/sigfox_helper.h>
 	#include <drivers/s2lp/st_rf_api.h>
 	#include <drivers/eeprom/m95640/m95640.h>
 	#include <drivers/sigfox/sigfox_api.h>
+#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX1276
+	#include <drivers/sx1276/sx1276Sigfox.h>
 #endif
 
 
@@ -57,6 +63,7 @@ itsdk_sigfox_state __sigfox_state = {0};
  */
 itsdk_sigfox_init_t itsdk_sigfox_setup() {
 
+	itsdk_sigfox_init_t ret = SIGFOX_INIT_SUCESS;
 #if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
 	eeprom_m95640_hwInit();
 	s2lp_hwInit();
@@ -66,6 +73,8 @@ itsdk_sigfox_init_t itsdk_sigfox_setup() {
 	s2lp_sigfox_init(&__s2lpConf);
 
 	__sigfox_state.rcz = __s2lpConf.rcz;
+#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX1276
+	ret = sx1276_sigfox_init(&__sigfox_state);
 #endif
 
 	switch (__sigfox_state.rcz) {
@@ -93,8 +102,10 @@ itsdk_sigfox_init_t itsdk_sigfox_setup() {
 		ITSDK_ERROR_REPORT(ITSDK_ERROR_SIGFOX_RCZ_NOTSUPPORTED,(uint16_t)__sigfox_state.rcz);
 	}
 
-	__sigfox_state.initialized = true;
-	return SIGFOX_INIT_SUCESS;
+	if ( ret == SIGFOX_INIT_SUCESS ) {
+	   __sigfox_state.initialized = true;
+	}
+	return ret;
 }
 
 /**
@@ -304,6 +315,14 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendOob(
 	return result;
 }
 
+/**
+ * Get the current RCZ
+ */
+itsdk_sigfox_init_t itsdk_sigfox_getCurrentRcz(uint8_t * rcz) {
+	*rcz = __sigfox_state.rcz;
+	if ( __sigfox_state.rcz > 0 ) return SIGFOX_INIT_SUCESS;
+	return SIGFOX_INIT_PARAMSERR;
+}
 
 
 /**
@@ -495,6 +514,49 @@ itsdk_sigfox_init_t itsdk_sigfox_getSigfoxLibVersion(uint8_t ** version){
 	sfx_u8 __size;
 	SIGFOX_API_get_version(version, &__size, VERSION_SIGFOX);
 #endif
+	return SIGFOX_INIT_SUCESS;
+}
+
+/**
+ * Return the size of the sigfox Nvm memory to reserve
+ */
+itsdk_sigfox_init_t itsdk_sigfox_getNvmSize(uint32_t * sz) {
+	*sz = ( SFX_NVMEM_BLOCK_SIZE + SFX_SE_NVMEM_BLOCK_SIZE );
+	return SIGFOX_INIT_SUCESS;
+}
+
+/**
+ * Return the offset of the NVM area for Sigfox
+ */
+itsdk_sigfox_init_t itsdk_sigfox_getNvmOffset(uint32_t * offset) {
+	uint32_t sstore=0, ssError=0;
+	#if ITSDK_WITH_SECURESTORE == __ENABLE
+	itsdk_secstore_getStoreSize(&sstore);
+	#endif
+	#if (ITSDK_WITH_ERROR_RPT == __ENABLE) && (ITSDK_ERROR_USE_EPROM == __ENABLE)
+	itsdk_error_getSize(&ssError);
+	#endif
+	*offset += sstore + ssError;
+	return SIGFOX_INIT_SUCESS;
+}
+
+/**
+ * Return the offset of the NVM area for Sigfox Secure Element
+ */
+itsdk_sigfox_init_t itsdk_sigfox_getSeNvmOffset(uint32_t * offset) {
+	itsdk_sigfox_getNvmOffset(offset);
+	*offset += SFX_NVMEM_BLOCK_SIZE;
+	return SIGFOX_INIT_SUCESS;
+}
+
+/**
+ * Configure the default values for the NVM Areas
+ */
+itsdk_sigfox_init_t __itsdk_sigfox_resetNvmToFactory() {
+	uint8_t se_nvm_default[SFX_SE_NVMEM_BLOCK_SIZE] = { 0xFF, 0, 0, 0x0F, 0xFF };
+	SE_NVM_set(se_nvm_default);
+	uint8_t se_mcu_default[SFX_NVMEM_BLOCK_SIZE] = { 0, 0, 0, 0, 0, 0, 0 };
+	MCU_API_set_nv_mem(se_mcu_default);
 	return SIGFOX_INIT_SUCESS;
 }
 

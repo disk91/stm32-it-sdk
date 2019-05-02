@@ -2,7 +2,7 @@
  * sdk_config.c - sdk NVM configuration
  * Project : Disk91 SDK
  * ----------------------------------------------------------
- * Created on: 21 févr. 2019
+ * Created on: 21 fï¿½vr. 2019
  *     Author: Paul Pinault aka Disk91
  * ----------------------------------------------------------
  * Copyright (C) 2019 Disk91
@@ -31,6 +31,12 @@
 #if ITSDK_CONFIGURATION_MODE == __CONFIG_EEPROM
   #include <it_sdk/eeprom/eeprom.h>
   #include <it_sdk/wrappers.h>
+#endif
+
+#if ITSDK_WITH_SIGFOX_LIB == __ENABLE
+	#include <it_sdk/configSigfox.h>
+	#include <it_sdk/sigfox/sigfox.h>
+    #include <drivers/sigfox/se_nvm.h>
 #endif
 
 #if ITSDK_WITH_CONSOLE == __ENABLE
@@ -64,6 +70,20 @@
 		itsdk_config.sdk.lorawan.joinMode = ITSDK_LORAWAN_ACTIVATION;
 		itsdk_config.sdk.lorawan.networkType = ITSDK_LORAWAN_NETWORKTYPE;
 		itsdk_config.sdk.lorawan.retries = ITSDK_LORAWAN_CNF_RETRY;
+		#endif
+		// ----------- Sigfox settings --------------------------------------------------
+		#if ITSDK_WITH_SIGFOX_LIB == __ENABLE
+		itsdk_config.sdk.sigfox.rssiCal = ITSDK_SIGFOX_RSSICAL;
+		itsdk_config.sdk.sigfox.txPower = ITSDK_SIGFOX_TXPOWER;
+		itsdk_config.sdk.sigfox.rcz = ITDSK_SIGFOX_RCZ;
+		itsdk_config.sdk.sigfox.sgfxKey = ITSDK_SIGFOX_KEY_TYPE;
+		sfx_u32 config_words_2[3] = RC2_SM_CONFIG;
+		bcopy(config_words_2,itsdk_config.sdk.sigfox.macroch_config_words_rc2,3*sizeof(sfx_u32));
+		sfx_u32 config_words_3[3] = RC3C_CONFIG;
+		bcopy(config_words_3,itsdk_config.sdk.sigfox.macroch_config_words_rc3,3*sizeof(sfx_u32));
+		sfx_u32 config_words_4[3] = RC4_SM_CONFIG;
+		bcopy(config_words_4,itsdk_config.sdk.sigfox.macroch_config_words_rc4,3*sizeof(sfx_u32));
+		__itsdk_sigfox_resetNvmToFactory();
 		#endif
 		return CONFIG_RESTORED_FROM_FACTORY;
 	}
