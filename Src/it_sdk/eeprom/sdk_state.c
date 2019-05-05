@@ -1,8 +1,8 @@
 /* ==========================================================
- * hw.h - hw header to load the other driver headers
+ * sdk_state.c - structure used for the SDK dynamic state
  * Project : Disk91 SDK
  * ----------------------------------------------------------
- * Created on: 16 janv. 2019
+ * Created on: 04 May 2019
  *     Author: Paul Pinault aka Disk91
  * ----------------------------------------------------------
  * Copyright (C) 2019 Disk91
@@ -20,25 +20,20 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  * ----------------------------------------------------------
- * 
+ *
  *
  * ==========================================================
  */
+#include <it_sdk/config.h>
+#include <it_sdk/eeprom/sdk_config.h>
+#include <it_sdk/eeprom/sdk_state.h>
+itsdk_state_t itsdk_state;
 
-#ifndef DRIVERS_SX1276_HW_H_
-#define DRIVERS_SX1276_HW_H_
-
-#include <math.h>
-#include <stdbool.h>
-#include <stdint.h>
-#include <string.h>
-
-#include <it_sdk/itsdk.h>
-
-#if ( ITSDK_WITH_SIGFOX_LIB == __ENABLE ) && (ITSDK_SIGFOX_LIB == __SIGFOX_SX1276)
-#define RADIO_DIO_4
+void itsdk_state_init() {
+#if ITSDK_CONFIGURATION_MODE != __CONFIG_STATIC
+	itsdk_state.activeNetwork = (uint8_t)itsdk_config.sdk.activeNetwork;
+#else
+	itsdk_state.activeNetwork = ITSDK_DEFAULT_NETWORK;
 #endif
-
-//#define RADIO_DIO_5
-
-#endif /* DRIVERS_SX1276_HW_H_ */
+	return;
+}

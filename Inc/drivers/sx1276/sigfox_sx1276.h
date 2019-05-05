@@ -29,8 +29,21 @@
 #include <it_sdk/config.h>
 #if ( ITSDK_WITH_SIGFOX_LIB == __ENABLE ) && (ITSDK_SIGFOX_LIB == __SIGFOX_SX1276)
 #include <it_sdk/sigfox/sigfox.h>
+#include <it_sdk/logger/logger.h>
+#include <drivers/sx1276/sigfox_lowlevel.h>
 
-itsdk_sigfox_init_t sx1276_sigfox_init(itsdk_sigfox_state * sigfox_state);
+typedef enum {
+	SX1276_SIGFOX_ERR_NONE = 0,
+	SX1276_SIGFOX_ERR_BREAK,			// Force to break a wait loop
+
+
+} sx1276_sigfox_ret_t;
+
+sx1276_sigfox_ret_t sx1276_sigfox_init(itsdk_sigfox_state * sigfox_state);
+sx1276_sigfox_ret_t sx1276_sigfox_idle( void );
+
+// Function you can override
+sx1276_sigfox_ret_t sx1276_sigfox_idle_used( void );
 
 /* ----------------------------------------------------------------
  * Misc defines
@@ -54,28 +67,29 @@ itsdk_sigfox_init_t sx1276_sigfox_init(itsdk_sigfox_state * sigfox_state);
 #endif
 
 /* ----------------------------------------------------------------
- * ST LowLevel
+ * Lib State
  */
 typedef enum {
-  STLL_ERROR = 0,
-  STLL_SUCCESS = !STLL_ERROR
-} STLL_Status;
+	SIGFOX_LPMODE_AUTHORIZED = 0,
+	SIGFOX_LPMODE_PROHIBITED
+} sigfox_lowpower_mode_t;
 
-typedef enum
-{
-  STLL_RESET = 0,
-  STLL_SET = !STLL_RESET
-} STLL_flag;
+#define SIGFOX_EVENT_CLEAR 	0
+#define SIGFOX_EVENT_SET	1
 
-typedef enum {
-  STLL_ENABLE=0,
-  STLL_DISABLE
-} STLL_State;
+typedef struct {
+	int8_t 					currentPower;				// Current Transmission Power
+	int16_t					meas_rssi_dbm;				// Computed Rssi
+	STLL_flag   			rxPacketReceived;
+	STLL_flag   			rxCarrierSenseFlag;
+	sigfox_lowpower_mode_t	lowPowerAuthorised:1;		// do device can be switched LP mode
 
-typedef enum {
-  HSE_SOURCE,
-  HSI_SOURCE
-} stll_clockType_e;
+	volatile uint8_t		timerEvent:1;				// Timer event
+	volatile uint8_t		endOfTxEvent:1;				// Frame sent
+
+} sx1276_sigfox_state_t;
+
+extern sx1276_sigfox_state_t	sx1276_sigfox_state;
 
 #endif // SIGFOX SX1276 ENABLE
 

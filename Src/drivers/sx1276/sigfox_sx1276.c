@@ -28,14 +28,28 @@
 #if ( ITSDK_WITH_SIGFOX_LIB == __ENABLE ) && (ITSDK_SIGFOX_LIB == __SIGFOX_SX1276)
 #include <string.h>
 #include <it_sdk/sigfox/sigfox.h>
+#include <it_sdk/eeprom/sdk_config.h>
+#include <it_sdk/time/timer.h>
 #include <drivers/sigfox/sigfox_api.h>
-#include <drivers/sx1276/sx1276Sigfox.h>
+#include <drivers/sx1276/sigfox_sx1276.h>
 
+sx1276_sigfox_state_t	sx1276_sigfox_state;
 
-itsdk_sigfox_init_t sx1276_sigfox_init(itsdk_sigfox_state * sigfox_state) {
-	sfx_error_t error = SFX_ERR_NONE;
+sx1276_sigfox_ret_t sx1276_sigfox_init(itsdk_sigfox_state * sigfox_state) {
+	sfx_error_t error = SX1276_SIGFOX_ERR_NONE;
 	sfx_rc_t  prcz;
 	sfx_u32   pconfig_words[3];
+
+	// Get config from eeprom or static files
+	#if ITSDK_CONFIGURATION_MODE != __CONFIG_STATIC
+	    sx1276_sigfox_state.currentPower = (uint8_t)itsdk_config.sdk.sigfox.txPower;
+	#else
+	    sx1276_sigfox_state.currentPower = ITSDK_SIGFOX_TXPOWER;
+	#endif
+	sx1276_sigfox_state.meas_rssi_dbm = 0;
+	sx1276_sigfox_state.rxPacketReceived= STLL_RESET;
+	sx1276_sigfox_state.rxCarrierSenseFlag= STLL_RESET;
+
 	switch (sigfox_state->rcz) {
 	default:
 	case SIGFOX_RCZ1:
@@ -86,6 +100,23 @@ itsdk_sigfox_init_t sx1276_sigfox_init(itsdk_sigfox_state * sigfox_state) {
 	return error;
 }
 
+/**
+ * This function is called when the mcu is waiting for the end of an action
+ * It executes the needed background tasks during this period.
+ * Returns SX1276_SIGFOX_ERR_BREAK when we want to force breaking the loop
+ */
+sx1276_sigfox_ret_t sx1276_sigfox_idle( void ) {
+	itsdk_stimer_run();
 
+	return sx1276_sigfox_idle_used();
+}
+
+/**
+ * This function can be override for a custom function executed in background
+ * during the sigfox transmit & receive phases
+ */
+__weak sx1276_sigfox_ret_t sx1276_sigfox_idle_used( void ) {
+	return SX1276_SIGFOX_ERR_NONE;
+}
 
 #endif

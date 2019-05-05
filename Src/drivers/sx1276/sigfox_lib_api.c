@@ -27,10 +27,12 @@
 #include <it_sdk/config.h>
 #if ( ITSDK_WITH_SIGFOX_LIB == __ENABLE ) && (ITSDK_SIGFOX_LIB == __SIGFOX_SX1276)
 #include <string.h>
+#include <stdio.h>
 #include <drivers/sigfox/mcu_api.h>
 #include <drivers/sigfox/rf_api.h>
-#include <drivers/sx1276/sx1276Sigfox.h>
+#include <drivers/sx1276/sigfox_sx1276.h>
 #include <drivers/sx1276/sgfx_sx1276_driver.h>
+#include <drivers/sx1276/sigfox_lowlevel.h>
 #include <drivers/sigfox/sigfox_api.h>
 #include <drivers/sigfox/se_nvm.h>
 #include <it_sdk/sigfox/sigfox.h>
@@ -39,10 +41,6 @@
 #include <it_sdk/wrappers.h>
 #include <it_sdk/time/timer.h>
 #include <it_sdk/logger/error.h>
-
-static int16_t __meas_rssi_dbm = 0;
-static STLL_flag __rxPacketReceived= STLL_RESET;
-static STLL_flag __rxCarrierSenseFlag= STLL_RESET;
 
 // =============================================================================================
 // MCU API
@@ -218,7 +216,7 @@ sfx_u8 MCU_API_report_test_result(sfx_bool status, sfx_s16 rssi)
  */
 void OnTimerTimeoutCsEvt( uint32_t v ) {
 	LOG_DEBUG_SFXSX1276((">> OnTimerTimeoutCsEvt\r\n"));
-    __rxCarrierSenseFlag = STLL_SET;
+	sx1276_sigfox_state.rxCarrierSenseFlag = STLL_SET;
 }
 
 sfx_u8 MCU_API_timer_start_carrier_sense(sfx_u16 time_duration_in_ms)
@@ -248,6 +246,7 @@ sfx_u8 MCU_API_timer_stop_carrier_sense(void)
 
 void OnTimerTimeoutEvt( uint32_t v ) {
 	LOG_DEBUG_SFXSX1276((">> OnTimerTimeoutEvt\r\n"));
+	sx1276_sigfox_state.timerEvent = SIGFOX_EVENT_SET;
 	//SCH_SetEvt( TIMOUT_EVT );
 }
 
@@ -261,6 +260,8 @@ sfx_u8 MCU_API_timer_start(sfx_u32 time_duration_in_s) {
 				TIMER_ACCEPT_LOWPOWER
 			) != TIMER_INIT_SUCCESS ) {
 		ITSDK_ERROR_REPORT(ITSDK_ERROR_SIGFOX_TIMER_STARTERROR,1);
+	} else {
+	   sx1276_sigfox_state.timerEvent = SIGFOX_EVENT_CLEAR;
 	}
 	return SFX_ERR_NONE;
 }
@@ -272,6 +273,7 @@ sfx_u8 MCU_API_timer_stop(void)
 			OnTimerTimeoutEvt,
 			0
 	);
+	sx1276_sigfox_state.timerEvent = SIGFOX_EVENT_SET;
 	return SFX_ERR_NONE;
 
 }
@@ -280,14 +282,10 @@ sfx_u8 MCU_API_timer_wait_for_end(void)
 {
    LOG_DEBUG_SFXSX1276((">> MCU_API_timer_wait_for_end\r\n"));
    //SCH_WaitEvt( TIMOUT_EVT );
-	while ( itsdk_stimer_isRunning(
-			OnTimerTimeoutEvt,
-				0
-			)
-		  ) {
-
-	}
-  return SFX_ERR_NONE;
+   while (sx1276_sigfox_state.timerEvent == SIGFOX_EVENT_CLEAR) {
+	   if ( sx1276_sigfox_idle() == SX1276_SIGFOX_ERR_BREAK ) break;
+   }
+   return SFX_ERR_NONE;
 }
 
 
@@ -451,16 +449,22 @@ sfx_u8 RF_API_wait_frame(sfx_u8 *frame, sfx_s16 *rssi, sfx_rx_state_enum_t * sta
   sfx_error_t status;
 
   SGFX_SX1276_rx_start();
-  if( STLL_WaitEndOfRxFrame( ) == STLL_SET ){
+  // Wait that flag EOFTX_EVT is set by STLL_SetEndOfTxFrame
+#warning ... here a wait is needed
+//  SCH_WaitEvt( EOFTX_EVT );
+
+//  if( STLL_WaitEndOfRxFrame( ) == STLL_SET ){
     SGFX_SX1276_rx_stop(frame);
     *rssi = STLL_SGFX_SX1276_GetSyncRssi();
     status = SFX_ERR_NONE;
     *state = DL_PASSED;
-  } else {
+/* According to STLL_WaitEndOfRxFrame => only status STLL_SET is returned ...
+} else {
     *rssi = (sfx_s8) 0;
     *state = DL_TIMEOUT;
     status = SFX_ERR_NONE;
   }
+  */
   return status;
 }
 

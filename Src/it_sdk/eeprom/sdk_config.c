@@ -63,6 +63,10 @@
 	static itsdk_config_ret_e itsdk_config_sdk_resetToFactory() {
 		itsdk_config.sdk.version = ITSDK_CONFIGURATION_SDK_VERSION;
 		itsdk_config.sdk.size = sizeof(itsdk_configuration_internal_t);
+		// ----------- Network choice ----------------------------------------------------
+		#if ITSDK_WITH_SIGFOX_LIB == __ENABLE || ITSDK_WITH_LORAWAN_LIB == __ENABLE
+		itsdk_config.sdk.activeNetwork = ITSDK_DEFAULT_NETWORK;
+		#endif
 		// ----------- LoRaWan settings --------------------------------------------------
 		#if ITSDK_WITH_LORAWAN_LIB == __ENABLE
 		itsdk_config.sdk.lorawan.adrMode = ITSDK_LORAWAN_ADR;

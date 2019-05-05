@@ -210,6 +210,13 @@
 #define __LOG_MOD_RESERVED		0x80000000			// Reserved Level
 
 /**
+ * Network to activate
+ */
+#define __ACTIV_NETWORK_NONE	0x00
+#define __ACTIV_NETWORK_SIGFOX	0x01
+#define __ACTIV_NETWORK_LORAWAN	0x02
+
+/**
  * Supported SIGFOX Interface
  */
 #define __SIGFOX_NONE			0

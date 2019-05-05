@@ -44,6 +44,7 @@
 
 #include <it_sdk/config.h>
 #include <it_sdk/logger/logger.h>
+#include <drivers/lorawan/phy/radio.h>
 #include "sx1276Regs-Fsk.h"
 #include "sx1276Regs-LoRa.h"
 
@@ -58,6 +59,8 @@
 #define LOG_ERROR_SX1276(x)
 #define LOG_DEBUG_SX1276(x)
 #endif
+
+extern gpio_irq_chain_t __sx1276_gpio_irq[];
 
 /*!
  * Radio wake-up time from sleep
@@ -554,5 +557,22 @@ void SX1276SetPublicNetwork( bool enable );
  * \retval time Radio plus board wakeup time in ms.
  */
 uint32_t SX1276GetWakeupTime( void );
+
+void SX1276SetXO( uint8_t state );
+
+uint32_t SX1276GetWakeTime( void );
+
+void SX1276IoIrqInit( DioIrqHandler **irqHandlers );
+
+uint8_t SX1276GetPaSelect( uint8_t power );
+
+void SX1276SetAntSwLowPower( bool status );
+
+void SX1276SetAntSw( uint8_t opMode );
+
+bool SX1276CheckRfFrequency( uint32_t frequency );
+void SX1276IoInit( void );
+void SX1276IoDeInit( void );
+void SX1276SetRfTxPower( int8_t power );
 
 #endif /* __SX1276_H__ */

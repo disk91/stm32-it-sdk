@@ -87,5 +87,24 @@ void spi_reset(
 	  HAL_SPI_Init(spi);
 }
 
+_SPI_Status spi_transmit_dma_start(
+		SPI_HandleTypeDef * spi,
+		uint8_t * 			pData,
+		uint16_t  			size
+) {
+	  HAL_SPI_Transmit_DMA(spi, (uint8_t *) pData, size);
+	  return SPI_OK;
+}
+
+_SPI_Status spi_transmit_dma_stop(
+		SPI_HandleTypeDef * spi
+) {
+	 DMA_HandleTypeDef *hdma= spi->hdmatx;
+	 HAL_SPI_DMAStop( spi );
+     __HAL_DMA_DISABLE_IT(hdma, DMA_IT_HT);
+     __HAL_DMA_DISABLE_IT(hdma, DMA_IT_TC);
+	 return SPI_OK;
+}
+
 
 #endif // __SPI_ENABLED

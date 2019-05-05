@@ -47,8 +47,9 @@
 	#include <drivers/eeprom/m95640/m95640.h>
 	#include <drivers/sigfox/sigfox_api.h>
 #elif ITSDK_SIGFOX_LIB == __SIGFOX_SX1276
-	#include <drivers/sx1276/sx1276Sigfox.h>
+	#include <drivers/sx1276/sigfox_sx1276.h>
 #endif
+#include <drivers/sigfox/mcu_api.h>
 
 
 

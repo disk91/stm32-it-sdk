@@ -42,6 +42,9 @@ typedef struct {
 	uint8_t				version;
 	uint16_t			size;
 
+#if ITSDK_WITH_SIGFOX_LIB == __ENABLE || ITSDK_WITH_LORAWAN_LIB == __ENABLE
+	uint32_t			activeNetwork;				   // active network Sigfox vs LoRaWan 32b for alignement
+#endif
 	// ----------- Sigfox settings --------------------------------------------------
 #if ITSDK_WITH_SIGFOX_LIB == __ENABLE
 	struct {
@@ -69,7 +72,6 @@ typedef struct {
 		uint16_t		align32b;			// 32b alignement
 	} lorawan;
 #endif
-
 	uint32_t			reserved[2];		// reserve space for later use
 
 } itsdk_configuration_internal_t;

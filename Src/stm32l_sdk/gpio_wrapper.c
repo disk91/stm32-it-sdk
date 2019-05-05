@@ -34,6 +34,7 @@
 #include <it_sdk/itsdk.h>
 #include <it_sdk/wrappers.h>
 #include <it_sdk/logger/error.h>
+#include <it_sdk/logger/logger.h>
 #include "stm32l0xx_hal.h"
 
 
@@ -85,9 +86,13 @@ IRQn_Type getIrqFromBankPin(uint8_t bankId, uint16_t id) {
 }
 
 
-
-
 void gpio_configure(uint8_t bank, uint16_t id, itsdk_gpio_type_t type ) {
+	gpio_configure_ext(bank, id, type, ITSDK_GPIO_SPEED_LOW, ITSDK_GPIO_ALT_NONE );
+}
+
+
+void gpio_configure_ext(uint8_t bank, uint16_t id, itsdk_gpio_type_t type, itsdk_gpio_speed_t speed, itsdk_gpio_alternate_t alternate ) {
+
 	GPIO_InitTypeDef GPIO_InitStruct;
 
 	switch ( bank ) {
@@ -114,7 +119,15 @@ void gpio_configure(uint8_t bank, uint16_t id, itsdk_gpio_type_t type ) {
 	}
 
 	GPIO_InitStruct.Pin = id;
-	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+	switch ( speed ) {
+	case ITSDK_GPIO_SPEED_LOW:
+		GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+		break;
+	case ITSDK_GPIO_SPEED_HIGH:
+		GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+		break;
+
+	}
 
 	switch (type) {
 
@@ -187,7 +200,65 @@ void gpio_configure(uint8_t bank, uint16_t id, itsdk_gpio_type_t type ) {
 	    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
 	    GPIO_InitStruct.Pull = GPIO_NOPULL;
 		break;
+
+	case GPIO_ALTERNATE_PP_NOPULL:
+		GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+	    GPIO_InitStruct.Pull = GPIO_NOPULL;
+	    break;
+
+	case GPIO_ALTERNATE_PP_PULLUP:
+		GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+	    GPIO_InitStruct.Pull = GPIO_PULLUP;
+	    break;
+
+	case GPIO_ALTERNATE_PP_PULLDOWN:
+		GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+	    GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+	    break;
+
+	case GPIO_ALTERNATE_OPENDRAIN:
+		GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
+	    GPIO_InitStruct.Pull = GPIO_NOPULL;
+	    break;
+
 	}
+	int err=0;
+	switch (type) {
+	case GPIO_ALTERNATE_PP_PULLUP:
+	case GPIO_ALTERNATE_PP_PULLDOWN:
+	case GPIO_ALTERNATE_OPENDRAIN:
+		switch (alternate) {
+		case ITSDK_GPIO_ALT_TIMER2_TR:
+		#if ITSDK_DEVICE == __DEVICE_STM32L072XX
+			if ( bank == __BANK_A && id == __LP_GPIO_15 ) GPIO_InitStruct.Alternate = GPIO_AF2_TIM2;
+			else if ( bank == __BANK_A && id == __LP_GPIO_5 ) GPIO_InitStruct.Alternate = GPIO_AF2_TIM2;
+			else if ( bank == __BANK_A && id == __LP_GPIO_0 ) GPIO_InitStruct.Alternate = GPIO_AF5_TIM2;
+			else err=1;
+		#else
+		#warning This device will not accept alternate GPIO configuration: code is missing
+		#endif
+			break;
+		case ITSDK_GPIO_ALT_TIMER2_C1:
+		#if ITSDK_DEVICE == __DEVICE_STM32L072XX
+			if ( bank == __BANK_A && id == __LP_GPIO_15 ) GPIO_InitStruct.Alternate = GPIO_AF5_TIM2;
+			else if ( bank == __BANK_A && id == __LP_GPIO_5 ) GPIO_InitStruct.Alternate = GPIO_AF5_TIM2;
+			else if ( bank == __BANK_A && id == __LP_GPIO_0 ) GPIO_InitStruct.Alternate = GPIO_AF2_TIM2;
+			else err=1;
+		#endif
+			break;
+
+		default:
+		case ITSDK_GPIO_ALT_NONE:
+			break;
+		}
+		if (err>0) {
+			log_error("Gpio - invalid alternate\r\n");
+		}
+		break;
+	default:
+		break;
+	}
+
 
 	HAL_GPIO_Init(getPortFromBankId(bank), &GPIO_InitStruct);
 

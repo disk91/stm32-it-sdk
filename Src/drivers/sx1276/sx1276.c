@@ -41,7 +41,8 @@
   ******************************************************************************
   */
 #include <it_sdk/config.h>
-#if ( ITSDK_WITH_LORAWAN_LIB == __ENABLE ) && (ITSDK_LORAWAN_LIB == __LORAWAN_SX1276)
+#if  ( ( ITSDK_WITH_LORAWAN_LIB == __ENABLE ) && (ITSDK_LORAWAN_LIB == __LORAWAN_SX1276) ) \
+   ||( ( ITSDK_WITH_SIGFOX_LIB == __ENABLE ) && (ITSDK_SIGFOX_LIB == __SIGFOX_SX1276) )
 
 /* Includes ------------------------------------------------------------------*/
 #include <drivers/sx1276/hw.h>
