@@ -2,7 +2,7 @@
  * securestore.c - encrypted eeprom storage
  * Project : Disk91 SDK
  * ----------------------------------------------------------
- * Created on: 9 févr. 2019
+ * Created on: 9 fï¿½vr. 2019
  *     Author: Paul Pinault aka Disk91
  * ----------------------------------------------------------
  * Copyright (C) 2019 Disk91
@@ -225,11 +225,8 @@ static itsdk_secStoreReturn_e _itsdk_secstore_getEntries(uint8_t * entries) {
    #if defined(ITSDK_WITH_LORAWAN_LIB) && ITSDK_WITH_LORAWAN_LIB == __ENABLE
    _entries+=5;
    #endif
-   #if ( defined(ITSDK_SIGFOX_ENCRYPTION) && ( ITSDK_SIGFOX_ENCRYPTION & __PAYLOAD_ENCRYPT_AESCTR ) > 0 ) || ( defined(ITSDK_LORAWAN_ENCRYPTION) && (( ITSDK_LORAWAN_ENCRYPTION & __PAYLOAD_ENCRYPT_AESCTR ) > 0) )
-	_entries++;
-   #endif
-   #if ( defined(ITSDK_SIGFOX_ENCRYPTION) && ( ITSDK_SIGFOX_ENCRYPTION > 0 )) || ( defined(ITSDK_LORAWAN_ENCRYPTION) && ( ITSDK_LORAWAN_ENCRYPTION > 0 ))
-	_entries++;
+   #if ( defined(ITSDK_SIGFOX_ENCRYPTION) && ( ITSDK_SIGFOX_ENCRYPTION > 0 )) || (defined(ITSDK_LORAWAN_ENCRYPTION) && ( ITSDK_LORAWAN_ENCRYPTION > 0))
+	_entries+=2;
    #endif
 	_entries+=ITSDK_SECSTORE_USRBLOCK;
 	*entries=_entries;
@@ -497,12 +494,10 @@ static itsdk_console_return_e _itsk_secstore_rekey(uint8_t * newKey){
 	// ITSDK_SS_LORA_OTAA_APPKEY
 	// ITSDK_SS_LORA_OTAA_NWKKEY
 #endif
-#if ( defined(ITSDK_SIGFOX_ENCRYPTION) && ( ITSDK_SIGFOX_ENCRYPTION & __PAYLOAD_ENCRYPT_AESCTR ) > 0 ) || ( defined(ITSDK_LORAWAN_ENCRYPTION) && (( ITSDK_LORAWAN_ENCRYPTION & __PAYLOAD_ENCRYPT_AESCTR ) > 0) )
+#if ( defined(ITSDK_SIGFOX_ENCRYPTION) && ( ITSDK_SIGFOX_ENCRYPTION > 0 )) || (defined(ITSDK_LORAWAN_ENCRYPTION) && ( ITSDK_LORAWAN_ENCRYPTION > 0))
 	if ( itsdk_secstore_readBlock(ITSDK_SS_AES_MASTERK, _b) != SS_FAILED_NOTSET ) {
 		_itsdk_secstore_writeBlockKey(ITSDK_SS_AES_MASTERK,_b,masterKey);
 	}
-#endif
-#if ( defined(ITSDK_SIGFOX_ENCRYPTION) && ( ITSDK_SIGFOX_ENCRYPTION > 0 )) || ( defined(ITSDK_LORAWAN_ENCRYPTION) && ( ITSDK_LORAWAN_ENCRYPTION > 0 ))
 	if ( itsdk_secstore_readBlock(ITSDK_SS_AES_SHARED_NONCE_SPECKKEY, _b) != SS_FAILED_NOTSET ) {
 		_itsdk_secstore_writeBlockKey(ITSDK_SS_AES_SHARED_NONCE_SPECKKEY,_b,masterKey);
 	}
@@ -626,6 +621,9 @@ static itsdk_console_return_e _itsdk_secStore_consolePriv(char * buffer, uint8_t
 		 #if defined(ITSDK_WITH_SIGFOX_LIB) && ITSDK_WITH_SIGFOX_LIB == __ENABLE
 			_itsdk_console_printf("SS:2:xxxx  : change the sigfox key (16B hex)\r\n");
 		 #endif
+		 #if ( defined(ITSDK_SIGFOX_ENCRYPTION) && ( ITSDK_SIGFOX_ENCRYPTION > 0 )) || (defined(ITSDK_LORAWAN_ENCRYPTION) && ( ITSDK_LORAWAN_ENCRYPTION > 0))
+			_itsdk_console_printf("ss:Y       : Encryption restore factory setting\r\n");
+		 #endif
 		 #if defined(ITSDK_WITH_LORAWAN_LIB) && ITSDK_WITH_LORAWAN_LIB == __ENABLE
 			_itsdk_console_printf("ss:Z       : LoRa restore factory setting\r\n");
 		   #if (ITSDK_LORAWAN_ACTTYPE == __LORAWAN_ACTIVATION_STATIC && ITSDK_LORAWAN_ACTIVATION == __LORAWAN_ABP) || ITSDK_LORAWAN_ACTTYPE == __LORAWAN_ACTIVATION_DYNAMIC
@@ -690,6 +688,17 @@ static itsdk_console_return_e _itsdk_secStore_consolePriv(char * buffer, uint8_t
 		// READ CASE
 		if ( buffer[0] == 's' && buffer[1] == 's' && buffer[2] == ':' ) {
 			switch(buffer[3]) {
+			 #if ( defined(ITSDK_SIGFOX_ENCRYPTION) && ( ITSDK_SIGFOX_ENCRYPTION > 0 )) || (defined(ITSDK_LORAWAN_ENCRYPTION) && ( ITSDK_LORAWAN_ENCRYPTION > 0))
+			  case 'Y':
+				  if ( itsdk_encrypt_resetFactoryDefaults(true) == ENCRYPT_RETURN_SUCESS ) {
+					  _itsdk_console_printf("OK\r\n");
+					  return ITSDK_CONSOLE_SUCCES;
+				  } else {
+					  _itsdk_console_printf("KO\r\n");
+					  return ITSDK_CONSOLE_FAILED;
+				  }
+				break;
+			 #endif
 			 #if defined(ITSDK_WITH_LORAWAN_LIB) && ITSDK_WITH_LORAWAN_LIB == __ENABLE
 			  case 'Z':
 				  if ( itsdk_lorawan_resetFactoryDefaults(true) == LORAWAN_RETURN_SUCESS ) {

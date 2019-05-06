@@ -52,7 +52,6 @@
 #include <drivers/sigfox/mcu_api.h>
 
 
-
 #if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
 s2lp_config_t __s2lpConf;
 #endif
@@ -63,6 +62,7 @@ itsdk_sigfox_state __sigfox_state = {0};
  * All operation needed to initialize the sigfox stack
  */
 itsdk_sigfox_init_t itsdk_sigfox_setup() {
+	LOG_INFO_SIGFOXSTK(("itsdk_sigfox_setup\r\n"));
 
 	itsdk_sigfox_init_t ret = SIGFOX_INIT_SUCESS;
 #if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
@@ -75,6 +75,7 @@ itsdk_sigfox_init_t itsdk_sigfox_setup() {
 
 	__sigfox_state.rcz = __s2lpConf.rcz;
 #elif ITSDK_SIGFOX_LIB == __SIGFOX_SX1276
+	itsdk_sigfox_resetFactoryDefaults(false);		// store the key if not yet done
 	ret = sx1276_sigfox_init(&__sigfox_state);
 #endif
 
@@ -130,6 +131,7 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendFrame(
 		bool ack,
 		uint8_t * dwn
 ) {
+	LOG_INFO_SIGFOXSTK(("itsdk_sigfox_sendFrame\r\n"));
 
 	// some basic checking...
 	if ( len > 12) return SIGFOX_ERROR_PARAMS;
@@ -152,7 +154,7 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendFrame(
 	#if ( ITSDK_SIGFOX_ENCRYPTION & __PAYLOAD_ENCRYPT_SPECK ) > 0
 		if ( (encrypt & PAYLOAD_ENCRYPT_SPECK) > 0 ) {
 			uint64_t masterKey;
-			itsdk_sigfox_speck_getMasterKey(&masterKey);
+			itsdk_encrypt_speck_getMasterKey(&masterKey);
 			itsdk_speck_encrypt(
 					buf,
 					buf,
@@ -168,11 +170,11 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendFrame(
 			uint16_t seqId;
 			itsdk_sigfox_getNextSeqId(&seqId);
 			uint8_t nonce;
-			itsdk_sigfox_aes_getNonce(&nonce);
+			itsdk_encrypt_aes_getNonce(&nonce);
 			uint32_t sharedKey;
-			itsdk_sigfox_aes_getSharedKey(&sharedKey);
+			itsdk_encrypt_aes_getSharedKey(&sharedKey);
 			uint8_t masterKey[16];
-			itsdk_sigfox_aes_getMasterKey(masterKey);
+			itsdk_encrypt_aes_getMasterKey(masterKey);
 
 			itsdk_aes_crt_encrypt_128B(
 					buf,							// Data to be encrypted
@@ -237,6 +239,7 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendBit(
 		bool ack,
 		uint8_t * dwn
 ) {
+	LOG_INFO_SIGFOXSTK(("itsdk_sigfox_sendBit\r\n"));
 
 	// some basic checking...
 	if ( repeat > 2) repeat = 2;
@@ -281,6 +284,7 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendOob(
 		itdsk_sigfox_speed_t speed,
 		int8_t power
 ) {
+	LOG_INFO_SIGFOXSTK(("itsdk_sigfox_sendOob\r\n"));
 
 	// some basic checking...
 	if ( power == SIGFOX_POWER_DEFAULT ) power = __sigfox_state.default_power;
@@ -320,6 +324,8 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendOob(
  * Get the current RCZ
  */
 itsdk_sigfox_init_t itsdk_sigfox_getCurrentRcz(uint8_t * rcz) {
+	LOG_INFO_SIGFOXSTK(("itsdk_sigfox_getCurrentRcz\r\n"));
+
 	*rcz = __sigfox_state.rcz;
 	if ( __sigfox_state.rcz > 0 ) return SIGFOX_INIT_SUCESS;
 	return SIGFOX_INIT_PARAMSERR;
@@ -330,6 +336,8 @@ itsdk_sigfox_init_t itsdk_sigfox_getCurrentRcz(uint8_t * rcz) {
  * Change the transmission power to the given value
  */
 itsdk_sigfox_init_t itsdk_sigfox_setTxPower(uint8_t power) {
+	LOG_INFO_SIGFOXSTK(("itsdk_sigfox_setTxPower\r\n"));
+
 	if ( power == __sigfox_state.default_power ) return SIGFOX_INIT_NOCHANGE;
 
 	#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
@@ -348,6 +356,8 @@ itsdk_sigfox_init_t itsdk_sigfox_setTxPower(uint8_t power) {
  * Change the transmission speed
  */
 itsdk_sigfox_init_t itsdk_sigfox_setTxSpeed(itdsk_sigfox_speed_t speed) {
+	LOG_INFO_SIGFOXSTK(("itsdk_sigfox_setTxSpeed\r\n"));
+
 	if ( speed == __sigfox_state.default_speed ) return SIGFOX_INIT_NOCHANGE;
 
 	#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
@@ -363,6 +373,8 @@ itsdk_sigfox_init_t itsdk_sigfox_setTxSpeed(itdsk_sigfox_speed_t speed) {
  * Return the deviceId into the given parameter
  */
 itsdk_sigfox_init_t itsdk_sigfox_getDeviceId(itsdk_sigfox_device_is_t * devId) {
+	LOG_INFO_SIGFOXSTK(("itsdk_sigfox_getDeviceId\r\n"));
+
 	#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
 		if ( __sigfox_state.initialized ) {
 		  *devId = __s2lpConf.id;
@@ -377,6 +389,8 @@ itsdk_sigfox_init_t itsdk_sigfox_getDeviceId(itsdk_sigfox_device_is_t * devId) {
  * The PAC parameter is a 8 Bytes table
  */
 itsdk_sigfox_init_t itsdk_sigfox_getInitialPac(uint8_t * pac) {
+	LOG_INFO_SIGFOXSTK(("itsdk_sigfox_getInitialPac\r\n"));
+
 	#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
 		if ( __sigfox_state.initialized ) {
 		  for ( int i = 0 ; i < 8 ; i++ ) {
@@ -393,6 +407,8 @@ itsdk_sigfox_init_t itsdk_sigfox_getInitialPac(uint8_t * pac) {
  * S2LP_UNKNOWN_RSSI if unknow (0x0F00);
  */
 itsdk_sigfox_init_t itsdk_sigfox_getLastRssi(int16_t * rssi) {
+	LOG_INFO_SIGFOXSTK(("itsdk_sigfox_getLastRssi\r\n"));
+
 	#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
 		*rssi = s2lp_sigfox_getLastRssiLevel();
 	#endif
@@ -404,6 +420,8 @@ itsdk_sigfox_init_t itsdk_sigfox_getLastRssi(int16_t * rssi) {
  * Return the last used seqId
  */
 itsdk_sigfox_init_t itsdk_sigfox_getLastSeqId(uint16_t * seqId) {
+	LOG_INFO_SIGFOXSTK(("itsdk_sigfox_getLastSeqId\r\n"));
+
 	#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
 		*seqId = _s2lp_sigfox_config->seqId;
 	#endif
@@ -415,6 +433,8 @@ itsdk_sigfox_init_t itsdk_sigfox_getLastSeqId(uint16_t * seqId) {
  * Return the next used seqId
  */
 itsdk_sigfox_init_t itsdk_sigfox_getNextSeqId(uint16_t * seqId) {
+	LOG_INFO_SIGFOXSTK(("itsdk_sigfox_getNextSeqId\r\n"));
+
 	#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
 		*seqId = (_s2lp_sigfox_config->seqId+1) & 0x0FFF;
 	#endif
@@ -428,6 +448,8 @@ itsdk_sigfox_init_t itsdk_sigfox_getNextSeqId(uint16_t * seqId) {
  * Switch to public key
  */
 itsdk_sigfox_init_t itsdk_sigfox_switchPublicKey() {
+	LOG_INFO_SIGFOXSTK(("itsdk_sigfox_switchPublicKey\r\n"));
+
 	#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
 		SIGFOX_API_switch_public_key(true);
 	#endif
@@ -438,6 +460,8 @@ itsdk_sigfox_init_t itsdk_sigfox_switchPublicKey() {
  * Switch to private key
  */
 itsdk_sigfox_init_t itsdk_sigfox_switchPrivateKey() {
+	LOG_INFO_SIGFOXSTK(("itsdk_sigfox_switchPrivateKey\r\n"));
+
 	#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
 		SIGFOX_API_switch_public_key(false);
 	#endif
@@ -455,6 +479,7 @@ itsdk_sigfox_init_t itsdk_sigfox_continuousModeStart(
 		itdsk_sigfox_speed_t 	speed,
 		int8_t 					power
 ) {
+	LOG_INFO_SIGFOXSTK(("itsdk_sigfox_continuousModeStart\r\n"));
 
 	if ( power == SIGFOX_POWER_DEFAULT ) power = __sigfox_state.default_power;
 	if ( speed == SIGFOX_SPEED_DEFAULT ) speed = __sigfox_state.default_speed;
@@ -480,6 +505,7 @@ itsdk_sigfox_init_t itsdk_sigfox_continuousModeStart(
  * Stop continuous transmission (certification)
  */
 itsdk_sigfox_init_t itsdk_sigfox_continuousModeStop() {
+	LOG_INFO_SIGFOXSTK(("itsdk_sigfox_continuousModeStop\r\n"));
 
 	#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
 		SIGFOX_API_stop_continuous_transmission();
@@ -495,6 +521,7 @@ itsdk_sigfox_init_t itsdk_sigfox_continuousModeStop() {
  * The given value is the number of frames
  */
 itsdk_sigfox_init_t itsdk_sigfox_setRcSyncPeriod(uint16_t numOfFrame) {
+	LOG_INFO_SIGFOXSTK(("itsdk_sigfox_setRcSyncPeriod\r\n"));
 
 	if ( numOfFrame > 4096 ) return SIGFOX_INIT_PARAMSERR;
 	#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
@@ -554,6 +581,8 @@ itsdk_sigfox_init_t itsdk_sigfox_getSeNvmOffset(uint32_t * offset) {
  * Configure the default values for the NVM Areas
  */
 itsdk_sigfox_init_t __itsdk_sigfox_resetNvmToFactory() {
+	LOG_INFO_SIGFOXSTK(("__itsdk_sigfox_resetNvmToFactory\r\n"));
+
 	uint8_t se_nvm_default[SFX_SE_NVMEM_BLOCK_SIZE] = { 0xFF, 0, 0, 0x0F, 0xFF };
 	SE_NVM_set(se_nvm_default);
 	uint8_t se_mcu_default[SFX_NVMEM_BLOCK_SIZE] = { 0, 0, 0, 0, 0, 0, 0 };
@@ -565,48 +594,55 @@ itsdk_sigfox_init_t __itsdk_sigfox_resetNvmToFactory() {
 // Overloadable functions
 // ===================================================================================
 
+
 /**
- * Return default nonce, this function is overloaded in the main program
- * to return a dynamic value
+ * Configure the SecureStore with the Static values obtained from configSigfox.h
+ * When force is false, the secure store will be refreshed only if there is no
+ * configuration already setup.
  */
-__weak  itsdk_sigfox_init_t itsdk_sigfox_aes_getNonce(uint8_t * nonce) {
-	*nonce = ITSDK_SIGFOX_AES_INITALNONCE;
+#if ITSDK_WITH_SECURESTORE == __ENABLE
+itsdk_sigfox_init_t itsdk_sigfox_resetFactoryDefaults(bool force) {
+	LOG_INFO_SIGFOXSTK(("itsdk_sigfox_resetFactoryDefaults\r\n"));
+
+	uint8_t buffer[16];
+	if ( force || itsdk_secstore_readBlock(ITSDK_SS_SIGFOXKEY, buffer) != SS_SUCCESS ) {
+		uint8_t key[16] = ITSDK_SIGFOX_KEY;
+		itsdk_encrypt_cifferKey(key,16);
+		itsdk_secstore_writeBlock(ITSDK_SS_SIGFOXKEY, key);
+		bzero(key,16);
+	}
+	bzero(buffer,16);
 	return SIGFOX_INIT_SUCESS;
 }
-
-/**
- * Return default sharedKey, this function is overloaded in the main program
- * to return a dynamic value
- */
-__weak  itsdk_sigfox_init_t itsdk_sigfox_aes_getSharedKey(uint32_t * sharedKey) {
-	*sharedKey = ITSDK_SIGFOX_AES_SHAREDKEY;
-	return SIGFOX_INIT_SUCESS;
-}
-
-
-/**
- * Return default masterKey (protected by ITSDK_PROTECT_KEY), this function is overloaded in the main program
- * to return a dynamic value when needed
- */
-__weak  itsdk_sigfox_init_t itsdk_sigfox_aes_getMasterKey(uint8_t * masterKey) {
-#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
-	bcopy((void *)_s2lp_sigfox_config->key,(void *)masterKey,16);
 #else
-	uint8_t tmp[16] = ITSDK_SIGFOX_KEY;
-	itsdk_encrypt_cifferKey(tmp,16);
-	bcopy((void *)tmp,(void *)masterKey,16);
+itsdk_sigfox_init_t itsdk_sigfox_resetFactoryDefaults(bool force) {
+	return SIGFOX_INIT_SUCESS;
+}
 #endif
+
+/**
+ * Get the sigfoxKey as a uint8_t[]
+ */
+__weak itsdk_sigfox_init_t itsdk_sigfox_getKEY(uint8_t * key) {
+	LOG_INFO_SIGFOXSTK(("itsdk_sigfox_getKEY\r\n"));
+#if ITSDK_WITH_SECURESTORE == __ENABLE
+	uint8_t d[16];
+	if ( itsdk_secstore_readBlock(ITSDK_SS_SIGFOXKEY, d) != SS_SUCCESS ) {
+		#if ITSDK_WITH_ERROR_RPT == __ENABLE
+			ITSDK_ERROR_REPORT(ITSDK_ERROR_SIGFOX_SS_INVALID,0);
+		#endif
+		bzero(key,16);
+		return SIGFOX_INIT_FAILED;
+	}
+#else
+	uint8_t d[16] = ITSDK_SIGFOX_KEY;
+	itsdk_encrypt_cifferKey(d,16);
+#endif
+	memcpy(key,d,16);
 	return SIGFOX_INIT_SUCESS;
 }
 
-/**
- * Return default speck Key ( protected by ITSDK_PROTECT_KEY), this function is overloaded in the main program
- * ro return a dynamic value when needed
- */
-__weak  itsdk_sigfox_init_t itsdk_sigfox_speck_getMasterKey(uint64_t * masterKey) {
-	*masterKey = ITSDK_SIGFOX_SPECKKEY;
-	return SIGFOX_INIT_SUCESS;
-}
+
 
 #endif // ITSDK_WITH_SIGFOX_LIB
 

@@ -37,6 +37,11 @@ typedef enum {												// Encryption mode are cumulative
 	PAYLOAD_ENCRYPT_SPECK = __PAYLOAD_ENCRYPT_SPECK			// SPECK32 encryption
 } itdsk_payload_encrypt_t;
 
+typedef enum {
+	ENCRYPT_RETURN_SUCESS = 0,
+	ENCRYPT_RETURN_FAILED
+}itsdk_encrypt_return_t;
+
 #if defined ITSDK_LORAWAN_ENCRYPTION && ITSDK_LORAWAN_ENCRYPTION > 0
   #define ITSDK_ENCRYPT_MAX_FRAME_SIZE    64				// LoRaWan max frame size (arbitral)
 #else
@@ -45,6 +50,12 @@ typedef enum {												// Encryption mode are cumulative
 
 void itsdk_encrypt_cifferKey(uint8_t * key, int len);
 void itsdk_encrypt_unCifferKey(uint8_t * key, int len);
+
+itsdk_encrypt_return_t itsdk_encrypt_resetFactoryDefaults(bool force);
+itsdk_encrypt_return_t itsdk_encrypt_aes_getNonce(uint8_t * nonce);
+itsdk_encrypt_return_t itsdk_encrypt_aes_getSharedKey(uint32_t * sharedKey);
+itsdk_encrypt_return_t itsdk_encrypt_aes_getMasterKey(uint8_t * masterKey);
+itsdk_encrypt_return_t itsdk_encrypt_speck_getMasterKey(uint64_t * masterKey);
 
 // uint64_t ciffer/unciffer function
 #define itsdk_encrypt_cifferKey64(v) ( \

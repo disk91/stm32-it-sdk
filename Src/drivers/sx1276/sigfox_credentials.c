@@ -45,10 +45,12 @@
  */
 #include <stdint.h>
 #include <string.h>
+#include <it_sdk/config.h>
+#if ( ITSDK_WITH_SIGFOX_LIB == __ENABLE ) && (ITSDK_SIGFOX_LIB == __SIGFOX_SX1276)
+#include <it_sdk/configSigfox.h>
 #include <it_sdk/encrypt/encrypt.h>
 #include <drivers/sx1276/sgfx_credentials.h>
 #include <drivers/sigfox/se_nvm.h>
-/* Private typedef -----------------------------------------------------------*/
 
 
 #define MANUF_DEVICE_ID_LENGTH     4
@@ -96,7 +98,7 @@ typedef struct manuf_device_info_s
 
 #define CREDENTIALS_VERSION 11
 
-#define PUBLIC_KEY    {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF}
+//#define PUBLIC_KEY    {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF}
 /*CREDENTIAL_KEY may be used to encrypt sigfox_data
   CREDENTIAL_KEY must be aligned with the sigfox tool generating and encrypting the sigfox_data*/
 /*
@@ -106,11 +108,11 @@ typedef struct manuf_device_info_s
 /* Private variables ---------------------------------------------------------*/
 static sfx_bool encrypt_flag = SFX_FALSE;
 
-static aes_context AesContext;
+//static aes_context AesContext;
 
 extern sfx_u8 encrypted_sigfox_data[SIGFOX_DATA_LEN];
 
-static uint8_t device_public_key[]=PUBLIC_KEY;
+static uint8_t device_public_key[]=ITSDK_SIGFOX_KEY_PUBLIC;
 
 static const char sgfxSeeLibVersion[]="." DECIMAL2STRING(CREDENTIALS_VERSION);
 
@@ -124,6 +126,10 @@ static sfx_error_t CREDENTIALS_get_cra(sfx_u8 *decrypted_data, sfx_u8 *data_to_d
 
 /* Public function definition -----------------------------------------------*/
 
+
+/**
+ * Encrypt a bloc with aes-ecb (eq CBC with iv = 0)
+ */
 sfx_error_t CREDENTIALS_aes_128_cbc_encrypt(uint8_t* encrypted_data, uint8_t* data_to_encrypt, uint8_t blocks)
 {
   //uint8_t iv[N_BLOCK] = {0x00};
@@ -285,7 +291,7 @@ static sfx_error_t CREDENTIALS_get_cra(sfx_u8 *decrypted_data, sfx_u8 *data_to_d
 }
 
 
-
+#endif
 
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

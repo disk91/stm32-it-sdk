@@ -65,6 +65,7 @@
 
 #if ITSDK_WITH_SECURESTORE == __ENABLE
 #include <it_sdk/eeprom/securestore.h>
+#include <it_sdk/encrypt/encrypt.h>
 #endif
 
 #if ITSDK_WITH_CONSOLE == __ENABLE
@@ -102,6 +103,7 @@ void itsdk_setup() {
 	  if ( itsdk_secstore_isInit() != SS_SUCCESS ) {
 		  itsdk_secstore_init();
 	  }
+	  itsdk_encrypt_resetFactoryDefaults(false);	// on first boot init the ss communication credentials
 	  itsdk_secStore_RegisterConsole();
 	#endif
 

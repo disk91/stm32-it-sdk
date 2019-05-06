@@ -254,7 +254,7 @@ static void __itsdk_lorawan_encrypt_payload(
 #if ( ITSDK_LORAWAN_ENCRYPTION & __PAYLOAD_ENCRYPT_SPECK ) > 0
 	if ( (encrypt & PAYLOAD_ENCRYPT_SPECK) > 0 ) {
 		uint64_t masterKey;
-		itsdk_lorawan_speck_getMasterKey(&masterKey);
+		itsdk_encrypt_speck_getMasterKey(&masterKey);
 		itsdk_speck_encrypt(
 				payload,
 				payload,
@@ -270,11 +270,11 @@ static void __itsdk_lorawan_encrypt_payload(
 		uint16_t seqId;
 		itsdk_lorawan_getNextUplinkFrameCounter(&seqId);
 		uint8_t nonce;
-		itsdk_lorawan_aes_getNonce(&nonce);
+		itsdk_encrypt_aes_getNonce(&nonce);
 		uint32_t sharedKey;
-		itsdk_lorawan_aes_getSharedKey(&sharedKey);
+		itsdk_encrypt_aes_getSharedKey(&sharedKey);
 		uint8_t masterKey[16];
-		itsdk_lorawan_aes_getMasterKey(masterKey);
+		itsdk_encrypt_aes_getMasterKey(masterKey);
 
 		itsdk_aes_crt_encrypt_128B(
 				payload,							// Data to be encrypted
@@ -585,97 +585,6 @@ void itsdk_lorawan_loop() {
 	LOG_DEBUG_LORAWANSTK(("itsdk_lorawan_loop\r\n"));
 	lorawan_driver_loop();
 }
-
-// ===================================================================================
-// Overloadable functions
-// ===================================================================================
-
-/**
- * Return default nonce, this function is overloaded in the main program
- * to return a dynamic value
- */
-__weak  itsdk_lorawan_return_t itsdk_lorawan_aes_getNonce(uint8_t * nonce) {
-#if ITSDK_WITH_SECURESTORE == __ENABLE
-	uint8_t d[16];
-	if ( itsdk_secstore_readBlock(ITSDK_SS_AES_SHARED_NONCE_SPECKKEY, d) != SS_SUCCESS ) {
-		*nonce = ITSDK_LORAWAN_AES_INITALNONCE;
-	} else {
-		*nonce = d[ITSDK_SECSTORE_CRYPT_NONCE_ID];
-	}
-#else
-	*nonce = ITSDK_LORAWAN_AES_INITALNONCE;
-#endif
-	return LORAWAN_RETURN_SUCESS;
-}
-
-/**
- * Return default sharedKey, this function is overloaded in the main program
- * to return a dynamic value
- */
-__weak  itsdk_lorawan_return_t itsdk_lorawan_aes_getSharedKey(uint32_t * sharedKey) {
-#if ITSDK_WITH_SECURESTORE == __ENABLE
-	uint8_t d[16];
-	if ( itsdk_secstore_readBlock(ITSDK_SS_AES_SHARED_NONCE_SPECKKEY, d) != SS_SUCCESS ) {
-		*sharedKey = ITSDK_LORAWAN_AES_SHAREDKEY;
-	} else {
-		*sharedKey = 0;
-		for (int i = 0 ; i<4 ; i++) {
-			*sharedKey = (*sharedKey)*256 + d[ITSDK_SECSTORE_CRYPT_SHARED_ID+i];
-		}
-	}
-#else
-	*sharedKey = ITSDK_LORAWAN_AES_SHAREDKEY;
-#endif
-	return LORAWAN_RETURN_SUCESS;
-}
-
-
-/**
- * Return default masterKey (protected by ITSDK_PROTECT_KEY), this function is overloaded in the main program
- * to return a dynamic value when needed
- */
-__weak  itsdk_lorawan_return_t itsdk_lorawan_aes_getMasterKey(uint8_t * masterKey) {
-#if ITSDK_WITH_SECURESTORE == __ENABLE
-	uint8_t tmp[16];
-	if ( itsdk_secstore_readBlock(ITSDK_SS_AES_MASTERK, tmp) != SS_SUCCESS ) {
-#endif
-		uint64_t h = ITSDK_LORAWAN_AES_MASTERKEYH;
-		uint64_t l = ITSDK_LORAWAN_AES_MASTERKEYL;
-		for ( int i = 0 ; i < 8 ; i++) {
-			tmp[i] = (h >> ((8-i)*8-8)) & 0xFF;
-		}
-		for ( int i = 0 ; i < 8 ; i++) {
-			tmp[8+i] = (l >> ((8-i)*8-8)) & 0xFF;
-		}
-#if ITSDK_WITH_SECURESTORE == __ENABLE
-	}
-#endif
-	memcpy(masterKey,tmp,16);
-	return LORAWAN_RETURN_SUCESS;
-}
-
-/**
- * Return default speck Key ( protected by ITSDK_PROTECT_KEY), this function is overloaded in the main program
- * ro return a dynamic value when needed
- */
-__weak  itsdk_lorawan_return_t itsdk_lorawan_speck_getMasterKey(uint64_t * masterKey) {
-#if ITSDK_WITH_SECURESTORE == __ENABLE
-	uint8_t d[16];
-	if ( itsdk_secstore_readBlock(ITSDK_SS_AES_SHARED_NONCE_SPECKKEY, d) != SS_SUCCESS ) {
-		*masterKey = ITSDK_LORAWAN_SPECKKEY;
-	} else {
-		*masterKey = 0;
-		for (int i = 0 ; i<8 ; i++) {
-			*masterKey = (*masterKey)*256 + d[ITSDK_SECSTORE_CRYPT_SPECK_ID+i];
-		}
-	}
-#else
-	*masterKey = ITSDK_LORAWAN_SPECKKEY;
-#endif
-	return LORAWAN_RETURN_SUCESS;
-}
-
-
 
 
 #endif

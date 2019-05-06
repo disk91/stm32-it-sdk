@@ -35,6 +35,18 @@
 
 #ifdef ITSDK_WITH_SIGFOX_LIB
 
+#if (ITSDK_LOGGER_MODULE & __LOG_MOD_STKSIGFOX) > 0
+#define LOG_INFO_SIGFOXSTK(x)		log_info x
+#define LOG_WARN_SIGFOXSTK(x) 		log_warn x
+#define LOG_ERROR_SIGFOXSTK(x)		log_error x
+#define LOG_DEBUG_SIGFOXSTK(x)		log_debug x
+#else
+#define LOG_INFO_SIGFOXSTK(x)
+#define LOG_WARN_SIGFOXSTK(x)
+#define LOG_ERROR_SIGFOXSTK(x)
+#define LOG_DEBUG_SIGFOXSTK(x)
+#endif
+
 
 typedef enum {
 	SIGFOX_INIT_SUCESS = 0,
@@ -146,10 +158,9 @@ itsdk_sigfox_init_t __itsdk_sigfox_resetNvmToFactory();
 // --------------------------------------------------------------------
 // Function to be overloaded in the main program
 // --------------------------------------------------------------------
-itsdk_sigfox_init_t itsdk_sigfox_aes_getNonce(uint8_t * nonce);
-itsdk_sigfox_init_t itsdk_sigfox_aes_getSharedKey(uint32_t * sharedKey);
-itsdk_sigfox_init_t itsdk_sigfox_aes_getMasterKey(uint8_t * masterKey);
-itsdk_sigfox_init_t itsdk_sigfox_speck_getMasterKey(uint64_t * masterKey);
+itsdk_sigfox_init_t itsdk_sigfox_resetFactoryDefaults(bool force);
+itsdk_sigfox_init_t itsdk_sigfox_getKEY(uint8_t * key);
+
 // --------------------------------------------------------------------
 // Logging
 // --------------------------------------------------------------------
