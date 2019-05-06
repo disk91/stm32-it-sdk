@@ -34,6 +34,26 @@ void itsdk_state_init() {
 	itsdk_state.activeNetwork = (uint8_t)itsdk_config.sdk.activeNetwork;
 #else
 	itsdk_state.activeNetwork = ITSDK_DEFAULT_NETWORK;
+	#if ITSDK_WITH_SIGFOX_LIB == __ENABLE
+	#endif
 #endif
+
+#if ITSDK_WITH_SIGFOX_LIB == __ENABLE
+	itsdk_state.sigfox.initialized = false;
+  #if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_LOCALEPROM
+	itsdk_state.sigfox.rcz = itsdk_config.sdk.sigfox.rcz;
+	itsdk_state.sigfox.current_power = itsdk_config.sdk.sigfox.txPower;
+	itsdk_state.sigfox.current_speed = itsdk_config.sdk.sigfox.speed;
+  #elif ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_CONFIG_STATIC
+	itsdk_state.sigfox.rcz = ITDSK_SIGFOX_RCZ;
+	itsdk_state.sigfox.current_power = ITSDK_SIGFOX_TXPOWER;
+	itsdk_state.sigfox.current_speed = ITSDK_SIGFOX_SPEED;
+  #elif ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_M95640
+	// The setting will be made later during sigfox init part
+  #else
+    #error INVALID ITSDK_SIGFOX_NVM_SOURCE VALUE
+  #endif
+#endif
+
 	return;
 }

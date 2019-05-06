@@ -33,7 +33,14 @@
 
 typedef struct {
 	uint8_t		activeNetwork;			// Currently active network see __ACTIV_NETWORK_*
-
+	#if ITSDK_WITH_SIGFOX_LIB == __ENABLE
+	struct {
+		bool					initialized;
+		uint8_t					rcz;
+		uint8_t					current_power;
+		uint16_t				current_speed;
+	} sigfox;
+	#endif
 } itsdk_state_t;
 
 extern itsdk_state_t itsdk_state;

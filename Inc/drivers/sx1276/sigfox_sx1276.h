@@ -35,12 +35,17 @@
 typedef enum {
 	SX1276_SIGFOX_ERR_NONE = 0,
 	SX1276_SIGFOX_ERR_BREAK,			// Force to break a wait loop
+	SX1276_SIGFOX_ERR_LIBINIT			// Impossible to open Sigfox Lib
 
 
 } sx1276_sigfox_ret_t;
 
-sx1276_sigfox_ret_t sx1276_sigfox_init(itsdk_sigfox_state * sigfox_state);
+sx1276_sigfox_ret_t sx1276_sigfox_init( void );
+sx1276_sigfox_ret_t sx1276_sigfox_deinit( void );
 sx1276_sigfox_ret_t sx1276_sigfox_idle( void );
+sx1276_sigfox_ret_t sx1276_sigfox_getRssi(int16_t * rssi);
+sx1276_sigfox_ret_t sx1276_sigfox_getSeqId( uint16_t * seqId );
+sx1276_sigfox_ret_t sx1276_sigfox_setPower( uint8_t power );
 
 // Function you can override
 sx1276_sigfox_ret_t sx1276_sigfox_idle_used( void );
@@ -78,7 +83,6 @@ typedef enum {
 #define SIGFOX_EVENT_SET	1
 
 typedef struct {
-	int8_t 					currentPower;				// Current Transmission Power
 	int16_t					meas_rssi_dbm;				// Computed Rssi
 	STLL_flag   			rxPacketReceived;
 	STLL_flag   			rxCarrierSenseFlag;

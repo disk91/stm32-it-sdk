@@ -58,6 +58,7 @@
 #include <drivers/sx1276/sigfox_sx1276.h>
 #include <it_sdk/wrappers.h>
 #include <it_sdk/eeprom/sdk_config.h>
+#include <it_sdk/eeprom/sdk_state.h>
 #include "stm32l0xx.h"
 
 uint8_t STLL_Radio_ReadReg(uint8_t address) {
@@ -77,14 +78,16 @@ void STLL_Radio_WriteFifo(uint8_t size, uint8_t* buffer) {
 }
 
 void STLL_Radio_Init( void ) {
+  LOG_DEBUG_SFXSX1276((">> STLL_Radio_Init\r\n"));
   RadioEvents_t events = {NULL};
   SX1276Init( &events );
 }
 
 void STLL_Radio_DeInit( void ) {
+  LOG_DEBUG_SFXSX1276((">> STLL_Radio_DeInit\r\n"));
   RadioEvents_t events = {NULL};
   SX1276Init( &events );
-  SX1276Write(0x40 , 0x01 );
+  SX1276Write(0x40 , 0x01 );	// set DIO3 from 'buffer empty' to NA to save current
 }
 
 static void __irqHandlers_dio0( uint16_t GPIO_Pin) {
@@ -105,7 +108,7 @@ static void __irqHandlers_dio4( uint16_t GPIO_Pin) {
 
 void STLL_Radio_IoInit( void )
 {
-  LOG_DEBUG_SFXSX1276(("STLL_Radio_IoInit\r\n"));
+  LOG_DEBUG_SFXSX1276((">> STLL_Radio_IoInit\r\n"));
 
   SX1276IoInit();
 
@@ -128,7 +131,7 @@ void STLL_Radio_IoInit( void )
 
 void STLL_Radio_IoDeInit( void )
 {
-    LOG_DEBUG_SFXSX1276(("STLL_Radio_IoDeInit\r\n"));
+    LOG_DEBUG_SFXSX1276((">> STLL_Radio_IoDeInit\r\n"));
 
 	gpio_removeIrqAction(&__sx1276_gpio_irq[0]);
 	gpio_removeIrqAction(&__sx1276_gpio_irq[1]);
@@ -158,14 +161,12 @@ void STLL_Radio_SetFreq( uint32_t Freq )
 void STLL_RadioPowerSetEeprom( int8_t power)
 {
  // HW_EEPROM_WRITE( E2pData.TxPower, power) ;
- sx1276_sigfox_state.currentPower = power;
-
-
+	itsdk_state.sigfox.current_power = power;
 }
 
 int8_t STLL_RadioPowerGet( void )
 {
-  return sx1276_sigfox_state.currentPower;
+  return itsdk_state.sigfox.current_power;
   //return E2pData.TxPower;
 }
 
@@ -180,7 +181,7 @@ void STLL_RadioPowerSetBoard( int8_t power)
  */
 STLL_flag STLL_WaitEndOfTxFrame( void )
 {
-  LOG_DEBUG_SFXSX1276(("STLL_WaitEndOfTxFrame\r\n"));
+  LOG_DEBUG_SFXSX1276((">> STLL_WaitEndOfTxFrame\r\n"));
   // Wait that flag EOFTX_EVT is set
   sx1276_sigfox_state.endOfTxEvent = SIGFOX_EVENT_CLEAR;
   while (sx1276_sigfox_state.endOfTxEvent == SIGFOX_EVENT_CLEAR) {
@@ -209,7 +210,7 @@ void STLL_SetEndOfTxFrame( void ) {
  */
 void STLL_Transmit_DMA_Start( uint16_t *pDataSource, uint16_t Size)
 {
-	LOG_DEBUG_SFXSX1276(("STLL_Transmit_DMA_Start\r\n"));
+	LOG_DEBUG_SFXSX1276((">> STLL_Transmit_DMA_Start\r\n"));
 
 	  // LL_SPI_SetDataWidth(SpiHandle.Instance,  LL_SPI_DATAWIDTH_16BIT );
 	  MODIFY_REG(ITSDK_SX1276_SPI.Instance->CR1, SPI_CR1_DFF, (SPI_CR1_DFF));  		// Set bit to 1
@@ -243,7 +244,7 @@ void STLL_Transmit_DMA_Start( uint16_t *pDataSource, uint16_t Size)
  */
 void STLL_Transmit_DMA_Stop( void )
 {
-	LOG_DEBUG_SFXSX1276(("STLL_Transmit_DMA_Stop\r\n"));
+	LOG_DEBUG_SFXSX1276((">> STLL_Transmit_DMA_Stop\r\n"));
 
 	 spi_transmit_dma_stop(&ITSDK_SX1276_SPI);
 	 MODIFY_REG(ITSDK_SX1276_SPI.Instance->CR1, SPI_CR1_DFF, (((uint32_t)0x00000000U)));	// Set bit to 0
@@ -351,7 +352,7 @@ void STLL_LowPower(STLL_State State)
  */
 void STLL_SetClockSource( stll_clockType_e clocktype)
 {
-  LOG_DEBUG_SFXSX1276(("STLL_SetClockSource\r\n"));
+  LOG_DEBUG_SFXSX1276((">> STLL_SetClockSource\r\n"));
   if ( clocktype == HSI_SOURCE ) {
     //HW_SetHSIasSysClock() ;
   } else {
@@ -373,7 +374,7 @@ int16_t STLL_SGFX_SX1276_GetSyncRssi(void)
  */
 STLL_flag STLL_WaitEndOfRxFrame( void )
 {
-  LOG_DEBUG_SFXSX1276(("STLL_WaitEndOfRxFrame\r\n"));
+  LOG_DEBUG_SFXSX1276((">> STLL_WaitEndOfRxFrame\r\n"));
 
   sx1276_sigfox_state.rxPacketReceived = STLL_RESET;
   sx1276_sigfox_state.timerEvent = SIGFOX_EVENT_CLEAR;

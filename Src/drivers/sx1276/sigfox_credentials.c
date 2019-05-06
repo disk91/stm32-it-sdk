@@ -49,10 +49,11 @@
 #if ( ITSDK_WITH_SIGFOX_LIB == __ENABLE ) && (ITSDK_SIGFOX_LIB == __SIGFOX_SX1276)
 #include <it_sdk/configSigfox.h>
 #include <it_sdk/encrypt/encrypt.h>
+#include <drivers/sx1276/sigfox_sx1276.h>
 #include <drivers/sx1276/sgfx_credentials.h>
 #include <drivers/sigfox/se_nvm.h>
 
-
+/*
 #define MANUF_DEVICE_ID_LENGTH     4
 #define MANUF_SIGNATURE_LENGTH     16
 #define MANUF_VER_LENGTH           1
@@ -65,20 +66,21 @@
 
 typedef struct manuf_device_info_s
 {
-    /* 16bits block 1 */
+    // 16bits block 1
     sfx_u8 dev_id[MANUF_DEVICE_ID_LENGTH];
     sfx_u8 pac[MANUF_PAC_LENGTH];
     sfx_u8 ver[MANUF_VER_LENGTH];
     sfx_u8 spare1[MANUF_SPARE_1];
-    /* 16bits block 2 */
+    // 16bits block 2
     sfx_u8 dev_key[MANUF_DEVICE_KEY_LENGTH];
-    /* 16bits block 3 */
-     sfx_u8 spare2[MANUF_SPARE_2];
+    // 16bits block 3
+    sfx_u8 spare2[MANUF_SPARE_2];
     sfx_u8 crc[MANUF_CRC_LENGTH];
 } manuf_device_info_t;
-
+*/
                                       
 /*PREPROCESSOR CONVERSION*/
+/*
 #define DECIMAL2STRING_DEF(s) #s
 #define DECIMAL2STRING(s) DECIMAL2STRING_DEF(s)
                                       
@@ -88,15 +90,19 @@ typedef struct manuf_device_info_s
 #ifndef ALIGN
 #define ALIGN(n)             __attribute__((aligned(n)))
 #endif
-
+*/
 /*SIGfox defines*/
 
 
-#define SIGNATURE_LEN 16 /*bytes*/
+#define SIGNATURE_LEN 16
+static uint8_t session_key[SIGNATURE_LEN]={0};
 
-#define SIGFOX_DATA_LEN 48 /*bytes*/
 
-#define CREDENTIALS_VERSION 11
+
+
+//#define SIGFOX_DATA_LEN 48 /*bytes*/
+
+//#define CREDENTIALS_VERSION 11
 
 //#define PUBLIC_KEY    {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF}
 /*CREDENTIAL_KEY may be used to encrypt sigfox_data
@@ -106,23 +112,22 @@ typedef struct manuf_device_info_s
 */
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-static sfx_bool encrypt_flag = SFX_FALSE;
+//static sfx_bool encrypt_flag = SFX_FALSE;
 
 //static aes_context AesContext;
 
-extern sfx_u8 encrypted_sigfox_data[SIGFOX_DATA_LEN];
+//extern sfx_u8 encrypted_sigfox_data[SIGFOX_DATA_LEN];
 
-static uint8_t device_public_key[]=ITSDK_SIGFOX_KEY_PUBLIC;
+//static uint8_t device_public_key[]=ITSDK_SIGFOX_KEY_PUBLIC;
 
-static const char sgfxSeeLibVersion[]="." DECIMAL2STRING(CREDENTIALS_VERSION);
+static const char sgfxSeeLibVersion[]="CRED v1.1";
 
-static uint8_t session_key[SIGNATURE_LEN]={0};
+//
 
 /* Private function prototypes -----------------------------------------------*/
-
 static void CREDENTIALS_get_key (uint8_t* key, sfx_key_type_t KeyType );
 
-static sfx_error_t CREDENTIALS_get_cra(sfx_u8 *decrypted_data, sfx_u8 *data_to_decrypt, sfx_u8 data_len);
+//static sfx_error_t CREDENTIALS_get_cra(sfx_u8 *decrypted_data, sfx_u8 *data_to_decrypt, sfx_u8 data_len);
 
 /* Public function definition -----------------------------------------------*/
 
@@ -132,14 +137,12 @@ static sfx_error_t CREDENTIALS_get_cra(sfx_u8 *decrypted_data, sfx_u8 *data_to_d
  */
 sfx_error_t CREDENTIALS_aes_128_cbc_encrypt(uint8_t* encrypted_data, uint8_t* data_to_encrypt, uint8_t blocks)
 {
+  LOG_DEBUG_SFXSX1276((">> CREDENTIALS_aes_128_cbc_encrypt\r\n"));
+
   //uint8_t iv[N_BLOCK] = {0x00};
   uint8_t key[AES_KEY_LEN];
   sfx_key_type_t KeyType = SE_NVM_get_key_type();
   CREDENTIALS_get_key ( key, KeyType );
-  //aes_set_key( key, AES_KEY_LEN,  &AesContext);
-  //memset(key, 0, AES_KEY_LEN);
-  
-  itsdk_encrypt_cifferKey(key,16);
   itsdk_aes_ecb_encrypt_128B(
 		  data_to_encrypt,
 		  encrypted_data,
@@ -148,6 +151,8 @@ sfx_error_t CREDENTIALS_aes_128_cbc_encrypt(uint8_t* encrypted_data, uint8_t* da
   );
   bzero(key,AES_KEY_LEN);
   /*
+  //aes_set_key( key, AES_KEY_LEN,  &AesContext);
+  //memset(key, 0, AES_KEY_LEN);
   aes_cbc_encrypt( data_to_encrypt,
                      encrypted_data,
                      blocks,
@@ -157,121 +162,163 @@ sfx_error_t CREDENTIALS_aes_128_cbc_encrypt(uint8_t* encrypted_data, uint8_t* da
   return SFX_ERR_NONE;
 }
 
-sfx_error_t CREDENTIALS_aes_128_cbc_encrypt_with_session_key(uint8_t* encrypted_data, uint8_t* data_to_encrypt, uint8_t blocks)
-{
-  //uint8_t iv[N_BLOCK] = {0x00};
-  //aes_set_key( session_key, AES_KEY_LEN,  &AesContext);
-
-  itsdk_encrypt_cifferKey(session_key,16);
+/**
+ * Encrypt a data block with the session key previously calculated
+ * Session key is already protected in memory, no need to ciffer it
+ */
+sfx_error_t CREDENTIALS_aes_128_cbc_encrypt_with_session_key(uint8_t* encrypted_data, uint8_t* data_to_encrypt, uint8_t blocks) {
+  LOG_DEBUG_SFXSX1276((">> CREDENTIALS_aes_128_cbc_encrypt_with_session_key\r\n"));
   itsdk_aes_ecb_encrypt_128B(
 		  data_to_encrypt,
 		  encrypted_data,
 		  blocks,
 		  session_key
   );
-/*
-  aes_cbc_encrypt( data_to_encrypt,
-                     encrypted_data,
-                     blocks,
-                     iv,
-                     &AesContext );
-  */
+
+  //uint8_t iv[N_BLOCK] = {0x00};
+  //aes_set_key( session_key, AES_KEY_LEN,  &AesContext);
+  //aes_cbc_encrypt( data_to_encrypt,
+  //                   encrypted_data,
+  //                   blocks,
+  //                   iv,
+  //                   &AesContext );
+
   return SFX_ERR_NONE;
 }
 
-sfx_error_t CREDENTIALS_wrap_session_key( uint8_t* data, uint8_t blocks)
-{
-  uint8_t iv[N_BLOCK] = {0x00};
-  
+/**
+ * Generate a session_key from a dataset and the encryption key
+ * Then this session key can be used as a key for future encryption
+ */
+sfx_error_t CREDENTIALS_wrap_session_key( uint8_t* data, uint8_t blocks) {
+  LOG_DEBUG_SFXSX1276((">> CREDENTIALS_wrap_session_key\r\n"));
+
   uint8_t key[AES_KEY_LEN];
-  
   CREDENTIALS_get_key ( key, CREDENTIALS_KEY_PRIVATE);
+  itsdk_aes_ecb_encrypt_128B(
+		  data,
+		  session_key,
+		  blocks,
+		  key
+  );
+  itsdk_encrypt_cifferKey(session_key,16);		// we keep the session_key more secure in ram
 
-  aes_set_key( key, AES_KEY_LEN,  &AesContext);
   
-  memset(key, 0, AES_KEY_LEN);
-
-  aes_cbc_encrypt( data,
-                   session_key,
-                   blocks,
-                   iv,
-                   &AesContext );
+  // uint8_t iv[N_BLOCK] = {0x00};
+  // uint8_t key[AES_KEY_LEN];
+  // CREDENTIALS_get_key ( key, CREDENTIALS_KEY_PRIVATE);
+  // aes_set_key( key, AES_KEY_LEN,  &AesContext);
+  // memset(key, 0, AES_KEY_LEN);
+  // aes_cbc_encrypt( data,
+  //                 session_key,
+  //                 blocks,
+  //                 iv,
+  //                 &AesContext );
   
   return SFX_ERR_NONE;
 }
 
+/**
+ * Returns the credential lib version
+ */
 const char* CREDENTIALS_get_version( void )
 {
+  LOG_DEBUG_SFXSX1276((">> CREDENTIALS_get_version\r\n"));
   return sgfxSeeLibVersion;
 }
 
+/**
+ * Returns the device Id
+ */
+#warning "unclear if devId is little or bigendian"
 void CREDENTIALS_get_dev_id( uint8_t* dev_id)
 {
-    manuf_device_info_t DeviceInfo;
+    LOG_DEBUG_SFXSX1276((">> CREDENTIALS_get_dev_id\r\n"));
+    uint32_t devId;
+    itsdk_sigfox_getDeviceId(&devId);
+    for (int i = 0 ; i < 4 ; i++) {
+    	dev_id[i]=(devId >> ((32-8)-8*i)) & 0xFF;
+    }
     
-    CREDENTIALS_get_cra( (uint8_t*) &DeviceInfo, encrypted_sigfox_data, sizeof(manuf_device_info_t) );
-
-    memcpy(dev_id, DeviceInfo.dev_id, MANUF_DEVICE_ID_LENGTH);
-  
-    /*clear key*/
-    memset( DeviceInfo.dev_key, 0, AES_KEY_LEN);
+    //manuf_device_info_t DeviceInfo;
+    //CREDENTIALS_get_cra( (uint8_t*) &DeviceInfo, encrypted_sigfox_data, sizeof(manuf_device_info_t) );
+    //memcpy(dev_id, DeviceInfo.dev_id, MANUF_DEVICE_ID_LENGTH);
+    //memset( DeviceInfo.dev_key, 0, AES_KEY_LEN);
 }
 
+/**
+ * Returns the initial Pac
+ */
 void CREDENTIALS_get_initial_pac( uint8_t* pac)
 {
-    manuf_device_info_t DeviceInfo;
-    
-    CREDENTIALS_get_cra( (uint8_t*) &DeviceInfo, encrypted_sigfox_data, sizeof(manuf_device_info_t) );
-    /*clear key*/
-    memcpy(pac, DeviceInfo.pac, MANUF_PAC_LENGTH);
-    /*clear key*/
-    memset( DeviceInfo.dev_key, 0, AES_KEY_LEN);
+    LOG_DEBUG_SFXSX1276((">> CREDENTIALS_get_initial_pac\r\n"));
+    itsdk_sigfox_getInitialPac(pac);
+
+	//manuf_device_info_t DeviceInfo;
+    //CREDENTIALS_get_cra( (uint8_t*) &DeviceInfo, encrypted_sigfox_data, sizeof(manuf_device_info_t) );
+    //memcpy(pac, DeviceInfo.pac, MANUF_PAC_LENGTH);
+    //memset( DeviceInfo.dev_key, 0, AES_KEY_LEN);
 }
 
+/**
+ * Returns the sigfox encryption status
+ */
 sfx_bool CREDENTIALS_get_payload_encryption_flag(void)
 {
-    return encrypt_flag;
+    LOG_DEBUG_SFXSX1276((">> CREDENTIALS_get_payload_encryption_flag\r\n"));
+    #if (defined ITSDK_SIGFOX_ENCRYPTION) && (( ITSDK_SIGFOX_ENCRYPTION & __PAYLOAD_ENCRYPT_SIGFOX) > 0)
+      return SFX_TRUE;
+    #else
+      return SFX_FALSE;
+    #endif
 }
 
-/* Private function definition -----------------------------------------------*/
+/**
+ * Access the Sigfox KEY for internal use
+ * The key is stored in memory with ciffer protection
+ */
+static void CREDENTIALS_get_key(uint8_t* key, sfx_key_type_t KeyType){
+    LOG_DEBUG_SFXSX1276((">> CREDENTIALS_get_key\r\n"));
 
-static void CREDENTIALS_get_key(uint8_t* key, sfx_key_type_t KeyType)
-{
-  switch (KeyType)
-  {
-    case CREDENTIALS_KEY_PUBLIC:
-    {
-      memcpy(key, device_public_key, AES_KEY_LEN);
-      
-      break;
+	switch (KeyType) {
+    case CREDENTIALS_KEY_PUBLIC: {
+      uint8_t pkey[AES_KEY_LEN] = ITSDK_SIGFOX_KEY_PUBLIC;
+      memcpy(key, pkey, AES_KEY_LEN);
+      itsdk_encrypt_cifferKey(key,16);
     }
-    case CREDENTIALS_KEY_PRIVATE:
-    {
-      manuf_device_info_t DeviceInfo;
-    
-      CREDENTIALS_get_cra( (uint8_t*) &DeviceInfo, encrypted_sigfox_data, sizeof(manuf_device_info_t) );
+    break;
+    case CREDENTIALS_KEY_PRIVATE: {
+      itsdk_sigfox_getKEY(key);
 
-      memcpy(key, DeviceInfo.dev_key, AES_KEY_LEN);
-    
-      memset( DeviceInfo.dev_key, 0, AES_KEY_LEN);
-      
-      break;
+      //manuf_device_info_t DeviceInfo;
+      //CREDENTIALS_get_cra( (uint8_t*) &DeviceInfo, encrypted_sigfox_data, sizeof(manuf_device_info_t) );
+      //memcpy(key, DeviceInfo.dev_key, AES_KEY_LEN);
+      //memset( DeviceInfo.dev_key, 0, AES_KEY_LEN);
     }
+    break;
     default:
+        LOG_ERROR_SFXSX1276(("   Invalid type of key\r\n"));
       break;
   }
 }
 
 
-static sfx_error_t CREDENTIALS_get_cra(sfx_u8 *decrypted_data, sfx_u8 *data_to_decrypt, sfx_u8 data_len)
-{
+/**
+ * This procedure extracts the data from an eeprom where i is stored encrypted
+ * then it decrypt it and returns it.
+ */
+/*
+static sfx_error_t CREDENTIALS_get_cra(sfx_u8 *decrypted_data, sfx_u8 *data_to_decrypt, sfx_u8 data_len) {
+
+
+
 #ifdef CREDENTIAL_KEY
   uint8_t iv[N_BLOCK] = {0x00};
   
   uint8_t CredentialKey[AES_KEY_LEN]=CREDENTIAL_KEY;
   
-  /*device is provisioned with sigfox_data.h   */
-  /*encrypted with CREDENTIAL_KEY in Sigfox Tool*/
+  //device is provisioned with sigfox_data.h
+  //encrypted with CREDENTIAL_KEY in Sigfox Tool
   aes_set_key( CredentialKey, AES_KEY_LEN,  &AesContext);
   
   memset( CredentialKey, 0, AES_KEY_LEN);
@@ -282,14 +329,14 @@ static sfx_error_t CREDENTIALS_get_cra(sfx_u8 *decrypted_data, sfx_u8 *data_to_d
                    iv,
                    &AesContext );
 #else
-  /* default sigfox_data.h provided, sigfox_data.h is not encrypted*/
+  // default sigfox_data.h provided, sigfox_data.h is not encrypted
   memcpy( (uint8_t*) decrypted_data, (uint8_t*) data_to_decrypt, sizeof(manuf_device_info_t) );
 
 #endif
 
   return SFX_ERR_NONE;
 }
-
+*/
 
 #endif
 

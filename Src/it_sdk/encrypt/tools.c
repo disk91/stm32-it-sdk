@@ -24,6 +24,7 @@
  * ==========================================================
  */
 
+#include <string.h>
 #include <it_sdk/config.h>
 #include <it_sdk/itsdk.h>
 #include <it_sdk/logger/logger.h>

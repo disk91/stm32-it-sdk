@@ -197,3 +197,17 @@ void itdt_macToString(char * str, uint8_t * mac) {
   }
   str[17]='\0';
 }
+
+/* ---------------------------------------------------
+ * Align a value on the next 32b value
+ * This is for NVM size whare offset need to be aligned
+ * on 32b values
+ */
+uint32_t itdt_align_32b(uint32_t v) {
+	if ( (v & 3) != 0 ) {
+		v &= 0xFFFFFFFC;
+		v += 4;
+	}
+	return v;
+}
+

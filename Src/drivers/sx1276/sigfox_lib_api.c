@@ -177,7 +177,15 @@ sfx_u8 MCU_API_get_nv_mem(sfx_u8 read_data[SFX_NVMEM_BLOCK_SIZE])
 
 	uint32_t offset;
 	itsdk_sigfox_getNvmOffset(&offset);
-	_eeprom_read(ITDT_EEPROM_BANK0, offset, (void *) &read_data, sizeof(SFX_NVMEM_BLOCK_SIZE));
+
+	uint8_t tab[SFX_NVMEM_BLOCK_SIZE+4] = {0};
+	uint8_t sz = itdt_align_32b(SFX_NVMEM_BLOCK_SIZE);
+	_eeprom_read(ITDT_EEPROM_BANK0, offset, (void *) &tab, sz);
+	bcopy(tab,read_data,SFX_NVMEM_BLOCK_SIZE);
+
+	#warning to_remove
+	log_info_array("MCU_NVM",read_data,SFX_NVMEM_BLOCK_SIZE);
+
     return SFX_ERR_NONE;
 }
 
@@ -190,8 +198,13 @@ sfx_u8 MCU_API_set_nv_mem(sfx_u8 data_to_write[SFX_NVMEM_BLOCK_SIZE])
 
 	uint32_t offset;
 	itsdk_sigfox_getNvmOffset(&offset);
-	_eeprom_write(ITDT_EEPROM_BANK0, offset, (void *) data_to_write, SFX_NVMEM_BLOCK_SIZE);
-    return SFX_ERR_NONE;
+
+	uint8_t tab[SFX_NVMEM_BLOCK_SIZE+4] = {0};
+	bcopy(data_to_write,tab,SFX_NVMEM_BLOCK_SIZE);
+	uint8_t sz = itdt_align_32b(SFX_NVMEM_BLOCK_SIZE);
+	_eeprom_write(ITDT_EEPROM_BANK0, offset, (void *) tab, sz);
+
+	return SFX_ERR_NONE;
 }
 
 
@@ -456,6 +469,7 @@ sfx_u8 RF_API_wait_frame(sfx_u8 *frame, sfx_s16 *rssi, sfx_rx_state_enum_t * sta
 //  if( STLL_WaitEndOfRxFrame( ) == STLL_SET ){
     SGFX_SX1276_rx_stop(frame);
     *rssi = STLL_SGFX_SX1276_GetSyncRssi();
+    sx1276_sigfox_state.meas_rssi_dbm = *rssi;
     status = SFX_ERR_NONE;
     *state = DL_PASSED;
 /* According to STLL_WaitEndOfRxFrame => only status STLL_SET is returned ...
@@ -565,12 +579,21 @@ sfx_u8 SE_NVM_get(sfx_u8 read_data[SFX_SE_NVMEM_BLOCK_SIZE])
 
 	uint32_t offset;
 	itsdk_sigfox_getSeNvmOffset(&offset);
-	_eeprom_read(ITDT_EEPROM_BANK0, offset, (void *) &read_data, sizeof(SFX_SE_NVMEM_BLOCK_SIZE));
+
+	uint8_t tab[SFX_SE_NVMEM_BLOCK_SIZE+4] = {0};
+	uint8_t sz = itdt_align_32b(SFX_SE_NVMEM_BLOCK_SIZE);
+	_eeprom_read(ITDT_EEPROM_BANK0, offset, (void *) &tab, sz);
+	bcopy(tab,read_data,SFX_SE_NVMEM_BLOCK_SIZE);
+
+	#warning to_remove
+	log_info_array("SE_NVM",read_data,SFX_SE_NVMEM_BLOCK_SIZE);
+
     return SFX_ERR_NONE;
 }
 
 /**
  * Write Data to NVM (eeprom)
+ * We need to be aligned on 32b size to access the EEPROM...
  */
 sfx_u8 SE_NVM_set(sfx_u8 data_to_write[SFX_SE_NVMEM_BLOCK_SIZE])
 {
@@ -578,7 +601,11 @@ sfx_u8 SE_NVM_set(sfx_u8 data_to_write[SFX_SE_NVMEM_BLOCK_SIZE])
 
 	uint32_t offset;
 	itsdk_sigfox_getSeNvmOffset(&offset);
-	_eeprom_write(ITDT_EEPROM_BANK0, offset, (void *) data_to_write, SFX_SE_NVMEM_BLOCK_SIZE);
+
+	uint8_t tab[SFX_SE_NVMEM_BLOCK_SIZE+4] = {0};
+	bcopy(data_to_write,tab,SFX_SE_NVMEM_BLOCK_SIZE);
+	uint8_t sz = itdt_align_32b(SFX_SE_NVMEM_BLOCK_SIZE);
+	_eeprom_write(ITDT_EEPROM_BANK0, offset, (void *) tab, sz);
     return SFX_ERR_NONE;
 }
 
@@ -586,6 +613,8 @@ sfx_u8 SE_NVM_set(sfx_u8 data_to_write[SFX_SE_NVMEM_BLOCK_SIZE])
  * Get the Type of Key (public / private)
  */
 sfx_key_type_t SE_NVM_get_key_type( void ) {
+	LOG_DEBUG_SFXSX1276((">> SE_NVM_get_key_type()\r\n"));
+
 	uint8_t v = 0;
 #if ITSDK_CONFIGURATION_MODE != __CONFIG_STATIC
 	v= itsdk_config.sdk.sigfox.sgfxKey;
@@ -608,6 +637,7 @@ sfx_key_type_t SE_NVM_get_key_type( void ) {
  * made in a different way, here we just update the memory
  */
 void  SE_NVM_set_key_type( sfx_key_type_t keyType ) {
+	LOG_DEBUG_SFXSX1276((">> SE_NVM_set_key_type()\r\n"));
 #if ITSDK_CONFIGURATION_MODE != __CONFIG_STATIC
 	switch (keyType) {
 	default:
@@ -622,11 +652,6 @@ void  SE_NVM_set_key_type( sfx_key_type_t keyType ) {
 	return ;
 #endif
 }
-
-
-// =============================================================================================
-// Radio / HW / Layer
-// =============================================================================================
 
 
 

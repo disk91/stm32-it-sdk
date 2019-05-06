@@ -49,14 +49,18 @@ typedef struct {
 #if ITSDK_WITH_SIGFOX_LIB == __ENABLE
 	struct {
 		int16_t			rssiCal;						// Rssi calibration ( offset )
-		int8_t      	txPower;						// Default Tx power
+		int8_t      	txPower;						// Default Tx power - use SIGFOX_DEFAULT_POWER for default regional setting
+		uint16_t		speed;							// Default Speed - use SIGFOX_DEFAULT_SPEED for default regional setting
 		uint8_t			sgfxKey;						// Sigfox key type Public / Private
 		uint8_t			rcz;							// Default RCZ
 		uint32_t		macroch_config_words_rc2[3];    // Macro channel config
 		uint32_t		macroch_config_words_rc3[3];	// Macro channel config
 		uint32_t		macroch_config_words_rc4[3];	// Macro channel config
-
-		uint8_t         align32b[3];		// 32b alignement
+	#if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_LOCALEPROM
+		uint32_t		deviceId;						// DeviceId
+		uint8_t			initialPac[8];					// Initial PAC
+	#endif
+		uint8_t         align32b[1];		// 32b alignement
 	} sigfox;
 #endif
 

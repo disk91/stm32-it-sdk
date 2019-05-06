@@ -85,14 +85,10 @@ typedef enum
 #define SIGFOX_KEY_PRIVATE	0
 #define SIGFOX_KEY_PUBLIC	1
 
-typedef uint32_t itsdk_sigfox_device_is_t;
+#define SIGFOX_DEFAULT_POWER	0xFF			// Use these values as config for setting the default value for state
+#define SIGFOX_DEFAULT_SPEED	0xFFFF
 
-typedef struct {
-	bool					initialized;
-	uint8_t					rcz;
-	uint8_t					default_power;
-	uint16_t				default_speed;
-} itsdk_sigfox_state;
+typedef uint32_t itsdk_sigfox_device_is_t;
 
 #define SIGFOX_POWER_DEFAULT	-1
 
@@ -101,6 +97,7 @@ typedef struct {
 // --------------------------------------------------------------------
 
 itsdk_sigfox_init_t itsdk_sigfox_setup();
+itsdk_sigfox_init_t itsdk_sigfox_deinit();
 itsdk_sigfox_init_t itsdk_sigfox_getCurrentRcz(uint8_t * rcz);
 itsdk_sigfox_init_t itsdk_sigfox_setTxPower(uint8_t power);
 itsdk_sigfox_init_t itsdk_sigfox_setTxSpeed(itdsk_sigfox_speed_t speed);

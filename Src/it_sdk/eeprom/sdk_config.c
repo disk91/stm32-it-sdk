@@ -79,6 +79,7 @@
 		#if ITSDK_WITH_SIGFOX_LIB == __ENABLE
 		itsdk_config.sdk.sigfox.rssiCal = ITSDK_SIGFOX_RSSICAL;
 		itsdk_config.sdk.sigfox.txPower = ITSDK_SIGFOX_TXPOWER;
+		itsdk_config.sdk.sigfox.speed = ITSDK_SIGFOX_SPEED;
 		itsdk_config.sdk.sigfox.rcz = ITDSK_SIGFOX_RCZ;
 		itsdk_config.sdk.sigfox.sgfxKey = ITSDK_SIGFOX_KEY_TYPE;
 		sfx_u32 config_words_2[3] = RC2_SM_CONFIG;
@@ -88,6 +89,12 @@
 		sfx_u32 config_words_4[3] = RC4_SM_CONFIG;
 		bcopy(config_words_4,itsdk_config.sdk.sigfox.macroch_config_words_rc4,3*sizeof(sfx_u32));
 		__itsdk_sigfox_resetNvmToFactory();
+		#if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_LOCALEPROM
+		  uint8_t pac[8] = ITSDK_SIGFOX_PAC;
+		  bcopy(pac,itsdk_config.sdk.sigfox.initialPac,8);
+		  itsdk_config.sdk.sigfox.deviceId = ITSDK_SIGFOX_ID;
+		#endif
+
 		#endif
 		return CONFIG_RESTORED_FROM_FACTORY;
 	}

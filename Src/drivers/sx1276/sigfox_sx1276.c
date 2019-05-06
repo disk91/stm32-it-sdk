@@ -29,28 +29,37 @@
 #include <string.h>
 #include <it_sdk/sigfox/sigfox.h>
 #include <it_sdk/eeprom/sdk_config.h>
+#include <it_sdk/eeprom/sdk_state.h>
 #include <it_sdk/time/timer.h>
 #include <drivers/sigfox/sigfox_api.h>
 #include <drivers/sx1276/sigfox_sx1276.h>
+#include <drivers/sx1276/sx1276.h>
 
 sx1276_sigfox_state_t	sx1276_sigfox_state;
 
-sx1276_sigfox_ret_t sx1276_sigfox_init(itsdk_sigfox_state * sigfox_state) {
+
+/**
+ * Configure the sigfox stack for sx1276
+ */
+sx1276_sigfox_ret_t sx1276_sigfox_init( void ) {
+	LOG_INFO_SFXSX1276((">> sx1276_sigfox_init\r\n"));
+
+
 	sfx_error_t error = SX1276_SIGFOX_ERR_NONE;
 	sfx_rc_t  prcz;
 	sfx_u32   pconfig_words[3];
 
-	// Get config from eeprom or static files
-	#if ITSDK_CONFIGURATION_MODE != __CONFIG_STATIC
-	    sx1276_sigfox_state.currentPower = (uint8_t)itsdk_config.sdk.sigfox.txPower;
-	#else
-	    sx1276_sigfox_state.currentPower = ITSDK_SIGFOX_TXPOWER;
-	#endif
+	// Hardware Init
+	SX1276IoInit();
+	STLL_Radio_Init();
+	// set DIO3 from 'buffer empty' to NA to save current
+	SX1276Write( 0x40, 0x01 );
+
 	sx1276_sigfox_state.meas_rssi_dbm = 0;
 	sx1276_sigfox_state.rxPacketReceived= STLL_RESET;
 	sx1276_sigfox_state.rxCarrierSenseFlag= STLL_RESET;
 
-	switch (sigfox_state->rcz) {
+	switch (itsdk_state.sigfox.rcz) {
 	default:
 	case SIGFOX_RCZ1:
 		{
@@ -83,8 +92,13 @@ sx1276_sigfox_ret_t sx1276_sigfox_init(itsdk_sigfox_state * sigfox_state) {
 		}
 		break;
 	}
-	error = SIGFOX_API_open(&prcz);
-	switch (sigfox_state->rcz) {
+	LOG_INFO_SFXSX1276((">> SIGFOX_API_open\r\n"));
+	sfx_error_t serror = SIGFOX_API_open(&prcz);
+	if ( serror != SFX_ERR_NONE ) {
+		LOG_ERROR_SFXSX1276(("[ERROR] Sigfox Open(%08X)\r\n",serror));
+		return SX1276_SIGFOX_ERR_LIBINIT;
+	}
+	switch (itsdk_state.sigfox.rcz) {
 	case SIGFOX_RCZ2:
 		error = SIGFOX_API_set_std_config(pconfig_words, RC2_SET_STD_TIMER_ENABLE);
 		break;
@@ -101,15 +115,61 @@ sx1276_sigfox_ret_t sx1276_sigfox_init(itsdk_sigfox_state * sigfox_state) {
 }
 
 /**
+ * DeInit Sigfox Stack
+ */
+sx1276_sigfox_ret_t sx1276_sigfox_deinit( void ) {
+	LOG_INFO_SFXSX1276((">> sx1276_sigfox_deinit\r\n"));
+
+	SX1276IoDeInit();
+	return SX1276_SIGFOX_ERR_NONE;
+}
+
+
+/**
+ * Change power
+ */
+sx1276_sigfox_ret_t sx1276_sigfox_setPower( uint8_t power ) {
+	LOG_INFO_SFXSX1276((">> sx1276_sigfox_setPower\r\n"));
+
+	STLL_RadioPowerSetBoard(power);
+    return SX1276_SIGFOX_ERR_NONE;
+}
+
+/**
+ * Return the sequence Id
+ */
+sx1276_sigfox_ret_t sx1276_sigfox_getSeqId( uint16_t * seqId ) {
+	LOG_INFO_SFXSX1276((">> sx1276_sigfox_getSeqId\r\n"));
+
+#warning "TO BE COMPLETED"
+  *seqId = 0;
+  return SX1276_SIGFOX_ERR_NONE;
+}
+
+/**
+ * Return the last Rssi value
+ */
+sx1276_sigfox_ret_t sx1276_sigfox_getRssi(int16_t * rssi) {
+	LOG_INFO_SFXSX1276((">> sx1276_sigfox_getRssi\r\n"));
+
+  *rssi = sx1276_sigfox_state.meas_rssi_dbm;
+  return SX1276_SIGFOX_ERR_NONE;
+}
+
+/**
  * This function is called when the mcu is waiting for the end of an action
  * It executes the needed background tasks during this period.
  * Returns SX1276_SIGFOX_ERR_BREAK when we want to force breaking the loop
  */
 sx1276_sigfox_ret_t sx1276_sigfox_idle( void ) {
+	LOG_INFO_SFXSX1276((">> sx1276_sigfox_idle\r\n"));
+
 	itsdk_stimer_run();
 
 	return sx1276_sigfox_idle_used();
 }
+
+
 
 /**
  * This function can be override for a custom function executed in background
