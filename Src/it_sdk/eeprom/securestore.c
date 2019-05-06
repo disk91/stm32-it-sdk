@@ -56,6 +56,9 @@
 #include <it_sdk/lorawan/lorawan.h>
 #endif
 
+#if defined(ITSDK_WITH_SIGFOX_LIB) && ITSDK_WITH_SIGFOX_LIB == __ENABLE
+#include <it_sdk/sigfox/sigfox.h>
+#endif
 
 /**
  * Compute the offset of a block in the EEPROM Memory for a given
@@ -619,6 +622,7 @@ static itsdk_console_return_e _itsdk_secStore_consolePriv(char * buffer, uint8_t
 			_itsdk_console_printf("SS:0:xxxx  : change the secure store dyn Key (12B)\r\n");
 			_itsdk_console_printf("SS:1:xxxx  : change the console password (max 15 char)\r\n");
 		 #if defined(ITSDK_WITH_SIGFOX_LIB) && ITSDK_WITH_SIGFOX_LIB == __ENABLE
+			_itsdk_console_printf("SS:S       : Sigfox key restore factory setting\r\n");
 			_itsdk_console_printf("SS:2:xxxx  : change the sigfox key (16B hex)\r\n");
 		 #endif
 		 #if ( defined(ITSDK_SIGFOX_ENCRYPTION) && ( ITSDK_SIGFOX_ENCRYPTION > 0 )) || (defined(ITSDK_LORAWAN_ENCRYPTION) && ( ITSDK_LORAWAN_ENCRYPTION > 0))
@@ -688,6 +692,17 @@ static itsdk_console_return_e _itsdk_secStore_consolePriv(char * buffer, uint8_t
 		// READ CASE
 		if ( buffer[0] == 's' && buffer[1] == 's' && buffer[2] == ':' ) {
 			switch(buffer[3]) {
+			#if defined(ITSDK_WITH_SIGFOX_LIB) && ITSDK_WITH_SIGFOX_LIB == __ENABLE
+			case 'S':
+				if ( itsdk_sigfox_resetFactoryDefaults(true) == SIGFOX_INIT_SUCESS ) {
+					  _itsdk_console_printf("OK\r\n");
+					  return ITSDK_CONSOLE_SUCCES;
+   			    } else {
+					  _itsdk_console_printf("KO\r\n");
+					  return ITSDK_CONSOLE_FAILED;
+				}
+				break;
+			 #endif
 			 #if ( defined(ITSDK_SIGFOX_ENCRYPTION) && ( ITSDK_SIGFOX_ENCRYPTION > 0 )) || (defined(ITSDK_LORAWAN_ENCRYPTION) && ( ITSDK_LORAWAN_ENCRYPTION > 0))
 			  case 'Y':
 				  if ( itsdk_encrypt_resetFactoryDefaults(true) == ENCRYPT_RETURN_SUCESS ) {
