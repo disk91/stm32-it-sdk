@@ -180,7 +180,7 @@ sfx_u8 MCU_API_get_nv_mem(sfx_u8 read_data[SFX_NVMEM_BLOCK_SIZE])
 
 	uint8_t tab[SFX_NVMEM_BLOCK_SIZE+4] = {0};
 	uint8_t sz = itdt_align_32b(SFX_NVMEM_BLOCK_SIZE);
-	_eeprom_read(ITDT_EEPROM_BANK0, offset, (void *) &tab, sz);
+	_eeprom_read(ITDT_EEPROM_BANK0, offset, (void *) tab, sz);
 	bcopy(tab,read_data,SFX_NVMEM_BLOCK_SIZE);
 
 	#warning to_remove
@@ -582,7 +582,7 @@ sfx_u8 SE_NVM_get(sfx_u8 read_data[SFX_SE_NVMEM_BLOCK_SIZE])
 
 	uint8_t tab[SFX_SE_NVMEM_BLOCK_SIZE+4] = {0};
 	uint8_t sz = itdt_align_32b(SFX_SE_NVMEM_BLOCK_SIZE);
-	_eeprom_read(ITDT_EEPROM_BANK0, offset, (void *) &tab, sz);
+	_eeprom_read(ITDT_EEPROM_BANK0, offset, (void *) tab, sz);
 	bcopy(tab,read_data,SFX_SE_NVMEM_BLOCK_SIZE);
 
 	#warning to_remove

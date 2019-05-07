@@ -225,6 +225,12 @@
 #define __SIGFOX_SX1276		   10
 
 /**
+ * Sigfox Extension
+ */
+#define __SIGFOX_NONE			0
+#define __SIGFOX_MONARCH		1
+
+/**
  * NVM source for Sigfox lib
  */
 #define __SFX_NVM_LOCALEPROM	0					// MCU internal EEPROM

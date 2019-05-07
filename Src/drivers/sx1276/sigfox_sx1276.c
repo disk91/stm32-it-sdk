@@ -162,7 +162,7 @@ sx1276_sigfox_ret_t sx1276_sigfox_getRssi(int16_t * rssi) {
  * Returns SX1276_SIGFOX_ERR_BREAK when we want to force breaking the loop
  */
 sx1276_sigfox_ret_t sx1276_sigfox_idle( void ) {
-	LOG_INFO_SFXSX1276((">> sx1276_sigfox_idle\r\n"));
+	LOG_INFO_SFXSX1276(("."));
 
 	itsdk_stimer_run();
 
