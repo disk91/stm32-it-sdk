@@ -224,8 +224,13 @@ void STLL_onSpiDmaTxComplete(void) {
 
 /**
  * Switch the SPI to DMA mode, NSS is setup with the TIM2 Timer instead of being piloted by the software
+ * By default SPI1 is not accessible on the chip pins but you can use alternate pin to get access
+ * 	  gpio_configure_ext(__BANK_A, __LP_GPIO_0, GPIO_ALTERNATE_PP_PULLUP,ITSDK_GPIO_SPEED_HIGH,ITSDK_GPIO_ALT_TIMER2_C1);
+ *	  gpio_configure_ext(__BANK_A, __LP_GPIO_5, GPIO_ALTERNATE_PP_NOPULL,ITSDK_GPIO_SPEED_HIGH,ITSDK_GPIO_ALT_SPI1_SCLK);
+ *	  gpio_configure_ext(__BANK_B, __LP_GPIO_5, GPIO_ALTERNATE_PP_NOPULL,ITSDK_GPIO_SPEED_HIGH,ITSDK_GPIO_ALT_SPI1_MOSI);
+ * This is making alternate on accessible pin.
  */
-extern DMA_HandleTypeDef UTSDK_SX1276_SPIDMATX;
+extern DMA_HandleTypeDef ITSDK_SX1276_SPIDMATX;
 void STLL_Transmit_DMA_Start( uint16_t *pDataSource, uint16_t Size)
 {
   	  LOG_DEBUG_SFXSX1276((">> STLL_Transmit_DMA_Start\r\n"));
@@ -237,6 +242,11 @@ void STLL_Transmit_DMA_Start( uint16_t *pDataSource, uint16_t Size)
 
 	  // Configure NSS to be piloted by TIM2 for DMA access
 	  gpio_configure_ext(ITSDK_SX1276_NSS_BANK, ITSDK_SX1276_NSS_PIN, GPIO_ALTERNATE_PP_PULLUP,ITSDK_GPIO_SPEED_HIGH,ITSDK_GPIO_ALT_TIMER2_C1);
+
+//	 gpio_configure_ext(__BANK_A, __LP_GPIO_0, GPIO_ALTERNATE_PP_PULLUP,ITSDK_GPIO_SPEED_HIGH,ITSDK_GPIO_ALT_TIMER2_C1);
+//	 gpio_configure_ext(__BANK_A, __LP_GPIO_5, GPIO_ALTERNATE_PP_PULLDOWN,ITSDK_GPIO_SPEED_HIGH,ITSDK_GPIO_ALT_SPI1_SCLK);
+//	 gpio_configure_ext(__BANK_B, __LP_GPIO_5, GPIO_ALTERNATE_PP_PULLDOWN,ITSDK_GPIO_SPEED_HIGH,ITSDK_GPIO_ALT_SPI1_MOSI);
+
 	  /*
 	  __GPIOA_CLK_ENABLE();
 	  // LL_GPIO_SetPinMode(RADIO_NSS_PORT, RADIO_NSS_PIN, LL_GPIO_MODE_ALTERNATE);
@@ -254,24 +264,29 @@ void STLL_Transmit_DMA_Start( uint16_t *pDataSource, uint16_t Size)
 	  */
 
 	  // Configure DMA
+	  // The source is defined by Couple Channel3/Request_8 according to L0 familly Ds pdf page 246
+	  __HAL_RCC_SPI1_CLK_ENABLE();
 	  __HAL_RCC_DMA1_CLK_ENABLE();
-	  UTSDK_SX1276_SPIDMATX.Instance = DMA1_Channel3;
-	  UTSDK_SX1276_SPIDMATX.Init.Request = DMA_REQUEST_8;					// DMA_REQUEST_8   was 1
-	  UTSDK_SX1276_SPIDMATX.Init.Direction = DMA_MEMORY_TO_PERIPH;
-	  UTSDK_SX1276_SPIDMATX.Init.PeriphInc = DMA_PINC_DISABLE;
-	  UTSDK_SX1276_SPIDMATX.Init.MemInc = DMA_MINC_ENABLE;
-	  UTSDK_SX1276_SPIDMATX.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
-	  UTSDK_SX1276_SPIDMATX.Init.MemDataAlignment = DMA_PDATAALIGN_HALFWORD;   // DMA_PDATAALIGN_HALFWORD; was : DMA_MDATAALIGN_BYTE
-	  UTSDK_SX1276_SPIDMATX.Init.Mode = DMA_CIRCULAR;
-	  UTSDK_SX1276_SPIDMATX.Init.Priority = DMA_PRIORITY_HIGH;
-	  HAL_DMA_Init(&UTSDK_SX1276_SPIDMATX);
-      __HAL_LINKDMA(&ITSDK_SX1276_SPI,hdmatx,UTSDK_SX1276_SPIDMATX);
+	  HAL_DMA_DeInit(&ITSDK_SX1276_SPIDMATX);
+	  ITSDK_SX1276_SPIDMATX.Instance = DMA1_Channel3;
+	  ITSDK_SX1276_SPIDMATX.Init.Request = DMA_REQUEST_8;
+	  ITSDK_SX1276_SPIDMATX.Init.Direction = DMA_MEMORY_TO_PERIPH;
+	  ITSDK_SX1276_SPIDMATX.Init.PeriphInc = DMA_PINC_DISABLE;
+	  ITSDK_SX1276_SPIDMATX.Init.MemInc = DMA_MINC_ENABLE;
+	  ITSDK_SX1276_SPIDMATX.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
+	  ITSDK_SX1276_SPIDMATX.Init.MemDataAlignment = DMA_MDATAALIGN_HALFWORD;   // DMA_PDATAALIGN_HALFWORD; was : DMA_MDATAALIGN_BYTE
+	  ITSDK_SX1276_SPIDMATX.Init.Mode = DMA_CIRCULAR;
+	  ITSDK_SX1276_SPIDMATX.Init.Priority = DMA_PRIORITY_HIGH;
+	  HAL_DMA_Init(&ITSDK_SX1276_SPIDMATX);
+      __HAL_LINKDMA(&ITSDK_SX1276_SPI,hdmatx,ITSDK_SX1276_SPIDMATX);
 
       HAL_NVIC_SetPriority(DMA1_Channel2_3_IRQn, 0, 0);
 	  HAL_NVIC_EnableIRQ(DMA1_Channel2_3_IRQn);
 
-	 // HAL_NVIC_SetPriority(SPI1_IRQn, 0, 0);
-	 // HAL_NVIC_EnableIRQ(SPI1_IRQn);
+	  HAL_NVIC_SetPriority(SPI1_IRQn, 0, 0);
+	  HAL_NVIC_EnableIRQ(SPI1_IRQn);
+
+  	  //log_info_array("DMA",pDataSource,Size);
 
 	  spi_transmit_dma_start(
 			&ITSDK_SX1276_SPI,
@@ -316,12 +331,15 @@ void STLL_Transmit_DMA_Stop( void )
  * ---
  * During transmission the MCU have HSE (from TCXO) as a clock source. The frequency
  * is 32MHz and this HSE is directly route to SYSCLK (no PLL here)
+ * ---
+ * Timer is generating the NSS signal with a PWM. Period is 12.5uS with a High level
+ * during the first 62,5ns of each period.
  * =========================================================================
  */
 
-#define  TIM2_PULSE_WIDTH  ((uint32_t) 2 )
-#define  TIM2_PERIOD       ((uint32_t) 400)        // 12,5us @ 32MHz
-#define  SPI_LAUNCH_DELAY  ((uint32_t) 69)
+#define  TIM2_PULSE_WIDTH  ((uint32_t) 10 )		   // 62,5ns
+#define  TIM2_PERIOD       ((uint32_t) 400)        // 12,5us @ 32MHz => Good & verified
+#define  SPI_LAUNCH_DELAY  ((uint32_t) 69)		   // 2.15us
 
 void STLL_TIM2_Init( void ) {
 	LOG_DEBUG_SFXSX1276((">> STLL_TIM2_Init\r\n"));
@@ -348,7 +366,7 @@ void STLL_TIM2_Init( void ) {
 
 	HAL_TIM_OC_ConfigChannel(&ITSDK_SX1276_TIM, &sConfig, TIM_CHANNEL_1);
 
-	// Pilot DMA transfer
+	// Pilot DMA transfer - HIGH Level puse of 2.15uS
 	sConfig.OCMode     = TIM_OCMODE_ACTIVE;
 	sConfig.OCPolarity = TIM_OCPOLARITY_HIGH;
 	sConfig.Pulse = SPI_LAUNCH_DELAY;
@@ -362,7 +380,9 @@ void STLL_TIM2_Init( void ) {
 
 
 void STLL_TIM2_Start( void ) {
-  LOG_DEBUG_SFXSX1276((">> STLL_TIM2_Start\r\n"));
+  // Remove logging because NSS is driven by TIM2 and in relation with SPI.
+  // Logging is killing the timings.
+  //LOG_DEBUG_SFXSX1276((">> STLL_TIM2_Start\r\n"));
 
   __HAL_TIM_SET_COUNTER(&ITSDK_SX1276_TIM, 0) ;
   HAL_TIM_OC_Start(&ITSDK_SX1276_TIM, TIM_CHANNEL_1);

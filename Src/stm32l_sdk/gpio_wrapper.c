@@ -234,6 +234,7 @@ void gpio_configure_ext(uint8_t bank, uint16_t id, itsdk_gpio_type_t type, itsdk
 	}
 	int err=0;
 	switch (type) {
+	case GPIO_ALTERNATE_PP_NOPULL:
 	case GPIO_ALTERNATE_PP_PULLUP:
 	case GPIO_ALTERNATE_PP_PULLDOWN:
 	case GPIO_ALTERNATE_OPENDRAIN:
@@ -256,7 +257,18 @@ void gpio_configure_ext(uint8_t bank, uint16_t id, itsdk_gpio_type_t type, itsdk
 			else err=1;
 		#endif
 			break;
-
+		case ITSDK_GPIO_ALT_SPI1_SCLK:
+			#if ITSDK_DEVICE == __DEVICE_STM32L072XX
+				if ( bank == __BANK_A && id == __LP_GPIO_5 ) GPIO_InitStruct.Alternate = GPIO_AF0_SPI1;
+				else err=1;
+			#endif
+			break;
+		case ITSDK_GPIO_ALT_SPI1_MOSI:
+			#if ITSDK_DEVICE == __DEVICE_STM32L072XX
+				if ( bank == __BANK_B && id == __LP_GPIO_5 ) GPIO_InitStruct.Alternate = GPIO_AF0_SPI1;
+				else err=1;
+			#endif
+			break;
 		default:
 		case ITSDK_GPIO_ALT_NONE:
 			break;

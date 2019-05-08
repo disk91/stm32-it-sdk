@@ -108,7 +108,7 @@ _SPI_Status spi_transmit_dma_start(
 		void (* pCallback)( void )
 ) {
 	  __spi_dma_tranfertCompleteCB = pCallback;
-	  HAL_SPI_Transmit_DMA(spi, (uint8_t *) pData, size);
+	  HAL_SPI_Transmit_DMA(spi, pData, size);
 	  return SPI_OK;
 }
 
