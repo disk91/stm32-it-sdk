@@ -79,6 +79,7 @@ itsdk_sigfox_init_t itsdk_sigfox_setup() {
 	s2lp_sigfox_init(&__s2lpConf);
 
 	__sigfox_state.rcz = __s2lpConf.rcz;
+	itsdk_state.sigfox.rcz = __s2lpConf.rcz;
 #elif ITSDK_SIGFOX_LIB == __SIGFOX_SX1276
 	itsdk_sigfox_resetFactoryDefaults(false);		// store the key if not yet done
 	ret = sx1276_sigfox_init();

@@ -118,7 +118,7 @@ sfx_u8 MCU_API_get_voltage_temperature(sfx_u16 *voltage_idle, sfx_u16 *voltage_t
 //	LOG_DEBUG_SFXSX1276((">> OnTimerDelayEvt\r\n"));
 //	SCH_SetEvt( DELAY_EVT );
 //}
-
+#warning "We could optimize long stop with going to sleep..."
 sfx_u8 MCU_API_delay(sfx_delay_t delay_type)
 {
 	LOG_DEBUG_SFXSX1276((">> MCU_API_delay(%d)\r\n",delay_type));
@@ -195,6 +195,9 @@ sfx_u8 MCU_API_get_nv_mem(sfx_u8 read_data[SFX_NVMEM_BLOCK_SIZE])
 sfx_u8 MCU_API_set_nv_mem(sfx_u8 data_to_write[SFX_NVMEM_BLOCK_SIZE])
 {
 	LOG_DEBUG_SFXSX1276((">> MCU_API_set_nv_mem\r\n"));
+	#warning to_remove
+	log_info_array("MCU_NVM",data_to_write,SFX_NVMEM_BLOCK_SIZE);
+
 
 	uint32_t offset;
 	itsdk_sigfox_getNvmOffset(&offset);
@@ -463,22 +466,20 @@ sfx_u8 RF_API_wait_frame(sfx_u8 *frame, sfx_s16 *rssi, sfx_rx_state_enum_t * sta
 
   SGFX_SX1276_rx_start();
   // Wait that flag EOFTX_EVT is set by STLL_SetEndOfTxFrame
-#warning ... here a wait is needed
-//  SCH_WaitEvt( EOFTX_EVT );
+  STLL_WaitEndOfTxFrame();
+  // SCH_WaitEvt( EOFTX_EVT );
 
-//  if( STLL_WaitEndOfRxFrame( ) == STLL_SET ){
+  if( STLL_WaitEndOfRxFrame( ) == STLL_SET ){
     SGFX_SX1276_rx_stop(frame);
     *rssi = STLL_SGFX_SX1276_GetSyncRssi();
     sx1276_sigfox_state.meas_rssi_dbm = *rssi;
     status = SFX_ERR_NONE;
     *state = DL_PASSED;
-/* According to STLL_WaitEndOfRxFrame => only status STLL_SET is returned ...
-} else {
+  } else {
     *rssi = (sfx_s8) 0;
     *state = DL_TIMEOUT;
     status = SFX_ERR_NONE;
   }
-  */
   return status;
 }
 
@@ -598,6 +599,8 @@ sfx_u8 SE_NVM_get(sfx_u8 read_data[SFX_SE_NVMEM_BLOCK_SIZE])
 sfx_u8 SE_NVM_set(sfx_u8 data_to_write[SFX_SE_NVMEM_BLOCK_SIZE])
 {
 	LOG_DEBUG_SFXSX1276((">> SE_NVM_set\r\n"));
+#warning to_remove
+log_info_array("SE_NVM",data_to_write,SFX_SE_NVMEM_BLOCK_SIZE);
 
 	uint32_t offset;
 	itsdk_sigfox_getSeNvmOffset(&offset);

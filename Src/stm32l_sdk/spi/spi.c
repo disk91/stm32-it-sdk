@@ -29,7 +29,6 @@
 #include <stm32l_sdk/spi/spi.h>
 #include <it_sdk/wrappers.h>
 
-
 /**
  * Read the given SPI
  */
@@ -87,11 +86,28 @@ void spi_reset(
 	  HAL_SPI_Init(spi);
 }
 
+
+/**
+ * Override the HAL_SPI_TxCpltCallback for DMA transfert completion
+ */
+static void (* __spi_dma_tranfertCompleteCB)( void ) = NULL;
+
+void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi) {
+	DMA_HandleTypeDef *hdma= hspi->hdmatx;
+	__HAL_DMA_CLEAR_FLAG(hdma, __HAL_DMA_GET_TC_FLAG_INDEX(hdma) );
+	__HAL_DMA_CLEAR_FLAG(hdma, __HAL_DMA_GET_HT_FLAG_INDEX(hdma) );
+	if ( __spi_dma_tranfertCompleteCB != NULL ) {
+	  __spi_dma_tranfertCompleteCB();
+	}
+}
+
 _SPI_Status spi_transmit_dma_start(
 		SPI_HandleTypeDef * spi,
 		uint8_t * 			pData,
-		uint16_t  			size
+		uint16_t  			size,
+		void (* pCallback)( void )
 ) {
+	  __spi_dma_tranfertCompleteCB = pCallback;
 	  HAL_SPI_Transmit_DMA(spi, (uint8_t *) pData, size);
 	  return SPI_OK;
 }
@@ -99,6 +115,7 @@ _SPI_Status spi_transmit_dma_start(
 _SPI_Status spi_transmit_dma_stop(
 		SPI_HandleTypeDef * spi
 ) {
+	 __spi_dma_tranfertCompleteCB = NULL;
 	 DMA_HandleTypeDef *hdma= spi->hdmatx;
 	 HAL_SPI_DMAStop( spi );
      __HAL_DMA_DISABLE_IT(hdma, DMA_IT_HT);

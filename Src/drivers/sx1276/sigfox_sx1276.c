@@ -44,7 +44,6 @@ sx1276_sigfox_state_t	sx1276_sigfox_state;
 sx1276_sigfox_ret_t sx1276_sigfox_init( void ) {
 	LOG_INFO_SFXSX1276((">> sx1276_sigfox_init\r\n"));
 
-
 	sfx_error_t error = SX1276_SIGFOX_ERR_NONE;
 	sfx_rc_t  prcz;
 	sfx_u32   pconfig_words[3];
@@ -161,11 +160,11 @@ sx1276_sigfox_ret_t sx1276_sigfox_getRssi(int16_t * rssi) {
  * It executes the needed background tasks during this period.
  * Returns SX1276_SIGFOX_ERR_BREAK when we want to force breaking the loop
  */
+//static uint32_t __xx = 0;
 sx1276_sigfox_ret_t sx1276_sigfox_idle( void ) {
-	LOG_INFO_SFXSX1276(("."));
-
+	//__xx++;
+	//if ( (__xx & 0x000FFFF) == 0 ) LOG_INFO_SFXSX1276((".\r\n"));
 	itsdk_stimer_run();
-
 	return sx1276_sigfox_idle_used();
 }
 

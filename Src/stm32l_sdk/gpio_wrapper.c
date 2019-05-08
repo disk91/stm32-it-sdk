@@ -176,6 +176,11 @@ void gpio_configure_ext(uint8_t bank, uint16_t id, itsdk_gpio_type_t type, itsdk
 	    GPIO_InitStruct.Pull = GPIO_PULLDOWN;
 		break;
 
+	case GPIO_INTERRUPT_RISING_PULLUP:
+	    GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+	    GPIO_InitStruct.Pull = GPIO_PULLUP;
+		break;
+
 	case GPIO_INTERRUPT_FALLING:
 	    GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
 	    GPIO_InitStruct.Pull = GPIO_NOPULL;
@@ -184,6 +189,11 @@ void gpio_configure_ext(uint8_t bank, uint16_t id, itsdk_gpio_type_t type, itsdk
 	case GPIO_INTERRUPT_FALLING_PULLUP:
 	    GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
 	    GPIO_InitStruct.Pull = GPIO_PULLUP;
+		break;
+
+	case GPIO_INTERRUPT_FALLING_PULLDWN:
+	    GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+	    GPIO_InitStruct.Pull = GPIO_PULLDOWN;
 		break;
 
 	case GPIO_INTERRUPT_ANY:

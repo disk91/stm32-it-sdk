@@ -171,6 +171,8 @@ stm32l_lowPowerReturn_e stm32l_lowPowerSetup(uint32_t durationMs) {
 			__HAL_RCC_ADC1_CLK_DISABLE();
 		#endif
 
+		// ??? add ?? Not yet tested
+		//__HAL_FLASH_SLEEP_POWERDOWN_ENABLE();
 
 
  	    // Switch to STOPMode

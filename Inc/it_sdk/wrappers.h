@@ -86,8 +86,10 @@ typedef enum {
 	GPIO_INPUT_PULLDOWN,
 	GPIO_INTERRUPT_RISING,
 	GPIO_INTERRUPT_RISING_PULLDWN,
+	GPIO_INTERRUPT_RISING_PULLUP,
 	GPIO_INTERRUPT_FALLING,
 	GPIO_INTERRUPT_FALLING_PULLUP,
+	GPIO_INTERRUPT_FALLING_PULLDWN,
 	GPIO_INTERRUPT_ANY,
 	GPIO_ANALOG,
 	GPIO_OFF,
@@ -165,7 +167,8 @@ _SPI_Status spi_write_byte(
 _SPI_Status spi_transmit_dma_start(
 		ITSDK_SPI_HANDLER_TYPE * spi,
 		uint8_t * 			pData,
-		uint16_t  			size
+		uint16_t  			size,
+		void (* pCallback)( void )			// Callback function to call on Tx complete
 );
 
 _SPI_Status spi_transmit_dma_stop(
