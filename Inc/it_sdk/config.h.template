@@ -33,8 +33,8 @@
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // | SDK SETTING                   | USER SELECTED VALUE                  | SETTING DESCRIPTION                   |
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#define ITSDK_VERSION				"1.4.1-master"							// SDK Version String (do not change it)
-#define ITSDK_VERSION_BYTE			0x14									//  SDK 1 Byte version corresponding to previous on (do not change it)
+#define ITSDK_VERSION				"1.5.0-master"							// SDK Version String (do not change it)
+#define ITSDK_VERSION_BYTE			0x15									//  SDK 1 Byte version corresponding to previous on (do not change it)
 
 #define ITSDK_USER_VERSION			"0.1"									// CHANGE ME - Version of your firwmare
 #define ITSDK_USER_VERSION_BYTE		0x01									// CHANGE ME - Version of your firwmare 4bits MAJOR / 4bits MINOR
@@ -77,8 +77,10 @@
 #define ITSDK_LOGGER_CONF			0x0070									// error->info level on serial1 => USART2 (see logger.c)
 #define ITSDK_LOGGER_MODULE			( \
 									  __LOG_MOD_NONE		  \
-									| __LOG_MOD_STKLORA       \
-								/*	| __LOG_MOD_STIMER    */  \
+								/*	| __LOG_MOD_LOWSIGFOX  */ \
+								/*	| __LOG_MOD_STKSIGFOX  */ \		
+								/*	| __LOG_MOD_STKLORA    */ \
+								/*	| __LOG_MOD_STIMER     */ \
 								/*	| __LOG_MOD_LOWLORADBG */ \
 								/*	| __LOG_MOD_LOWLORAINF */ \
 									)										// list the module to be activated in log see config_defines.h
@@ -103,8 +105,11 @@
 								/*	 | __LP_HALT_I2C2	*/				\
 								/*	 | __LP_HALT_SPI1	*/				\
 								/*	 | __LP_HALT_SPI2	*/				\
+								/*	 | __LP_HALT_TIM21 	*/				\
+								/*	 | __LP_HALT_ADC1 	*/				\
 									)										// extra module to stop during low power phase
-#define ITSDK_LOWPOWER_GPIO_A_KEEP	(  __LP_GPIO_1  \
+#define ITSDK_LOWPOWER_GPIO_A_KEEP	(  __LP_GPIO_0  \
+									 | __LP_GPIO_1  \
 									 | __LP_GPIO_2  \
 									 | __LP_GPIO_3  \
 									 | __LP_GPIO_4	\
@@ -127,6 +132,7 @@
 									 | __LP_GPIO_12 \
 									 | __LP_GPIO_13 \
 									 | __LP_GPIO_14 \
+									 | __LP_GPIO_15 \
 									)										// Keep activ (led 1,3,4), radio, button, spi2, sx1276 GPIO 0,1,2
 #define ITSDK_LOWPOWER_GPIO_C_KEEP	(   __LP_GPIO_0 \
 									  | __LP_GPIO_1 \
@@ -142,7 +148,8 @@
 																			// GPIO Wake-Up => the pin should also be in the _KEEP list
 #define ITSDK_LOWPOWER_GPIO_A_WAKE	(__LP_GPIO_NONE)						// During Low Power mode, the GPIO bank A can be used for wakeup
 																			// SX1276 GPIO 4 & 5
-#define ITSDK_LOWPOWER_GPIO_B_WAKE	(  __LP_GPIO_0 \
+#define ITSDK_LOWPOWER_GPIO_B_WAKE	( __LP_GPIO_NONE  \
+ 									 | __LP_GPIO_0 \
 									 | __LP_GPIO_1 \
 									 | __LP_GPIO_4 \
 									)										// During Low Power mode, the GPIO bank B can be used for wakeup
@@ -204,12 +211,40 @@
 #define ITSDK_WITH_SIGFOX_LIB		__DISABLE								// Include the sigfox code when 1 disabled when 0
 #define ITSDK_SIGFOX_LIB			__SIGFOX_NONE							// Type of Sigfox module
 
-#define ITSDK_WITH_LORAWAN_LIB		__ENABLE								// Include the lorawan code when 1 disabled when 0
+#define ITSDK_WITH_LORAWAN_LIB		__DISABLE								// Include the lorawan code when 1 disabled when 0
 #define ITSDK_LORAWAN_LIB			__LORAWAN_SX1276
 
 #define ITSDK_PROTECT_KEY			0xA7459BC3 	 	/* CHANGE ME */			// A random value used to protect the SIGFOX (and others) KEY in memory (better than nothing)
 
+#define ITSDK_DEFAULT_NETWORK		__ACTIV_NETWORK_SIGFOX					// Default network to activate
 
+
+#define ITSDK_ENCRYPT_AES_SHAREDKEY	( 0xAE632397 ^ ITSDK_PROTECT_KEY )      // CHANGE ME
+																			// Shared Key for CTR generation
+
+#define ITSDK_ENCRYPT_AES_INITALNONCE ( 0x25 )								// CHANGE ME
+																			// Initial value for Nonce used for AES128-CRT
+
+#define ITSDK_ENCRYPT_SPECKKEY		(   (uint64_t)0xEF583AB7A57834BC  \
+									  ^ (  (uint64_t)ITSDK_PROTECT_KEY \
+									     | ((uint64_t)ITSDK_PROTECT_KEY << 32)) \
+									)										// CHANGE ME
+																			// Shared Key for SPECK32/64 Encryption
+
+#define ITSDK_ENCRYPT_AES_MASTERKEYH (   (uint64_t)0x2B7E151628AED2A6  \
+									  ^ (  (uint64_t)ITSDK_PROTECT_KEY \
+									     | ((uint64_t)ITSDK_PROTECT_KEY << 32)) \
+									 )										// CHANGE ME
+																			// Static 16B key used as master key (8B HIGH)
+																			// for end to end encryption
+
+#define ITSDK_ENCRYPT_AES_MASTERKEYL (   (uint64_t)0xABF7158809CF4F3C  \
+									  ^ (  (uint64_t)ITSDK_PROTECT_KEY \
+									     | ((uint64_t)ITSDK_PROTECT_KEY << 32)) \
+									 )										// CHANGE ME
+																		    // Static 16B key used as master key (8B LOW)
+																		    // for end to end encryption
+			
 
 #if ITSDK_PLATFORM == __PLATFORM_STM32L0
 	#include <stm32l_sdk/config.h>
