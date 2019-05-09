@@ -43,10 +43,10 @@
 #define ITSDK_CUBEMX_VERSION	    __CUBEMX_VERSION500						// Version of cube MX
 #define ITSDK_PLATFORM 				__PLATFORM_STM32L0						// Hardware platform selection
 #define ITSDK_DEVICE				__DEVICE_STM32L072XX					// Specific device
-#define ITSDK_WITH_DRIVERS			__ENABLE								// Includes configDrivers.h
+#define ITSDK_WITH_DRIVERS			__DISABLE								// Includes configDrivers.h
 #define ITSDK_RAM_SIZE				(20*1024)								// RAM Memory size
 #define ITSDK_EPROM_SIZE			(6*1024)								// EEPROM size
-#define ITSDK_WITH_UART				( __UART_USART2 | __UART_LPUART1 )		// Use LPUART1 and USART2 for debug
+#define ITSDK_WITH_UART				( __UART_USART2 )						// Use LPUART1 and USART2 for debug USART1 possible
 #define ITSDK_WITH_RTC				__RTC_ENABLED							// The Rtc is usd in the firmware
 #define ITSDK_WITH_CLK_ADJUST		__ENABLE								// The RTC (and wtachdog) is calibrated
 #define ITSDK_RTC_CLKFREQ			32768									// RTC clock source frequency
@@ -78,7 +78,7 @@
 #define ITSDK_LOGGER_MODULE			( \
 									  __LOG_MOD_NONE		  \
 								/*	| __LOG_MOD_LOWSIGFOX  */ \
-								/*	| __LOG_MOD_STKSIGFOX  */ \		
+								/*	| __LOG_MOD_STKSIGFOX  */ \
 								/*	| __LOG_MOD_STKLORA    */ \
 								/*	| __LOG_MOD_STIMER     */ \
 								/*	| __LOG_MOD_LOWLORADBG */ \
@@ -86,15 +86,15 @@
 									)										// list the module to be activated in log see config_defines.h
 #define ITSDK_WITH_ERROR_RPT		__ENABLE								// Enable the Error reporting code. The allow to store error code in the EEPROM
 #define ITSDK_ERROR_USE_EPROM		__ENABLE								//  Error reports are stored in the EEPROM
-#define ITSDK_WITH_ERROR_EXTENTION	__ENABLE								//  Add an application extension for error code in configError.h file
+#define ITSDK_WITH_ERROR_EXTENTION	__DISABLE								//  Add an application extension for error code in configError.h file
 #define ITSDK_ERROR_BLOCKS			64										//  Max number of error block / 1 block stores 1 error and needs 8 Byte for storage.
 																			//  The first block is header
 
 #define ITSDK_LOWPOWER_MOD			( __LOWPWR_MODE_STOP       \
 									| __LOWPWR_MODE_WAKE_RTC   \
 									| __LOWPWR_MODE_WAKE_GPIO  \
-								/*	| __LOWPWR_MODE_WAKE_LPUART */\         
-								/*  | __LOWPWR_MODE_WAKE_UART1 */ \         
+								/*	| __LOWPWR_MODE_WAKE_LPUART */\
+								/*  | __LOWPWR_MODE_WAKE_UART1 */ \
 									)										// Mode Stop + wakeup RTC + GPIO
 																			// UART WakeUp - Requires clk HSE/LSE and WakeInt Activated - low speed recommanded
 
@@ -179,7 +179,7 @@
 																			// MEMORY = The config is reinit at boottime but store in memory
 																			// STATIC = No config use in memory, only static settings
 
-#define ITSDK_WITH_CONFIGURATION_APP	__ENABLE							// The application have a configuration stored in NVM
+#define ITSDK_WITH_CONFIGURATION_APP	__DISABLE							// The application have a configuration stored in NVM
 																			// This is enable the app specific part of NVM config
 																			// The file it_sdk/configNvm.h will be included and
 																			//  contains the application specific configuration
@@ -189,7 +189,7 @@
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
-#define ITSDK_WITH_SECURESTORE		__ENABLE								// Enable EEPROM secured storage
+#define ITSDK_WITH_SECURESTORE		__DISABLE								// Enable EEPROM secured storage
 #define ITSDK_SECSTORE_USRBLOCK		0										//  Number of USER BLOCK to allocate (from 0 to 7)
 #define ITSDK_SECSTORE_DEFKEY		{   \
 									  0xC0,0xA5,0x84,0xEB,0x36,0x4F, \
