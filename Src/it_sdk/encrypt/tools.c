@@ -30,6 +30,7 @@
 #include <it_sdk/logger/logger.h>
 #include <it_sdk/logger/error.h>
 #include <it_sdk/eeprom/securestore.h>
+#include <it_sdk/encrypt/encrypt.h>
 
 
 /**
@@ -145,7 +146,7 @@ __weak itsdk_encrypt_return_t itsdk_encrypt_aes_getSharedKey(uint32_t * sharedKe
 		}
 	}
 #else
-	*sharedKey = ITSDK_LORAWAN_AES_SHAREDKEY;
+	*sharedKey = ITSDK_ENCRYPT_AES_SHAREDKEY;
 #endif
 	return ENCRYPT_RETURN_SUCESS;
 }
@@ -156,8 +157,8 @@ __weak itsdk_encrypt_return_t itsdk_encrypt_aes_getSharedKey(uint32_t * sharedKe
  * to return a dynamic value when needed
  */
 __weak itsdk_encrypt_return_t itsdk_encrypt_aes_getMasterKey(uint8_t * masterKey) {
-#if ITSDK_WITH_SECURESTORE == __ENABLE
 	uint8_t tmp[16];
+#if ITSDK_WITH_SECURESTORE == __ENABLE
 	if ( itsdk_secstore_readBlock(ITSDK_SS_AES_MASTERK, tmp) != SS_SUCCESS ) {
 #endif
 		uint64_t h = ITSDK_ENCRYPT_AES_MASTERKEYH;

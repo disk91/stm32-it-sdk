@@ -92,7 +92,7 @@
 
 #define ITSDK_LOWPOWER_MOD			( __LOWPWR_MODE_STOP       \
 									| __LOWPWR_MODE_WAKE_RTC   \
-									| __LOWPWR_MODE_WAKE_GPIO  \
+								/*	| __LOWPWR_MODE_WAKE_GPIO  */\
 								/*	| __LOWPWR_MODE_WAKE_LPUART */\
 								/*  | __LOWPWR_MODE_WAKE_UART1 */ \
 									)										// Mode Stop + wakeup RTC + GPIO

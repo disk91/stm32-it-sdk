@@ -31,11 +31,15 @@ itsdk_state_t itsdk_state;
 
 void itsdk_state_init() {
 #if ITSDK_CONFIGURATION_MODE != __CONFIG_STATIC
+   #if ITSDK_WITH_SIGFOX_LIB == __ENABLE || ITSDK_WITH_LORAWAN_LIB == __ENABLE
 	itsdk_state.activeNetwork = (uint8_t)itsdk_config.sdk.activeNetwork;
+   #endif
 #else
+   #if ITSDK_WITH_SIGFOX_LIB == __ENABLE || ITSDK_WITH_LORAWAN_LIB == __ENABLE
 	itsdk_state.activeNetwork = ITSDK_DEFAULT_NETWORK;
 	#if ITSDK_WITH_SIGFOX_LIB == __ENABLE
 	#endif
+   #endif
 #endif
 
 #if ITSDK_WITH_SIGFOX_LIB == __ENABLE

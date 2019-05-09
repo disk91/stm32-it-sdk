@@ -295,7 +295,9 @@ itsdk_config_ret_e itsdk_config_commitConfiguration(itsdk_config_commit_mode_e m
 					_itsdk_console_printf("sdk.lora.networkType : %d\r\n",_c->sdk.lorawan.networkType);
 					_itsdk_console_printf("sdk.lora.retries : %d\r\n",_c->sdk.lorawan.retries);
 				    #endif
-					itsdk_config_app_printConfig(_c);
+					#if ITSDK_WITH_CONFIGURATION_APP == __ENABLE
+					   itsdk_config_app_printConfig(_c);
+					#endif
 				  #endif
 				  _itsdk_console_printf("OK\r\n");
 				}

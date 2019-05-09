@@ -2,7 +2,7 @@
  * st25dv.c - ST NFC 25 DV chip
  * Project : Disk91 SDK
  * ----------------------------------------------------------
- * Created on: 24 févr. 2019
+ * Created on: 24 fï¿½vr. 2019
  *     Author: Paul Pinault aka Disk91
  * ----------------------------------------------------------
  * Copyright (C) 2019 Disk91
@@ -27,6 +27,8 @@
  *
  * ==========================================================
  */
+#include <it_sdk/config.h>
+#if ITSDK_WITH_DRIVERS == __ENABLE
 
 #include <it_sdk/configDrivers.h>
 #if ITSDK_DRIVERS_ST25DV == __ENABLE
@@ -1155,5 +1157,7 @@ serial_read_response_e itsdk_console_customSerial_read(char * ch) {
 #endif
 #endif // ITSDK_WITH_CONSOLE
 
-
 #endif
+
+#endif // ITSDK_WITH_DRIVERS
+
