@@ -179,6 +179,9 @@ stm32l_lowPowerReturn_e stm32l_lowPowerSetup(uint32_t durationMs) {
 		__lowPower_wakeup_reason=LOWPWR_WAKEUP_UNDEF;
 		#if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_GPIO ) > 0
 			__lowPower_wakeup_pin=0;
+		#else
+			  HAL_NVIC_DisableIRQ(EXTI0_1_IRQn);
+			  HAL_NVIC_DisableIRQ(EXTI4_15_IRQn);
 		#endif
  	    HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
 	}

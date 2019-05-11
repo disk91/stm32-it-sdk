@@ -116,6 +116,10 @@
 									 | __LP_GPIO_5	\
 									 | __LP_GPIO_6	\
 									 | __LP_GPIO_7	\
+									 | __LP_GPIO_8	\
+									 | __LP_GPIO_9	\
+									 | __LP_GPIO_10	\
+									 | __LP_GPIO_11	\
 									 | __LP_GPIO_12	\
 									 | __LP_GPIO_13	\
 									 | __LP_GPIO_14	\
@@ -129,6 +133,10 @@
 									 | __LP_GPIO_5 \
 									 | __LP_GPIO_6 \
 									 | __LP_GPIO_7 \
+									 | __LP_GPIO_8	\
+									 | __LP_GPIO_9	\
+									 | __LP_GPIO_10	\
+									 | __LP_GPIO_11	\
 									 | __LP_GPIO_12 \
 									 | __LP_GPIO_13 \
 									 | __LP_GPIO_14 \

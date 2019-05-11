@@ -105,7 +105,6 @@ Things to not forget once a cubeMx project has been created
   /* USER CODE BEGIN Includes */
 	#include <it_sdk/config.h>
 	#include <it_sdk/itsdk.h>
-	#include <it_sdk/logger/logger.h>
   /* USER CODE END Includes */
 ```  
    => main
