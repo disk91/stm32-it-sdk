@@ -194,10 +194,7 @@
 																		   // have an interrupt handler configured.
 																		   // EXTI activated for Pins in CubeMW for STM32
 																		   // And corrsponding PIN add in the Low level Handler (stm32L...it.c)
-#endif
 // +-------------MURATA------------|--------------------------------------|---------------------------------------|
-
-#ifndef ITSDK_SX1276_SPI												   // if not yet defined in configSigfox
 
 #define ITSDK_MURATA_ANTSW_RX_BANK 	     __BANK_A						   // MURATE ANTENNA SWITCH RX
 #define ITSDK_MURATE_ANTSW_RX_PIN	     __LP_GPIO_1

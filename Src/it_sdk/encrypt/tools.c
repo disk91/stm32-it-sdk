@@ -69,7 +69,7 @@ void itsdk_encrypt_unCifferKey(uint8_t * key, int len) {
  * When force is false, the secure store will be refreshed only if there is no
  * configuration already setup.
  */
-#if ITSDK_WITH_SECURESTORE == __ENABLE && ( defined(ITSDK_SIGFOX_ENCRYPTION) && ( ITSDK_SIGFOX_ENCRYPTION > 0 )) || (defined(ITSDK_LORAWAN_ENCRYPTION) && ( ITSDK_LORAWAN_ENCRYPTION > 0))
+#if ITSDK_WITH_SECURESTORE == __ENABLE && (( defined(ITSDK_SIGFOX_ENCRYPTION) && ( ITSDK_SIGFOX_ENCRYPTION > 0 )) || (defined(ITSDK_LORAWAN_ENCRYPTION) && ( ITSDK_LORAWAN_ENCRYPTION > 0)))
 itsdk_encrypt_return_t itsdk_encrypt_resetFactoryDefaults(bool force) {
 	uint8_t buffer[16];
 	if ( force || itsdk_secstore_readBlock(ITSDK_SS_AES_MASTERK, buffer) != SS_SUCCESS ) {
