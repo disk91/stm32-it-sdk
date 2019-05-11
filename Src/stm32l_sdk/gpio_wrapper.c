@@ -315,6 +315,11 @@ void gpio_interruptDisable(uint8_t bank, uint16_t id) {
 	HAL_NVIC_DisableIRQ(getIrqFromBankPin(bank,id));
 }
 
+void gpio_interruptDisableAll() {
+	  HAL_NVIC_DisableIRQ(EXTI0_1_IRQn);
+	  HAL_NVIC_DisableIRQ(EXTI4_15_IRQn);
+}
+
 void gpio_interruptPriority(uint8_t bank, uint16_t id, uint8_t nPreemption, uint8_t nSubpriority) {
 	HAL_NVIC_SetPriority(getIrqFromBankPin(bank,id), nPreemption, nSubpriority);
 }

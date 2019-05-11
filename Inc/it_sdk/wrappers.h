@@ -128,6 +128,7 @@ void gpio_toggle(uint8_t bank, uint16_t id);
 uint8_t gpio_read(uint8_t bank, uint16_t id);
 void gpio_interruptEnable(uint8_t bank, uint16_t id);
 void gpio_interruptDisable(uint8_t bank, uint16_t id);
+void gpio_interruptDisableAll( void );
 void gpio_interruptPriority(uint8_t bank, uint16_t id, uint8_t nPreemption, uint8_t nSubpriority);
 void gpio_interruptClear(uint8_t bank, uint16_t id);
 void gpio_registerIrqAction(gpio_irq_chain_t * chain);
