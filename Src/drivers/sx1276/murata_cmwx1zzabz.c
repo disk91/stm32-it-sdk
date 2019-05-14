@@ -303,16 +303,15 @@ void SX1276SetAntSw( uint8_t opMode )
     switch( opMode )
     {
     case RFLR_OPMODE_TRANSMITTER:
-      if( ( paConfig & RF_PACONFIG_PASELECT_PABOOST ) == RF_PACONFIG_PASELECT_PABOOST )
-      {
+      if( ( paConfig & RF_PACONFIG_PASELECT_PABOOST ) == RF_PACONFIG_PASELECT_PABOOST ) {
+    	LOG_INFO_SX1276(("   PABOOST\r\n"));
     	gpio_set(ITSDK_MURATA_ANTSW_TXBOOST_BANK,ITSDK_MURATE_ANTSW_TXBOOST_PIN);
-      }
-      else
-      {
+      } else {
+      	LOG_INFO_SX1276(("   RFO\r\n"));
         gpio_set(ITSDK_MURATA_ANTSW_TXRFO_BANK,ITSDK_MURATE_ANTSW_TXRFO_PIN);
       }
       SX1276.RxTx = 1;
-        break;
+      break;
     case RFLR_OPMODE_RECEIVER:
     case RFLR_OPMODE_RECEIVER_SINGLE:
     case RFLR_OPMODE_CAD:

@@ -84,7 +84,6 @@ itsdk_sigfox_init_t itsdk_sigfox_setup() {
 	itsdk_sigfox_resetFactoryDefaults(false);		// store the key if not yet done
 	ret = sx1276_sigfox_init();
 #endif
-
 	if ( itsdk_config.sdk.sigfox.txPower == SIGFOX_DEFAULT_POWER || itsdk_state.sigfox.current_power == SIGFOX_DEFAULT_POWER ) {
 		switch (itsdk_state.sigfox.rcz) {
 		case SIGFOX_RCZ1:
@@ -117,6 +116,9 @@ itsdk_sigfox_init_t itsdk_sigfox_setup() {
 			ITSDK_ERROR_REPORT(ITSDK_ERROR_SIGFOX_RCZ_NOTSUPPORTED,(uint16_t)itsdk_state.sigfox.rcz);
 		}
 	}
+
+	// Set the default power
+	itsdk_sigfox_setTxPower_ext(itsdk_state.sigfox.current_power,true);
 
 	if ( ret == SIGFOX_INIT_SUCESS ) {
 		itsdk_state.sigfox.initialized = true;
@@ -367,10 +369,10 @@ itsdk_sigfox_init_t itsdk_sigfox_getCurrentRcz(uint8_t * rcz) {
 /**
  * Change the transmission power to the given value
  */
-itsdk_sigfox_init_t itsdk_sigfox_setTxPower(uint8_t power) {
+itsdk_sigfox_init_t itsdk_sigfox_setTxPower_ext(uint8_t power, bool force) {
 	LOG_INFO_SIGFOXSTK(("itsdk_sigfox_setTxPower\r\n"));
 
-	if ( power == itsdk_state.sigfox.current_power ) return SIGFOX_INIT_NOCHANGE;
+	if ( !force && power == itsdk_state.sigfox.current_power ) return SIGFOX_INIT_NOCHANGE;
 
 	#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
 		sfx_s16 delta = (power - itsdk_state.sigfox.current_power)*2;
@@ -381,6 +383,11 @@ itsdk_sigfox_init_t itsdk_sigfox_setTxPower(uint8_t power) {
 	itsdk_state.sigfox.current_power = power;
 	return SIGFOX_INIT_SUCESS;
 }
+
+itsdk_sigfox_init_t itsdk_sigfox_setTxPower(uint8_t power) {
+	return itsdk_sigfox_setTxPower_ext(power,false);
+}
+
 
 
 /**
@@ -644,7 +651,8 @@ itsdk_sigfox_init_t __itsdk_sigfox_resetNvmToFactory() {
 
 	uint8_t se_nvm_default[SFX_SE_NVMEM_BLOCK_SIZE] = { 0xFF, 0, 0, 0x0F, 0xFF };
 	SE_NVM_set(se_nvm_default);
-	uint8_t se_mcu_default[SFX_NVMEM_BLOCK_SIZE] = { 0, 0, 0, 0, 0, 0, 0 };
+	uint8_t se_mcu_default[SFX_NVMEM_BLOCK_SIZE];
+	bzero(se_mcu_default,SFX_NVMEM_BLOCK_SIZE);
 	MCU_API_set_nv_mem(se_mcu_default);
 	return SIGFOX_INIT_SUCESS;
 }

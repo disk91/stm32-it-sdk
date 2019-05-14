@@ -108,8 +108,11 @@ _SPI_Status spi_transmit_dma_start(
 		void (* pCallback)( void )
 ) {
 	  __spi_dma_tranfertCompleteCB = pCallback;
-	  HAL_SPI_Transmit_DMA(spi, pData, size);
-	  return SPI_OK;
+	  if ( HAL_SPI_Transmit_DMA(spi, pData, size) == HAL_OK ) {
+	     return SPI_OK;
+	  } else {
+		  return SPI_ERROR;
+	  }
 }
 
 _SPI_Status spi_transmit_dma_stop(

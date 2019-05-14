@@ -176,6 +176,7 @@ int8_t STLL_RadioPowerGet( void )
 
 void STLL_RadioPowerSetBoard( int8_t power)
 {
+  LOG_DEBUG_SFXSX1276((">> STLL_RadioPowerSetBoard(%d)\r\n",power));
   SX1276SetRfTxPower( power );
 }
 
@@ -239,8 +240,12 @@ void STLL_Transmit_DMA_Start( uint16_t *pDataSource, uint16_t Size)
   	  // Configure SPI as 16bits words
 	  ITSDK_SX1276_SPI.Instance->CR1 &= SPI_CR1_DFF_Msk;
 	  ITSDK_SX1276_SPI.Instance->CR1 |= SPI_DATASIZE_16BIT;
+	  //ITSDK_SX1276_SPI.Instance->CR1 &= SPI_CR1_SSM_Msk;    // NSS HARD ?
+	  //ITSDK_SX1276_SPI.Instance->CR1 |= SPI_NSS_HARD_INPUT;
 
 	  // Configure NSS to be piloted by TIM2 for DMA access
+	  gpio_configure_ext(ITSDK_SX1276_NSS_BANK, ITSDK_SX1276_NSS_PIN, GPIO_OUTPUT_PULLUP,ITSDK_GPIO_SPEED_HIGH,ITSDK_GPIO_ALT_NONE);
+	  gpio_change(ITSDK_SX1276_NSS_BANK,ITSDK_SX1276_NSS_PIN,1);
 	  gpio_configure_ext(ITSDK_SX1276_NSS_BANK, ITSDK_SX1276_NSS_PIN, GPIO_ALTERNATE_PP_PULLUP,ITSDK_GPIO_SPEED_HIGH,ITSDK_GPIO_ALT_TIMER2_C1);
 
 //	 gpio_configure_ext(__BANK_A, __LP_GPIO_0, GPIO_ALTERNATE_PP_PULLUP,ITSDK_GPIO_SPEED_HIGH,ITSDK_GPIO_ALT_TIMER2_C1);
@@ -265,9 +270,13 @@ void STLL_Transmit_DMA_Start( uint16_t *pDataSource, uint16_t Size)
 
 	  // Configure DMA
 	  // The source is defined by Couple Channel3/Request_8 according to L0 familly Ds pdf page 246
+
+	  /*
 	  __HAL_RCC_SPI1_CLK_ENABLE();
 	  __HAL_RCC_DMA1_CLK_ENABLE();
 	  HAL_DMA_DeInit(&ITSDK_SX1276_SPIDMATX);
+	  __HAL_RCC_SPI1_CLK_ENABLE();
+	  __HAL_RCC_DMA1_CLK_ENABLE();
 	  ITSDK_SX1276_SPIDMATX.Instance = DMA1_Channel3;
 	  ITSDK_SX1276_SPIDMATX.Init.Request = DMA_REQUEST_8;
 	  ITSDK_SX1276_SPIDMATX.Init.Direction = DMA_MEMORY_TO_PERIPH;
@@ -285,15 +294,17 @@ void STLL_Transmit_DMA_Start( uint16_t *pDataSource, uint16_t Size)
 
 	  HAL_NVIC_SetPriority(SPI1_IRQn, 0, 0);
 	  HAL_NVIC_EnableIRQ(SPI1_IRQn);
-
+*/
   	  //log_info_array("DMA",pDataSource,Size);
 
-	  spi_transmit_dma_start(
-			&ITSDK_SX1276_SPI,
-			(uint8_t *)pDataSource,
-			Size,
-			STLL_onSpiDmaTxComplete
-	  );
+	  if ( spi_transmit_dma_start(
+				&ITSDK_SX1276_SPI,
+				(uint8_t *)pDataSource,
+				Size,
+				STLL_onSpiDmaTxComplete
+		  ) != SPI_OK ) {
+		  LOG_ERROR_SFXSX1276(("** spi_transmit_dma_start Error \r\n"));
+	  }
 }
 
 /**
@@ -343,13 +354,16 @@ void STLL_Transmit_DMA_Stop( void )
 
 void STLL_TIM2_Init( void ) {
 	LOG_DEBUG_SFXSX1276((">> STLL_TIM2_Init\r\n"));
-	HAL_TIM_Base_MspInit(&ITSDK_SX1276_TIM);
+
+	//HAL_TIM_Base_DeInit(&ITSDK_SX1276_TIM);
+
+	//HAL_TIM_Base_MspInit(&ITSDK_SX1276_TIM);
 	__HAL_RCC_TIM2_CLK_ENABLE();
 
 	// -1- Timer Output Compare Configuration Structure declaration
 	TIM_OC_InitTypeDef sConfig;
 
-	//ITSDK_SX1276_TIM.Instance = TIM2;		// Set by CubeMx config
+	ITSDK_SX1276_TIM.Instance = TIM2;		// Set by CubeMx config
 
 	ITSDK_SX1276_TIM.Init.Period        = TIM2_PERIOD-1;
 	ITSDK_SX1276_TIM.Init.Prescaler     = 0;

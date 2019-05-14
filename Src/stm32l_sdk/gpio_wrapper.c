@@ -124,7 +124,7 @@ void gpio_configure_ext(uint8_t bank, uint16_t id, itsdk_gpio_type_t type, itsdk
 		GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
 		break;
 	case ITSDK_GPIO_SPEED_HIGH:
-		GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+		GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
 		break;
 
 	}
