@@ -219,6 +219,7 @@ void STLL_SetEndOfTxFrame( void ) {
  * This function will we called on DMA transfer complete
  */
 void STLL_onSpiDmaTxComplete(void) {
+    gpio_change(__BANK_B, GPIO_PIN_5,0);
 	STLL_TX_IRQHandler_CB();
 }
 
@@ -238,14 +239,14 @@ void STLL_Transmit_DMA_Start( uint16_t *pDataSource, uint16_t Size)
 
 	  // LL_SPI_SetDataWidth(SpiHandle.Instance,  LL_SPI_DATAWIDTH_16BIT );
   	  // Configure SPI as 16bits words
-	  ITSDK_SX1276_SPI.Instance->CR1 &= SPI_CR1_DFF_Msk;
+	  ITSDK_SX1276_SPI.Instance->CR1 &= ~SPI_CR1_DFF_Msk;
 	  ITSDK_SX1276_SPI.Instance->CR1 |= SPI_DATASIZE_16BIT;
 	  //ITSDK_SX1276_SPI.Instance->CR1 &= SPI_CR1_SSM_Msk;    // NSS HARD ?
 	  //ITSDK_SX1276_SPI.Instance->CR1 |= SPI_NSS_HARD_INPUT;
 
 	  // Configure NSS to be piloted by TIM2 for DMA access
-	  gpio_configure_ext(ITSDK_SX1276_NSS_BANK, ITSDK_SX1276_NSS_PIN, GPIO_OUTPUT_PULLUP,ITSDK_GPIO_SPEED_HIGH,ITSDK_GPIO_ALT_NONE);
-	  gpio_change(ITSDK_SX1276_NSS_BANK,ITSDK_SX1276_NSS_PIN,1);
+	 // gpio_configure_ext(ITSDK_SX1276_NSS_BANK, ITSDK_SX1276_NSS_PIN, GPIO_OUTPUT_PULLUP,ITSDK_GPIO_SPEED_HIGH,ITSDK_GPIO_ALT_NONE);
+	 // gpio_change(ITSDK_SX1276_NSS_BANK,ITSDK_SX1276_NSS_PIN,1);
 	  gpio_configure_ext(ITSDK_SX1276_NSS_BANK, ITSDK_SX1276_NSS_PIN, GPIO_ALTERNATE_PP_PULLUP,ITSDK_GPIO_SPEED_HIGH,ITSDK_GPIO_ALT_TIMER2_C1);
 
 //	 gpio_configure_ext(__BANK_A, __LP_GPIO_0, GPIO_ALTERNATE_PP_PULLUP,ITSDK_GPIO_SPEED_HIGH,ITSDK_GPIO_ALT_TIMER2_C1);
@@ -271,7 +272,7 @@ void STLL_Transmit_DMA_Start( uint16_t *pDataSource, uint16_t Size)
 	  // Configure DMA
 	  // The source is defined by Couple Channel3/Request_8 according to L0 familly Ds pdf page 246
 
-	  /*
+
 	  __HAL_RCC_SPI1_CLK_ENABLE();
 	  __HAL_RCC_DMA1_CLK_ENABLE();
 	  HAL_DMA_DeInit(&ITSDK_SX1276_SPIDMATX);
@@ -289,12 +290,15 @@ void STLL_Transmit_DMA_Start( uint16_t *pDataSource, uint16_t Size)
 	  HAL_DMA_Init(&ITSDK_SX1276_SPIDMATX);
       __HAL_LINKDMA(&ITSDK_SX1276_SPI,hdmatx,ITSDK_SX1276_SPIDMATX);
 
+      //__HAL_DMA_ENABLE_IT(&ITSDK_SX1276_SPIDMATX, DMA_IT_HT);
+      //__HAL_DMA_ENABLE_IT(&ITSDK_SX1276_SPIDMATX, DMA_IT_TC);
+
       HAL_NVIC_SetPriority(DMA1_Channel2_3_IRQn, 0, 0);
 	  HAL_NVIC_EnableIRQ(DMA1_Channel2_3_IRQn);
 
-	  HAL_NVIC_SetPriority(SPI1_IRQn, 0, 0);
-	  HAL_NVIC_EnableIRQ(SPI1_IRQn);
-*/
+	 // HAL_NVIC_SetPriority(SPI1_IRQn, 0, 0);
+	 // HAL_NVIC_DisableIRQ(SPI1_IRQn);
+
   	  //log_info_array("DMA",pDataSource,Size);
 
 	  if ( spi_transmit_dma_start(
@@ -345,10 +349,28 @@ void STLL_Transmit_DMA_Stop( void )
  * ---
  * Timer is generating the NSS signal with a PWM. Period is 12.5uS with a High level
  * during the first 62,5ns of each period.
+ * The DMA/SPI transfer will start, for each of the 16b blocks 2,15uS after the NSS
+ * signal change each of the SPI transmission will be sent every 12,5uS => SPI transfer
+ * is at 80KHz (16b every time)
+ * ---
+ * We assume at 600b per seconds the TIM2_PERIOD is 6 times lower and the
+ * spi frequency is more constrained.
+ *
+ *                 <---- 2.15uS -->
+ *                                 _____________________
+ * TIM2_CC2 ______________________|
+ *                 <-------------- 12,5uS ---------------->
+ *                 > < 62,5ns
+ *                  _                                       _
+ * TIM2_CC1  ______| |_____________________________________| |_____________
+ *
+ * SPI MOSI -----------------------< Value 16b >----------------------< Val
+ * SPI CLK  _______________________|||||||||||||______________________||||| 16MHz
+ *
  * =========================================================================
  */
 
-#define  TIM2_PULSE_WIDTH  ((uint32_t) 10 )		   // 62,5ns
+#define  TIM2_PULSE_WIDTH  ((uint32_t) 2 )		   // 62,5ns
 #define  TIM2_PERIOD       ((uint32_t) 400)        // 12,5us @ 32MHz => Good & verified
 #define  SPI_LAUNCH_DELAY  ((uint32_t) 69)		   // 2.15us
 
@@ -399,6 +421,7 @@ void STLL_TIM2_Start( void ) {
   //LOG_DEBUG_SFXSX1276((">> STLL_TIM2_Start\r\n"));
 
   __HAL_TIM_SET_COUNTER(&ITSDK_SX1276_TIM, 0) ;
+  HAL_TIM_Base_Start(&ITSDK_SX1276_TIM);
   HAL_TIM_OC_Start(&ITSDK_SX1276_TIM, TIM_CHANNEL_1);
   HAL_TIM_OC_Start(&ITSDK_SX1276_TIM, TIM_CHANNEL_2);
 }
