@@ -120,7 +120,7 @@
 																		   // SPI Configured by CubeMX
 																		   //  Master, 8b, Polarity Low,
 																		   //  first bit msb, CRC disable...
-#define ITSDK_SX1276_TIM			htim2								   // Timer used => Should not be changed
+#define ITSDK_SX1276_TIM_ID			2								   	   // Timer used => Should not be changed
 																		   // Need to b activated in the CubeMx project
 #define ITSDK_SX1276_SPIDMATX		hdma_spi1_tx						   // Associated DMA
 
