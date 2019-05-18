@@ -1,0 +1,37 @@
+By downloading, or attempting to download, the SIGFOX protocol library "SgfxCoreV231_CM0_GCC.a" and/or 
+"SgfxCoreV231_CM0_IAR.a" and/or "SgfxCoreV231_CM0_Keil" and/or "SgfxAddonV020_CM0_GCC.a" and/or 
+"SgfxAddonV020_CM0_IAR.a" and/or "SgfxAddonV020_CM0_Keil.lib", you are hereby informed and you acknowledge 
+and agree that any use of the licensed materials is subject to all terms and conditions required by SIGFOX 
+and listed below:
+• You shall 
+  o respect the Partner Certification Process, described in the SIGFOX developer platform at  
+    http://build.SIGFOX.com to embed applicable authentication keys; 
+  o be in compliance with all applicable laws, regulations (including any applicable 
+    export control law or regulation) and industry standards in connection with the manufacture, sale 
+    and/or distribution of certified products;
+• You shall not:
+ o modify or create without SIGFOX written prior agreement any derivative work of any part of the 
+   SIGFOX protocol library 
+ o market, sell, license, distribute, publish, display, reproduce, rent, lease, loan, assign or otherwise 
+   transfer to a third party the SIGFOX protocol library or any copy thereof, in whole or in part; 
+ o install or otherwise incorporate the SIGFOX protocol library into a product except as set 
+   forth in and in accordance with this document; 
+ o use the SIGFOX protocol library in any way that would not be in compliance with applicable laws; 
+ o except to the extent permitted by law, permit the disassembly, decompilation or reverse engineering
+   of the SIGFOX protocol library or otherwise attempt to gain access to the source code to the SIGFOX 
+   protocol library (or the underlying ideas, algorithms, structure or organization of the object code 
+   in the SIGFOX protocol library)
+ o incorporate any open source software into any product, including with respect to certified products 
+   sold or distributed, that creates or purports to create any obligation to disclose to a third party 
+   any source code relating to the SIGFOX protocol library or grants or purports to grant to any third 
+   party any intellectual property of SIGFOX; 
+ o develop, sell or distribute any product that undermines SIGFOX network security and integrity and/or 
+   introduces in any SIGFOX network any viruses, worms, Trojan horses or similar harmful or malicious 
+   code, or otherwise harms any SIGFOX network; 
+ o remove or attempt to remove any SIGFOX authentication keys,
+ o incorporate the SIGFOX protocol library in any product for connection on another network than SIGFOX 
+   network. You shall inform any of your third party that such infringement to the obligations below 
+   would cause significant harm to SIGFOX.
+
+You shall have no rights to any source code for the SIGFOX protocol library. You agree that only SIGFOX 
+shall have the right to maintain, enhance or otherwise modify the SIGFOX protocol library. 

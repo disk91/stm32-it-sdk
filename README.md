@@ -7,12 +7,12 @@ Most is done to preserve code size.
 Made for being compiled with open-source environment GCC / AC6
 
 * Supported MCU functions
-  * Low Power switch with regular auto-wakeup / LPUART / GPIO Wake-up
+  * Low Power switch with regular auto-wakeup / LPUART / UART /GPIO Wake-up
   * RTC with calibration
   * EEprom for configuration backup
   * Watchdog 
-  * Timers with calibration (harwdare & software)
-  * GPIO abstraction
+  * Timers with calibration (hardware & software)
+  * GPIO / SPI / I2C abstraction
   * Time update
   * Generic Interrupt Handler (hardware independant)
 
@@ -23,6 +23,8 @@ Made for being compiled with open-source environment GCC / AC6
   * Error logger with NVM storage
   * Secured debug & configuration Console
   * Secured Storage in EEPROM for keys
+  * End 2 End Sigfox & LoRaWan encryption
+  * Configuration over serial for ID commissionning during manufacturing process
   
 * Communication protocols interface
   * Sigfox ( clear-text, AES128-CTR, SPECK32, Sigfox-EAS128-CTR-Encryption )
@@ -39,6 +41,7 @@ Made for being compiled with open-source environment GCC / AC6
      * m95640
   * sigfox
      * s2lp
+     * murata cmwx1zzabz (sx1276)
   * lorawan
     * murata cmwx1zzabz (sx1276)
   * T / H / P
@@ -102,7 +105,6 @@ Things to not forget once a cubeMx project has been created
   /* USER CODE BEGIN Includes */
 	#include <it_sdk/config.h>
 	#include <it_sdk/itsdk.h>
-	#include <it_sdk/logger/logger.h>
   /* USER CODE END Includes */
 ```  
    => main

@@ -2,7 +2,7 @@
  * max44009.c - Maximum Light sensor driver
  * Project : Disk91 SDK
  * ----------------------------------------------------------
- * Created on: 19 févr. 2019
+ * Created on: 19 fï¿½vr. 2019
  *     Author: Paul Pinault aka Disk91
  * ----------------------------------------------------------
  * Copyright (C) 2019 Disk91
@@ -24,6 +24,8 @@
  *
  * ==========================================================
  */
+#include <it_sdk/config.h>
+#if ITSDK_WITH_DRIVERS == __ENABLE
 
 #include <it_sdk/configDrivers.h>
 #if ITSDK_DRIVERS_MAX44009 == __ENABLE
@@ -113,4 +115,5 @@ drivers_max44009_ret_e drivers_max44009_getSensors(
 	return MAX44009_SUCCESS;
 }
 
+#endif
 #endif

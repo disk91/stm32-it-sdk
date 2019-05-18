@@ -81,8 +81,8 @@
 #ifndef IT_SDK_DRIVERS_SIGFOX_API_H_
 #define IT_SDK_DRIVERS_SIGFOX_API_H_
 
+#include <it_sdk/config.h>
 #include <drivers/sigfox/sigfox_types.h>
-
 
 
 #define SFX_ERR_NONE                                             (sfx_u8)(0x00) /*!< No error - to be used for MANUF_ERROR_CODES and SIGFOX_ERROR_CODES */
@@ -397,6 +397,7 @@ typedef enum
  * for backend compatibility
  *******************************/
 /* FH information required, seq_num stored in nv_mem */
+#if ( ITSDK_SIGFOX_EXTENSIONS & __SIGFOX_MONARCH) > 0
 typedef enum
 {
     SFX_NVMEM_PN         = 0,                 /*!< Index of nv memory for PN */
@@ -405,7 +406,14 @@ typedef enum
     SFX_NVMEM_RL         = 6,                 /*!< Index of nv memory for rollover counter */
     SFX_NVMEM_BLOCK_SIZE = 7,
 } sfx_nvmem_t;
-
+#else
+typedef enum
+{
+    SFX_NVMEM_PN         = 0,                 /*!< Index of nv memory for PN */
+    SFX_NVMEM_FH         = 2,                 /*!< Index of nv memory for dedicated FH information */
+    SFX_NVMEM_BLOCK_SIZE = 4,
+} sfx_nvmem_t;
+#endif
 
 /********************************
  * \enum sfx_rf_mode_t

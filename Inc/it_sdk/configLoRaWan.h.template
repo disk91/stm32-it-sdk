@@ -162,31 +162,11 @@
 										    __PAYLOAD_ENCRYPT_AESCTR \
 									      | __PAYLOAD_ENCRYPT_SPECK  \
 									    )									// Encryption code activated
-#define ITSDK_LORAWAN_AES_SHAREDKEY	( 0xAE632397 ^ ITSDK_PROTECT_KEY )      // CHANGE ME
-																			// Shared Key for CTR generation
-#define ITSDK_LORAWAN_AES_INITALNONCE ( 0x25 )								// CHANGE ME
-																			// Initial value for Nonce used for AES128-CRT
-#define ITSDK_LORAWAN_SPECKKEY		(   (uint64_t)0xEF583AB7A57834BC  \
-									  ^ (  (uint64_t)ITSDK_PROTECT_KEY \
-									     | ((uint64_t)ITSDK_PROTECT_KEY << 32)) \
-									)										// CHANGE ME
-																			// Shared Key for SPECK32/64 Encryption
-#define ITSDK_LORAWAN_AES_MASTERKEYH (   (uint64_t)0x2B7E151628AED2A6  \
-									  ^ (  (uint64_t)ITSDK_PROTECT_KEY \
-									     | ((uint64_t)ITSDK_PROTECT_KEY << 32)) \
-									 )										// CHANGE ME
-																			// Static 16B key used as master key (8B HIGH)
-																			// for end to end encryption
-#define ITSDK_LORAWAN_AES_MASTERKEYL (   (uint64_t)0xABF7158809CF4F3C  \
-									  ^ (  (uint64_t)ITSDK_PROTECT_KEY \
-									     | ((uint64_t)ITSDK_PROTECT_KEY << 32)) \
-									 )										// CHANGE ME
-																		    // Static 16B key used as master key (8B LOW)
-																		    // for end to end encryption
 
 #endif
 // +-------------SX1276------------|--------------------------------------|---------------------------------------|
 #if ITSDK_LORAWAN_LIB == __LORAWAN_SX1276
+#ifndef ITSDK_SX1276_SPI												   // if not yet defined in configSigfox
 #define ITSDK_SX1276_SPI			hspi1								   // SPI To BE USED
 																		   // SPI Configured by CubeMX
 																		   //  Master, 8b, Polarity Low,
@@ -214,7 +194,6 @@
 																		   // have an interrupt handler configured.
 																		   // EXTI activated for Pins in CubeMW for STM32
 																		   // And corrsponding PIN add in the Low level Handler (stm32L...it.c)
-
 // +-------------MURATA------------|--------------------------------------|---------------------------------------|
 
 #define ITSDK_MURATA_ANTSW_RX_BANK 	     __BANK_A						   // MURATE ANTENNA SWITCH RX
@@ -224,6 +203,7 @@
 #define ITSDK_MURATA_ANTSW_TXRFO_BANK    __BANK_C						   // MURATA TX RFO
 #define ITSDK_MURATE_ANTSW_TXRFO_PIN	 __LP_GPIO_2
 
+#endif
 
 #endif //__LORAWAN_SX1276
 

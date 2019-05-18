@@ -2,7 +2,7 @@
  * sdk_config.h - structure used for the SDK configuration
  * Project : Disk91 SDK
  * ----------------------------------------------------------
- * Created on: 21 févr. 2019
+ * Created on: 21 fï¿½vr. 2019
  *     Author: Paul Pinault aka Disk91
  * ----------------------------------------------------------
  * Copyright (C) 2019 Disk91
@@ -34,7 +34,6 @@
 	#include <it_sdk/configNvm.h>
 #endif
 
-
 /**
  * SDK specific structure
  * size aligned on 32b
@@ -42,6 +41,28 @@
 typedef struct {
 	uint8_t				version;
 	uint16_t			size;
+
+#if ITSDK_WITH_SIGFOX_LIB == __ENABLE || ITSDK_WITH_LORAWAN_LIB == __ENABLE
+	uint32_t			activeNetwork;				   // active network Sigfox vs LoRaWan 32b for alignement
+#endif
+	// ----------- Sigfox settings --------------------------------------------------
+#if ITSDK_WITH_SIGFOX_LIB == __ENABLE
+	struct {
+		int16_t			rssiCal;						// Rssi calibration ( offset )
+		int8_t      	txPower;						// Default Tx power - use SIGFOX_DEFAULT_POWER for default regional setting
+		uint16_t		speed;							// Default Speed - use SIGFOX_DEFAULT_SPEED for default regional setting
+		uint8_t			sgfxKey;						// Sigfox key type Public / Private
+		uint8_t			rcz;							// Default RCZ
+		uint32_t		macroch_config_words_rc2[3];    // Macro channel config
+		uint32_t		macroch_config_words_rc3[3];	// Macro channel config
+		uint32_t		macroch_config_words_rc4[3];	// Macro channel config
+	#if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_LOCALEPROM
+		uint32_t		deviceId;						// DeviceId
+		uint8_t			initialPac[8];					// Initial PAC
+	#endif
+		uint8_t         align32b[1];		// 32b alignement
+	} sigfox;
+#endif
 
 	// ----------- LoRaWan settings --------------------------------------------------
 #if ITSDK_WITH_LORAWAN_LIB == __ENABLE
@@ -55,7 +76,6 @@ typedef struct {
 		uint16_t		align32b;			// 32b alignement
 	} lorawan;
 #endif
-
 	uint32_t			reserved[2];		// reserve space for later use
 
 } itsdk_configuration_internal_t;

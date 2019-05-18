@@ -35,6 +35,18 @@
 
 #ifdef ITSDK_WITH_SIGFOX_LIB
 
+#if (ITSDK_LOGGER_MODULE & __LOG_MOD_STKSIGFOX) > 0
+#define LOG_INFO_SIGFOXSTK(x)		log_info x
+#define LOG_WARN_SIGFOXSTK(x) 		log_warn x
+#define LOG_ERROR_SIGFOXSTK(x)		log_error x
+#define LOG_DEBUG_SIGFOXSTK(x)		log_debug x
+#else
+#define LOG_INFO_SIGFOXSTK(x)
+#define LOG_WARN_SIGFOXSTK(x)
+#define LOG_ERROR_SIGFOXSTK(x)
+#define LOG_DEBUG_SIGFOXSTK(x)
+#endif
+
 
 typedef enum {
 	SIGFOX_INIT_SUCESS = 0,
@@ -64,14 +76,19 @@ typedef enum
 } itdsk_sigfox_oob_t;
 
 
-typedef uint32_t itsdk_sigfox_device_is_t;
+#define SIGFOX_RCZ1		1
+#define SIGFOX_RCZ2 	2
+#define SIGFOX_RCZ3C 	3
+#define SIGFOX_RCZ4		4
+#define SIGFOX_RCZ5		5
 
-typedef struct {
-	bool		initialized;
-	uint8_t		rcz;
-	uint8_t		default_power;
-	uint16_t	default_speed;
-} itsdk_sigfox_state;
+#define SIGFOX_KEY_PRIVATE	0
+#define SIGFOX_KEY_PUBLIC	1
+
+#define SIGFOX_DEFAULT_POWER	0xFF			// Use these values as config for setting the default value for state
+#define SIGFOX_DEFAULT_SPEED	0xFFFF
+
+typedef uint32_t itsdk_sigfox_device_is_t;
 
 #define SIGFOX_POWER_DEFAULT	-1
 
@@ -80,7 +97,10 @@ typedef struct {
 // --------------------------------------------------------------------
 
 itsdk_sigfox_init_t itsdk_sigfox_setup();
+itsdk_sigfox_init_t itsdk_sigfox_deinit();
+itsdk_sigfox_init_t itsdk_sigfox_getCurrentRcz(uint8_t * rcz);
 itsdk_sigfox_init_t itsdk_sigfox_setTxPower(uint8_t power);
+itsdk_sigfox_init_t itsdk_sigfox_setTxPower_ext(uint8_t power, bool force);
 itsdk_sigfox_init_t itsdk_sigfox_setTxSpeed(itdsk_sigfox_speed_t speed);
 itsdk_sigfox_init_t itsdk_sigfox_getDeviceId(itsdk_sigfox_device_is_t * devId);
 itsdk_sigfox_init_t itsdk_sigfox_getInitialPac(uint8_t * pac);
@@ -126,12 +146,19 @@ itsdk_sigfox_init_t itsdk_sigfox_continuousModeStart(
 itsdk_sigfox_init_t itsdk_sigfox_continuousModeStop();
 
 // --------------------------------------------------------------------
+// Public function for internal use
+// --------------------------------------------------------------------
+itsdk_sigfox_init_t itsdk_sigfox_getNvmSize(uint32_t * sz);
+itsdk_sigfox_init_t itsdk_sigfox_getNvmOffset(uint32_t * offset);
+itsdk_sigfox_init_t itsdk_sigfox_getSeNvmOffset(uint32_t * offset);
+itsdk_sigfox_init_t __itsdk_sigfox_resetNvmToFactory();
+
+// --------------------------------------------------------------------
 // Function to be overloaded in the main program
 // --------------------------------------------------------------------
-itsdk_sigfox_init_t itsdk_sigfox_aes_getNonce(uint8_t * nonce);
-itsdk_sigfox_init_t itsdk_sigfox_aes_getSharedKey(uint32_t * sharedKey);
-itsdk_sigfox_init_t itsdk_sigfox_aes_getMasterKey(uint8_t * masterKey);
-itsdk_sigfox_init_t itsdk_sigfox_speck_getMasterKey(uint64_t * masterKey);
+itsdk_sigfox_init_t itsdk_sigfox_resetFactoryDefaults(bool force);
+itsdk_sigfox_init_t itsdk_sigfox_getKEY(uint8_t * key);
+
 // --------------------------------------------------------------------
 // Logging
 // --------------------------------------------------------------------

@@ -2,7 +2,7 @@
  * max17205.c - Maxim 17205 - Gauge 3 cells
  * Project : Disk91 SDK
  * ----------------------------------------------------------
- * Created on: 24 févr. 2019
+ * Created on: 24 fï¿½vr. 2019
  *     Author: Paul Pinault aka Disk91
  * ----------------------------------------------------------
  * Copyright (C) 2019 Disk91
@@ -24,6 +24,8 @@
  *
  * ==========================================================
  */
+#include <it_sdk/config.h>
+#if ITSDK_WITH_DRIVERS == __ENABLE
 
 #include <it_sdk/configDrivers.h>
 #if ITSDK_DRIVERS_MAX17205 == __ENABLE
@@ -185,7 +187,7 @@ drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode) {
 }
 
 /**
- * Return the temperature in m°C
+ * Return the temperature in mï¿½C
  */
 drivers_max17205_ret_e drivers_max17205_getTemperature(int32_t * mTemp) {
 	int16_t v;
@@ -292,3 +294,5 @@ drivers_max17205_ret_e drivers_max17205_isReady() {
 
 
 #endif // ITSDK_DRIVERS_MAX17205
+
+#endif

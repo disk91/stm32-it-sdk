@@ -175,6 +175,11 @@
 #define __BANK_F				5
 #define __BANK_H				7
 
+/**
+ * GPIO State
+ */
+#define __GPIO_VAL_SET			1
+#define __GPIO_VAL_RESET		0
 
 /**
  * LOG MODULE DEFINES
@@ -182,7 +187,7 @@
 #define __LOG_MOD_NONE			0x00000000			// No Log
 #define __LOG_MOD_STIMER		0x00000001			// software timer module
 #define __LOG_MOD_LOWSIGFOX		0x00000002			// sigfox low level driver whatever it is
-#define __LOG_MOD_SIGFOX		0x00000004			// sigfox abstraction layer
+#define __LOG_MOD_STKSIGFOX		0x00000004			// sigfox abstraction layer
 #define __LOG_MOD_LOWLORADBG	0x00000008			// Lora low level - hardware level
 #define __LOG_MOD_LOWLORAINF	0x00000010			// Lora low level - mac level
 #define __LOG_MOD_STKLORA		0x00000020			// Lora low level - itsdk level
@@ -205,18 +210,32 @@
 #define __LOG_MOD_RESERVED		0x80000000			// Reserved Level
 
 /**
+ * Network to activate
+ */
+#define __ACTIV_NETWORK_NONE	0x00
+#define __ACTIV_NETWORK_SIGFOX	0x01
+#define __ACTIV_NETWORK_LORAWAN	0x02
+
+/**
  * Supported SIGFOX Interface
  */
 #define __SIGFOX_NONE			0
 #define	__SIGFOX_S2LP			1
 #define __SIGFOX_WISOL10		2
+#define __SIGFOX_SX1276		   10
+
+/**
+ * Sigfox Extension
+ */
+#define __SIGFOX_NONE			0
+#define __SIGFOX_MONARCH		1
 
 /**
  * NVM source for Sigfox lib
  */
 #define __SFX_NVM_LOCALEPROM	0					// MCU internal EEPROM
 #define __SFX_NVM_M95640		1					// External EEPROM type M95640
-#define __SFX_NVM_HEADERS		2					// Configuration stored in the #define
+#define __SFX_NVM_CONFIG_STATIC	2					// Configuration stored in the #define
 
 /**
  * Drivers S2LP Config

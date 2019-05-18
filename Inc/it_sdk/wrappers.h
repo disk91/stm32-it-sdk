@@ -86,12 +86,32 @@ typedef enum {
 	GPIO_INPUT_PULLDOWN,
 	GPIO_INTERRUPT_RISING,
 	GPIO_INTERRUPT_RISING_PULLDWN,
+	GPIO_INTERRUPT_RISING_PULLUP,
 	GPIO_INTERRUPT_FALLING,
 	GPIO_INTERRUPT_FALLING_PULLUP,
+	GPIO_INTERRUPT_FALLING_PULLDWN,
 	GPIO_INTERRUPT_ANY,
 	GPIO_ANALOG,
-	GPIO_OFF
+	GPIO_OFF,
+	GPIO_ALTERNATE_PP_NOPULL,
+	GPIO_ALTERNATE_PP_PULLUP,
+	GPIO_ALTERNATE_PP_PULLDOWN,
+	GPIO_ALTERNATE_OPENDRAIN
 } itsdk_gpio_type_t;
+
+typedef enum {
+	ITSDK_GPIO_SPEED_LOW = 0,
+	ITSDK_GPIO_SPEED_HIGH
+} itsdk_gpio_speed_t;
+
+typedef enum {
+	ITSDK_GPIO_ALT_NONE = 0,
+	ITSDK_GPIO_ALT_TIMER2_TR,
+	ITSDK_GPIO_ALT_TIMER2_C1,
+	ITSDK_GPIO_ALT_SPI1_SCLK,
+	ITSDK_GPIO_ALT_SPI1_MOSI
+
+} itsdk_gpio_alternate_t;
 
 typedef struct s_gpio_irq_chain {
 	void (*irq_func)(uint16_t GPIO_Pin);
@@ -100,6 +120,7 @@ typedef struct s_gpio_irq_chain {
 } gpio_irq_chain_t;
 
 void gpio_configure(uint8_t bank, uint16_t id, itsdk_gpio_type_t type );
+void gpio_configure_ext(uint8_t bank, uint16_t id, itsdk_gpio_type_t type, itsdk_gpio_speed_t speed, itsdk_gpio_alternate_t alternate );
 void gpio_set(uint8_t bank, uint16_t id);
 void gpio_reset(uint8_t bank, uint16_t id);
 void gpio_change(uint8_t bank, uint16_t id, uint8_t val);
@@ -107,6 +128,7 @@ void gpio_toggle(uint8_t bank, uint16_t id);
 uint8_t gpio_read(uint8_t bank, uint16_t id);
 void gpio_interruptEnable(uint8_t bank, uint16_t id);
 void gpio_interruptDisable(uint8_t bank, uint16_t id);
+void gpio_interruptDisableAll( void );
 void gpio_interruptPriority(uint8_t bank, uint16_t id, uint8_t nPreemption, uint8_t nSubpriority);
 void gpio_interruptClear(uint8_t bank, uint16_t id);
 void gpio_registerIrqAction(gpio_irq_chain_t * chain);
@@ -143,6 +165,18 @@ _SPI_Status spi_readRegister(
 _SPI_Status spi_write_byte(
 		ITSDK_SPI_HANDLER_TYPE * spi,
 		uint8_t Value
+);
+
+_SPI_Status spi_transmit_dma_start(
+		SPI_HandleTypeDef * spi,
+		uint8_t * 			pData,
+		uint16_t  			size,
+		void (* pCallbackHC)( void ),		// Half Transfer Complete callback
+		void (* pCallbackTC)( void )		// TransferComplete callback
+);
+
+_SPI_Status spi_transmit_dma_stop(
+		ITSDK_SPI_HANDLER_TYPE * spi
 );
 
 void spi_wait4TransactionEnd(
@@ -183,7 +217,7 @@ _I2C_Status i2c_write(
 _I2C_Status i2c_write8BRegister(
 		ITSDK_I2C_HANDLER_TYPE * i2c,
 		uint16_t  devAdr,			// Non shifted device address
-		uint16_t  regAdr,			// Register address (8b or 16bà
+		uint16_t  regAdr,			// Register address (8b or 16bï¿½
 		uint8_t   value,			// 8B value to be written
 		uint16_t  regSize			// Register address size 1B or 2B
 );
@@ -191,7 +225,7 @@ _I2C_Status i2c_write8BRegister(
 _I2C_Status i2c_write16BRegister(		// 16B Word => LSB first on I2C
 		ITSDK_I2C_HANDLER_TYPE * i2c,
 		uint16_t  devAdr,			// Non shifted device address
-		uint16_t  regAdr,			// Register address (8b or 16bà
+		uint16_t  regAdr,			// Register address (8b or 16bï¿½
 		uint16_t  value,			// 16B value to be written
 		uint16_t  regSize			// Register address size 1B or 2B
 );
@@ -215,7 +249,7 @@ _I2C_Status i2c_read(
 _I2C_Status i2c_read8BRegister(
 		ITSDK_I2C_HANDLER_TYPE * i2c,
 		uint16_t  devAdr,			// Non shifted device address
-		uint16_t  regAdr,			// Register address (8b or 16bà
+		uint16_t  regAdr,			// Register address (8b or 16bï¿½
 		uint8_t * value,			// 8B value to be read
 		uint16_t  regSize			// Register address size 1B or 2B
 );
@@ -223,7 +257,7 @@ _I2C_Status i2c_read8BRegister(
 _I2C_Status i2c_read16BRegister(    // 16B Word => LSB first on I2C
 		ITSDK_I2C_HANDLER_TYPE * i2c,
 		uint16_t  devAdr,			// Non shifted device address
-		uint16_t  regAdr,			// Register address (8b or 16bà
+		uint16_t  regAdr,			// Register address (8b or 16bï¿½
 		uint16_t * value,			// 8B value to be read
 		uint16_t  regSize			// Register address size 1B or 2B
 );

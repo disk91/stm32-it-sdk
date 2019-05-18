@@ -2,7 +2,7 @@
  * securestore.h - secured / encryptage eeprom storage
  * Project : Disk91 SDK
  * ----------------------------------------------------------
- * Created on: 9 févr. 2019
+ * Created on: 9 fï¿½vr. 2019
  *     Author: Paul Pinault aka Disk91
  * ----------------------------------------------------------
  * Copyright (C) 2019 Disk91
@@ -127,10 +127,8 @@ typedef struct {
 			} otaa;
 		} lorawan;
 	#endif
-    #if ( defined(ITSDK_SIGFOX_ENCRYPTION) && ( ITSDK_SIGFOX_ENCRYPTION & __PAYLOAD_ENCRYPT_AESCTR ) > 0 ) || ( defined(ITSDK_LORAWAN_ENCRYPTION) && (( ITSDK_LORAWAN_ENCRYPTION & __PAYLOAD_ENCRYPT_AESCTR ) > 0) )
+    #if ( defined(ITSDK_SIGFOX_ENCRYPTION) && ( ITSDK_SIGFOX_ENCRYPTION > 0 )) || (defined(ITSDK_LORAWAN_ENCRYPTION) && ( ITSDK_LORAWAN_ENCRYPTION > 0))
 		uint8_t	aesMasterKey[ITSDK_SECSTORE_BLOCKSZ];						// AES-CTR Key
-	#endif
-    #if ( defined(ITSDK_SIGFOX_ENCRYPTION) && ( ITSDK_SIGFOX_ENCRYPTION > 0 )) || ( defined(ITSDK_LORAWAN_ENCRYPTION) && ( ITSDK_LORAWAN_ENCRYPTION > 0 ))
 		uint8_t encryptSharedNonceSpeck[ITSDK_SECSTORE_BLOCKSZ];			// AES-CTR / Dynamic element for CTR (Shared 4B), (Nonce 1B) , 3B not used, 8B SPECK KEY
     #endif
 	#if ITSDK_SECSTORE_USRBLOCK > 0

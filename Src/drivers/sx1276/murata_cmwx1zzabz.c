@@ -31,43 +31,26 @@ Maintainer: Miguel Luis and Gregory Cristian
   ******************************************************************************
   */
 #include <it_sdk/config.h>
-#if ITSDK_WITH_LORAWAN_LIB == __ENABLE && ITSDK_LORAWAN_LIB == __LORAWAN_SX1276
+#if  ( ( ITSDK_WITH_LORAWAN_LIB == __ENABLE ) && (ITSDK_LORAWAN_LIB == __LORAWAN_SX1276) ) \
+   ||( ( ITSDK_WITH_SIGFOX_LIB == __ENABLE ) && (ITSDK_SIGFOX_LIB == __SIGFOX_SX1276) )
 
 /* Includes ------------------------------------------------------------------*/
 
 #include <drivers/sx1276/hw.h>
 #include <drivers/lorawan/phy/radio.h>
 #include <drivers/sx1276/sx1276.h>
+#include <it_sdk/eeprom/sdk_state.h>
 
 #include <it_sdk/wrappers.h>
 
-#define BOARD_WAKEUP_TIME  5
+#define BOARD_WAKEUP_TIME  50		// Was 5ms wait after TCXO is set ON, try 50 to see if we have a better stability
 #define IRQ_HIGH_PRIORITY  0
 
 #define TCXO_ON() gpio_set(ITSDK_SX1276_TCXO_VCC_BANK,ITSDK_SX1276_TCXO_VCC_PIN);
 
-#define TCXO_OFF()  gpio_reset(ITSDK_SX1276_TCXO_VCC_BANK,ITSDK_SX1276_TCXO_VCC_PIN);
+#define TCXO_OFF() gpio_reset(ITSDK_SX1276_TCXO_VCC_BANK,ITSDK_SX1276_TCXO_VCC_PIN);
 
-static void SX1276AntSwInit( void );
 
-static void SX1276AntSwDeInit( void );
-
-void SX1276SetXO( uint8_t state );
-
-uint32_t SX1276GetWakeTime( void );
-
-void SX1276IoIrqInit( DioIrqHandler **irqHandlers );
-
-uint8_t SX1276GetPaSelect( uint8_t power );
-
-void SX1276SetAntSwLowPower( bool status );
-
-void SX1276SetAntSw( uint8_t opMode );
-
-bool SX1276CheckRfFrequency( uint32_t frequency );
-void SX1276IoInit( void );
-void SX1276IoDeInit( void );
-void SX1276SetRfTxPower( int8_t power );
 
 /*!
  * \brief Controls the antena switch if necessary.
@@ -124,7 +107,7 @@ uint32_t SX1276GetWakeTime( void )
 
 void SX1276SetXO( uint8_t state )
 {
-  LOG_INFO_SX1276((">> SX1276SetXO\r\n"));
+  LOG_INFO_SX1276((">> SX1276SetXO (%s)\r\n",((state==SET)?"ON":"OFF")));
 
   if (state == SET )
   {
@@ -142,21 +125,24 @@ void SX1276IoInit( void )
 
   SX1276BoardInit( &BoardCallbacks );
   
-  gpio_configure(ITSDK_SX1276_DIO_0_BANK, ITSDK_SX1276_DIO_0_PIN, GPIO_INTERRUPT_RISING_PULLDWN );
-  gpio_configure(ITSDK_SX1276_DIO_1_BANK, ITSDK_SX1276_DIO_1_PIN, GPIO_INTERRUPT_RISING_PULLDWN );
-  gpio_configure(ITSDK_SX1276_DIO_2_BANK, ITSDK_SX1276_DIO_2_PIN, GPIO_INTERRUPT_RISING_PULLDWN );
-  gpio_configure(ITSDK_SX1276_DIO_3_BANK, ITSDK_SX1276_DIO_3_PIN, GPIO_INTERRUPT_RISING_PULLDWN );
+#warning the LoRaStack was GPIO_INTERRUPT_RISING_PULLDWN
+  gpio_configure(ITSDK_SX1276_DIO_0_BANK, ITSDK_SX1276_DIO_0_PIN, GPIO_INTERRUPT_RISING_PULLUP );
+  gpio_configure(ITSDK_SX1276_DIO_1_BANK, ITSDK_SX1276_DIO_1_PIN, GPIO_INTERRUPT_RISING_PULLUP );
+  gpio_configure(ITSDK_SX1276_DIO_2_BANK, ITSDK_SX1276_DIO_2_PIN, GPIO_INTERRUPT_RISING_PULLUP );
+  gpio_configure(ITSDK_SX1276_DIO_3_BANK, ITSDK_SX1276_DIO_3_PIN, GPIO_INTERRUPT_RISING_PULLUP );
 
 #ifdef RADIO_DIO_4
-  gpio_configure(ITSDK_SX1276_DIO_4_BANK, ITSDK_SX1276_DIO_4_PIN, GPIO_INTERRUPT_RISING_PULLDWN );
+  if ( (itsdk_state.activeNetwork & __ACTIV_NETWORK_SIGFOX) > 0) {
+    gpio_configure(ITSDK_SX1276_DIO_4_BANK, ITSDK_SX1276_DIO_4_PIN, GPIO_INTERRUPT_RISING_PULLUP );
+  }
 #endif
 #ifdef RADIO_DIO_5
-  gpio_configure(ITSDK_SX1276_DIO_5_BANK, ITSDK_SX1276_DIO_5_PIN, GPIO_INTERRUPT_RISING_PULLDWN );
+  gpio_configure(ITSDK_SX1276_DIO_5_BANK, ITSDK_SX1276_DIO_5_PIN, GPIO_INTERRUPT_RISING_PULLUP );
 #endif
   gpio_configure(ITSDK_SX1276_TCXO_VCC_BANK, ITSDK_SX1276_TCXO_VCC_PIN, GPIO_OUTPUT_PP );
 }
 
-gpio_irq_chain_t __sx1276_gpio_irq[4] = { 0 };
+gpio_irq_chain_t __sx1276_gpio_irq[6] = { 0 };
 void SX1276IoIrqInit( DioIrqHandler **irqHandlers )
 {
 	LOG_INFO_SX1276((">> SX1276IoIrqInit\r\n"));
@@ -190,19 +176,19 @@ void SX1276IoIrqInit( DioIrqHandler **irqHandlers )
 void SX1276IoDeInit( void )
 {
   LOG_INFO_SX1276((">> SX1276IoDeInit\r\n"));
-
-  gpio_configure(ITSDK_SX1276_DIO_0_BANK, ITSDK_SX1276_DIO_0_PIN, GPIO_INTERRUPT_RISING_PULLDWN );
-  gpio_configure(ITSDK_SX1276_DIO_1_BANK, ITSDK_SX1276_DIO_1_PIN, GPIO_INTERRUPT_RISING_PULLDWN );
-  gpio_configure(ITSDK_SX1276_DIO_2_BANK, ITSDK_SX1276_DIO_2_PIN, GPIO_INTERRUPT_RISING_PULLDWN );
-  gpio_configure(ITSDK_SX1276_DIO_3_BANK, ITSDK_SX1276_DIO_3_PIN, GPIO_INTERRUPT_RISING_PULLDWN );
+#warning NOPULL from ST_CODE on SIgfox impl, lets see if this could consume energy ?!? was PULLDWN
+  gpio_configure(ITSDK_SX1276_DIO_0_BANK, ITSDK_SX1276_DIO_0_PIN, GPIO_INTERRUPT_RISING );
+  gpio_configure(ITSDK_SX1276_DIO_1_BANK, ITSDK_SX1276_DIO_1_PIN, GPIO_INTERRUPT_RISING );
+  gpio_configure(ITSDK_SX1276_DIO_2_BANK, ITSDK_SX1276_DIO_2_PIN, GPIO_INTERRUPT_RISING );
+  gpio_configure(ITSDK_SX1276_DIO_3_BANK, ITSDK_SX1276_DIO_3_PIN, GPIO_INTERRUPT_RISING );
   
 #ifdef RADIO_DIO_4
-  HW_GPIO_Init( RADIO_DIO_4_PORT, RADIO_DIO_4_PIN, &initStruct );
-  gpio_configure(ITSDK_SX1276_DIO_4_BANK, ITSDK_SX1276_DIO_4_PIN, GPIO_INTERRUPT_RISING_PULLDWN );
+  if ( (itsdk_state.activeNetwork & __ACTIV_NETWORK_SIGFOX) > 0) {
+    gpio_configure(ITSDK_SX1276_DIO_4_BANK, ITSDK_SX1276_DIO_4_PIN, GPIO_INTERRUPT_RISING );
+  }
 #endif
 #ifdef RADIO_DIO_5
-  HW_GPIO_Init( RADIO_DIO_5_PORT, RADIO_DIO_5_PIN, &initStruct );
-  gpio_configure(ITSDK_SX1276_DIO_5_BANK, ITSDK_SX1276_DIO_5_PIN, GPIO_INTERRUPT_RISING_PULLDWN );
+  gpio_configure(ITSDK_SX1276_DIO_5_BANK, ITSDK_SX1276_DIO_5_PIN, GPIO_INTERRUPT_RISING );
 #endif
 }
 
@@ -284,44 +270,29 @@ uint8_t SX1276GetPaSelect( uint8_t power )
     }
 }
 
+
 void SX1276SetAntSwLowPower( bool status )
 {
-	LOG_INFO_SX1276((">> SX1276SetAntSwLowPower\r\n"));
+	LOG_INFO_SX1276((">> SX1276SetAntSwLowPower (%s)\r\n",((status)?"LP":"FP")));
 
     if( status == false )
     {
-      SX1276AntSwInit( );
+    	  gpio_configure(ITSDK_MURATA_ANTSW_RX_BANK, ITSDK_MURATE_ANTSW_RX_PIN, GPIO_OUTPUT_PP );
+    	  gpio_reset(ITSDK_MURATA_ANTSW_RX_BANK,ITSDK_MURATE_ANTSW_RX_PIN);
+    	  gpio_configure(ITSDK_MURATA_ANTSW_TXBOOST_BANK, ITSDK_MURATE_ANTSW_TXBOOST_PIN, GPIO_OUTPUT_PP );
+    	  gpio_reset(ITSDK_MURATA_ANTSW_TXBOOST_BANK,ITSDK_MURATE_ANTSW_TXBOOST_PIN);
+    	  gpio_configure(ITSDK_MURATA_ANTSW_TXRFO_BANK, ITSDK_MURATE_ANTSW_TXRFO_PIN, GPIO_OUTPUT_PP );
+    	  gpio_reset(ITSDK_MURATA_ANTSW_TXRFO_BANK,ITSDK_MURATE_ANTSW_TXRFO_PIN);
     }
-    else 
+    else
     {
-      SX1276AntSwDeInit( );
+    	  gpio_configure(ITSDK_MURATA_ANTSW_RX_BANK, ITSDK_MURATE_ANTSW_RX_PIN, GPIO_ANALOG );
+    	  gpio_reset(ITSDK_MURATA_ANTSW_RX_BANK,ITSDK_MURATE_ANTSW_RX_PIN);
+    	  gpio_configure(ITSDK_MURATA_ANTSW_TXBOOST_BANK, ITSDK_MURATE_ANTSW_TXBOOST_PIN, GPIO_ANALOG );
+    	  gpio_reset(ITSDK_MURATA_ANTSW_TXBOOST_BANK,ITSDK_MURATE_ANTSW_TXBOOST_PIN);
+    	  gpio_configure(ITSDK_MURATA_ANTSW_TXRFO_BANK, ITSDK_MURATE_ANTSW_TXRFO_PIN, GPIO_ANALOG );
+    	  gpio_reset(ITSDK_MURATA_ANTSW_TXRFO_BANK,ITSDK_MURATE_ANTSW_TXRFO_PIN);
     }
-}
-
-static void SX1276AntSwInit( void )
-{
-  LOG_INFO_SX1276((">> SX1276AntSwInit\r\n"));
-
-  gpio_configure(ITSDK_MURATA_ANTSW_RX_BANK, ITSDK_MURATE_ANTSW_RX_PIN, GPIO_OUTPUT_PP );
-  gpio_reset(ITSDK_MURATA_ANTSW_RX_BANK,ITSDK_MURATE_ANTSW_RX_PIN);
-  gpio_configure(ITSDK_MURATA_ANTSW_TXBOOST_BANK, ITSDK_MURATE_ANTSW_TXBOOST_PIN, GPIO_OUTPUT_PP );
-  gpio_reset(ITSDK_MURATA_ANTSW_TXBOOST_BANK,ITSDK_MURATE_ANTSW_TXBOOST_PIN);
-  gpio_configure(ITSDK_MURATA_ANTSW_TXRFO_BANK, ITSDK_MURATE_ANTSW_TXRFO_PIN, GPIO_OUTPUT_PP );
-  gpio_reset(ITSDK_MURATA_ANTSW_TXRFO_BANK,ITSDK_MURATE_ANTSW_TXRFO_PIN);
-
-}
-
-static void SX1276AntSwDeInit( void )
-{
-  LOG_INFO_SX1276((">> SX1276AntSwDeInit\r\n"));
-
-  gpio_configure(ITSDK_MURATA_ANTSW_RX_BANK, ITSDK_MURATE_ANTSW_RX_PIN, GPIO_ANALOG );
-  gpio_reset(ITSDK_MURATA_ANTSW_RX_BANK,ITSDK_MURATE_ANTSW_RX_PIN);
-  gpio_configure(ITSDK_MURATA_ANTSW_TXBOOST_BANK, ITSDK_MURATE_ANTSW_TXBOOST_PIN, GPIO_ANALOG );
-  gpio_reset(ITSDK_MURATA_ANTSW_TXBOOST_BANK,ITSDK_MURATE_ANTSW_TXBOOST_PIN);
-  gpio_configure(ITSDK_MURATA_ANTSW_TXRFO_BANK, ITSDK_MURATE_ANTSW_TXRFO_PIN, GPIO_ANALOG );
-  gpio_reset(ITSDK_MURATA_ANTSW_TXRFO_BANK,ITSDK_MURATE_ANTSW_TXRFO_PIN);
-
 }
 
 void SX1276SetAntSw( uint8_t opMode )
@@ -332,16 +303,15 @@ void SX1276SetAntSw( uint8_t opMode )
     switch( opMode )
     {
     case RFLR_OPMODE_TRANSMITTER:
-      if( ( paConfig & RF_PACONFIG_PASELECT_PABOOST ) == RF_PACONFIG_PASELECT_PABOOST )
-      {
+      if( ( paConfig & RF_PACONFIG_PASELECT_PABOOST ) == RF_PACONFIG_PASELECT_PABOOST ) {
+    	LOG_INFO_SX1276(("   PABOOST\r\n"));
     	gpio_set(ITSDK_MURATA_ANTSW_TXBOOST_BANK,ITSDK_MURATE_ANTSW_TXBOOST_PIN);
-      }
-      else
-      {
+      } else {
+      	LOG_INFO_SX1276(("   RFO\r\n"));
         gpio_set(ITSDK_MURATA_ANTSW_TXRFO_BANK,ITSDK_MURATE_ANTSW_TXRFO_PIN);
       }
       SX1276.RxTx = 1;
-        break;
+      break;
     case RFLR_OPMODE_RECEIVER:
     case RFLR_OPMODE_RECEIVER_SINGLE:
     case RFLR_OPMODE_CAD:

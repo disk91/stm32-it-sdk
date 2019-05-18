@@ -61,9 +61,11 @@
 #include <it_sdk/time/timer.h>
 #include <it_sdk/logger/logger.h>
 #include <it_sdk/eeprom/sdk_config.h>
+#include <it_sdk/eeprom/sdk_state.h>
 
 #if ITSDK_WITH_SECURESTORE == __ENABLE
 #include <it_sdk/eeprom/securestore.h>
+#include <it_sdk/encrypt/encrypt.h>
 #endif
 
 #if ITSDK_WITH_CONSOLE == __ENABLE
@@ -101,12 +103,13 @@ void itsdk_setup() {
 	  if ( itsdk_secstore_isInit() != SS_SUCCESS ) {
 		  itsdk_secstore_init();
 	  }
+	  itsdk_encrypt_resetFactoryDefaults(false);	// on first boot init the ss communication credentials
 	  itsdk_secStore_RegisterConsole();
 	#endif
 
 	// load the configuration according to setting
 	itsdk_config_loadConfiguration(CONFIG_NORMAL_LOAD);
-
+	itsdk_state_init();
 	// Application setup
 	project_setup();
     #if ITSDK_WITH_ERROR_RPT == __ENABLE

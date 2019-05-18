@@ -2,7 +2,7 @@
  * bme280.c - Bosh BME280 Temp / Hygro / Pressure I2C-SPI sensor
  * Project : Disk91 SDK
  * ----------------------------------------------------------
- * Created on: 15 févr. 2019
+ * Created on: 15 fï¿½vr. 2019
  *     Author: Paul Pinault aka Disk91
  * ----------------------------------------------------------
  * Copyright (C) 2019 Disk91
@@ -24,6 +24,9 @@
  *
  * ==========================================================
  */
+#include <it_sdk/config.h>
+#if ITSDK_WITH_DRIVERS == __ENABLE
+
 #include <it_sdk/configDrivers.h>
 #if defined ITSDK_DRIVERS_BME280 && ITSDK_DRIVERS_BME280 == __ENABLE
 #include <drivers/temphygropressure/bosh_bme280/bme280.h>
@@ -239,7 +242,7 @@ drivers_bme280_ret_e drivers_bme280_setup(drivers_bme280_mode_e mode) {
 
 /**
  * Compute the temperature from the BM280 adc value
- * The unit is Centi Celsius 5123 = 51,23°C
+ * The unit is Centi Celsius 5123 = 51,23ï¿½C
  */
 static int32_t __compensateTemp(int32_t adc) {
 	int32_t var1,var2,t;
@@ -297,12 +300,12 @@ static uint32_t __compensateHumidity(int32_t adc){
 /**
  * Depends on mode, get the last sensor values or request a new value and get it
  * Get the sensors value.
- * Temperature is in m°C
+ * Temperature is in mï¿½C
  * Humidity is in m%RH
  * Pressure is in Pa
  */
 drivers_bme280_ret_e drivers_bme280_getSensors(
-		int32_t  * temperature,			// Temp in m°C
+		int32_t  * temperature,			// Temp in mï¿½C
 		uint32_t * pressure,			// Pressure un Pa
 		uint32_t * humidity				// Humidity in m%RH
 ) {
@@ -365,5 +368,6 @@ drivers_bme280_ret_e drivers_bme280_getSensors(
 
 #endif // ITSDK_DRIVERS_BME280
 
+#endif // ITSDK_WITH_DRIVERS
 
 

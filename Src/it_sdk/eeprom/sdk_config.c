@@ -2,7 +2,7 @@
  * sdk_config.c - sdk NVM configuration
  * Project : Disk91 SDK
  * ----------------------------------------------------------
- * Created on: 21 févr. 2019
+ * Created on: 21 fï¿½vr. 2019
  *     Author: Paul Pinault aka Disk91
  * ----------------------------------------------------------
  * Copyright (C) 2019 Disk91
@@ -33,6 +33,12 @@
   #include <it_sdk/wrappers.h>
 #endif
 
+#if ITSDK_WITH_SIGFOX_LIB == __ENABLE
+	#include <it_sdk/configSigfox.h>
+	#include <it_sdk/sigfox/sigfox.h>
+    #include <drivers/sigfox/se_nvm.h>
+#endif
+
 #if ITSDK_WITH_CONSOLE == __ENABLE
   #include <it_sdk/console/console.h>
   static itsdk_console_chain_t __console_configMng;
@@ -57,6 +63,10 @@
 	static itsdk_config_ret_e itsdk_config_sdk_resetToFactory() {
 		itsdk_config.sdk.version = ITSDK_CONFIGURATION_SDK_VERSION;
 		itsdk_config.sdk.size = sizeof(itsdk_configuration_internal_t);
+		// ----------- Network choice ----------------------------------------------------
+		#if ITSDK_WITH_SIGFOX_LIB == __ENABLE || ITSDK_WITH_LORAWAN_LIB == __ENABLE
+		itsdk_config.sdk.activeNetwork = ITSDK_DEFAULT_NETWORK;
+		#endif
 		// ----------- LoRaWan settings --------------------------------------------------
 		#if ITSDK_WITH_LORAWAN_LIB == __ENABLE
 		itsdk_config.sdk.lorawan.adrMode = ITSDK_LORAWAN_ADR;
@@ -64,6 +74,27 @@
 		itsdk_config.sdk.lorawan.joinMode = ITSDK_LORAWAN_ACTIVATION;
 		itsdk_config.sdk.lorawan.networkType = ITSDK_LORAWAN_NETWORKTYPE;
 		itsdk_config.sdk.lorawan.retries = ITSDK_LORAWAN_CNF_RETRY;
+		#endif
+		// ----------- Sigfox settings --------------------------------------------------
+		#if ITSDK_WITH_SIGFOX_LIB == __ENABLE
+		itsdk_config.sdk.sigfox.rssiCal = ITSDK_SIGFOX_RSSICAL;
+		itsdk_config.sdk.sigfox.txPower = ITSDK_SIGFOX_TXPOWER;
+		itsdk_config.sdk.sigfox.speed = ITSDK_SIGFOX_SPEED;
+		itsdk_config.sdk.sigfox.rcz = ITDSK_SIGFOX_RCZ;
+		itsdk_config.sdk.sigfox.sgfxKey = ITSDK_SIGFOX_KEY_TYPE;
+		sfx_u32 config_words_2[3] = RC2_SM_CONFIG;
+		bcopy(config_words_2,itsdk_config.sdk.sigfox.macroch_config_words_rc2,3*sizeof(sfx_u32));
+		sfx_u32 config_words_3[3] = RC3C_CONFIG;
+		bcopy(config_words_3,itsdk_config.sdk.sigfox.macroch_config_words_rc3,3*sizeof(sfx_u32));
+		sfx_u32 config_words_4[3] = RC4_SM_CONFIG;
+		bcopy(config_words_4,itsdk_config.sdk.sigfox.macroch_config_words_rc4,3*sizeof(sfx_u32));
+		__itsdk_sigfox_resetNvmToFactory();
+		#if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_LOCALEPROM
+		  uint8_t pac[8] = ITSDK_SIGFOX_PAC;
+		  bcopy(pac,itsdk_config.sdk.sigfox.initialPac,8);
+		  itsdk_config.sdk.sigfox.deviceId = ITSDK_SIGFOX_ID;
+		#endif
+
 		#endif
 		return CONFIG_RESTORED_FROM_FACTORY;
 	}
@@ -211,7 +242,17 @@ itsdk_config_ret_e itsdk_config_commitConfiguration(itsdk_config_commit_mode_e m
 // ====================================================================================================
 // CONSOLE PART
 // ====================================================================================================
-
+static bool __checkAndConvert(char * str,uint8_t start,uint8_t stop,uint8_t sz,uint8_t * buf) {
+	if ( (stop - start) < 2*sz ) return false;
+	int k = 0;
+	for ( int i = start ; i < stop ; i+=2 ) {
+		if ( itdt_isHexChar(str[i],false) && itdt_isHexChar(str[i+1],false) ) {
+			buf[k] = itdt_convertHexChar2Int(&str[i]);
+			k++;
+		} else return false;
+	}
+	return true;
+}
 
 #if ITSDK_WITH_CONSOLE == __ENABLE
 
@@ -264,7 +305,31 @@ itsdk_config_ret_e itsdk_config_commitConfiguration(itsdk_config_commit_mode_e m
 					_itsdk_console_printf("sdk.lora.networkType : %d\r\n",_c->sdk.lorawan.networkType);
 					_itsdk_console_printf("sdk.lora.retries : %d\r\n",_c->sdk.lorawan.retries);
 				    #endif
-					itsdk_config_app_printConfig(_c);
+
+					#if ITSDK_WITH_SIGFOX_LIB == __ENABLE
+					_itsdk_console_printf("sdk.sigfox.rssiCal : %d\r\n",_c->sdk.sigfox.rssiCal);
+					_itsdk_console_printf("sdk.sigfox.txPower : %ddB\r\n",_c->sdk.sigfox.txPower);
+					_itsdk_console_printf("sdk.sigfox.speed : %dbps\r\n",_c->sdk.sigfox.speed);
+					_itsdk_console_printf("sdk.sigfox.rcz : %d\r\n",_c->sdk.sigfox.rcz);
+					_itsdk_console_printf("sdk.sigfox.sgfxKey : %d\r\n",_c->sdk.sigfox.sgfxKey);
+					 #if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_LOCALEPROM
+					 _itsdk_console_printf("sdk.sigfox.initialPac : [%02X%02X%02X%02X%02X%02X%02X%02X]\r\n",
+							_c->sdk.sigfox.initialPac[0],
+							_c->sdk.sigfox.initialPac[1],
+							_c->sdk.sigfox.initialPac[2],
+							_c->sdk.sigfox.initialPac[3],
+							_c->sdk.sigfox.initialPac[4],
+							_c->sdk.sigfox.initialPac[5],
+							_c->sdk.sigfox.initialPac[6],
+							_c->sdk.sigfox.initialPac[7]
+						);
+					 _itsdk_console_printf("sdk.sigfox.deviceId : %08X \r\n",_c->sdk.sigfox.deviceId);
+					 #endif
+					#endif
+
+					#if ITSDK_WITH_CONFIGURATION_APP == __ENABLE
+					   itsdk_config_app_printConfig(_c);
+					#endif
 				  #endif
 				  _itsdk_console_printf("OK\r\n");
 				}
@@ -293,6 +358,14 @@ static itsdk_console_return_e _itsdk_config_consolePriv(char * buffer, uint8_t s
 			  _itsdk_console_printf("SC:2:x     : lora.joinMode 1:OTAA/2:ABP\r\n");
 			  _itsdk_console_printf("SC:3:x     : lora.networkType 1:PUBLIC/2:PRIVATE\r\n");
 			  _itsdk_console_printf("SC:4:nn    : lora.retries 00..99\r\n");
+			#endif
+			#if ITSDK_WITH_SIGFOX_LIB == __ENABLE
+			  _itsdk_console_printf("SC:8:xx   : sigfox.txPower 00-22dB (decimal) 99 (default)\r\n");
+			  _itsdk_console_printf("SC:9:xx   : sigfox.speed 0(default)/100/600bps (decimal)\r\n");
+			  _itsdk_console_printf("SC:A:xx   : sigfox.rcz [01,02,3c,04,05]\r\n");
+			  _itsdk_console_printf("SC:B:x    : sigfox.sgfxKey 0:PRIVATE 1:PUBLIC\r\n");
+			  _itsdk_console_printf("SC:C:8hex : sigfox.initialPac 8B hex string\r\n");
+			  _itsdk_console_printf("SC:D:4hex : sigfox.deviceId 4B hex string\r\n");
 			#endif
 		  return ITSDK_CONSOLE_SUCCES;
 		  break;
@@ -400,6 +473,127 @@ static itsdk_console_return_e _itsdk_config_consolePriv(char * buffer, uint8_t s
 				return ITSDK_CONSOLE_FAILED;
 				break;
 			#endif
+			#if ITSDK_WITH_SIGFOX_LIB == __ENABLE
+			case '8':
+				// sigfox.txPower
+				if ( sz >= 7 ) {
+					int v = 0;
+					char c = buffer[5];
+					if ( c >= '0' && c <= '9' ) {
+						v = 10*(c - '0');
+						c = buffer[6];
+						if ( c >= '0' && c <= '9' ) {
+							v = v + (c - '0');
+						} else 	v = -1;
+					} else v = -1;
+					if ( v >= 0 && v < 24 ) {
+						itsdk_config_shadow.sdk.sigfox.txPower = v;
+						_itsdk_console_printf("OK\r\n");
+						return ITSDK_CONSOLE_SUCCES;
+					}
+					if ( v == 99 ) {
+						itsdk_config_shadow.sdk.sigfox.txPower = SIGFOX_DEFAULT_POWER;
+						_itsdk_console_printf("OK\r\n");
+						return ITSDK_CONSOLE_SUCCES;
+					}
+				}
+				_itsdk_console_printf("KO\r\n");
+				return ITSDK_CONSOLE_FAILED;
+				break;
+			case '9':
+				// sigfox.speed
+				if ( sz >= 8 ) {
+					if ( buffer[6] == '0' && buffer[7] == '0' ) {
+						if ( buffer[5] == '1') {
+							itsdk_config_shadow.sdk.sigfox.speed = SIGFOX_SPEED_100;
+							_itsdk_console_printf("OK\r\n");
+							return ITSDK_CONSOLE_SUCCES;
+						} else if ( buffer[5] == '6' ) {
+							itsdk_config_shadow.sdk.sigfox.speed = SIGFOX_SPEED_600;
+							_itsdk_console_printf("OK\r\n");
+							return ITSDK_CONSOLE_SUCCES;
+						} else if ( buffer[5] == '0' ) {
+							itsdk_config_shadow.sdk.sigfox.speed = SIGFOX_DEFAULT_SPEED;
+							_itsdk_console_printf("OK\r\n");
+							return ITSDK_CONSOLE_SUCCES;
+						}
+					}
+				}
+				_itsdk_console_printf("KO\r\n");
+				return ITSDK_CONSOLE_FAILED;
+				break;
+			case 'A':
+				if ( sz >= 7 ) {
+					if ( buffer[5] == '0' && buffer[6] == '1' ) {
+						itsdk_config_shadow.sdk.sigfox.rcz = SIGFOX_RCZ1;
+						_itsdk_console_printf("OK\r\n");
+						return ITSDK_CONSOLE_SUCCES;
+					}
+					if ( buffer[5] == '0' && buffer[6] == '2' ) {
+						itsdk_config_shadow.sdk.sigfox.rcz = SIGFOX_RCZ2;
+						_itsdk_console_printf("OK\r\n");
+						return ITSDK_CONSOLE_SUCCES;
+					}
+					if ( buffer[5] == '3' && buffer[6] == 'c' ) {
+						itsdk_config_shadow.sdk.sigfox.rcz = SIGFOX_RCZ3C;
+						_itsdk_console_printf("OK\r\n");
+						return ITSDK_CONSOLE_SUCCES;
+					}
+					if ( buffer[5] == '0' && buffer[6] == '4' ) {
+						itsdk_config_shadow.sdk.sigfox.rcz = SIGFOX_RCZ4;
+						_itsdk_console_printf("OK\r\n");
+						return ITSDK_CONSOLE_SUCCES;
+					}
+					if ( buffer[5] == '0' && buffer[6] == '5' ) {
+						itsdk_config_shadow.sdk.sigfox.rcz = SIGFOX_RCZ5;
+						_itsdk_console_printf("OK\r\n");
+						return ITSDK_CONSOLE_SUCCES;
+					}
+				}
+				_itsdk_console_printf("KO\r\n");
+				return ITSDK_CONSOLE_FAILED;
+				break;
+			case 'B':
+				if ( sz >= 6) {
+					if ( buffer[5] == '0' ) {
+						itsdk_config_shadow.sdk.sigfox.sgfxKey = SIGFOX_KEY_PRIVATE;
+						_itsdk_console_printf("OK\r\n");
+						return ITSDK_CONSOLE_SUCCES;
+					}
+					if ( buffer[5] == '1' ) {
+						itsdk_config_shadow.sdk.sigfox.sgfxKey = SIGFOX_KEY_PUBLIC;
+						_itsdk_console_printf("OK\r\n");
+						return ITSDK_CONSOLE_SUCCES;
+					}
+				}
+				_itsdk_console_printf("KO\r\n");
+				return ITSDK_CONSOLE_FAILED;
+				break;
+			case 'C':
+				{
+					uint8_t b[8];
+					if ( __checkAndConvert(buffer,5,sz,8,b) ) {
+						bcopy(b,itsdk_config_shadow.sdk.sigfox.initialPac,8);
+						_itsdk_console_printf("OK\r\n");
+						return ITSDK_CONSOLE_SUCCES;
+					}
+					_itsdk_console_printf("KO\r\n");
+					return ITSDK_CONSOLE_FAILED;
+				}
+				break;
+			case 'D':
+				{
+					uint8_t b[4];
+					if ( __checkAndConvert(buffer,5,sz,4,b) ) {
+						bcopy(b,itsdk_config_shadow.sdk.sigfox.deviceId,4);
+						_itsdk_console_printf("OK\r\n");
+						return ITSDK_CONSOLE_SUCCES;
+					}
+					_itsdk_console_printf("KO\r\n");
+					return ITSDK_CONSOLE_FAILED;
+				}
+				break;
+			#endif	// ITSDK_WITH_SIGFOX_LIB
 			default:
 				break;
 			}

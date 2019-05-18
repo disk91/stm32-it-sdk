@@ -150,6 +150,8 @@ stm32l_lowPowerReturn_e stm32l_lowPowerSetup(uint32_t durationMs) {
 		  __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU); 				// Clear wakeUp flag
 		  gpio_registerWakeUpAction(&__lowpwer_gpio_irq);	// Install the wakeup handler
 		  	  	  	  	  	  	  	  	  	  	  	  	  	// (the previously existing handler will be bypassed)
+		#else
+		  gpio_interruptDisableAll();						// Disable GPIOs interrupts
 		#endif
 
 		#if ( ITSDK_LOWPOWER_MISC_HALT & __LP_HALT_I2C1 ) > 0
@@ -171,6 +173,8 @@ stm32l_lowPowerReturn_e stm32l_lowPowerSetup(uint32_t durationMs) {
 			__HAL_RCC_ADC1_CLK_DISABLE();
 		#endif
 
+		// ??? add ?? Not yet tested
+		//__HAL_FLASH_SLEEP_POWERDOWN_ENABLE();
 
 
  	    // Switch to STOPMode
@@ -241,12 +245,17 @@ stm32l_lowPowerReturn_e stm32l_lowPowerResume() {
 	//  useful line of code to identify the wakeup cause when needed...
 	//if (__lowPower_wakeup_reason != LOWPWR_WAKEUP_UNDEF ) {
 	//	if ( __lowPower_wakeup_reason == LOWPWR_WAKEUP_GPIO )
+    //     #if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_GPIO ) > 0
 	//		log_info("-%d-(%d)-",__lowPower_wakeup_reason,__lowPower_wakeup_pin);
+    //     #else
+	//	    log_info("!");
+    //     #endif
 	//	else
 	//		log_info("-%d-",__lowPower_wakeup_reason);
 	//} else {
 	//	log_info("|");
 	//}
+
 	return STM32L_LOWPOWER_SUCCESS;
 }
 
