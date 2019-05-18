@@ -143,8 +143,40 @@ void itsdk_aes_crt_encrypt_128B(
 
 #endif
 
+#if ITSDK_WITH_SIGFOX_LIB == __ENABLE
+
+/**
+ * CBC encryption with Iv = 0
+ * clearData and encryptedData ca be the same buffer
+ * support multiple block encryption
+ */
+void itsdk_aes_cbc_encrypt_128B(
+		uint8_t	* clearData,			// Data to be encrypted
+		uint8_t * encryptedData,		// Can be the same as clearData
+		uint8_t   dataLen,				// Size of data to be encrypted can be higher than 16B
+		uint8_t * masterKey				// 128B key used for encryption (hidden with ITSDK_PROTECT_KEY)
+) {
+	uint8_t aesResult[16];
+	itsdk_encrypt_unCifferKey(masterKey,16);
+	struct AES_ctx ctx;
+	bzero(ctx.Iv,16);
+	tiny_AES_init_ctx(&ctx,masterKey);
+
+	for ( int k = 0 ; k < dataLen/16 ; k++ ) {
+		memcpy(aesResult,&clearData[16*k],16);
+		tiny_AES_CBC_encrypt_buffer(&ctx, aesResult, 16);
+		memcpy(&encryptedData[16*k],aesResult,16);
+	}
+	itsdk_encrypt_cifferKey(masterKey,16);
+	bzero(aesResult,16);
+	bzero(&ctx,sizeof(struct AES_ctx));
+}
+
+#endif
+
 
 #if ITSDK_WITH_SECURESTORE == __ENABLE
+
 
 /**
  * ECB encryption with Iv = 0
@@ -166,6 +198,7 @@ void itsdk_aes_ecb_encrypt_128B(
 	itsdk_encrypt_cifferKey(masterKey,16);
 	memcpy(encryptedData,aesResult,16);
 	bzero(aesResult,16);
+	bzero(&ctx,sizeof(struct AES_ctx));
 }
 
 /**

@@ -43,7 +43,7 @@ Maintainer: Miguel Luis and Gregory Cristian
 
 #include <it_sdk/wrappers.h>
 
-#define BOARD_WAKEUP_TIME  5
+#define BOARD_WAKEUP_TIME  50		// Was 5ms wait after TCXO is set ON, try 50 to see if we have a better stability
 #define IRQ_HIGH_PRIORITY  0
 
 #define TCXO_ON() gpio_set(ITSDK_SX1276_TCXO_VCC_BANK,ITSDK_SX1276_TCXO_VCC_PIN);

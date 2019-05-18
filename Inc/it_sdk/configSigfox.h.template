@@ -42,7 +42,7 @@
 // | SDK SETTING                   | USER SELECTED VALUE                  | SETTING DESCRIPTION                   |
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // +------------SIGFOX-------------|--------------------------------------|---------------------------------------|
-#if ITSDK_WITH_SIGFOX_LIB == 1
+#if ITSDK_WITH_SIGFOX_LIB == __ENABLE
 #define ITSDK_SIGFOX_ENCRYPTION		(   __PAYLOAD_ENCRYPT_NONE          \
   									  | __PAYLOAD_ENCRYPT_AESCTR 		\
 									  | __PAYLOAD_ENCRYPT_SPECK 		\

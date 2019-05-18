@@ -97,4 +97,13 @@ void itsdk_aes_ecb_decrypt_128B(
 		uint8_t   dataLen,				// Size of data to be encrypted
 		uint8_t * masterKey				// 128B key used for encryption (hidden with ITSDK_PROTECT_KEY)
 );
+
+
+void itsdk_aes_cbc_encrypt_128B(
+		uint8_t	* clearData,			// Data to be encrypted
+		uint8_t * encryptedData,		// Can be the same as clearData
+		uint8_t   dataLen,				// Size of data to be encrypted can be higher than 16B
+		uint8_t * masterKey				// 128B key used for encryption (hidden with ITSDK_PROTECT_KEY)
+);
+
 #endif /* IT_SDK_ENCRYPT_H_ */
