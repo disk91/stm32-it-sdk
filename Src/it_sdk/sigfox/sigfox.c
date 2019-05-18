@@ -649,7 +649,7 @@ itsdk_sigfox_init_t itsdk_sigfox_getSeNvmOffset(uint32_t * offset) {
 itsdk_sigfox_init_t __itsdk_sigfox_resetNvmToFactory() {
 	LOG_INFO_SIGFOXSTK(("__itsdk_sigfox_resetNvmToFactory\r\n"));
 
-	uint8_t se_nvm_default[SFX_SE_NVMEM_BLOCK_SIZE] = { 0xFF, 0, 0, 0x0F, 0xFF };
+	uint8_t se_nvm_default[SFX_SE_NVMEM_BLOCK_SIZE] = { 0, 0, 0, 0x0F, 0xFF };
 	SE_NVM_set(se_nvm_default);
 	uint8_t se_mcu_default[SFX_NVMEM_BLOCK_SIZE];
 	bzero(se_mcu_default,SFX_NVMEM_BLOCK_SIZE);

@@ -113,11 +113,6 @@ sfx_u8 MCU_API_get_voltage_temperature(sfx_u16 *voltage_idle, sfx_u16 *voltage_t
 /**
  * Wait for the given delay_type..
  */
-// Let see if the use of sTimer is better for log wait ... later
-//static void OnTimerDelayEvt( void ) {
-//	LOG_DEBUG_SFXSX1276((">> OnTimerDelayEvt\r\n"));
-//	SCH_SetEvt( DELAY_EVT );
-//}
 #warning "We could optimize long stop with going to sleep..."
 sfx_u8 MCU_API_delay(sfx_delay_t delay_type)
 {
@@ -162,7 +157,6 @@ sfx_u8 MCU_API_delay(sfx_delay_t delay_type)
         err = MCU_ERR_API_DLY;
         break;
     }
-    //SCH_SetEvt( DELAY_EVT );
     return err;
 }
 
@@ -183,8 +177,7 @@ sfx_u8 MCU_API_get_nv_mem(sfx_u8 read_data[SFX_NVMEM_BLOCK_SIZE])
 	_eeprom_read(ITDT_EEPROM_BANK0, offset, (void *) tab, sz);
 	bcopy(tab,read_data,SFX_NVMEM_BLOCK_SIZE);
 
-	#warning to_remove
-	log_info_array("MCU_NVM",read_data,SFX_NVMEM_BLOCK_SIZE);
+	//log_info_array("MCU_NVM",read_data,SFX_NVMEM_BLOCK_SIZE);
 
     return SFX_ERR_NONE;
 }
@@ -195,8 +188,7 @@ sfx_u8 MCU_API_get_nv_mem(sfx_u8 read_data[SFX_NVMEM_BLOCK_SIZE])
 sfx_u8 MCU_API_set_nv_mem(sfx_u8 data_to_write[SFX_NVMEM_BLOCK_SIZE])
 {
 	LOG_DEBUG_SFXSX1276((">> MCU_API_set_nv_mem\r\n"));
-	#warning to_remove
-	log_info_array("MCU_NVM",data_to_write,SFX_NVMEM_BLOCK_SIZE);
+	//log_info_array("MCU_NVM",data_to_write,SFX_NVMEM_BLOCK_SIZE);
 
 
 	uint32_t offset;
@@ -586,8 +578,7 @@ sfx_u8 SE_NVM_get(sfx_u8 read_data[SFX_SE_NVMEM_BLOCK_SIZE])
 	_eeprom_read(ITDT_EEPROM_BANK0, offset, (void *) tab, sz);
 	bcopy(tab,read_data,SFX_SE_NVMEM_BLOCK_SIZE);
 
-	#warning to_remove
-	log_info_array("SE_NVM",read_data,SFX_SE_NVMEM_BLOCK_SIZE);
+	//log_info_array("SE_NVM",read_data,SFX_SE_NVMEM_BLOCK_SIZE);
 
     return SFX_ERR_NONE;
 }
@@ -599,8 +590,8 @@ sfx_u8 SE_NVM_get(sfx_u8 read_data[SFX_SE_NVMEM_BLOCK_SIZE])
 sfx_u8 SE_NVM_set(sfx_u8 data_to_write[SFX_SE_NVMEM_BLOCK_SIZE])
 {
 	LOG_DEBUG_SFXSX1276((">> SE_NVM_set\r\n"));
-#warning to_remove
-log_info_array("SE_NVM",data_to_write,SFX_SE_NVMEM_BLOCK_SIZE);
+
+	//log_info_array("SE_NVM",data_to_write,SFX_SE_NVMEM_BLOCK_SIZE);
 
 	uint32_t offset;
 	itsdk_sigfox_getSeNvmOffset(&offset);

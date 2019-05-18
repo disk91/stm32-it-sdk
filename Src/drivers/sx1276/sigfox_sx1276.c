@@ -32,6 +32,7 @@
 #include <it_sdk/eeprom/sdk_state.h>
 #include <it_sdk/time/timer.h>
 #include <drivers/sigfox/sigfox_api.h>
+#include <drivers/sigfox/se_nvm.h>
 #include <drivers/sx1276/sigfox_sx1276.h>
 #include <drivers/sx1276/sx1276.h>
 
@@ -139,10 +140,10 @@ sx1276_sigfox_ret_t sx1276_sigfox_setPower( uint8_t power ) {
  */
 sx1276_sigfox_ret_t sx1276_sigfox_getSeqId( uint16_t * seqId ) {
 	LOG_INFO_SFXSX1276((">> sx1276_sigfox_getSeqId\r\n"));
-
-#warning "TO BE COMPLETED"
-  *seqId = 0;
-  return SX1276_SIGFOX_ERR_NONE;
+	sfx_u8 read_data[SFX_SE_NVMEM_BLOCK_SIZE];
+	SE_NVM_get(read_data);
+    *seqId = (read_data[SE_NVMEM_SEQNUM]+(read_data[SE_NVMEM_SEQNUM+1] << 8)) & 0xFFF;
+    return SX1276_SIGFOX_ERR_NONE;
 }
 
 /**
