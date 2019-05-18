@@ -107,7 +107,10 @@ _SPI_Status spi_transmit_dma_start(
 		uint16_t  			size,
 		void (* pCallback)( void )
 ) {
+	  DMA_HandleTypeDef *hdma= spi->hdmatx;
 	  __spi_dma_tranfertCompleteCB = pCallback;
+      __HAL_DMA_DISABLE_IT(hdma, DMA_IT_HT);
+      __HAL_DMA_ENABLE_IT(hdma, DMA_IT_TC);
 	  if ( HAL_SPI_Transmit_DMA(spi, pData, size) == HAL_OK ) {
 	     return SPI_OK;
 	  } else {

@@ -49,9 +49,11 @@
 #if ( ITSDK_WITH_SIGFOX_LIB == __ENABLE ) && (ITSDK_SIGFOX_LIB == __SIGFOX_SX1276)
 
 #if ITSDK_PLATFORM != __PLATFORM_STM32L0
-#error The ST implementation requires use of Timer 2 and DMA complicated to abstract - need to be rewritten
+#error "sigfox_lowlevel is not compatible with platform other than stm32"
+#else
+#warning "sigfox_lowlevel file contains non portable code"
 #endif
-
+#include <string.h>
 #include <it_sdk/configSigfox.h>
 #include <drivers/sx1276/sigfox_lowlevel.h>
 #include <drivers/sx1276/sx1276.h>
@@ -96,7 +98,6 @@ static void __irqHandlers_dio0( uint16_t GPIO_Pin) {
 	LOG_DEBUG_SFXSX1276((">> __irqHandlers_dio0\r\n"));
 	sx1276_sigfox_state.rxPacketReceived = STLL_SET;		// Set a frame have been received
 	sx1276_sigfox_state.timerEvent = SIGFOX_EVENT_SET;		// Clear the running timer event
-//   SCH_SetEvt( TIMOUT_EVT );
 }
 
 /*!
@@ -128,26 +129,17 @@ void STLL_Radio_IoInit( void )
   __sx1276_gpio_irq[4].pinMask = ITSDK_SX1276_DIO_4_PIN;
   gpio_registerIrqAction(&__sx1276_gpio_irq[4]);
 
-  
-  //HW_GPIO_SetIrq( RADIO_DIO_0_PORT, RADIO_DIO_0_PIN, IRQ_PRIORITY_RADIO, RADIO_rx_packet_interrupt_handler );
-  //HW_GPIO_SetIrq( RADIO_DIO_4_PORT, RADIO_DIO_4_PIN, IRQ_PRIORITY_RADIO, STLL_RX_SYNC_IRQHandler_CB );
 }
 
 void STLL_Radio_IoDeInit( void )
 {
-    LOG_DEBUG_SFXSX1276((">> STLL_Radio_IoDeInit\r\n"));
+  LOG_DEBUG_SFXSX1276((">> STLL_Radio_IoDeInit\r\n"));
 
-	gpio_removeIrqAction(&__sx1276_gpio_irq[0]);
-	gpio_removeIrqAction(&__sx1276_gpio_irq[1]);
-	gpio_removeIrqAction(&__sx1276_gpio_irq[2]);
-	gpio_removeIrqAction(&__sx1276_gpio_irq[3]);
-	gpio_removeIrqAction(&__sx1276_gpio_irq[4]);
-
-//  HW_GPIO_SetIrq( RADIO_DIO_0_PORT, RADIO_DIO_0_PIN, IRQ_PRIORITY_RADIO, NULL );
-//  HW_GPIO_SetIrq( RADIO_DIO_1_PORT, RADIO_DIO_1_PIN, IRQ_PRIORITY_RADIO, NULL );
-//  HW_GPIO_SetIrq( RADIO_DIO_2_PORT, RADIO_DIO_2_PIN, IRQ_PRIORITY_RADIO, NULL );
-//  HW_GPIO_SetIrq( RADIO_DIO_3_PORT, RADIO_DIO_3_PIN, IRQ_PRIORITY_RADIO, NULL );
-//  HW_GPIO_SetIrq( RADIO_DIO_4_PORT, RADIO_DIO_4_PIN, IRQ_PRIORITY_RADIO, NULL );
+  gpio_removeIrqAction(&__sx1276_gpio_irq[0]);
+  gpio_removeIrqAction(&__sx1276_gpio_irq[1]);
+  gpio_removeIrqAction(&__sx1276_gpio_irq[2]);
+  gpio_removeIrqAction(&__sx1276_gpio_irq[3]);
+  gpio_removeIrqAction(&__sx1276_gpio_irq[4]);
 
   SX1276IoDeInit();
 }
@@ -199,7 +191,6 @@ STLL_flag STLL_WaitEndOfTxFrame( void )
       wdg_refresh();
   }
   LOG_DEBUG_SFXSX1276(("    Wait Done\r\n"));
-  //SCH_WaitEvt( EOFTX_EVT );
   
   return STLL_SET;
 }
@@ -233,82 +224,69 @@ void STLL_onSpiDmaTxComplete(void) {
  * This is making alternate on accessible pin.
  */
 extern DMA_HandleTypeDef ITSDK_SX1276_SPIDMATX;
+#define __DMA_HANDLER ITSDK_SX1276_SPIDMATX
+
+extern SPI_HandleTypeDef hspi1;
+#define __SPI_HANDLER ITSDK_SX1276_SPI
+
 void STLL_Transmit_DMA_Start( uint16_t *pDataSource, uint16_t Size)
 {
-  	  LOG_DEBUG_SFXSX1276((">> STLL_Transmit_DMA_Start\r\n"));
+  	LOG_DEBUG_SFXSX1276((">> STLL_Transmit_DMA_Start\r\n"));
 
-	  // LL_SPI_SetDataWidth(SpiHandle.Instance,  LL_SPI_DATAWIDTH_16BIT );
-  	  // Configure SPI as 16bits words
-	  ITSDK_SX1276_SPI.Instance->CR1 &= ~SPI_CR1_DFF_Msk;
-	  ITSDK_SX1276_SPI.Instance->CR1 |= SPI_DATASIZE_16BIT;
-	  //ITSDK_SX1276_SPI.Instance->CR1 &= SPI_CR1_SSM_Msk;    // NSS HARD ?
-	  //ITSDK_SX1276_SPI.Instance->CR1 |= SPI_NSS_HARD_INPUT;
+    // Reconfigure SPI from scratch for the DMA transfer
+    // SPI speed is 16MHz (SPI_BAUDRATEPRESCALER_2) 16B
+    bzero(&__SPI_HANDLER,sizeof(SPI_HandleTypeDef));
+   	__SPI_HANDLER.Instance = SPI1;
+  	__SPI_HANDLER.Init.Mode = SPI_MODE_MASTER;
+  	__SPI_HANDLER.Init.Direction = SPI_DIRECTION_2LINES;
+  	__SPI_HANDLER.Init.DataSize = SPI_DATASIZE_16BIT;
+  	__SPI_HANDLER.Init.CLKPolarity = SPI_POLARITY_LOW;
+  	__SPI_HANDLER.Init.CLKPhase = SPI_PHASE_1EDGE;
+  	__SPI_HANDLER.Init.NSS = SPI_NSS_SOFT;
+  	__SPI_HANDLER.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  	__SPI_HANDLER.Init.FirstBit = SPI_FIRSTBIT_MSB;
+  	__SPI_HANDLER.Init.TIMode = SPI_TIMODE_DISABLE;
+  	__SPI_HANDLER.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
+  	__SPI_HANDLER.Init.CRCPolynomial = 7;
+    HAL_SPI_Init(&__SPI_HANDLER);
+    itsdk_delayMs(1);
 
-	  // Configure NSS to be piloted by TIM2 for DMA access
-	 // gpio_configure_ext(ITSDK_SX1276_NSS_BANK, ITSDK_SX1276_NSS_PIN, GPIO_OUTPUT_PULLUP,ITSDK_GPIO_SPEED_HIGH,ITSDK_GPIO_ALT_NONE);
-	 // gpio_change(ITSDK_SX1276_NSS_BANK,ITSDK_SX1276_NSS_PIN,1);
-	  gpio_configure_ext(ITSDK_SX1276_NSS_BANK, ITSDK_SX1276_NSS_PIN, GPIO_ALTERNATE_PP_PULLUP,ITSDK_GPIO_SPEED_HIGH,ITSDK_GPIO_ALT_TIMER2_C1);
+    // bzero(&__DMA_HANDLER, sizeof(DMA_HandleTypeDef));
+  	// Overide the DMA configuration and link it with SPI_TX
+  	// Channel 3 / Request 8 is corresponding to TIM2 CC2 control
+  	// 16B
+	__HAL_RCC_SPI1_CLK_ENABLE();
+	__HAL_RCC_DMA1_CLK_ENABLE();
+	HAL_DMA_DeInit(&__DMA_HANDLER);
+	__HAL_RCC_SPI1_CLK_ENABLE();
+	__HAL_RCC_DMA1_CLK_ENABLE();
 
-//	 gpio_configure_ext(__BANK_A, __LP_GPIO_0, GPIO_ALTERNATE_PP_PULLUP,ITSDK_GPIO_SPEED_HIGH,ITSDK_GPIO_ALT_TIMER2_C1);
-//	 gpio_configure_ext(__BANK_A, __LP_GPIO_5, GPIO_ALTERNATE_PP_PULLDOWN,ITSDK_GPIO_SPEED_HIGH,ITSDK_GPIO_ALT_SPI1_SCLK);
-//	 gpio_configure_ext(__BANK_B, __LP_GPIO_5, GPIO_ALTERNATE_PP_PULLDOWN,ITSDK_GPIO_SPEED_HIGH,ITSDK_GPIO_ALT_SPI1_MOSI);
+	__DMA_HANDLER.Instance = DMA1_Channel3;
+	__DMA_HANDLER.Init.Request = DMA_REQUEST_8;
+	__DMA_HANDLER.Init.Direction = DMA_MEMORY_TO_PERIPH;
+	__DMA_HANDLER.Init.PeriphInc = DMA_PINC_DISABLE;
+	__DMA_HANDLER.Init.MemInc = DMA_MINC_ENABLE;
+	__DMA_HANDLER.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
+	__DMA_HANDLER.Init.MemDataAlignment = DMA_MDATAALIGN_HALFWORD;
+	__DMA_HANDLER.Init.Mode = DMA_CIRCULAR;
+	__DMA_HANDLER.Init.Priority = DMA_PRIORITY_HIGH;
+	HAL_DMA_Init(&__DMA_HANDLER);
+    __HAL_LINKDMA(&__SPI_HANDLER,hdmatx,__DMA_HANDLER);
 
-	  /*
-	  __GPIOA_CLK_ENABLE();
-	  // LL_GPIO_SetPinMode(RADIO_NSS_PORT, RADIO_NSS_PIN, LL_GPIO_MODE_ALTERNATE);
-	  MODIFY_REG(bank_nss->MODER, ((ITSDK_SX1276_NSS_PIN * ITSDK_SX1276_NSS_PIN) * GPIO_MODER_MODE0), ((ITSDK_SX1276_NSS_PIN * ITSDK_SX1276_NSS_PIN) * GPIO_MODER_MODE0_1));
-	  // LL_GPIO_SetPinOutputType(RADIO_NSS_PORT, RADIO_NSS_PIN, LL_GPIO_OUTPUT_PUSHPULL);
-	  MODIFY_REG(bank_nss->OTYPER, ITSDK_SX1276_NSS_PIN, (ITSDK_SX1276_NSS_PIN * ((uint32_t)0x00000000U)));
-	  // LL_GPIO_SetPinSpeed(RADIO_NSS_PORT, RADIO_NSS_PIN, LL_GPIO_SPEED_FREQ_HIGH);
-      MODIFY_REG(bank_nss->OSPEEDR, ((ITSDK_SX1276_NSS_PIN * ITSDK_SX1276_NSS_PIN) * GPIO_OSPEEDER_OSPEED0), ((ITSDK_SX1276_NSS_PIN * ITSDK_SX1276_NSS_PIN) * GPIO_OSPEEDER_OSPEED0_1));
-	  // LL_GPIO_SetPinPull(RADIO_NSS_PORT, RADIO_NSS_PIN, GPIO_PULLUP);
-	  MODIFY_REG(bank_nss->PUPDR, ((ITSDK_SX1276_NSS_PIN * ITSDK_SX1276_NSS_PIN) * GPIO_PUPDR_PUPD0), ((ITSDK_SX1276_NSS_PIN * ITSDK_SX1276_NSS_PIN) * GPIO_PULLUP));
-	  // LL_GPIO_SetAFPin_8_15(RADIO_NSS_PORT, RADIO_NSS_PIN, TIMx_GPIO_AF_CHANNEL1);
-	  GPIO_TypeDef * bank_nss = getPortFromBankId(ITSDK_SX1276_NSS_BANK);
-	  MODIFY_REG(bank_nss->AFR[1], (((((ITSDK_SX1276_NSS_PIN >> 8U) * (ITSDK_SX1276_NSS_PIN >> 8U)) * (ITSDK_SX1276_NSS_PIN >> 8U)) * (ITSDK_SX1276_NSS_PIN >> 8U)) * GPIO_AFRH_AFRH0),
-	             (((((ITSDK_SX1276_NSS_PIN >> 8U) * (ITSDK_SX1276_NSS_PIN >> 8U)) * (ITSDK_SX1276_NSS_PIN >> 8U)) * (ITSDK_SX1276_NSS_PIN >> 8U)) * TIMx_GPIO_AF_CHANNEL1));
-	  */
+    HAL_NVIC_SetPriority(DMA1_Channel2_3_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(DMA1_Channel2_3_IRQn);
 
-	  // Configure DMA
-	  // The source is defined by Couple Channel3/Request_8 according to L0 familly Ds pdf page 246
-
-
-	  __HAL_RCC_SPI1_CLK_ENABLE();
-	  __HAL_RCC_DMA1_CLK_ENABLE();
-	  HAL_DMA_DeInit(&ITSDK_SX1276_SPIDMATX);
-	  __HAL_RCC_SPI1_CLK_ENABLE();
-	  __HAL_RCC_DMA1_CLK_ENABLE();
-	  ITSDK_SX1276_SPIDMATX.Instance = DMA1_Channel3;
-	  ITSDK_SX1276_SPIDMATX.Init.Request = DMA_REQUEST_8;
-	  ITSDK_SX1276_SPIDMATX.Init.Direction = DMA_MEMORY_TO_PERIPH;
-	  ITSDK_SX1276_SPIDMATX.Init.PeriphInc = DMA_PINC_DISABLE;
-	  ITSDK_SX1276_SPIDMATX.Init.MemInc = DMA_MINC_ENABLE;
-	  ITSDK_SX1276_SPIDMATX.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
-	  ITSDK_SX1276_SPIDMATX.Init.MemDataAlignment = DMA_MDATAALIGN_HALFWORD;   // DMA_PDATAALIGN_HALFWORD; was : DMA_MDATAALIGN_BYTE
-	  ITSDK_SX1276_SPIDMATX.Init.Mode = DMA_CIRCULAR;
-	  ITSDK_SX1276_SPIDMATX.Init.Priority = DMA_PRIORITY_HIGH;
-	  HAL_DMA_Init(&ITSDK_SX1276_SPIDMATX);
-      __HAL_LINKDMA(&ITSDK_SX1276_SPI,hdmatx,ITSDK_SX1276_SPIDMATX);
-
-      //__HAL_DMA_ENABLE_IT(&ITSDK_SX1276_SPIDMATX, DMA_IT_HT);
-      //__HAL_DMA_ENABLE_IT(&ITSDK_SX1276_SPIDMATX, DMA_IT_TC);
-
-      HAL_NVIC_SetPriority(DMA1_Channel2_3_IRQn, 0, 0);
-	  HAL_NVIC_EnableIRQ(DMA1_Channel2_3_IRQn);
-
-	 // HAL_NVIC_SetPriority(SPI1_IRQn, 0, 0);
-	 // HAL_NVIC_DisableIRQ(SPI1_IRQn);
-
-  	  //log_info_array("DMA",pDataSource,Size);
-
-	  if ( spi_transmit_dma_start(
+    /**
+     * Start the DMA transmission
+     */
+	if ( spi_transmit_dma_start(
 				&ITSDK_SX1276_SPI,
 				(uint8_t *)pDataSource,
 				Size,
 				STLL_onSpiDmaTxComplete
 		  ) != SPI_OK ) {
 		  LOG_ERROR_SFXSX1276(("** spi_transmit_dma_start Error \r\n"));
-	  }
+	}
 }
 
 /**
@@ -319,24 +297,16 @@ void STLL_Transmit_DMA_Stop( void )
     // Called by an interrupt from the sigfox library
 	LOG_DEBUG_SFXSX1276((">> STLL_Transmit_DMA_Stop\r\n"));
 
-    spi_transmit_dma_stop(&ITSDK_SX1276_SPI);
+	spi_transmit_dma_stop(&__SPI_HANDLER);
 	HAL_NVIC_DisableIRQ(DMA1_Channel2_3_IRQn);
 
     // Restore the normal SPI configuration
 #if ITSDK_SX1276_SPI == hspi1
+	bzero(&__SPI_HANDLER,sizeof(SPI_HandleTypeDef));
 	MX_SPI1_Init();
 #else
 	#error "Please update this part for the use of another spi handler"
 #endif
-	HAL_SPI_MspInit(&ITSDK_SX1276_SPI);
-
-     //ITSDK_SX1276_SPI.Instance->CR1 &= SPI_CR1_DFF_Msk;
-	 //ITSDK_SX1276_SPI.Instance->CR1 |= SPI_DATASIZE_8BIT;
-
-	 // Restore the NSS pin configuration avec a normal GPIO
-	 gpio_configure_ext(ITSDK_SX1276_NSS_BANK, ITSDK_SX1276_NSS_PIN, GPIO_OUTPUT_PULLUP,ITSDK_GPIO_SPEED_HIGH,ITSDK_GPIO_ALT_NONE);
-	 gpio_set(ITSDK_SX1276_NSS_BANK,ITSDK_SX1276_NSS_PIN);
-
 }
 
 /* =========================================================================
@@ -370,48 +340,67 @@ void STLL_Transmit_DMA_Stop( void )
  * =========================================================================
  */
 
-#define  TIM2_PULSE_WIDTH  ((uint32_t) 2 )		   // 62,5ns
-#define  TIM2_PERIOD       ((uint32_t) 400)        // 12,5us @ 32MHz => Good & verified
-#define  SPI_LAUNCH_DELAY  ((uint32_t) 69)		   // 2.15us
+#define  TIM2_PULSE_WIDTH  ((uint32_t) 2 )		   // 62,5ns (2)
+#define  TIM2_PERIOD       ((uint32_t) 400)        // 12,5us @ 32MHz => Good & verified (400)
+#define  SPI_LAUNCH_DELAY  ((uint32_t) 69)		   // 2.15us (69)
 
-void STLL_TIM2_Init( void ) {
+static TIM_HandleTypeDef __sx1276_htim2 = {0};
+#define __TIM_HANDLER __sx1276_htim2
+
+void STLL_TIM2_Init( uint32_t period ) {
 	LOG_DEBUG_SFXSX1276((">> STLL_TIM2_Init\r\n"));
 
-	//HAL_TIM_Base_DeInit(&ITSDK_SX1276_TIM);
+	TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+	TIM_MasterConfigTypeDef sMasterConfig = {0};
+	TIM_OC_InitTypeDef sConfigOC = {0};
 
-	//HAL_TIM_Base_MspInit(&ITSDK_SX1276_TIM);
 	__HAL_RCC_TIM2_CLK_ENABLE();
 
 	// -1- Timer Output Compare Configuration Structure declaration
-	TIM_OC_InitTypeDef sConfig;
+	switch (ITSDK_SX1276_TIM_ID) {
+	  case 2:
+		__TIM_HANDLER.Instance = TIM2;		// Set by CubeMx config
+		break;
+	  default:
+	  	LOG_ERROR_SFXSX1276(("   Invalid TIM Handler\r\n"));
+	  	return;
+	}
+	__TIM_HANDLER.Init.Prescaler     = 0;
+	__TIM_HANDLER.Init.CounterMode   = TIM_COUNTERMODE_UP;
+	__TIM_HANDLER.Init.Period        = period-1;
+	__TIM_HANDLER.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+	__TIM_HANDLER.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+	HAL_TIM_Base_Init(&__TIM_HANDLER);
+	sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+	HAL_TIM_ConfigClockSource(&__TIM_HANDLER, &sClockSourceConfig);
+	HAL_TIM_PWM_Init(&__TIM_HANDLER);
+	HAL_TIM_OC_Init(&__TIM_HANDLER);
 
-	ITSDK_SX1276_TIM.Instance = TIM2;		// Set by CubeMx config
-
-	ITSDK_SX1276_TIM.Init.Period        = TIM2_PERIOD-1;
-	ITSDK_SX1276_TIM.Init.Prescaler     = 0;
-	ITSDK_SX1276_TIM.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-	ITSDK_SX1276_TIM.Init.CounterMode   = TIM_COUNTERMODE_UP;
-
-	HAL_TIM_OC_Init(&ITSDK_SX1276_TIM);
+	sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+	sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+	HAL_TIMEx_MasterConfigSynchronization(&__TIM_HANDLER, &sMasterConfig);
 
 	// ##-2- Configure the Output Compare channels
 	// Pilot NSS signal
-	sConfig.OCMode     = TIM_OCMODE_PWM1;
-	sConfig.OCPolarity = TIM_OCPOLARITY_HIGH;
-	sConfig.Pulse = TIM2_PULSE_WIDTH;
-
-	HAL_TIM_OC_ConfigChannel(&ITSDK_SX1276_TIM, &sConfig, TIM_CHANNEL_1);
+	sConfigOC.OCMode     = TIM_OCMODE_PWM1;
+	sConfigOC.Pulse 	 = TIM2_PULSE_WIDTH;
+	sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+	sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+	HAL_TIM_PWM_ConfigChannel(&__TIM_HANDLER, &sConfigOC, TIM_CHANNEL_1);
 
 	// Pilot DMA transfer - HIGH Level puse of 2.15uS
-	sConfig.OCMode     = TIM_OCMODE_ACTIVE;
-	sConfig.OCPolarity = TIM_OCPOLARITY_HIGH;
-	sConfig.Pulse = SPI_LAUNCH_DELAY;
+	sConfigOC.OCMode     = TIM_OCMODE_ACTIVE;
+	sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+	sConfigOC.Pulse      = SPI_LAUNCH_DELAY;
+	HAL_TIM_OC_ConfigChannel(&__TIM_HANDLER, &sConfigOC, TIM_CHANNEL_2);
 
-	HAL_TIM_OC_ConfigChannel(&ITSDK_SX1276_TIM, &sConfig, TIM_CHANNEL_2);
+	// Configure the NSS pin as TIM2_CC1 controled output
+	gpio_configure_ext(ITSDK_SX1276_NSS_BANK, ITSDK_SX1276_NSS_PIN, GPIO_ALTERNATE_PP_PULLUP,ITSDK_GPIO_SPEED_HIGH,ITSDK_GPIO_ALT_TIMER2_C1);
 
 	// ##-3- Start signals generation
 	// Start channel 2 in Output compare mode
-    __HAL_TIM_ENABLE_DMA(&ITSDK_SX1276_TIM, TIM_DMA_CC2);
+	__HAL_TIM_ENABLE_DMA(&__TIM_HANDLER, TIM_DMA_CC2);
+
 }
 
 
@@ -419,48 +408,40 @@ void STLL_TIM2_Start( void ) {
   // Remove logging because NSS is driven by TIM2 and in relation with SPI.
   // Logging is killing the timings.
   //LOG_DEBUG_SFXSX1276((">> STLL_TIM2_Start\r\n"));
-
-  __HAL_TIM_SET_COUNTER(&ITSDK_SX1276_TIM, 0) ;
-  HAL_TIM_Base_Start(&ITSDK_SX1276_TIM);
-  HAL_TIM_OC_Start(&ITSDK_SX1276_TIM, TIM_CHANNEL_1);
-  HAL_TIM_OC_Start(&ITSDK_SX1276_TIM, TIM_CHANNEL_2);
+  __HAL_TIM_SET_COUNTER(&__TIM_HANDLER, 0) ;
+  HAL_TIM_Base_Start(&__TIM_HANDLER);
+  HAL_TIM_OC_Start(&__TIM_HANDLER, TIM_CHANNEL_1);
+  HAL_TIM_OC_Start(&__TIM_HANDLER, TIM_CHANNEL_2);
 }
 
 void STLL_TIM2_Stop( void ) {
-  // Called by the DMA interrupt and from sigfox lib
-  LOG_DEBUG_SFXSX1276((">> STLL_TIM2_Stop\r\n"));
+	  // Clear the update interrupt flag
+	  __HAL_TIM_CLEAR_FLAG(&__TIM_HANDLER, TIM_FLAG_UPDATE);
+	  // Wait for the update interrupt flag
+	  while(__HAL_TIM_GET_FLAG(&__TIM_HANDLER, TIM_FLAG_UPDATE) != SET);
+	  // stop the timer
+	  HAL_TIM_OC_Stop(&__TIM_HANDLER, TIM_CHANNEL_1);
+	  // stop the timer
+	  HAL_TIM_OC_Stop(&__TIM_HANDLER, TIM_CHANNEL_2);
+	  // reset counter value to 0 the timer
+	  __HAL_TIM_SET_COUNTER(&__TIM_HANDLER, 0) ;
+	  // clear counter flag
+	  __HAL_TIM_CLEAR_FLAG(&__TIM_HANDLER, TIM_FLAG_CC1);
 
-  // Clear the update interrupt flag
-  __HAL_TIM_CLEAR_FLAG(&ITSDK_SX1276_TIM, TIM_FLAG_UPDATE);
-  // Wait for the update interrupt flag
-  while(__HAL_TIM_GET_FLAG(&ITSDK_SX1276_TIM, TIM_FLAG_UPDATE) != SET);
-  // stop the timer
-  HAL_TIM_OC_Stop(&ITSDK_SX1276_TIM, TIM_CHANNEL_1);
-  // stop the timer
-  HAL_TIM_OC_Stop(&ITSDK_SX1276_TIM, TIM_CHANNEL_2);
-  // reset counter value to 0 the timer
-  __HAL_TIM_SET_COUNTER(&ITSDK_SX1276_TIM, 0) ;
-  // clear counter flag
-  __HAL_TIM_CLEAR_FLAG(&ITSDK_SX1276_TIM, TIM_FLAG_CC1);
+	  // Restore the NSS pin configuration avec a normal GPIO
+	  gpio_configure_ext(ITSDK_SX1276_NSS_BANK, ITSDK_SX1276_NSS_PIN, GPIO_OUTPUT_PULLUP,ITSDK_GPIO_SPEED_HIGH,ITSDK_GPIO_ALT_NONE);
+	  gpio_set(ITSDK_SX1276_NSS_BANK,ITSDK_SX1276_NSS_PIN);
 }
 
 void STLL_TIM2_SetPeriod( uint32_t period ) {
 	LOG_DEBUG_SFXSX1276((">> STLL_TIM2_SetPeriod (%d)\r\n",period));
-	STLL_TIM2_Init();
-
-	//ITSDK_SX1276_TIM.Instance = TIM2;	// Set by CubeMx config
-	ITSDK_SX1276_TIM.Init.Period        = period-1;
-	ITSDK_SX1276_TIM.Init.Prescaler     = 0;
-	ITSDK_SX1276_TIM.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-	ITSDK_SX1276_TIM.Init.CounterMode   = TIM_COUNTERMODE_UP;
-    HAL_TIM_OC_Init(&ITSDK_SX1276_TIM);
+	STLL_TIM2_Init(period);
 }
 
 
 uint32_t STLL_TIM2_GetPeriod( void ) {
 	LOG_DEBUG_SFXSX1276((">> STLL_TIM2_GetPeriod\r\n"));
-
-	return ITSDK_SX1276_TIM.Init.Period+1;
+	return __TIM_HANDLER.Init.Period+1;
 }
 
 
@@ -472,10 +453,8 @@ void STLL_LowPower(STLL_State State)
   LOG_DEBUG_SFXSX1276((">> STLL_LowPower(%d)\r\n",State));
   if ( State == STLL_ENABLE) {
 	  sx1276_sigfox_state.lowPowerAuthorised = SIGFOX_LPMODE_AUTHORIZED;
-	  //LPM_SetStopMode( LPM_LIB_Id, LPM_Enable);
   } else {
 	  sx1276_sigfox_state.lowPowerAuthorised = SIGFOX_LPMODE_PROHIBITED;
-      // LPM_SetStopMode( LPM_LIB_Id, LPM_Disable);
   }
 }
 
@@ -485,7 +464,7 @@ void STLL_LowPower(STLL_State State)
  * The TCXO is driving the communication frequency and we need to switch from HSI to
  * external HSE connected to TCXO.
  */
-#warning "This function contains non portable code"
+
 void STLL_SetClockSource( stll_clockType_e clocktype)
 {
   LOG_DEBUG_SFXSX1276((">> STLL_SetClockSource\r\n"));
@@ -493,21 +472,7 @@ void STLL_SetClockSource( stll_clockType_e clocktype)
   if ( clocktype == HSI_SOURCE ) {
  	 LOG_DEBUG_SFXSX1276(("   DEFAULT Selected\r\n"));
  	 SystemClock_Config();
- /*
- 	 __HAL_RCC_HSI_ENABLE();
-	 // Wait till HSI is ready
- 	 while( __HAL_RCC_GET_FLAG(RCC_FLAG_HSIRDY) == RESET ) {}
-	 // Enable PLL
- 	 __HAL_RCC_PLL_ENABLE();
- 	 // Wait till PLL is ready
- 	 while( __HAL_RCC_GET_FLAG( RCC_FLAG_PLLRDY ) == RESET ) {}
-	 // Select PLL as system clock source
- 	 __HAL_RCC_SYSCLK_CONFIG ( RCC_SYSCLKSOURCE_PLLCLK );
- 	 // Wait till PLL is used as system clock source
- 	 while( __HAL_RCC_GET_SYSCLK_SOURCE( ) != RCC_SYSCLKSOURCE_STATUS_PLLCLK ) {}
-*/
  	 __HAL_RCC_HSE_CONFIG(RCC_HSE_OFF);
-
   } else {
 	 LOG_DEBUG_SFXSX1276(("   HSE Selected\r\n"));
 	 __HAL_RCC_HSE_CONFIG(RCC_HSE_ON);
@@ -540,9 +505,6 @@ STLL_flag STLL_WaitEndOfRxFrame( void )
   while (sx1276_sigfox_state.timerEvent == SIGFOX_EVENT_CLEAR) {
 	  if ( sx1276_sigfox_idle() == SX1276_SIGFOX_ERR_BREAK ) break;
   }
-  //SCH_ClrEvt( TIMOUT_EVT );
-  //SCH_WaitEvt( TIMOUT_EVT );
-  
   return sx1276_sigfox_state.rxPacketReceived;
 }
 
@@ -554,8 +516,7 @@ int16_t STLL_RxCarrierSenseGetRssi(void)
 
 void STLL_RxCarrierSenseInitStatus( void )
 {
-  /*Initialises the Flag*/
-	sx1276_sigfox_state.rxCarrierSenseFlag =STLL_RESET;
+  sx1276_sigfox_state.rxCarrierSenseFlag =STLL_RESET;
 }
 
 STLL_flag STLL_RxCarrierSenseGetStatus( void )
@@ -566,4 +527,3 @@ STLL_flag STLL_RxCarrierSenseGetStatus( void )
 
 #endif
 
-/******************* (C) COPYRIGHT  STMicroelectronics *****END OF FILE****/
