@@ -168,10 +168,11 @@ _SPI_Status spi_write_byte(
 );
 
 _SPI_Status spi_transmit_dma_start(
-		ITSDK_SPI_HANDLER_TYPE * spi,
+		SPI_HandleTypeDef * spi,
 		uint8_t * 			pData,
 		uint16_t  			size,
-		void (* pCallback)( void )			// Callback function to call on Tx complete
+		void (* pCallbackHC)( void ),		// Half Transfer Complete callback
+		void (* pCallbackTC)( void )		// TransferComplete callback
 );
 
 _SPI_Status spi_transmit_dma_stop(

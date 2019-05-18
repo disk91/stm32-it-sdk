@@ -91,6 +91,7 @@ void spi_reset(
  * Override the HAL_SPI_TxCpltCallback for DMA transfert completion
  */
 static void (* __spi_dma_tranfertCompleteCB)( void ) = NULL;
+static void (* __spi_dma_tranfertHalfCompleteCB)( void ) = NULL;
 
 void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi) {
 	DMA_HandleTypeDef *hdma= hspi->hdmatx;
@@ -101,16 +102,32 @@ void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi) {
 	}
 }
 
+void HAL_SPI_TxHalfCpltCallback(SPI_HandleTypeDef *hspi) {
+	DMA_HandleTypeDef *hdma= hspi->hdmatx;
+	__HAL_DMA_CLEAR_FLAG(hdma, __HAL_DMA_GET_TC_FLAG_INDEX(hdma) );
+	__HAL_DMA_CLEAR_FLAG(hdma, __HAL_DMA_GET_HT_FLAG_INDEX(hdma) );
+	if ( __spi_dma_tranfertHalfCompleteCB != NULL ) {
+		__spi_dma_tranfertHalfCompleteCB();
+	}
+}
+
+
 _SPI_Status spi_transmit_dma_start(
 		SPI_HandleTypeDef * spi,
 		uint8_t * 			pData,
 		uint16_t  			size,
-		void (* pCallback)( void )
+		void (* pCallbackHC)( void ),
+		void (* pCallbackTC)( void )
 ) {
 	  DMA_HandleTypeDef *hdma= spi->hdmatx;
-	  __spi_dma_tranfertCompleteCB = pCallback;
-      __HAL_DMA_DISABLE_IT(hdma, DMA_IT_HT);
-      __HAL_DMA_ENABLE_IT(hdma, DMA_IT_TC);
+	  __spi_dma_tranfertCompleteCB = pCallbackTC;
+	  __spi_dma_tranfertHalfCompleteCB = pCallbackHC;
+	  if ( __spi_dma_tranfertCompleteCB != NULL ) {
+	      __HAL_DMA_ENABLE_IT(hdma, DMA_IT_TC);
+	  }
+	  if (__spi_dma_tranfertHalfCompleteCB != NULL ) {
+		  __HAL_DMA_ENABLE_IT(hdma, DMA_IT_HT);
+	  }
 	  if ( HAL_SPI_Transmit_DMA(spi, pData, size) == HAL_OK ) {
 	     return SPI_OK;
 	  } else {

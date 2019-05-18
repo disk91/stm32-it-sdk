@@ -278,11 +278,16 @@ void STLL_Transmit_DMA_Start( uint16_t *pDataSource, uint16_t Size)
 
     /**
      * Start the DMA transmission
+     * The buffer contains a full DMA transfer information but to not miss any transmission
+     * The HalfTransmit interrupt is used to add new data into the circular buffer. That way
+     * we have no risk to loose data.
+     * So here the callback used is the Half Tx one.
      */
 	if ( spi_transmit_dma_start(
 				&ITSDK_SX1276_SPI,
 				(uint8_t *)pDataSource,
 				Size,
+				STLL_onSpiDmaTxComplete,		// Normally only half Tx callback should be rise
 				STLL_onSpiDmaTxComplete
 		  ) != SPI_OK ) {
 		  LOG_ERROR_SFXSX1276(("** spi_transmit_dma_start Error \r\n"));
