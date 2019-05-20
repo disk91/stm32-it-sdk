@@ -32,6 +32,7 @@
 
 #include <it_sdk/wrappers.h>
 #include "stm32l0xx_hal.h"
+#include "usart.h"
 
 // ---------------------------------------------------------------------------
 // serial 1 - is mapped to LPUART1
