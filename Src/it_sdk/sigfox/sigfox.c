@@ -78,13 +78,16 @@ itsdk_sigfox_init_t itsdk_sigfox_setup() {
 	s2lp_loadConfiguration(&__s2lpConf);
 	s2lp_sigfox_init(&__s2lpConf);
 
-	__sigfox_state.rcz = __s2lpConf.rcz;
 	itsdk_state.sigfox.rcz = __s2lpConf.rcz;
 #elif ITSDK_SIGFOX_LIB == __SIGFOX_SX1276
 	itsdk_sigfox_resetFactoryDefaults(false);		// store the key if not yet done
 	ret = sx1276_sigfox_init();
 #endif
-	if ( itsdk_config.sdk.sigfox.txPower == SIGFOX_DEFAULT_POWER || itsdk_state.sigfox.current_power == SIGFOX_DEFAULT_POWER ) {
+	if (
+#if ITSDK_CONFIGURATION_MODE != __CONFIG_STATIC
+			itsdk_config.sdk.sigfox.txPower == SIGFOX_DEFAULT_POWER ||
+#endif
+		    itsdk_state.sigfox.current_power == SIGFOX_DEFAULT_POWER ) {
 		switch (itsdk_state.sigfox.rcz) {
 		case SIGFOX_RCZ1:
 		case SIGFOX_RCZ5:
@@ -101,7 +104,11 @@ itsdk_sigfox_init_t itsdk_sigfox_setup() {
 			ITSDK_ERROR_REPORT(ITSDK_ERROR_SIGFOX_RCZ_NOTSUPPORTED,(uint16_t)itsdk_state.sigfox.rcz);
 		}
 	}
-	if ( itsdk_config.sdk.sigfox.speed == SIGFOX_DEFAULT_SPEED || itsdk_state.sigfox.current_speed == SIGFOX_DEFAULT_SPEED ) {
+	if (
+#if ITSDK_CONFIGURATION_MODE != __CONFIG_STATIC
+			itsdk_config.sdk.sigfox.speed == SIGFOX_DEFAULT_SPEED ||
+#endif
+			itsdk_state.sigfox.current_speed == SIGFOX_DEFAULT_SPEED ) {
 		switch (itsdk_state.sigfox.rcz) {
 		case SIGFOX_RCZ1:
 		case SIGFOX_RCZ3C:
@@ -417,7 +424,7 @@ itsdk_sigfox_init_t itsdk_sigfox_getDeviceId(itsdk_sigfox_device_is_t * devId) {
 	LOG_INFO_SIGFOXSTK(("itsdk_sigfox_getDeviceId\r\n"));
 
 	#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
-		if ( __sigfox_state.initialized ) {
+		if ( itsdk_state.sigfox.initialized ) {
 		  *devId = __s2lpConf.id;
 		} else return SIGFOX_INIT_FAILED;
     #else
@@ -441,7 +448,7 @@ itsdk_sigfox_init_t itsdk_sigfox_getInitialPac(uint8_t * pac) {
 	LOG_INFO_SIGFOXSTK(("itsdk_sigfox_getInitialPac\r\n"));
 
 	#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
-		if ( __sigfox_state.initialized ) {
+		if ( itsdk_state.sigfox.initialized ) {
 		  for ( int i = 0 ; i < 8 ; i++ ) {
 			  pac[i] = __s2lpConf.pac[i];
 		  }

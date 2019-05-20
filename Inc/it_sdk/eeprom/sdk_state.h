@@ -29,6 +29,7 @@
 
 #include <it_sdk/config.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 
 typedef struct {
