@@ -242,6 +242,7 @@ itsdk_config_ret_e itsdk_config_commitConfiguration(itsdk_config_commit_mode_e m
 // ====================================================================================================
 // CONSOLE PART
 // ====================================================================================================
+#if ITSDK_WITH_SIGFOX_LIB == __ENABLE
 static bool __checkAndConvert(char * str,uint8_t start,uint8_t stop,uint8_t sz,uint8_t * buf) {
 	if ( (stop - start) < 2*sz ) return false;
 	int k = 0;
@@ -253,6 +254,7 @@ static bool __checkAndConvert(char * str,uint8_t start,uint8_t stop,uint8_t sz,u
 	}
 	return true;
 }
+#endif
 
 #if ITSDK_WITH_CONSOLE == __ENABLE
 
