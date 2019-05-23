@@ -380,11 +380,18 @@ static void _itsdk_console_processChar(char c) {
 
 	if ( c == '\n' || c == '\r' || c == '\0' ) {
 		if ( __console.pBuffer > 0 ) {
+//			log_info("RET");
 			_itsdk_console_processLine();
 			__console.pBuffer = 0;
 		}
+//		log_info("ESC");
 	} else {
 		if ( __console.pBuffer < ITSDK_CONSOLE_LINEBUFFER ) {
+
+//			if ( c > 32 ) {
+//			  log_info("[%c]",c);
+//			} else log_info("(%02X)",c);
+
 			__console.serialBuffer[__console.pBuffer] = c;
 			__console.pBuffer++;
 		}

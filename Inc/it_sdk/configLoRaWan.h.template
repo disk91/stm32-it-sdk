@@ -154,6 +154,20 @@
 								}									\
 							  }												// TTN EU Configuration
 
+#define UNDEF__ITSDK_LORAWAN_CHANNEL {										\
+								8,		/*num of channel*/			\
+								{									\
+									{	0, 903900000, 903900000, __LORAWAN_DR_0, __LORAWAN_DR_3, 0 }, \
+									{	1, 904100000, 904100000, __LORAWAN_DR_0, __LORAWAN_DR_3, 0 }, \
+									{	2, 904300000, 904300000, __LORAWAN_DR_0, __LORAWAN_DR_3, 0 }, \
+									{	3, 904500000, 904500000, __LORAWAN_DR_0, __LORAWAN_DR_3, 0 }, \
+									{	4, 904700000, 904700000, __LORAWAN_DR_0, __LORAWAN_DR_3, 0 }, \
+									{	5, 904900000, 904900000, __LORAWAN_DR_0, __LORAWAN_DR_3, 0 }, \
+									{	6, 905100000, 905100000, __LORAWAN_DR_0, __LORAWAN_DR_3, 0 }, \
+									{	7, 905300000, 905300000, __LORAWAN_DR_0, __LORAWAN_DR_3, 0 }  \
+								}									\
+							  }												// TTN US915 Configuration
+
 																		   // =============================
 																		   // ITSDK E2E ENCRYPTION STATIC CONFIG
 																		   // =============================

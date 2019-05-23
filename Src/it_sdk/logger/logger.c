@@ -20,8 +20,9 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  * ----------------------------------------------------------
- * 
- * Init the logger structure from a given configuration
+ */
+
+/* Init the logger structure from a given configuration
  * The configuration is a 32bits field for each of the
  * 4 possible logging option with the 4 level of trace.
  * This configuration is optimize to be stored in the application

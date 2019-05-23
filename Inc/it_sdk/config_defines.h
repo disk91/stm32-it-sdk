@@ -282,13 +282,13 @@
 /**
  * LoRaWAN default Data Rate
  */
-#define __LORAWAN_DR_UNDEFINED	0x0
-#define __LORAWAN_DR_0			0x1
-#define __LORAWAN_DR_1			0x2
-#define __LORAWAN_DR_2			0x3
-#define __LORAWAN_DR_3			0x4
-#define __LORAWAN_DR_4			0x5
-#define __LORAWAN_DR_5			0x6
+#define __LORAWAN_DR_UNDEFINED	0x0			//   EU868     US915
+#define __LORAWAN_DR_0			0x1			//     250      980
+#define __LORAWAN_DR_1			0x2			//     440     1760
+#define __LORAWAN_DR_2			0x3         //     980     3125
+#define __LORAWAN_DR_3			0x4         //    1760     5470
+#define __LORAWAN_DR_4			0x5         //    3125
+#define __LORAWAN_DR_5			0x6         //    5470
 #define __LORAWAN_DR_6			0x7
 #define __LORAWAN_DR_7			0x8
 #define __LORAWAN_DR_8			0x9

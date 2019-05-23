@@ -133,15 +133,37 @@ itsdk_lorawan_init_t itsdk_lorawan_setup(uint16_t region, itsdk_lorawan_channelI
 	bzero(&__config,sizeof(__config));
 
 	if ( channelConfig != NULL ) {
-		for ( int i=0 ; i < channelConfig->num ; i++ ) {
-			if ( lorawan_driver_LORA_AddChannel(
-					channelConfig->channels[i].id,
-					channelConfig->channels[i].frequency,
-					channelConfig->channels[i].frequencyRx,
-					channelConfig->channels[i].minDr,
-					channelConfig->channels[i].maxDr,
-					channelConfig->channels[i].band
-				) != LORAWAN_CHANNEL_SUCCESS ) return LORAWAN_INIT_CHANNEL_FAILED;
+		switch (region) {
+		case __LORAWAN_REGION_US915:
+		{
+			// US915 does not allow to addChannel ; all the possible channel are already defined
+			// and activated. Here we basically unactivate the one we do not need
+			uint16_t channels[6];
+			bzero(channels,6*sizeof(uint16_t));
+			for ( int i=0 ; i < channelConfig->num ; i++ ) {
+				int channel = (channelConfig->channels[i].frequency - 902300000) / 200000; // get chan ID on the 72
+				int index = channel >> 4; // associated word
+				int shift = channel & 0x0F;
+				channels[index] |= (1 << shift);
+#warning "remove this trace"
+log_info("Add channel %d at freq %d on idx %d with shift %d\r\n",channel,channelConfig->channels[i].frequency,index,shift);
+			}
+			lorawan_driver_LORA_SelectChannels(__LORAWAN_REGION_US915,channels);
+		}
+		break;
+
+		default:
+			for ( int i=0 ; i < channelConfig->num ; i++ ) {
+				if ( lorawan_driver_LORA_AddChannel(
+						channelConfig->channels[i].id,
+						channelConfig->channels[i].frequency,
+						channelConfig->channels[i].frequencyRx,
+						channelConfig->channels[i].minDr,
+						channelConfig->channels[i].maxDr,
+						channelConfig->channels[i].band
+					) != LORAWAN_CHANNEL_SUCCESS ) return LORAWAN_INIT_CHANNEL_FAILED;
+			}
+			break;
 		}
 	}
 	return LORAWAN_INIT_SUCESS;

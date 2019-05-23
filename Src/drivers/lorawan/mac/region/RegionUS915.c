@@ -654,6 +654,13 @@ bool RegionUS915ChanMaskSet( ChanMaskSetParams_t* chanMaskSet )
             RegionCommonChanMaskCopy( NvmCtx.ChannelsDefaultMask, chanMaskSet->ChannelsMaskIn, CHANNELS_MASK_SIZE );
             break;
         }
+        case CHANNELS_REINIT_MASK:
+        {
+            RegionCommonChanMaskCopy( NvmCtx.ChannelsMaskRemaining, chanMaskSet->ChannelsMaskIn, CHANNELS_MASK_SIZE );
+            RegionCommonChanMaskCopy( NvmCtx.ChannelsDefaultMask, chanMaskSet->ChannelsMaskIn, CHANNELS_MASK_SIZE );
+        	RegionCommonChanMaskCopy( NvmCtx.ChannelsMask, chanMaskSet->ChannelsMaskIn, CHANNELS_MASK_SIZE );
+        	break;
+        }
         default:
             return false;
     }
@@ -729,7 +736,8 @@ bool RegionUS915TxConfig( TxConfigParams_t* txConfig, int8_t* txPower, TimerTime
 
     Radio.SetTxConfig( MODEM_LORA, phyTxPower, 0, bandwidth, phyDr, 1, 8, false, true, 0, 0, false, 3000 );
     TVL1( PRINTF( "TX on freq %d Hz at DR %d\n\r", NvmCtx.Channels[txConfig->Channel].Frequency, txConfig->Datarate );)
-
+#warning "to remove"
+log_info("TX on freq %d Hz at DR %d\n\r", NvmCtx.Channels[txConfig->Channel].Frequency, txConfig->Datarate);
     // Setup maximum payload lenght of the radio driver
     Radio.SetMaxPayloadLength( MODEM_LORA, txConfig->PktLen );
     // Get the time-on-air of the next tx frame

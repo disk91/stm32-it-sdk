@@ -751,6 +751,31 @@ itsdk_lorawan_channel_t lorawan_driver_LORA_AddChannel(
 }
 
 /**
+ * Change channel mask to enable only the one we need
+ * The channels parameter is a table containing x time 16b corresponding
+ * to the possible channels
+ * for US915 as an example we have 6 entries of 16b in the tab for the 72 possible channels
+ */
+itsdk_lorawan_channel_t lorawan_driver_LORA_SelectChannels(uint16_t region, uint16_t * channels ){
+	LOG_INFO_LORAWAN(("lorawan_driver_LORA_SelectChannels (%d)\r\n",channelId));
+	ChanMaskSetParams_t chanMaskSet;
+	chanMaskSet.ChannelsMaskType = CHANNELS_REINIT_MASK;
+	chanMaskSet.ChannelsMaskIn = channels;
+	switch ( region ) {
+	case __LORAWAN_REGION_US915:
+		if ( RegionChanMaskSet(LORAMAC_REGION_US915,&chanMaskSet) ) {
+			return LORAWAN_CHANNEL_SUCCESS;
+		}
+		break;
+	default:
+		break;
+	}
+	log_warn("[LoRaWan] Channel configuration error\r\n");
+	return LORAWAN_CHANNEL_FAILED;
+}
+
+
+/**
  * Remove a previously defined channel
  * channelId - entry Id in the channel table
  */
