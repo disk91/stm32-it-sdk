@@ -145,8 +145,7 @@ itsdk_lorawan_init_t itsdk_lorawan_setup(uint16_t region, itsdk_lorawan_channelI
 				int index = channel >> 4; // associated word
 				int shift = channel & 0x0F;
 				channels[index] |= (1 << shift);
-#warning "remove this trace"
-log_info("Add channel %d at freq %d on idx %d with shift %d\r\n",channel,channelConfig->channels[i].frequency,index,shift);
+				LOG_DEBUG_LORAWANSTK(("Add channel %d at freq %d on idx %d with shift %d\r\n",channel,channelConfig->channels[i].frequency,index,shift));
 			}
 			lorawan_driver_LORA_SelectChannels(__LORAWAN_REGION_US915,channels);
 		}

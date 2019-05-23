@@ -149,7 +149,7 @@ __weak void lorawan_driver_onJoinFailed() {
  * Callback function on Send Success
  */
 __weak void lorawan_driver_onSendSuccess() {
-   log_info("[LoRaWAN] Send success\r\n");
+	LOG_INFO_LORAWAN(("[LoRaWAN] Send success\r\n"));
 }
 
 /**
@@ -406,7 +406,7 @@ void lorawan_driver_LORA_Init(
         	break;
 		#endif
         default:
-        	log_error("[LoRaWan] Invalid region selected\r\n");
+        	LOG_ERROR_LORAWAN(("[LoRaWan] Invalid region selected\r\n"));
     		ITSDK_ERROR_REPORT(ITSDK_ERROR_LORAWAN_INVALID_REGION,(uint16_t)config->region);
         	return;
         }
@@ -675,7 +675,7 @@ itsdk_lorawan_send_t lorawan_driver_LORA_Send(
 							*rSize = __lorawan_driver_lastDownlink.size;
 						}
     	    		} else {
-    	    			log_warn(("[LoRaWan] Receiving downlink but can't return it\r\n"));
+    	    			LOG_WARN_LORAWAN(("[LoRaWan] Receiving downlink but can't return it\r\n"));
     	    		}
     	    		return (__loraWanState.sendState ==LORAWAN_SEND_STATE_ACKED_WITH_DOWNLINK)?LORAWAN_SEND_ACKED_WITH_DOWNLINK:LORAWAN_SEND_ACKED_WITH_DOWNLINK_PENDING;
     	    	case LORAWAN_SEND_STATE_ACKED_NO_DOWNLINK:
@@ -698,7 +698,7 @@ itsdk_lorawan_send_t lorawan_driver_LORA_Send(
     		return LORAWAN_SEND_NOT_JOINED;
     	default:
     		__loraWanState.sendState = LORAWAN_SEND_STATE_FAILED;
-    		log_warn("[LoRaWan] can't send err(%d)\r\n",r);
+    		LOG_WARN_LORAWAN(("[LoRaWan] can't send err(%d)\r\n",r));
     		return LORAWAN_SEND_FAILED;
     }
 
@@ -742,10 +742,10 @@ itsdk_lorawan_channel_t lorawan_driver_LORA_AddChannel(
 		case LORAMAC_STATUS_FREQ_AND_DR_INVALID:
 		case LORAMAC_STATUS_DATARATE_INVALID:
 		case LORAMAC_STATUS_FREQUENCY_INVALID:
-			log_warn("[LoRaWan] Invalid channel configuration (%d)\r\n",r);
+			LOG_WARN_LORAWAN(("[LoRaWan] Invalid channel configuration (%d)\r\n",r));
 			return LORAWAN_CHANNEL_INVALID_PARAMS;
 		default:
-			log_warn("[LoRaWan] Channel configuration error (%d)\r\n",r);
+			LOG_WARN_LORAWAN(("[LoRaWan] Channel configuration error (%d)\r\n",r));
 			return LORAWAN_CHANNEL_FAILED;
 	}
 }
@@ -770,7 +770,7 @@ itsdk_lorawan_channel_t lorawan_driver_LORA_SelectChannels(uint16_t region, uint
 	default:
 		break;
 	}
-	log_warn("[LoRaWan] Channel configuration error\r\n");
+	LOG_WARN_LORAWAN(("[LoRaWan] Channel configuration error\r\n"));
 	return LORAWAN_CHANNEL_FAILED;
 }
 
@@ -784,7 +784,7 @@ itsdk_lorawan_channel_t lorawan_driver_LORA_RemoveChannel(uint8_t channelId){
 	if ( LoRaMacChannelRemove(channelId) == LORAMAC_STATUS_OK ) {
 		return LORAWAN_CHANNEL_SUCCESS;
 	} else {
-		log_warn("[LoRaWan] Channel removal error\r\n");
+		LOG_WARN_LORAWAN(("[LoRaWan] Channel removal error\r\n"));
 		return LORAWAN_CHANNEL_FAILED;
 	}
 }
@@ -943,7 +943,7 @@ static void McpsConfirm( McpsConfirm_t *mcpsConfirm )
     	lorawan_driver_onSendSuccessAckFailed();
     	break;
     default:
-    	log_warn("[LoRaWan] MCPSc returns(%d)\r\n",mcpsConfirm->Status);
+    	LOG_WARN_LORAWAN(("[LoRaWan] MCPSc returns(%d)\r\n",mcpsConfirm->Status));
     	__loraWanState.sendState = LORAWAN_SEND_STATE_FAILED;
 	}
 
@@ -962,7 +962,7 @@ static void McpsIndication( McpsIndication_t *mcpsIndication )
     //lora_AppData_t _AppData;
     if( mcpsIndication->Status != LORAMAC_EVENT_INFO_STATUS_OK )
     {
-    	log_warn("[LoRaWan] MCPSi returns(%d)\r\n",mcpsIndication->Status);
+    	LOG_WARN_LORAWAN(("[LoRaWan] MCPSi returns(%d)\r\n",mcpsIndication->Status));
     	__loraWanState.sendState = LORAWAN_SEND_STATE_FAILED;
         return;
     }
@@ -980,7 +980,7 @@ static void McpsIndication( McpsIndication_t *mcpsIndication )
         }
         case MCPS_CONFIRMED:
         {
-        	log_info("??? MCPS_CONFIRMED\r\n");
+        	LOG_WARN_LORAWAN(("??? MCPS_CONFIRMED\r\n"));
             break;
         }
         case MCPS_PROPRIETARY:
@@ -1105,7 +1105,7 @@ static void MlmeConfirm( MlmeConfirm_t *mlmeConfirm )
                 if (certif_running() == true ){
                      certif_linkCheck(mlmeConfirm);
                 }
-                log_info("### link_Check\r\n");
+                LOG_DEBUG_LORAWAN(("### link_Check\r\n"));
             }
             break;
         }
