@@ -180,7 +180,7 @@ stm32l_lowPowerReturn_e stm32l_lowPowerSetup(uint32_t durationMs) {
  	    // Switch to STOPMode
 		__lowPower_wakeup_reason=LOWPWR_WAKEUP_UNDEF;
 		#if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_GPIO ) > 0
-			__lowPower_wakeup_pin=0;
+			__lowPower_wakeup_pin=0xFFFF;
 		#endif
  	    HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
 	}
@@ -195,6 +195,7 @@ stm32l_lowPowerReturn_e stm32l_lowPowerResume() {
 		// Restore from STOP MODE
 		// ------------------------------------------------------------
 		SystemClock_Config();
+		HAL_SuspendTick();
 		#if  ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_RTC ) > 0
 			rtc_disable4LowPower();
 		#endif
@@ -231,12 +232,11 @@ stm32l_lowPowerReturn_e stm32l_lowPowerResume() {
 			HAL_UART_MspInit(&huart2);
 			MX_USART2_UART_Init();
 		#endif
-		HAL_ResumeTick();
 
 		#if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_GPIO ) > 0
 		 // remove the WakeUp Handler and fire the pending irq to the normal IRQ handler
 		 gpio_removeWakeUpAction();
- 		 if ( __lowPower_wakeup_reason == LOWPWR_WAKEUP_GPIO && __lowPower_wakeup_pin != 0 ) {
+ 		 if ( __lowPower_wakeup_reason == LOWPWR_WAKEUP_GPIO && __lowPower_wakeup_pin != 0xFFFF ) {
 		 	HAL_GPIO_EXTI_Callback(__lowPower_wakeup_pin);
 		 }
 		#endif
@@ -256,6 +256,7 @@ stm32l_lowPowerReturn_e stm32l_lowPowerResume() {
 	//	log_info("|");
 	//}
 
+	HAL_ResumeTick();
 	return STM32L_LOWPOWER_SUCCESS;
 }
 

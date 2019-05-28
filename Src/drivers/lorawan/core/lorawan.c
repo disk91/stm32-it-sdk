@@ -490,11 +490,11 @@ void lorawan_driver_LORA_Init(
   	    LoRaMacMibSetRequestConfirm( &mibReq );
 
 	    mibReq.Type = MIB_SYSTEM_MAX_RX_ERROR;
-		mibReq.Param.SystemMaxRxError = 20;
+		mibReq.Param.SystemMaxRxError = ITSDK_LORAWAN_MAX_RX_ERROR;
 		LoRaMacMibSetRequestConfirm( &mibReq );
 
 
-		// this part of the code is not yes clear...
+		// Sounds like this is remapping the channels
 		#if defined( HYBRID )
                 uint16_t channelMask[] = { 0x00FF, 0x0000, 0x0000, 0x0000, 0x0001, 0x0000};
                 mibReq.Type = MIB_CHANNELS_MASK;

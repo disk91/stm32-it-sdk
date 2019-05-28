@@ -126,18 +126,28 @@ void SX1276IoInit( void )
   SX1276BoardInit( &BoardCallbacks );
   
 #warning the LoRaStack was GPIO_INTERRUPT_RISING_PULLDWN
-  gpio_configure(ITSDK_SX1276_DIO_0_BANK, ITSDK_SX1276_DIO_0_PIN, GPIO_INTERRUPT_RISING_PULLUP );
-  gpio_configure(ITSDK_SX1276_DIO_1_BANK, ITSDK_SX1276_DIO_1_PIN, GPIO_INTERRUPT_RISING_PULLUP );
-  gpio_configure(ITSDK_SX1276_DIO_2_BANK, ITSDK_SX1276_DIO_2_PIN, GPIO_INTERRUPT_RISING_PULLUP );
-  gpio_configure(ITSDK_SX1276_DIO_3_BANK, ITSDK_SX1276_DIO_3_PIN, GPIO_INTERRUPT_RISING_PULLUP );
+  if ( ITSDK_SX1276_DIO_0_PIN != __LP_GPIO_NONE ) {
+     gpio_configure(ITSDK_SX1276_DIO_0_BANK, ITSDK_SX1276_DIO_0_PIN, GPIO_INTERRUPT_RISING_PULLUP );
+  }
+  if ( ITSDK_SX1276_DIO_1_PIN != __LP_GPIO_NONE ) {
+     gpio_configure(ITSDK_SX1276_DIO_1_BANK, ITSDK_SX1276_DIO_1_PIN, GPIO_INTERRUPT_RISING_PULLUP );
+  }
+  if ( ITSDK_SX1276_DIO_2_PIN != __LP_GPIO_NONE ) {
+     gpio_configure(ITSDK_SX1276_DIO_2_BANK, ITSDK_SX1276_DIO_2_PIN, GPIO_INTERRUPT_RISING_PULLUP );
+  }
+  if ( ITSDK_SX1276_DIO_3_PIN != __LP_GPIO_NONE ) {
+    gpio_configure(ITSDK_SX1276_DIO_3_BANK, ITSDK_SX1276_DIO_3_PIN, GPIO_INTERRUPT_RISING_PULLUP );
+  }
 
 #ifdef RADIO_DIO_4
-  if ( (itsdk_state.activeNetwork & __ACTIV_NETWORK_SIGFOX) > 0) {
+  if ( (itsdk_state.activeNetwork & __ACTIV_NETWORK_SIGFOX) > 0 && ITSDK_SX1276_DIO_4_PIN != __LP_GPIO_NONE) {
     gpio_configure(ITSDK_SX1276_DIO_4_BANK, ITSDK_SX1276_DIO_4_PIN, GPIO_INTERRUPT_RISING_PULLUP );
   }
 #endif
 #ifdef RADIO_DIO_5
-  gpio_configure(ITSDK_SX1276_DIO_5_BANK, ITSDK_SX1276_DIO_5_PIN, GPIO_INTERRUPT_RISING_PULLUP );
+  if ( ITSDK_SX1276_DIO_5_PIN != __LP_GPIO_NONE ) {
+     gpio_configure(ITSDK_SX1276_DIO_5_BANK, ITSDK_SX1276_DIO_5_PIN, GPIO_INTERRUPT_RISING_PULLUP );
+  }
 #endif
   gpio_configure(ITSDK_SX1276_TCXO_VCC_BANK, ITSDK_SX1276_TCXO_VCC_PIN, GPIO_OUTPUT_PP );
 }
@@ -147,29 +157,37 @@ void SX1276IoIrqInit( DioIrqHandler **irqHandlers )
 {
 	LOG_INFO_SX1276((">> SX1276IoIrqInit\r\n"));
 
-    gpio_interruptPriority(ITSDK_SX1276_DIO_0_BANK,ITSDK_SX1276_DIO_0_PIN,IRQ_HIGH_PRIORITY,0);
-    gpio_interruptEnable(ITSDK_SX1276_DIO_0_BANK, ITSDK_SX1276_DIO_0_PIN);
-    __sx1276_gpio_irq[0].irq_func = (void (*)(uint16_t))irqHandlers[0];
-    __sx1276_gpio_irq[0].pinMask = ITSDK_SX1276_DIO_0_PIN;
-    gpio_registerIrqAction(&__sx1276_gpio_irq[0]);
+	if (ITSDK_SX1276_DIO_0_PIN != __LP_GPIO_NONE ) {
+		gpio_interruptPriority(ITSDK_SX1276_DIO_0_BANK,ITSDK_SX1276_DIO_0_PIN,IRQ_HIGH_PRIORITY,0);
+		gpio_interruptEnable(ITSDK_SX1276_DIO_0_BANK, ITSDK_SX1276_DIO_0_PIN);
+		__sx1276_gpio_irq[0].irq_func = (void (*)(uint16_t))irqHandlers[0];
+		__sx1276_gpio_irq[0].pinMask = ITSDK_SX1276_DIO_0_PIN;
+		gpio_registerIrqAction(&__sx1276_gpio_irq[0]);
+	}
 
-    gpio_interruptPriority(ITSDK_SX1276_DIO_1_BANK,ITSDK_SX1276_DIO_1_PIN,IRQ_HIGH_PRIORITY,0);
-    gpio_interruptEnable(ITSDK_SX1276_DIO_1_BANK, ITSDK_SX1276_DIO_1_PIN);
-    __sx1276_gpio_irq[1].irq_func = (void (*)(uint16_t))irqHandlers[1];
-    __sx1276_gpio_irq[1].pinMask = ITSDK_SX1276_DIO_1_PIN;
-    gpio_registerIrqAction(&__sx1276_gpio_irq[1]);
+	if (ITSDK_SX1276_DIO_1_PIN != __LP_GPIO_NONE ) {
+		gpio_interruptPriority(ITSDK_SX1276_DIO_1_BANK,ITSDK_SX1276_DIO_1_PIN,IRQ_HIGH_PRIORITY,0);
+		gpio_interruptEnable(ITSDK_SX1276_DIO_1_BANK, ITSDK_SX1276_DIO_1_PIN);
+		__sx1276_gpio_irq[1].irq_func = (void (*)(uint16_t))irqHandlers[1];
+		__sx1276_gpio_irq[1].pinMask = ITSDK_SX1276_DIO_1_PIN;
+		gpio_registerIrqAction(&__sx1276_gpio_irq[1]);
+	}
 
-    gpio_interruptPriority(ITSDK_SX1276_DIO_2_BANK,ITSDK_SX1276_DIO_2_PIN,IRQ_HIGH_PRIORITY,0);
-    gpio_interruptEnable(ITSDK_SX1276_DIO_2_BANK, ITSDK_SX1276_DIO_2_PIN);
-    __sx1276_gpio_irq[2].irq_func = (void (*)(uint16_t))irqHandlers[2];
-    __sx1276_gpio_irq[2].pinMask = ITSDK_SX1276_DIO_2_PIN;
-    gpio_registerIrqAction(&__sx1276_gpio_irq[2]);
+	if (ITSDK_SX1276_DIO_2_PIN != __LP_GPIO_NONE ) {
+		gpio_interruptPriority(ITSDK_SX1276_DIO_2_BANK,ITSDK_SX1276_DIO_2_PIN,IRQ_HIGH_PRIORITY,0);
+		gpio_interruptEnable(ITSDK_SX1276_DIO_2_BANK, ITSDK_SX1276_DIO_2_PIN);
+		__sx1276_gpio_irq[2].irq_func = (void (*)(uint16_t))irqHandlers[2];
+		__sx1276_gpio_irq[2].pinMask = ITSDK_SX1276_DIO_2_PIN;
+		gpio_registerIrqAction(&__sx1276_gpio_irq[2]);
+	}
 
-    gpio_interruptPriority(ITSDK_SX1276_DIO_3_BANK,ITSDK_SX1276_DIO_3_PIN,IRQ_HIGH_PRIORITY,0);
-    gpio_interruptEnable(ITSDK_SX1276_DIO_3_BANK, ITSDK_SX1276_DIO_3_PIN);
-    __sx1276_gpio_irq[3].irq_func = (void (*)(uint16_t))irqHandlers[3];
-    __sx1276_gpio_irq[3].pinMask = ITSDK_SX1276_DIO_3_PIN;
-    gpio_registerIrqAction(&__sx1276_gpio_irq[3]);
+	if (ITSDK_SX1276_DIO_3_PIN != __LP_GPIO_NONE ) {
+		gpio_interruptPriority(ITSDK_SX1276_DIO_3_BANK,ITSDK_SX1276_DIO_3_PIN,IRQ_HIGH_PRIORITY,0);
+		gpio_interruptEnable(ITSDK_SX1276_DIO_3_BANK, ITSDK_SX1276_DIO_3_PIN);
+		__sx1276_gpio_irq[3].irq_func = (void (*)(uint16_t))irqHandlers[3];
+		__sx1276_gpio_irq[3].pinMask = ITSDK_SX1276_DIO_3_PIN;
+		gpio_registerIrqAction(&__sx1276_gpio_irq[3]);
+	}
 
 }
 
@@ -177,18 +195,28 @@ void SX1276IoDeInit( void )
 {
   LOG_INFO_SX1276((">> SX1276IoDeInit\r\n"));
 #warning NOPULL from ST_CODE on SIgfox impl, lets see if this could consume energy ?!? was PULLDWN
-  gpio_configure(ITSDK_SX1276_DIO_0_BANK, ITSDK_SX1276_DIO_0_PIN, GPIO_INTERRUPT_RISING );
-  gpio_configure(ITSDK_SX1276_DIO_1_BANK, ITSDK_SX1276_DIO_1_PIN, GPIO_INTERRUPT_RISING );
-  gpio_configure(ITSDK_SX1276_DIO_2_BANK, ITSDK_SX1276_DIO_2_PIN, GPIO_INTERRUPT_RISING );
-  gpio_configure(ITSDK_SX1276_DIO_3_BANK, ITSDK_SX1276_DIO_3_PIN, GPIO_INTERRUPT_RISING );
+	if (ITSDK_SX1276_DIO_0_PIN != __LP_GPIO_NONE ) {
+		gpio_configure(ITSDK_SX1276_DIO_0_BANK, ITSDK_SX1276_DIO_0_PIN, GPIO_INTERRUPT_RISING );
+	}
+	if (ITSDK_SX1276_DIO_1_PIN != __LP_GPIO_NONE ) {
+		gpio_configure(ITSDK_SX1276_DIO_1_BANK, ITSDK_SX1276_DIO_1_PIN, GPIO_INTERRUPT_RISING );
+	}
+	if (ITSDK_SX1276_DIO_2_PIN != __LP_GPIO_NONE ) {
+		gpio_configure(ITSDK_SX1276_DIO_2_BANK, ITSDK_SX1276_DIO_2_PIN, GPIO_INTERRUPT_RISING );
+	}
+	if (ITSDK_SX1276_DIO_3_PIN != __LP_GPIO_NONE ) {
+		gpio_configure(ITSDK_SX1276_DIO_3_BANK, ITSDK_SX1276_DIO_3_PIN, GPIO_INTERRUPT_RISING );
+	}
   
 #ifdef RADIO_DIO_4
-  if ( (itsdk_state.activeNetwork & __ACTIV_NETWORK_SIGFOX) > 0) {
+  if ( (itsdk_state.activeNetwork & __ACTIV_NETWORK_SIGFOX) > 0 && ITSDK_SX1276_DIO_4_PIN != __LP_GPIO_NONE) {
     gpio_configure(ITSDK_SX1276_DIO_4_BANK, ITSDK_SX1276_DIO_4_PIN, GPIO_INTERRUPT_RISING );
   }
 #endif
 #ifdef RADIO_DIO_5
-  gpio_configure(ITSDK_SX1276_DIO_5_BANK, ITSDK_SX1276_DIO_5_PIN, GPIO_INTERRUPT_RISING );
+	if (ITSDK_SX1276_DIO_5_PIN != __LP_GPIO_NONE ) {
+		gpio_configure(ITSDK_SX1276_DIO_5_BANK, ITSDK_SX1276_DIO_5_PIN, GPIO_INTERRUPT_RISING );
+	}
 #endif
 }
 

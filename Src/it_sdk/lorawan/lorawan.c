@@ -99,7 +99,7 @@ itsdk_lorawan_init_t itsdk_lorawan_setup(uint16_t region, itsdk_lorawan_channelI
 		  #error Invalid ITSDK_LORAWAN_ADR configuration
 		#endif
     #else
-		__config.adrEnable = (itsdk_config.sdk.lorawan.networkType == __LORAWAN_ADR_ON)?LORAWAN_ADR_ON:LORAWAN_ADR_OFF;
+		__config.adrEnable = (itsdk_config.sdk.lorawan.adrMode == __LORAWAN_ADR_ON)?LORAWAN_ADR_ON:LORAWAN_ADR_OFF;
 	#endif
 
 	#if ITSDK_CONFIGURATION_MODE == __CONFIG_STATIC
