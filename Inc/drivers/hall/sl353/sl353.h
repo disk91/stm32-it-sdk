@@ -46,9 +46,16 @@ typedef enum {
 typedef struct {
 	drivers_sl353_state_e 			status;			// magnetic field status
 	uint8_t							hasChanged:1;	// status has changed since last read
+	void (*onFieldSet)(void);						// when not NULL call when magnetic field is appearing
+	void (*onFieldReset)(void);						// when not NULL call when magnetic field is disappearing
+	void (*onFieldChange)(drivers_sl353_state_e state);	// when not NULL call on any field change
 } drivers_sl353_state_t;
 
-drivers_sl353_ret_e drivers_sl353_setup(void);
+drivers_sl353_ret_e drivers_sl353_setup(
+		void (*onFieldSet)(void),
+		void (*onFieldReset)(void),
+		void (*onFieldChange)(drivers_sl353_state_e state)
+);
 drivers_sl353_ret_e drivers_sl353_getImmediateState( drivers_sl353_state_e * state );
 
 

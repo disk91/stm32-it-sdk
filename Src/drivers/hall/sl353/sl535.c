@@ -47,11 +47,12 @@ static void __sl353_interrupt(uint16_t GPIO_Pin) {
 	if ( __sl353_state.status != new ) {
 		__sl353_state.status = new;
 		__sl353_state.hasChanged = 1;
-	}
-	if ( new == SL353_FIELD_DETECTED ) {
-		log_info("Field detected\r\n");
-	} else {
-		log_info("No Field\r\n");
+		if ( __sl353_state.onFieldChange != NULL ) __sl353_state.onFieldChange(__sl353_state.status);
+		if ( __sl353_state.status == SL353_FIELD_DETECTED ) {
+			if ( __sl353_state.onFieldSet != NULL ) __sl353_state.onFieldSet();
+		} else {
+			if ( __sl353_state.onFieldReset != NULL ) __sl353_state.onFieldReset();
+		}
 	}
 }
 
@@ -65,7 +66,11 @@ static gpio_irq_chain_t __sl353_gpio_irq = {
 /**
  * Setup the sensor according to the selected mode.
  */
-drivers_sl353_ret_e drivers_sl353_setup(void) {
+drivers_sl353_ret_e drivers_sl353_setup(
+		void (*onFieldSet)(void),
+		void (*onFieldReset)(void),
+		void (*onFieldChange)(drivers_sl353_state_e state)
+) {
 
 	log_debug("drivers_sl353_setup\r\n");
 
@@ -75,6 +80,9 @@ drivers_sl353_ret_e drivers_sl353_setup(void) {
 	}
 	drivers_sl353_getImmediateState(&__sl353_state.status);
 	__sl353_state.hasChanged = 0;
+	__sl353_state.onFieldSet = onFieldSet;
+	__sl353_state.onFieldReset = onFieldReset;
+	__sl353_state.onFieldChange = onFieldChange;
 	return SL353_SUCCESS;
 }
 
