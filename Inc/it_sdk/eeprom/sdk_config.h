@@ -41,9 +41,11 @@
 typedef struct {
 	uint8_t				version;
 	uint16_t			size;
+	uint8_t				align32b_0;					   // 32b alignment
 
 #if ITSDK_WITH_SIGFOX_LIB == __ENABLE || ITSDK_WITH_LORAWAN_LIB == __ENABLE
-	uint32_t			activeNetwork;				   // active network Sigfox vs LoRaWan 32b for alignement
+	uint16_t			activeNetwork;				   // active network Sigfox vs LoRaWan 32b for alignement
+	uint16_t		    activeRegion;				   // current region to activate on startup
 #endif
 	// ----------- Sigfox settings --------------------------------------------------
 #if ITSDK_WITH_SIGFOX_LIB == __ENABLE

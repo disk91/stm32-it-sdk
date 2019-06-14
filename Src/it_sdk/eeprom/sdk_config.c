@@ -74,13 +74,29 @@
 		itsdk_config.sdk.lorawan.joinMode = ITSDK_LORAWAN_ACTIVATION;
 		itsdk_config.sdk.lorawan.networkType = ITSDK_LORAWAN_NETWORKTYPE;
 		itsdk_config.sdk.lorawan.retries = ITSDK_LORAWAN_CNF_RETRY;
+		itsdk_config.sdk.activeRegion = ITSDK_DEFAULT_REGION;
 		#endif
 		// ----------- Sigfox settings --------------------------------------------------
 		#if ITSDK_WITH_SIGFOX_LIB == __ENABLE
 		itsdk_config.sdk.sigfox.rssiCal = ITSDK_SIGFOX_RSSICAL;
 		itsdk_config.sdk.sigfox.txPower = ITSDK_SIGFOX_TXPOWER;
 		itsdk_config.sdk.sigfox.speed = ITSDK_SIGFOX_SPEED;
-		itsdk_config.sdk.sigfox.rcz = ITDSK_SIGFOX_RCZ;
+		uint8_t __rcz = 0;
+		switch (ITSDK_DEFAULT_REGION) {
+		case __LPWAN_REGION_EU868:
+			__rcz = SIGFOX_RCZ1;
+			break;
+		default:
+			// error - unsupported
+			__rcz = ITDSK_SIGFOX_RCZ;
+		}
+		if ( __rcz != ITDSK_SIGFOX_RCZ ) {
+			// error - invalid config
+			// not needed once the ITDSK_SIGFOX_RCZ will be removed
+		}
+		// @TODO - make RCZ fit with ITSDK_DEFAULT_REGION
+		#warning "ITSDK_DEFAULT_REGION is not yet correctly implemented"
+		itsdk_config.sdk.sigfox.rcz = __rcz;
 		itsdk_config.sdk.sigfox.sgfxKey = ITSDK_SIGFOX_KEY_TYPE;
 		sfx_u32 config_words_2[3] = RC2_SM_CONFIG;
 		bcopy(config_words_2,itsdk_config.sdk.sigfox.macroch_config_words_rc2,3*sizeof(sfx_u32));
@@ -300,6 +316,10 @@ static bool __checkAndConvert(char * str,uint8_t start,uint8_t stop,uint8_t sz,u
 					itsdk_configuration_nvm_t * _c = &itsdk_config;
 					if (buffer[0]=='C') _c = &itsdk_config_shadow;
 					_itsdk_console_printf("sdk.version : %02X\r\n",_c->sdk.version);
+					#if ITSDK_WITH_SIGFOX_LIB == __ENABLE || ITSDK_WITH_LORAWAN_LIB == __ENABLE
+					_itsdk_console_printf("sdk.activeNetwork : %d\r\n",_c->sdk.activeNetwork);
+					_itsdk_console_printf("sdk.activeRegion : %04X\r\n",_c->sdk.activeRegion);
+					#endif
 					#if ITSDK_WITH_LORAWAN_LIB == __ENABLE
 					_itsdk_console_printf("sdk.lora.adrmode : %d\r\n",_c->sdk.lorawan.adrMode);
 					_itsdk_console_printf("sdk.lora.devEuiType : %d\r\n",_c->sdk.lorawan.devEuiType);
@@ -354,6 +374,10 @@ static itsdk_console_return_e _itsdk_config_consolePriv(char * buffer, uint8_t s
 			  _itsdk_console_printf("S          : commit configuration\r\n");
 			  _itsdk_console_printf("F          : restore factory defaults\r\n");
 			#endif
+			#if ITSDK_WITH_SIGFOX_LIB == __ENABLE || ITSDK_WITH_LORAWAN_LIB == __ENABLE
+			  _itsdk_console_printf("SC:N:x     : sdk.activeNetwork 1:SFX 2:LoRa\r\n");
+			  _itsdk_console_printf("SC:R:xxxx  : sdk.activeRegion __PLWAN_REGION_xx\r\n");
+			#endif
 			#if ITSDK_WITH_LORAWAN_LIB == __ENABLE
 			  _itsdk_console_printf("SC:0:x     : lora.adrmode 1:OFF/2:ON\r\n");
 			  _itsdk_console_printf("SC:1:x     : lora.devEuiType 1:STATIC/2:GENERATED\r\n");
@@ -392,6 +416,40 @@ static itsdk_console_return_e _itsdk_config_consolePriv(char * buffer, uint8_t s
 	} else if ( sz >= 6 ) {
 		if ( buffer[0] == 'S' && buffer[1] == 'C' && buffer[2] == ':' && buffer[4] == ':' ) {
 			switch(buffer[3]) {
+			#if ITSDK_WITH_SIGFOX_LIB == __ENABLE || ITSDK_WITH_LORAWAN_LIB == __ENABLE
+			case 'N': {
+				// sdk.activeNetwork
+				switch ( buffer[5] ) {
+					case '0':
+					   itsdk_config_shadow.sdk.activeNetwork = __ACTIV_NETWORK_NONE;
+					   break;
+					case '1':
+					   itsdk_config_shadow.sdk.activeNetwork = __ACTIV_NETWORK_SIGFOX;
+					   break;
+					case '2':
+					   itsdk_config_shadow.sdk.activeNetwork = __ACTIV_NETWORK_LORAWAN;
+					   break;
+					default:
+						_itsdk_console_printf("KO\r\n");
+						return ITSDK_CONSOLE_FAILED;
+				}
+				_itsdk_console_printf("OK\r\n");
+				return ITSDK_CONSOLE_SUCCES;
+			}
+			case 'R': {
+				if ( itdt_isHexString( &buffer[5],4,false) ) {
+					uint16_t v = itdt_convertHexChar4Int(&buffer[5]);
+					if ( itdt_count_bits_1(v) <= 1 ) {
+						itsdk_config_shadow.sdk.activeRegion = v;
+						_itsdk_console_printf("OK\r\n");
+						return ITSDK_CONSOLE_SUCCES;
+					}
+				}
+				_itsdk_console_printf("KO\r\n");
+				return ITSDK_CONSOLE_FAILED;
+			}
+			#endif
+
  	 	 	#if ITSDK_WITH_LORAWAN_LIB == __ENABLE
 			case '0':
 				// lora.adrmode

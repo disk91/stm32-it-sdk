@@ -327,4 +327,18 @@
 #define __LORAWAN_REGION_US915		0x0100
 #define __LORAWAN_REGION_RU864		0x0200
 
+/**
+ * More generic Region mapping -> must be equivalent to __LORAWAN_REGION...
+ */
+#define __PLWAN_REGION_NONE			0x0000
+#define __LPWAN_REGION_AS923		0x0001
+#define __LPWAN_REGION_AU915		0x0002
+#define __LPWAN_REGION_CN470		0x0004
+#define __LPWAN_REGION_CN779		0x0008
+#define __LPWAN_REGION_EU433		0x0010
+#define __LPWAN_REGION_EU868		0x0020
+#define __LPWAN_REGION_KR920		0x0040
+#define __LPWAN_REGION_IN865		0x0080
+#define __LPWAN_REGION_US915		0x0100
+#define __LPWAN_REGION_RU864		0x0200
 #endif /* IT_SDK_CONFIG_DEFINES_H_ */

@@ -59,9 +59,11 @@ bool itdt_isHexString(char * str,int n,bool upper);
 uint8_t itdt_convertHexChar2HalfInt(char c);
 uint8_t itdt_convertHexChar2Int(char * v);
 uint32_t itdt_convertHexChar8Int(char * v);
+uint16_t itdt_convertHexChar4Int(char * v);
 int16_t itdt_convertDecChar4Int(char * v);
 void itdt_convertHexStr2IntTab(char * hexstr,uint8_t * tab, int len);
 void itdt_macToString(char * str, uint8_t * mac);
 uint32_t itdt_align_32b(uint32_t v);
+uint8_t itdt_count_bits_1(uint32_t v);
 
 #endif /* IT_SDK_ITSDK_H_ */

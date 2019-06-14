@@ -225,6 +225,7 @@
 #define ITSDK_PROTECT_KEY			0xA7459BC3 	 	/* CHANGE ME */			// A random value used to protect the SIGFOX (and others) KEY in memory (better than nothing)
 
 #define ITSDK_DEFAULT_NETWORK		__ACTIV_NETWORK_SIGFOX					// Default network to activate
+#define ITSDK_DEFAULT_REGION		__LPWAN_REGION_EU868				    // default region to activate 
 
 
 #define ITSDK_ENCRYPT_AES_SHAREDKEY	( 0xAE632397 ^ ITSDK_PROTECT_KEY )      // CHANGE ME
