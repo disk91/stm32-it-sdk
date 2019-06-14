@@ -37,6 +37,9 @@
 #include "stm32l0xx_hal.h"
 #include "usart.h"
 #include "gpio.h"
+#if ( ITSDK_LOWPOWER_MISC_HALT & __LP_HALT_I2C2 ) > 0 || ( ITSDK_LOWPOWER_MISC_HALT & __LP_HALT_I2C1 )
+#include "i2c.h"
+#endif
 
 #if (ITSDK_DEVICE == __DEVICE_STM32L072XX) && (ITSDK_LOWPOWER_MOD &__LOWPWR_MODE_WAKE_LPUART) > 0
 #error "STM32L0172 does not support LPUART WakeUp (or tells me what's wrong)"
@@ -218,6 +221,7 @@ stm32l_lowPowerReturn_e stm32l_lowPowerResume() {
 		#endif
 		#if( ITSDK_LOWPOWER_MISC_HALT & __LP_HALT_ADC1 ) > 0
 		    __HAL_RCC_ADC1_CLK_ENABLE();
+		    HAL_ADCEx_EnableVREFINT();
 		#endif
 		#if (( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_LPUART ) == 0) && (( ITSDK_WITH_UART & __UART_LPUART1 ) > 0)
 			// Reinit LPUart
