@@ -44,7 +44,7 @@ ADC_HandleTypeDef hadc;
 #define CAL1_VALUE          ((uint16_t*)((uint32_t)0x1FF8007A))
 #define VREFINT_CAL       ((uint16_t*) ((uint32_t) 0x1FF80078))
 #elif ITSDK_DEVICE == __DEVICE_STM32L053R8 || ITSDK_DEVICE == __DEVICE_STM32L072XX
-#define CAL2_TEMP			110 // 130 selon DS ?
+#define CAL2_TEMP			130 // 110 acording to certain sources but 130 from Datasheet
 #define CAL2_VALUE          ((uint16_t*)((uint32_t)0x1FF8007E))
 #define CAL1_TEMP			30
 #define CAL1_VALUE          ((uint16_t*)((uint32_t)0x1FF8007A))
@@ -216,7 +216,7 @@ uint32_t __getAdcValue(uint32_t channel) {
 #endif
 
 /**
- * Return temperature from Adc the temp is in centi�C
+ * Return temperature from Adc the temp is in centi-degrés Celcius
  */
 int16_t adc_getTemperature() {
 
