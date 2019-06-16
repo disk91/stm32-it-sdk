@@ -34,6 +34,7 @@
 
 typedef struct {
 	uint8_t		activeNetwork;			// Currently active network see __ACTIV_NETWORK_*
+	uint64_t	lastWakeUpTimeUs;		// Store time from last reset in uS (use by adc to ensure reference are stabel before read)
 	#if ITSDK_WITH_SIGFOX_LIB == __ENABLE
 	struct {
 		bool					initialized;

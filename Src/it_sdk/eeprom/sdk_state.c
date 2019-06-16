@@ -30,6 +30,8 @@
 itsdk_state_t itsdk_state;
 
 void itsdk_state_init() {
+	itsdk_state.lastWakeUpTimeUs = 0;
+
 #if ITSDK_CONFIGURATION_MODE != __CONFIG_STATIC
    #if ITSDK_WITH_SIGFOX_LIB == __ENABLE || ITSDK_WITH_LORAWAN_LIB == __ENABLE
 	itsdk_state.activeNetwork = (uint8_t)itsdk_config.sdk.activeNetwork;

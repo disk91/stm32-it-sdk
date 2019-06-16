@@ -27,6 +27,7 @@
 #include <it_sdk/config.h>
 #include <it_sdk/lowpower/lowpower.h>
 #include <it_sdk/time/time.h>
+#include <it_sdk/eeprom/sdk_state.h>
 #if ITSDK_PLATFORM == __PLATFORM_STM32L0
 	#include <stm32l_sdk/lowpower/lowpower.h>
 	#include <stm32l_sdk/rtc/rtc.h>
@@ -72,6 +73,7 @@ void lowPower_switch() {
 			if ( stm32l_lowPowerSetup(duration) == STM32L_LOWPOWER_SUCCESS ) {
 				// waking up
 				stm32l_lowPowerResume();
+				itsdk_state.lastWakeUpTimeUs = itsdk_time_get_us();
 			}
 			#endif
 		}

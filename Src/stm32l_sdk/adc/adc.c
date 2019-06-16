@@ -217,6 +217,8 @@ uint32_t __getAdcValue(uint32_t channel) {
 
 /**
  * Return temperature from Adc the temp is in centi-degrés Celcius
+ * Ensure to read Temperature at least 8ms after wake up ...
+ * Time to get accurate getVdd response
  */
 int16_t adc_getTemperature() {
 
@@ -244,10 +246,14 @@ int16_t adc_getTemperature() {
  * Return VDD in mV ( internal VDD )
  * Be Careful -> right after wakeup from STOP the
  * value can be invalid (200mv error). The solution is to
- * sleep a bit (10ms recommanded) before sampling Vdd
+ * sleep a bit (8ms recommanded) before sampling Vdd
  */
 uint16_t adc_getVdd() {
-	//return  ( ((uint32_t)VDD_APPLI * (*VREFINT_CAL) )/ adc_getValue(0));
+	// The value measured is not good until we wait about 8ms after MCU wakeup from stop
+	uint64_t t = ( itsdk_time_get_us() - itsdk_state.lastWakeUpTimeUs) / 1000;
+	if ( t < 8 ) {
+		itsdk_delayMs(8 - t);
+	}
 	return adc_getValue(0);
 }
 
