@@ -29,6 +29,7 @@
 #include <it_sdk/config.h>
 #if ITSDK_PLATFORM == __PLATFORM_STM32L0
 #include <it_sdk/itsdk.h>
+#include <it_sdk/eeprom/sdk_state.h>
 #include <it_sdk/logger/error.h>
 #include <it_sdk/debug.h>
 #include "stm32l0xx_hal.h"
