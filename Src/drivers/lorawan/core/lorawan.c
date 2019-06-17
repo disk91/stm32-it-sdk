@@ -434,6 +434,10 @@ void lorawan_driver_LORA_Init(
   	    LoRaMacMibSetRequestConfirm( &mibReq );
 
   	    __loraWanState.txDatarate = __convertDR(config->txDatarate);
+  	    mibReq.Type = MIB_CHANNELS_DEFAULT_DATARATE;
+  	    mibReq.Param.ChannelsDefaultDatarate = __convertDR(config->txDatarate);
+  	    LoRaMacMibSetRequestConfirm( &mibReq );
+
   	    __loraWanState.JoinType = config->JoinType;
   	    if ( config->JoinType == __LORAWAN_OTAA ) {
   	    	mibReq.Type = MIB_APP_KEY;
@@ -616,6 +620,13 @@ itsdk_lorawan_send_t lorawan_driver_LORA_Send(
       return false;
     }
 
+    // Update the Datarate information this is important to correctly calculate the max size of frame
+    // for the LoRaMacQueryTxPossible function
+    MibRequestConfirm_t set;
+    set.Type = MIB_CHANNELS_DATARATE;
+    set.Param.ChannelsDatarate = __convertDR(dataRate);
+    LoRaMacMibSetRequestConfirm(&set);
+
     // Verify if a command can be proceed by the MAC Layer
     if( LoRaMacQueryTxPossible( size, &txInfo ) != LORAMAC_STATUS_OK ) {
         // Send empty frame in order to flush MAC commands
@@ -623,6 +634,8 @@ itsdk_lorawan_send_t lorawan_driver_LORA_Send(
         mcpsReq.Req.Unconfirmed.fBuffer = NULL;
         mcpsReq.Req.Unconfirmed.fBufferSize = 0;
         mcpsReq.Req.Unconfirmed.Datarate = __convertDR(dataRate);
+        // @TODO here we do not send the expected payload so we may have a callback to notice this
+		#warning "Manage the Flush MAC case"
     } else {
     	__loraWanState.lastRetries = 0;
     	// Ok To proceed
