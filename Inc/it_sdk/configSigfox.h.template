@@ -143,11 +143,11 @@
 #define ITSDK_SX1276_DIO_5_BANK	 	 		__BANK_A					   // SX1276 GPIO 5 => Mode Ready / Clk out
 #define ITSDK_SX1276_DIO_5_PIN	 	 		__LP_GPIO_4
 #define ITSDK_MURATA_ANTSW_RX_BANK 	     	__BANK_A					   // MURATA ANTENNA SWITCH RX
-#define ITSDK_MURATE_ANTSW_RX_PIN	     	__LP_GPIO_1
+#define ITSDK_MURATA_ANTSW_RX_PIN	     	__LP_GPIO_1
 #define ITSDK_MURATA_ANTSW_TXBOOST_BANK  	__BANK_C					   // MURATA TX POWER BOOST
-#define ITSDK_MURATE_ANTSW_TXBOOST_PIN	 	__LP_GPIO_1
+#define ITSDK_MURATA_ANTSW_TXBOOST_PIN	 	__LP_GPIO_1
 #define ITSDK_MURATA_ANTSW_TXRFO_BANK    	__BANK_C					   // MURATA TX RFO
-#define ITSDK_MURATE_ANTSW_TXRFO_PIN	 	__LP_GPIO_2
+#define ITSDK_MURATA_ANTSW_TXRFO_PIN	 	__LP_GPIO_2
 
 #define ITSDK_SIGFOX_EXTENSIONS				__SIGFOX_NONE				   // Murata sigfox lib does not support Monarch
 #endif																	   // Corresponding Interrupts needs to

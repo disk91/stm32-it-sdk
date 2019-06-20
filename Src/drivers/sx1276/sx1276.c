@@ -275,7 +275,7 @@ uint32_t SX1276Init( RadioEvents_t *events )
 
     SX1276.Settings.State = RF_IDLE;
 
-    return ( uint32_t )LoRaBoardCallbacks->SX1276BoardGetWakeTime( ) + RADIO_WAKEUP_TIME;// BOARD_WAKEUP_TIME;
+    return ( uint32_t )LoRaBoardCallbacks->SX1276BoardGetWakeTime( ) + ITSDK_MURATA_WAKEUP_TIME;// BOARD_WAKEUP_TIME;
 }
 
 RadioState_t SX1276GetStatus( void )
@@ -1431,7 +1431,7 @@ void SX1276SetPublicNetwork( bool enable )
 uint32_t SX1276GetWakeupTime( void )
 {
 	LOG_INFO_SX1276((">> SX1276GetWakeupTime\r\n"));
-    return ( uint32_t )LoRaBoardCallbacks->SX1276BoardGetWakeTime( ) + RADIO_WAKEUP_TIME;// BOARD_WAKEUP_TIME;
+    return ( uint32_t )LoRaBoardCallbacks->SX1276BoardGetWakeTime( ) + ITSDK_MURATA_WAKEUP_TIME;// BOARD_WAKEUP_TIME;
 }
 
 void SX1276OnTimeoutIrq( void* context )
