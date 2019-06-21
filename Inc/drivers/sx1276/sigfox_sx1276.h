@@ -65,7 +65,7 @@ sx1276_sigfox_ret_t sx1276_sigfox_idle_used( void );
 #define LOG_ERROR_SFXSX1276(x)		log_error x
 #define LOG_DEBUG_SFXSX1276(x)		log_debug x
 #else
-#define LOG_INFO_SFXSX1276P(x)
+#define LOG_INFO_SFXSX1276(x)
 #define LOG_WARN_SFXSX1276(x)
 #define LOG_ERROR_SFXSX1276(x)
 #define LOG_DEBUG_SFXSX1276(x)

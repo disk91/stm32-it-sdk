@@ -29,8 +29,8 @@
  * ==========================================================
  */
 
-#ifndef IT_SDK_CONFIG_SIGFOX_H_
-#define IT_SDK_CONFIG_SIGFOX_H_
+#ifndef IT_SDK_CONFIG_LORAWAN_H_
+#define IT_SDK_CONFIG_LORAWAN_H_
 
 #include <it_sdk/config_defines.h>
 #if ITSDK_LORAWAN_LIB == __LORAWAN_SX1276
@@ -231,5 +231,5 @@
 #endif
 
 
-#endif /* IT_SDK_CONFIG_SIGFOX_H_ */
+#endif /* IT_SDK_CONFIG_LORAWAN_H_ */
 

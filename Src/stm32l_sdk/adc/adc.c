@@ -32,6 +32,7 @@
 #include <it_sdk/eeprom/sdk_state.h>
 #include <it_sdk/logger/error.h>
 #include <it_sdk/debug.h>
+#include <it_sdk/time/time.h>
 #include "stm32l0xx_hal.h"
 
 #if ( ITSDK_WITH_ADC & __ADC_ENABLED ) > 0

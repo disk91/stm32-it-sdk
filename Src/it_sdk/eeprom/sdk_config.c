@@ -86,11 +86,14 @@
 		case __LPWAN_REGION_EU868:
 			__rcz = SIGFOX_RCZ1;
 			break;
+		case __LPWAN_REGION_US915:
+			__rcz = SIGFOX_RCZ2;
+			break;
 		default:
 			// error - unsupported
 			__rcz = ITDSK_SIGFOX_RCZ;
 		}
-		if ( __rcz != ITDSK_SIGFOX_RCZ ) {
+		if ( __rcz == ITDSK_SIGFOX_RCZ ) {
 			// error - invalid config
 			// not needed once the ITDSK_SIGFOX_RCZ will be removed
 		}
