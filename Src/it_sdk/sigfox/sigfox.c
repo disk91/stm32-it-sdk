@@ -85,9 +85,10 @@ itsdk_sigfox_init_t itsdk_sigfox_setup() {
 #endif
 	if (
 #if ITSDK_CONFIGURATION_MODE != __CONFIG_STATIC
-			itsdk_config.sdk.sigfox.txPower == SIGFOX_DEFAULT_POWER ||
+		    itsdk_config.sdk.sigfox.txPower == SIGFOX_DEFAULT_POWER ||
 #endif
-		    itsdk_state.sigfox.current_power == SIGFOX_DEFAULT_POWER ) {
+		    itsdk_state.sigfox.current_power == SIGFOX_DEFAULT_POWER
+		) {
 		switch (itsdk_state.sigfox.rcz) {
 		case SIGFOX_RCZ1:
 		case SIGFOX_RCZ5:
@@ -130,6 +131,7 @@ itsdk_sigfox_init_t itsdk_sigfox_setup() {
 	if ( ret == SIGFOX_INIT_SUCESS ) {
 		itsdk_state.sigfox.initialized = true;
 	}
+
 	return ret;
 }
 

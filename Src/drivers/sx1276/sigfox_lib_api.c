@@ -458,7 +458,7 @@ sfx_u8 RF_API_wait_frame(sfx_u8 *frame, sfx_s16 *rssi, sfx_rx_state_enum_t * sta
 
   SGFX_SX1276_rx_start();
   // Wait that flag EOFTX_EVT is set by STLL_SetEndOfTxFrame
-  STLL_WaitEndOfTxFrame();
+  //STLL_WaitEndOfTxFrame();
   // SCH_WaitEvt( EOFTX_EVT );
 
   if( STLL_WaitEndOfRxFrame( ) == STLL_SET ){

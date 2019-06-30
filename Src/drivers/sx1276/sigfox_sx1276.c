@@ -51,7 +51,9 @@ sx1276_sigfox_ret_t sx1276_sigfox_init( void ) {
 
 	// Hardware Init
 	SX1276IoInit();
+
 	STLL_Radio_Init();
+
 	// set DIO3 from 'buffer empty' to NA to save current
 	SX1276Write( 0x40, 0x01 );
 
@@ -92,8 +94,10 @@ sx1276_sigfox_ret_t sx1276_sigfox_init( void ) {
 		}
 		break;
 	}
+
 	LOG_INFO_SFXSX1276((">> SIGFOX_API_open\r\n"));
 	sfx_error_t serror = SIGFOX_API_open(&prcz);
+
 	if ( serror != SFX_ERR_NONE ) {
 		LOG_ERROR_SFXSX1276(("[ERROR] Sigfox Open(%08X)\r\n",serror));
 		return SX1276_SIGFOX_ERR_LIBINIT;
@@ -111,6 +115,7 @@ sx1276_sigfox_ret_t sx1276_sigfox_init( void ) {
 	default:
 		break;
 	}
+
 	return error;
 }
 

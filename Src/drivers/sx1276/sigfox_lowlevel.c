@@ -169,7 +169,7 @@ STLL_flag STLL_WaitEndOfTxFrame( void )
   LOG_DEBUG_SFXSX1276((">> STLL_WaitEndOfTxFrame\r\n"));
   // Wait that flag EOFTX_EVT is set
   sx1276_sigfox_state.endOfTxEvent = SIGFOX_EVENT_CLEAR;
-  while (sx1276_sigfox_state.endOfTxEvent == SIGFOX_EVENT_CLEAR) {
+  while (   sx1276_sigfox_state.endOfTxEvent == SIGFOX_EVENT_CLEAR ) {
       if ( sx1276_sigfox_idle() == SX1276_SIGFOX_ERR_BREAK ) break;
       wdg_refresh();
   }
@@ -483,7 +483,7 @@ int16_t STLL_SGFX_SX1276_GetSyncRssi(void)
 
 
 /**
- * Apprently we are waiting end of a timer,
+ * Apparently we are waiting end of a timer,
  * not clear why : this sound redundent with the MCU_API_timer_wait_for_end code
  */
 STLL_flag STLL_WaitEndOfRxFrame( void )
@@ -493,7 +493,8 @@ STLL_flag STLL_WaitEndOfRxFrame( void )
   sx1276_sigfox_state.rxPacketReceived = STLL_RESET;
   sx1276_sigfox_state.timerEvent = SIGFOX_EVENT_CLEAR;
   while (sx1276_sigfox_state.timerEvent == SIGFOX_EVENT_CLEAR) {
-	  if ( sx1276_sigfox_idle() == SX1276_SIGFOX_ERR_BREAK ) break;
+      if ( sx1276_sigfox_idle() == SX1276_SIGFOX_ERR_BREAK ) break;
+      wdg_refresh();
   }
   return sx1276_sigfox_state.rxPacketReceived;
 }
