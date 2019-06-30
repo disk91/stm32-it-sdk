@@ -655,8 +655,13 @@ itsdk_sigfox_init_t itsdk_sigfox_getSeNvmOffset(uint32_t * offset) {
 /**
  * Configure the default values for the NVM Areas
  */
-itsdk_sigfox_init_t __itsdk_sigfox_resetNvmToFactory() {
+itsdk_sigfox_init_t __itsdk_sigfox_resetNvmToFactory(bool force) {
 	LOG_INFO_SIGFOXSTK(("__itsdk_sigfox_resetNvmToFactory\r\n"));
+
+#warning todo this
+	// when force is true the header and all the NVM blocks are rewriten
+	// when force is false, the block is rewritten only if the sigfox header is not found.
+
 
 	uint8_t se_nvm_default[SFX_SE_NVMEM_BLOCK_SIZE] = { 0, 0, 0, 0x0F, 0xFF };
 	SE_NVM_set(se_nvm_default);

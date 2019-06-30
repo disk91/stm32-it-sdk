@@ -107,7 +107,7 @@
 		bcopy(config_words_3,itsdk_config.sdk.sigfox.macroch_config_words_rc3,3*sizeof(sfx_u32));
 		sfx_u32 config_words_4[3] = RC4_SM_CONFIG;
 		bcopy(config_words_4,itsdk_config.sdk.sigfox.macroch_config_words_rc4,3*sizeof(sfx_u32));
-		__itsdk_sigfox_resetNvmToFactory();
+		__itsdk_sigfox_resetNvmToFactory(false);
 		#if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_LOCALEPROM
 		  uint8_t pac[8] = ITSDK_SIGFOX_PAC;
 		  bcopy(pac,itsdk_config.sdk.sigfox.initialPac,8);
@@ -376,6 +376,7 @@ static itsdk_console_return_e _itsdk_config_consolePriv(char * buffer, uint8_t s
  			#if ITSDK_CONFIGURATION_MODE != __CONFIG_STATIC
 			  _itsdk_console_printf("S          : commit configuration\r\n");
 			  _itsdk_console_printf("F          : restore factory defaults\r\n");
+			  _itsdk_console_printf("m          : see eeprom configuration\r\n");
 			#endif
 			#if ITSDK_WITH_SIGFOX_LIB == __ENABLE || ITSDK_WITH_LORAWAN_LIB == __ENABLE
 			  _itsdk_console_printf("SC:N:x     : sdk.activeNetwork 1:SFX 2:LoRa\r\n");
@@ -412,6 +413,36 @@ static itsdk_console_return_e _itsdk_config_consolePriv(char * buffer, uint8_t s
 			  itsdk_config_resetToFactory();
 			  _itsdk_console_printf("OK\r\n");
 			 return ITSDK_CONSOLE_SUCCES;
+		case 'm': {
+			  // print the eeprom memory mapping configuration
+			  uint32_t offset = 0;
+			  uint32_t size = 0;
+			  uint32_t totSize = 0;
+			  #if ITSDK_WITH_SECURESTORE == __ENABLE
+			  	itsdk_secstore_getStoreSize(&size);
+			  	_itsdk_console_printf("SecureStore: 0x%08X->0x%08X (%dB)\r\n",offset,offset+size,size);
+			  	offset += size;
+			  	totSize += size;
+			  #endif
+			  #if (ITSDK_WITH_ERROR_RPT == __ENABLE) && (ITSDK_ERROR_USE_EPROM == __ENABLE)
+			  	itsdk_error_getSize(&size);
+			  	_itsdk_console_printf("ErrorLog: 0x%08X->0x%08X (%dB)\r\n",offset,offset+size,size);
+			  	offset += size;
+			  	totSize += size;
+			  #endif
+			  #if (ITSDK_WITH_SIGFOX_LIB == __ENABLE)
+			  	itsdk_sigfox_getNvmSize(&size);
+			  	_itsdk_console_printf("SigfoxConfig: 0x%08X->0x%08X (%dB)\r\n",offset,offset+size,size);
+			  	offset += size;
+			  	totSize += size;
+			  #endif
+			  eeprom_getConfigSize(&size);
+  		  	  totSize += size;
+			  _itsdk_console_printf("ApplicationConfig: 0x%08X->0x%08X (%dB)\r\n",offset,offset+size,size);
+			  _itsdk_console_printf("UsedMemory: %dB on %dB\r\n",totSize,ITSDK_EPROM_SIZE);
+			  _itsdk_console_printf("OK\r\n");
+			 return ITSDK_CONSOLE_SUCCES;
+			}
 		#endif
 		default:
 			break;

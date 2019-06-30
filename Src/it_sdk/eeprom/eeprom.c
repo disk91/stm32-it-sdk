@@ -52,17 +52,9 @@ bool eeprom_write(void * data, uint16_t len, uint8_t version) {
 	t.size = len;
 	t.version = version;
 	t.crc32 = calculateCRC32((uint8_t*)data, len);
-	uint32_t offset = 0, sstore=0, ssError=0, sSigfox=0;
-  #if ITSDK_WITH_SECURESTORE == __ENABLE
-	itsdk_secstore_getStoreSize(&sstore);
-  #endif
-  #if (ITSDK_WITH_ERROR_RPT == __ENABLE) && (ITSDK_ERROR_USE_EPROM == __ENABLE)
-	itsdk_error_getSize(&ssError);
-  #endif
-  #if (ITSDK_WITH_SIGFOX_LIB == __ENABLE)
-	itsdk_sigfox_getNvmSize(&sSigfox);
-  #endif
-	offset += sstore + ssError + sSigfox;
+
+	uint32_t offset = 0;
+	eeprom_getConfigOffset(&offset);
 
 	// Write the data header
 	_eeprom_write(ITDT_EEPROM_BANK0, offset, (void *) &t, sizeof(t));
@@ -84,17 +76,8 @@ bool eeprom_write(void * data, uint16_t len, uint8_t version) {
  */
 bool eeprom_read(void * data, uint16_t len, uint8_t version, uint8_t * versionR) {
 	t_eeprom_entry t;
-	uint32_t offset = 0, sstore=0, ssError=0, sSigfox=0;
-  #if ITSDK_WITH_SECURESTORE == __ENABLE
-	itsdk_secstore_getStoreSize(&sstore);
-  #endif
-  #if (ITSDK_WITH_ERROR_RPT == __ENABLE) && (ITSDK_ERROR_USE_EPROM == __ENABLE)
-	itsdk_error_getSize(&ssError);
-  #endif
-  #if (ITSDK_WITH_SIGFOX_LIB == __ENABLE)
-	itsdk_sigfox_getNvmSize(&sSigfox);
-  #endif
-	offset += sstore + ssError + sSigfox;
+	uint32_t offset = 0;
+	eeprom_getConfigOffset(&offset);
 
 	// Read the data header
 	_eeprom_read(ITDT_EEPROM_BANK0, offset, (void *) &t, sizeof(t));
@@ -128,13 +111,11 @@ bool eeprom_read(void * data, uint16_t len, uint8_t version, uint8_t * versionR)
 }
 
 /**
- * Returns the offset of the first byte following the configuration & other SDK
- * EEPROM reserved zone. Make sure your data post this zone will be preserved if you
- * change the config area size.
+ * Compute the EEProm Config offset
+ * Memory have SecureStore then Log then Sigfox config, then Device config
  */
-bool eeprom_getPostConfigOffset(uint32_t * _offset) {
-	t_eeprom_entry t;
-	uint32_t offset = 0, sstore=0, ssError=0, sSigfox=0;
+bool eeprom_getConfigOffset(uint32_t * _offset) {
+  uint32_t offset = 0, sstore=0, ssError=0, sSigfox=0;
   #if ITSDK_WITH_SECURESTORE == __ENABLE
 	itsdk_secstore_getStoreSize(&sstore);
   #endif
@@ -144,12 +125,42 @@ bool eeprom_getPostConfigOffset(uint32_t * _offset) {
   #if (ITSDK_WITH_SIGFOX_LIB == __ENABLE)
 	itsdk_sigfox_getNvmSize(&sSigfox);
   #endif
-	offset += sstore + ssError + sSigfox;
+  *_offset += sstore + ssError + sSigfox;
+  return true;
+}
+
+/**
+ * Get the EEprom config size from the config header
+ * it includes the header size
+ */
+bool eeprom_getConfigSize(uint32_t * _size) {
+	t_eeprom_entry t;
+
+	uint32_t offset = 0;
+	eeprom_getConfigOffset(&offset);
 
 	// Read the data header
 	_eeprom_read(ITDT_EEPROM_BANK0, offset, (void *) &t, sizeof(t));
 
-	*_offset = offset + sizeof(t) + t.size;
+	*_size = sizeof(t) + t.size;
 	return true;
+}
 
+
+/**
+ * Returns the offset of the first byte following the configuration & other SDK
+ * EEPROM reserved zone. Make sure your data post this zone will be preserved if you
+ * change the config area size.
+ */
+bool eeprom_getPostConfigOffset(uint32_t * _offset) {
+	t_eeprom_entry t;
+
+	uint32_t size = 0;
+	uint32_t offset = 0;
+
+	eeprom_getConfigOffset(&offset);
+	eeprom_getConfigSize(&size);
+
+	*_offset = offset +size;
+	return true;
 }

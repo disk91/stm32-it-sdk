@@ -151,7 +151,7 @@ itsdk_sigfox_init_t itsdk_sigfox_continuousModeStop();
 itsdk_sigfox_init_t itsdk_sigfox_getNvmSize(uint32_t * sz);
 itsdk_sigfox_init_t itsdk_sigfox_getNvmOffset(uint32_t * offset);
 itsdk_sigfox_init_t itsdk_sigfox_getSeNvmOffset(uint32_t * offset);
-itsdk_sigfox_init_t __itsdk_sigfox_resetNvmToFactory();
+itsdk_sigfox_init_t __itsdk_sigfox_resetNvmToFactory(bool force);
 
 // --------------------------------------------------------------------
 // Function to be overloaded in the main program
