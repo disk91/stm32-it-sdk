@@ -127,9 +127,14 @@ sfx_u8 MCU_API_delay(sfx_delay_t delay_type)
         /* Delay  is 500ms  in FCC and ETSI
          * In ARIB : minimum delay is 50 ms */
         if( rcz == SIGFOX_RCZ3C ) {
-        	itsdk_delayMs(50);
+        	itsdk_delayMs(ITSDK_SIGFOX_IF_TXRX_RCZ3);
         } else {
-        	itsdk_delayMs(500);	// spec is 500 - 525ms
+        	// Measure (frame to frame) is 721ms for 500ms requested
+        	// due to code around assuming with 50ms TCXO wakeup
+			#if ITSDK_SIGFOX_IF_TXRX_RCZ1 < ITSDK_SX1276_SFXWAKEUP_TIME
+			#error "ITSDK_SIGFOX_IF_TXRX_RCZ1 can't be lower than ITSDK_SX1276_SFXWAKEUP_TIME"
+			#endif
+        	itsdk_delayMs(ITSDK_SIGFOX_IF_TXRX_RCZ1 - ITSDK_SX1276_SFXWAKEUP_TIME);	// spec is 500 - 525ms
         }
         break;
 
@@ -139,7 +144,12 @@ sfx_u8 MCU_API_delay(sfx_delay_t delay_type)
         if( rcz == SIGFOX_RCZ3C ) {
         	itsdk_delayMs(50);
         } else {
-        	itsdk_delayMs(1000);
+			#if ITSDK_SIGFOX_IF_TX_RCZ1 < ITSDK_SX1276_SFXWAKEUP_TIME
+			#error "ITSDK_SIGFOX_IF_TX_RCZ1 can't be lower than ITSDK_SX1276_SFXWAKEUP_TIME"
+			#endif
+        	// was 1s but many different devices like sensit are 100ms sounds more efficient
+        	// but 100 ms do not work really good
+        	itsdk_delayMs(ITSDK_SIGFOX_IF_TX_RCZ1 - ITSDK_SX1276_SFXWAKEUP_TIME);
         }
         break;
 

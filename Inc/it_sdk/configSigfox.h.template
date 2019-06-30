@@ -64,6 +64,10 @@
 #define ITSDK_SIGFOX_TXPOWER		SIGFOX_DEFAULT_POWER					// Default Tx power in dB - can be replaced by a value in dB	
 #define ITSDK_SIGFOX_SPEED			SIGFOX_DEFAULT_SPEED					// Default Speed in bps - can be replaced by a value in BPS		
 #define ITSDK_SIGFOX_RSSICAL		0	
+#define ITSDK_SIGFOX_IF_TX_RCZ1	 	500										// Interframe time for TX Frame
+#define ITSDK_SIGFOX_IF_TX_RCZ3	 	50										// Interframe time for TX Frame
+#define ITSDK_SIGFOX_IF_TXRX_RCZ1 	500										// Interframe time for TX/RX frame
+#define ITSDK_SIGFOX_IF_TXRX_RCZ3 	50										// Interframe time for TX/RX frame
 
 #define ITSDK_SIGFOX_KEY			{ 0x00, 0x00, 0x00, 0x00, \
 									  0x00, 0x00, 0x00, 0x00, \
@@ -123,6 +127,10 @@
 #define ITSDK_SX1276_TIM_ID			2								   	   // Timer used => Should not be changed
 																		   // Need to b activated in the CubeMx project
 #define ITSDK_SX1276_SPIDMATX		hdma_spi1_tx						   // Associated DMA
+#ifndef ITSDK_MURATA_TCXO_WARMUP
+#define ITSDK_MURATA_TCXO_WARMUP	50									   // Warmup time for TCXO
+#endif
+#define ITSDK_SX1276_SFXWAKEUP_TIME 60 								   	   // WakeUp time correction interframe timing (includes TCXO)
 
 #define ITSDK_SX1276_RESET_BANK		 		__BANK_C					   // SX1276 GPIO FOR RESET
 #define ITSDK_SX1276_RESET_PIN		 		__LP_GPIO_0

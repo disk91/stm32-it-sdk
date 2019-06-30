@@ -21,6 +21,6 @@
   * Enable DMA1 channel2 & 3 interrupt
   * Disable SPI1 global interrupt
   * Set GPIO as Very High Speed
-  
+* DIO4 must be declared as Interrupt to have the interrupt handler set for this pin  
 
 

@@ -51,7 +51,9 @@
 #define ITSDK_LORAWAN_ADR			__LORAWAN_ADR_OFF					   // Adaptative Data Rate
 #define ITSDK_LORAWAN_DEFAULT_DR	__LORAWAN_DR_0						   // Default data rate (SF12 125KHz)
 #define ITSDK_LORAWAN_CNF_RETRY		3									   // Number of retry when Confirm mode is applied
+#ifndef ITSDK_MURATA_TCXO_WARMUP
 #define ITSDK_MURATA_TCXO_WARMUP	50									   // Warmup time for TCXO
+#endif
 #define ITSDK_MURATA_WAKEUP_TIME    53 									   // WakeUp time correction for RX window start at least TCXO Time [ms]
 #define ITSDK_LORAWAN_MAX_RX_ERROR	0									   // Extends the RX windows with +/- MS
 																		   // This is for unprecised clocks (0=default value)
