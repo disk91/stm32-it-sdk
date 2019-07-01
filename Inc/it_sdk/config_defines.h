@@ -330,15 +330,21 @@
 /**
  * More generic Region mapping -> must be equivalent to __LORAWAN_REGION...
  */
-#define __PLWAN_REGION_NONE			0x0000
-#define __LPWAN_REGION_AS923		0x0001
-#define __LPWAN_REGION_AU915		0x0002
-#define __LPWAN_REGION_CN470		0x0004
-#define __LPWAN_REGION_CN779		0x0008
-#define __LPWAN_REGION_EU433		0x0010
-#define __LPWAN_REGION_EU868		0x0020
-#define __LPWAN_REGION_KR920		0x0040
-#define __LPWAN_REGION_IN865		0x0080
-#define __LPWAN_REGION_US915		0x0100
-#define __LPWAN_REGION_RU864		0x0200
+#define __PLWAN_REGION_NONE			0x00000000
+#define __LPWAN_REGION_AS923		0x00000001
+#define __LPWAN_REGION_AU915		0x00000002	 	// Autralia (RCZ4)
+#define __LPWAN_REGION_CN470		0x00000004
+#define __LPWAN_REGION_CN779		0x00000008
+#define __LPWAN_REGION_EU433		0x00000010
+#define __LPWAN_REGION_EU868		0x00000020		// Europe (RCZ1)
+#define __LPWAN_REGION_KR920		0x00000040		// South Korea (RCZ5)
+#define __LPWAN_REGION_IN865		0x00000080		// India (RCZ6)
+#define __LPWAN_REGION_US915		0x00000100		// USA, Canada (RCZ2)
+#define __LPWAN_REGION_RU864		0x00000200
+#define __LPWAN_REGION_MEA868		0x00000400		// Iran, Keyan, Oman, Tunisia, UAE (RCZ1)
+#define __LPWAN_REGION_SA915		0x00000800		// South Amnerica : Brazil, Mexico, Puerto Rico (RCZ2)
+#define __LPWAN_REGION_SA920		0x00001000		// South America :Argentina, Chile, Colombia, Costa Rica, Ecuador, El Salvador, Guatemala, Honduras, Panama, Peru, Uruguay (RCZ4)
+#define __LPWAN_REGION_AP920		0x00002000		// Asia Pacific : Australia, Hong Kong, Malaysia, New Zealand, Singapore, Taiwan, Thailand (RCZ4)
+#define __LPWAN_REGION_JP923		0x00004000		// Japan (RCZ3a)
+
 #endif /* IT_SDK_CONFIG_DEFINES_H_ */

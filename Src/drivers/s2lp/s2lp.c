@@ -206,7 +206,7 @@ void s2lp_loadConfiguration(
 		s2lpConf->tcxo 		= ITSDK_S2LP_CNF_TCX0;
 		s2lpConf->xtalFreq 	= ITSDK_S2LP_CNF_FREQ;
 		s2lpConf->id		= ITSDK_SIGFOX_ID;
-		s2lpConf->rcz		= ITDSK_SIGFOX_RCZ;
+		itsdk_sigfox_getRczFromRegion(ITSDK_DEFAULT_REGION, &s2lpConf->rcz);
 		for ( i =  0 ; i < 8 ; i++ ) s2lpConf->pac[i] = pac[i];
 		for ( i =  0 ; i < 16 ; i++ ) {
 			s2lpConf->key[i] = key[i];

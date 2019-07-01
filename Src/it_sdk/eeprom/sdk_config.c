@@ -82,23 +82,13 @@
 		itsdk_config.sdk.sigfox.txPower = ITSDK_SIGFOX_TXPOWER;
 		itsdk_config.sdk.sigfox.speed = ITSDK_SIGFOX_SPEED;
 		uint8_t __rcz = 0;
-		switch (ITSDK_DEFAULT_REGION) {
-		case __LPWAN_REGION_EU868:
-			__rcz = SIGFOX_RCZ1;
-			break;
-		case __LPWAN_REGION_US915:
-			__rcz = SIGFOX_RCZ2;
-			break;
-		default:
-			// error - unsupported
-			__rcz = ITDSK_SIGFOX_RCZ;
+
+		if ( itsdk_sigfox_getRczFromRegion(ITSDK_DEFAULT_REGION, &__rcz) != SIGFOX_INIT_SUCESS ) {
+			// the Region is not supported
+			itsdk_config.sdk.activeNetwork = __ACTIV_NETWORK_NONE;
+			log_error("Sigfox Region not supported\r\n");
 		}
-		if ( __rcz == ITDSK_SIGFOX_RCZ ) {
-			// error - invalid config
-			// not needed once the ITDSK_SIGFOX_RCZ will be removed
-		}
-		// @TODO - make RCZ fit with ITSDK_DEFAULT_REGION
-		#warning "ITSDK_DEFAULT_REGION is not yet correctly implemented"
+
 		itsdk_config.sdk.sigfox.rcz = __rcz;
 		itsdk_config.sdk.sigfox.sgfxKey = ITSDK_SIGFOX_KEY_TYPE;
 		sfx_u32 config_words_2[3] = RC2_SM_CONFIG;
@@ -107,6 +97,7 @@
 		bcopy(config_words_3,itsdk_config.sdk.sigfox.macroch_config_words_rc3,3*sizeof(sfx_u32));
 		sfx_u32 config_words_4[3] = RC4_SM_CONFIG;
 		bcopy(config_words_4,itsdk_config.sdk.sigfox.macroch_config_words_rc4,3*sizeof(sfx_u32));
+		// reset the Sigfox NVM if not yet already created
 		__itsdk_sigfox_resetNvmToFactory(false);
 		#if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_LOCALEPROM
 		  uint8_t pac[8] = ITSDK_SIGFOX_PAC;

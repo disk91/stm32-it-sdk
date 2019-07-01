@@ -51,7 +51,8 @@ void itsdk_state_init() {
 	itsdk_state.sigfox.current_power = itsdk_config.sdk.sigfox.txPower;
 	itsdk_state.sigfox.current_speed = itsdk_config.sdk.sigfox.speed;
   #elif ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_CONFIG_STATIC
-	itsdk_state.sigfox.rcz = ITDSK_SIGFOX_RCZ;
+	uint8_t __rcz = 0;
+	itsdk_sigfox_getRczFromRegion(ITSDK_DEFAULT_REGION, &itsdk_state.sigfox.rcz);
 	itsdk_state.sigfox.current_power = ITSDK_SIGFOX_TXPOWER;
 	itsdk_state.sigfox.current_speed = ITSDK_SIGFOX_SPEED;
   #elif ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_M95640

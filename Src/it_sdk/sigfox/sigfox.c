@@ -57,6 +57,10 @@
 #endif
 #include <drivers/sigfox/mcu_api.h>
 
+#if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_LOCALEPROM
+	#include <it_sdk/eeprom/eeprom.h>
+#endif
+
 
 #if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
 s2lp_config_t __s2lpConf;
@@ -618,11 +622,21 @@ itsdk_sigfox_init_t itsdk_sigfox_getSigfoxLibVersion(uint8_t ** version){
 	return SIGFOX_INIT_SUCESS;
 }
 
+// ================================================================================
+// MANAGE THE NVM STORAGE FOR SIGFOX LIBS
+// ================================================================================
+
+
+#if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_LOCALEPROM
+
 /**
  * Return the size of the sigfox Nvm memory to reserve
  */
 itsdk_sigfox_init_t itsdk_sigfox_getNvmSize(uint32_t * sz) {
-	*sz = ( itdt_align_32b(SFX_NVMEM_BLOCK_SIZE) + itdt_align_32b(SFX_SE_NVMEM_BLOCK_SIZE) );
+	*sz = (   sizeof(itsdk_sigfox_nvm_header_t)
+			+ itdt_align_32b(SFX_NVMEM_BLOCK_SIZE)
+			+ itdt_align_32b(SFX_SE_NVMEM_BLOCK_SIZE)
+		  );
 	return SIGFOX_INIT_SUCESS;
 }
 
@@ -630,14 +644,8 @@ itsdk_sigfox_init_t itsdk_sigfox_getNvmSize(uint32_t * sz) {
  * Return the offset of the NVM area for Sigfox
  */
 itsdk_sigfox_init_t itsdk_sigfox_getNvmOffset(uint32_t * offset) {
-	uint32_t sstore=0, ssError=0;
-	#if ITSDK_WITH_SECURESTORE == __ENABLE
-	itsdk_secstore_getStoreSize(&sstore);
-	#endif
-	#if (ITSDK_WITH_ERROR_RPT == __ENABLE) && (ITSDK_ERROR_USE_EPROM == __ENABLE)
-	itsdk_error_getSize(&ssError);
-	#endif
-	*offset = sstore + ssError;
+	itsdk_sigfox_getSigfoxNvmOffset(offset);
+	*offset += sizeof(itsdk_sigfox_nvm_header_t);
 	return SIGFOX_INIT_SUCESS;
 }
 
@@ -651,23 +659,93 @@ itsdk_sigfox_init_t itsdk_sigfox_getSeNvmOffset(uint32_t * offset) {
 	return SIGFOX_INIT_SUCESS;
 }
 
+/**
+ * Return the offset of the NVM area for Sigfox
+ * Data including the Lib Nvm Offset followed by the
+ * the SE offset
+ */
+itsdk_sigfox_init_t itsdk_sigfox_getSigfoxNvmOffset(uint32_t * offset) {
+
+	uint32_t sstore=0, ssError=0;
+	#if ITSDK_WITH_SECURESTORE == __ENABLE
+	itsdk_secstore_getStoreSize(&sstore);
+	#endif
+	#if (ITSDK_WITH_ERROR_RPT == __ENABLE) && (ITSDK_ERROR_USE_EPROM == __ENABLE)
+	itsdk_error_getSize(&ssError);
+	#endif
+	*offset = sstore + ssError;
+	return SIGFOX_INIT_SUCESS;
+}
+
 
 /**
  * Configure the default values for the NVM Areas
  */
 itsdk_sigfox_init_t __itsdk_sigfox_resetNvmToFactory(bool force) {
-	LOG_INFO_SIGFOXSTK(("__itsdk_sigfox_resetNvmToFactory\r\n"));
+	LOG_INFO_SIGFOXSTK(("__itsdk_sigfox_resetNvmToFactory"));
 
-#warning todo this
-	// when force is true the header and all the NVM blocks are rewriten
-	// when force is false, the block is rewritten only if the sigfox header is not found.
+	uint32_t offset;
+	itsdk_sigfox_getSigfoxNvmOffset(&offset);
 
+	itsdk_sigfox_nvm_header_t header;
+	_eeprom_read(ITDT_EEPROM_BANK0, offset, (void *) &header, sizeof(itsdk_sigfox_nvm_header_t));
+	uint32_t expecteSize;
+	itsdk_sigfox_getNvmSize(&expecteSize);
+	if ( force || header.magic != ITSDK_SIGFOX_NVM_MAGIC || header.size != expecteSize ) {
+		LOG_INFO_SIGFOXSTK((".. Reset\r\n"));
+		header.magic = ITSDK_SIGFOX_NVM_MAGIC;
+		header.size = expecteSize;
+		header.reserved = 0;
+		_eeprom_write(ITDT_EEPROM_BANK0, offset, (void *) &header, sizeof(itsdk_sigfox_nvm_header_t));
+		// force to reset the Sigfox NVM structure
+		uint8_t se_nvm_default[SFX_SE_NVMEM_BLOCK_SIZE] = { 0, 0, 0, 0x0F, 0xFF };
+		SE_NVM_set(se_nvm_default);
+		uint8_t se_mcu_default[SFX_NVMEM_BLOCK_SIZE];
+		bzero(se_mcu_default,SFX_NVMEM_BLOCK_SIZE);
+		MCU_API_set_nv_mem(se_mcu_default);
+	} else {
+		LOG_INFO_SIGFOXSTK((".. Skiped\r\n"));
+	}
+	return SIGFOX_INIT_SUCESS;
+}
 
-	uint8_t se_nvm_default[SFX_SE_NVMEM_BLOCK_SIZE] = { 0, 0, 0, 0x0F, 0xFF };
-	SE_NVM_set(se_nvm_default);
-	uint8_t se_mcu_default[SFX_NVMEM_BLOCK_SIZE];
-	bzero(se_mcu_default,SFX_NVMEM_BLOCK_SIZE);
-	MCU_API_set_nv_mem(se_mcu_default);
+#endif
+
+// ===================================================================================
+// Region conversion
+// ===================================================================================
+itsdk_sigfox_init_t itsdk_sigfox_getRczFromRegion(uint32_t region, uint8_t * rcz) {
+	switch ( region ) {
+	case __LPWAN_REGION_EU868:
+	case __LPWAN_REGION_MEA868:
+		*rcz = SIGFOX_RCZ1;
+		break;
+	case __LPWAN_REGION_US915:
+	case __LPWAN_REGION_SA915:
+		*rcz = SIGFOX_RCZ2;
+		break;
+	case __LPWAN_REGION_JP923:
+		*rcz = SIGFOX_RCZ3C;		// to be verified as RCZ3a sound more relevant
+		break;
+	case __LPWAN_REGION_AU915:
+	case __LPWAN_REGION_SA920:
+	case __LPWAN_REGION_AP920:
+		*rcz = SIGFOX_RCZ4;
+		break;
+	case __LPWAN_REGION_KR920:
+		*rcz = SIGFOX_RCZ5;
+		break;
+	case __LPWAN_REGION_IN865:
+		//*rcz = SIGFOX_RCZ6;
+		*rcz = SIGFOX_UNSUPPORTED;
+		break;
+	default:
+		*rcz = SIGFOX_UNSUPPORTED;
+		break;
+	}
+	if ( *rcz == SIGFOX_UNSUPPORTED ) {
+		return SIGFOX_INIT_FAILED;
+	}
 	return SIGFOX_INIT_SUCESS;
 }
 
