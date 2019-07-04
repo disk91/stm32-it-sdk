@@ -40,8 +40,8 @@ Made for being compiled with open-source environment GCC / AC6
   * eeprom
      * m95640
   * sigfox
-     * s2lp
-     * murata cmwx1zzabz (sx1276)
+     * s2lp (tested on RCZ1)
+     * murata cmwx1zzabz (sx1276) (tested on RCZ1 & RCZ2)
   * lorawan
     * murata cmwx1zzabz (sx1276)
   * T / H / P
@@ -52,10 +52,14 @@ Made for being compiled with open-source environment GCC / AC6
     * Maxim Max17205 / Max17201
   * NFC
   	 * ST25DV - block access / serial console over FTM & memory
+  * Hall Effect
+     * sl353
        
 * Supported stacks
   * lorawan
      * semtech stack
+  * sigfox
+     * sigfox stack
 
 The second objective is to be able to port this SDK to different patform
 to make it a portable SDK. The SDK have a it-sdk directory where everything needs to be portable. stm32l-sdk contains all the subfunctions specific to this platform.
