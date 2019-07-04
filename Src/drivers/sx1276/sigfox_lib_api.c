@@ -41,6 +41,7 @@
 #include <it_sdk/wrappers.h>
 #include <it_sdk/time/timer.h>
 #include <it_sdk/logger/error.h>
+#include <it_sdk/lowpower/lowpower.h>
 
 // =============================================================================================
 // MCU API
@@ -127,9 +128,14 @@ sfx_u8 MCU_API_delay(sfx_delay_t delay_type)
         /* Delay  is 500ms  in FCC and ETSI
          * In ARIB : minimum delay is 50 ms */
         if( rcz == SIGFOX_RCZ3C ) {
-        	itsdk_delayMs(50);
+        	itsdk_delayMs(ITSDK_SIGFOX_IF_TXRX_RCZ3);
         } else {
-        	itsdk_delayMs(500);	// spec is 500 - 525ms
+        	// Measure (frame to frame) is 721ms for 500ms requested
+        	// due to code around assuming with 50ms TCXO wakeup
+			#if ITSDK_SIGFOX_IF_TXRX_RCZ1 < ITSDK_SX1276_SFXWAKEUP_TIME
+			#error "ITSDK_SIGFOX_IF_TXRX_RCZ1 can't be lower than ITSDK_SX1276_SFXWAKEUP_TIME"
+			#endif
+        	itsdk_delayMs(ITSDK_SIGFOX_IF_TXRX_RCZ1 - ITSDK_SX1276_SFXWAKEUP_TIME);	// spec is 500 - 525ms
         }
         break;
 
@@ -139,7 +145,12 @@ sfx_u8 MCU_API_delay(sfx_delay_t delay_type)
         if( rcz == SIGFOX_RCZ3C ) {
         	itsdk_delayMs(50);
         } else {
-        	itsdk_delayMs(1000);
+			#if ITSDK_SIGFOX_IF_TX_RCZ1 < ITSDK_SX1276_SFXWAKEUP_TIME
+			#error "ITSDK_SIGFOX_IF_TX_RCZ1 can't be lower than ITSDK_SX1276_SFXWAKEUP_TIME"
+			#endif
+        	// was 1s but many different devices like sensit are 100ms sounds more efficient
+        	// but 100 ms do not work really good
+        	itsdk_delayMs(ITSDK_SIGFOX_IF_TX_RCZ1 - ITSDK_SX1276_SFXWAKEUP_TIME);
         }
         break;
 
@@ -286,12 +297,17 @@ sfx_u8 MCU_API_timer_stop(void)
 
 }
 
+/**
+ * Rq : this function wait for 2x10s in RCZ2 communication, assuming to ensure the 20s duty cycle between transmissions
+ * switch to low power mode with rtc wakeup only.
+ */
 sfx_u8 MCU_API_timer_wait_for_end(void)
 {
    LOG_DEBUG_SFXSX1276((">> MCU_API_timer_wait_for_end\r\n"));
-   //SCH_WaitEvt( TIMOUT_EVT );
    while (sx1276_sigfox_state.timerEvent == SIGFOX_EVENT_CLEAR) {
+	   lowPower_delayMs(1000);
 	   if ( sx1276_sigfox_idle() == SX1276_SIGFOX_ERR_BREAK ) break;
+	   wdg_refresh();
    }
    return SFX_ERR_NONE;
 }
@@ -362,17 +378,20 @@ sfx_u8 RF_API_stop(void)
  */
 sfx_u8 RF_API_send(sfx_u8 *stream, sfx_modulation_type_t type, sfx_u8 size)
 {
-  LOG_DEBUG_SFXSX1276(("RF_API_send\r\n"));
+  LOG_DEBUG_SFXSX1276(("RF_API_send (%d)\r\n",type));
   sfx_u8 status =SFX_ERR_NONE;
+  mod_error_t err;
   switch (type)
   {
     case SFX_DBPSK_100BPS :
-      if ( SGFX_SX1276_tx( (uint8_t *)stream, (uint8_t) size, 100 ) != MOD_SUCCESS) {
+      if ( (err = SGFX_SX1276_tx( (uint8_t *)stream, (uint8_t) size, 100 )) != MOD_SUCCESS) {
+    	  LOG_DEBUG_SFXSX1276(("Send Error (%d)\r\n",err));
           status = RF_ERR_API_SEND;
       }
       break;
     case SFX_DBPSK_600BPS :
-      if ( SGFX_SX1276_tx( (uint8_t *)stream, (uint8_t) size, 600 ) != MOD_SUCCESS) {
+      if ( (err = SGFX_SX1276_tx( (uint8_t *)stream, (uint8_t) size, 600 )) != MOD_SUCCESS) {
+    	  LOG_DEBUG_SFXSX1276(("Send Error  (%d)\r\n",err));
           status = RF_ERR_API_SEND;
       }
       break;
@@ -458,7 +477,7 @@ sfx_u8 RF_API_wait_frame(sfx_u8 *frame, sfx_s16 *rssi, sfx_rx_state_enum_t * sta
 
   SGFX_SX1276_rx_start();
   // Wait that flag EOFTX_EVT is set by STLL_SetEndOfTxFrame
-  STLL_WaitEndOfTxFrame();
+  //STLL_WaitEndOfTxFrame();
   // SCH_WaitEvt( EOFTX_EVT );
 
   if( STLL_WaitEndOfRxFrame( ) == STLL_SET ){

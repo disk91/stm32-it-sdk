@@ -29,8 +29,8 @@
  * ==========================================================
  */
 
-#ifndef IT_SDK_CONFIG_SIGFOX_H_
-#define IT_SDK_CONFIG_SIGFOX_H_
+#ifndef IT_SDK_CONFIG_LORAWAN_H_
+#define IT_SDK_CONFIG_LORAWAN_H_
 
 #include <it_sdk/config_defines.h>
 #if ITSDK_LORAWAN_LIB == __LORAWAN_SX1276
@@ -51,6 +51,10 @@
 #define ITSDK_LORAWAN_ADR			__LORAWAN_ADR_OFF					   // Adaptative Data Rate
 #define ITSDK_LORAWAN_DEFAULT_DR	__LORAWAN_DR_0						   // Default data rate (SF12 125KHz)
 #define ITSDK_LORAWAN_CNF_RETRY		3									   // Number of retry when Confirm mode is applied
+#ifndef ITSDK_MURATA_TCXO_WARMUP
+#define ITSDK_MURATA_TCXO_WARMUP	50									   // Warmup time for TCXO
+#endif
+#define ITSDK_MURATA_WAKEUP_TIME    53 									   // WakeUp time correction for RX window start at least TCXO Time [ms]
 #define ITSDK_LORAWAN_MAX_RX_ERROR	0									   // Extends the RX windows with +/- MS
 																		   // This is for unprecised clocks (0=default value)
 #define ITSDK_LORAWAN_MAX_DWNLNKSZ	32									   // Max downlink Size in Byte for reception buffer
@@ -154,6 +158,20 @@
 								}									\
 							  }												// TTN EU Configuration
 
+#define UNDEF__ITSDK_LORAWAN_CHANNEL {										\
+								8,		/*num of channel*/			\
+								{									\
+									{	0, 903900000, 903900000, __LORAWAN_DR_0, __LORAWAN_DR_3, 0 }, \
+									{	1, 904100000, 904100000, __LORAWAN_DR_0, __LORAWAN_DR_3, 0 }, \
+									{	2, 904300000, 904300000, __LORAWAN_DR_0, __LORAWAN_DR_3, 0 }, \
+									{	3, 904500000, 904500000, __LORAWAN_DR_0, __LORAWAN_DR_3, 0 }, \
+									{	4, 904700000, 904700000, __LORAWAN_DR_0, __LORAWAN_DR_3, 0 }, \
+									{	5, 904900000, 904900000, __LORAWAN_DR_0, __LORAWAN_DR_3, 0 }, \
+									{	6, 905100000, 905100000, __LORAWAN_DR_0, __LORAWAN_DR_3, 0 }, \
+									{	7, 905300000, 905300000, __LORAWAN_DR_0, __LORAWAN_DR_3, 0 }  \
+								}									\
+							  }												// TTN US915 Configuration
+
 																		   // =============================
 																		   // ITSDK E2E ENCRYPTION STATIC CONFIG
 																		   // =============================
@@ -196,12 +214,12 @@
 																		   // And corrsponding PIN add in the Low level Handler (stm32L...it.c)
 // +-------------MURATA------------|--------------------------------------|---------------------------------------|
 
-#define ITSDK_MURATA_ANTSW_RX_BANK 	     __BANK_A						   // MURATE ANTENNA SWITCH RX
-#define ITSDK_MURATE_ANTSW_RX_PIN	     __LP_GPIO_1
+#define ITSDK_MURATA_ANTSW_RX_BANK 	     __BANK_A						   // MURATA ANTENNA SWITCH RX
+#define ITSDK_MURATA_ANTSW_RX_PIN	     __LP_GPIO_1
 #define ITSDK_MURATA_ANTSW_TXBOOST_BANK  __BANK_C						   // MURATA TX POWER BOOST
-#define ITSDK_MURATE_ANTSW_TXBOOST_PIN	 __LP_GPIO_1
+#define ITSDK_MURATA_ANTSW_TXBOOST_PIN	 __LP_GPIO_1
 #define ITSDK_MURATA_ANTSW_TXRFO_BANK    __BANK_C						   // MURATA TX RFO
-#define ITSDK_MURATE_ANTSW_TXRFO_PIN	 __LP_GPIO_2
+#define ITSDK_MURATA_ANTSW_TXRFO_PIN	 __LP_GPIO_2
 
 #endif
 
@@ -215,5 +233,5 @@
 #endif
 
 
-#endif /* IT_SDK_CONFIG_SIGFOX_H_ */
+#endif /* IT_SDK_CONFIG_LORAWAN_H_ */
 

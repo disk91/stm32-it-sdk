@@ -46,6 +46,9 @@
   static itsdk_console_return_e _itsdk_config_consolePublic(char * buffer, uint8_t sz);
 #endif
 
+#if ITSDK_WITH_SECURESTORE == __ENABLE
+  #include <it_sdk/eeprom/securestore.h>
+#endif
 
 /**
  * In Memory configuration image
@@ -74,13 +77,22 @@
 		itsdk_config.sdk.lorawan.joinMode = ITSDK_LORAWAN_ACTIVATION;
 		itsdk_config.sdk.lorawan.networkType = ITSDK_LORAWAN_NETWORKTYPE;
 		itsdk_config.sdk.lorawan.retries = ITSDK_LORAWAN_CNF_RETRY;
+		itsdk_config.sdk.activeRegion = ITSDK_DEFAULT_REGION;
 		#endif
 		// ----------- Sigfox settings --------------------------------------------------
 		#if ITSDK_WITH_SIGFOX_LIB == __ENABLE
 		itsdk_config.sdk.sigfox.rssiCal = ITSDK_SIGFOX_RSSICAL;
-		itsdk_config.sdk.sigfox.txPower = ITSDK_SIGFOX_TXPOWER;
+		itsdk_config.sdk.sigfox.txPower = (ITSDK_SIGFOX_TXPOWER < ITSDK_SIGFOX_MAXPOWER )?ITSDK_SIGFOX_TXPOWER:ITSDK_SIGFOX_MAXPOWER;
 		itsdk_config.sdk.sigfox.speed = ITSDK_SIGFOX_SPEED;
-		itsdk_config.sdk.sigfox.rcz = ITDSK_SIGFOX_RCZ;
+		uint8_t __rcz = 0;
+
+		if ( itsdk_sigfox_getRczFromRegion(ITSDK_DEFAULT_REGION, &__rcz) != SIGFOX_INIT_SUCESS ) {
+			// the Region is not supported
+			itsdk_config.sdk.activeNetwork = __ACTIV_NETWORK_NONE;
+			log_error("Sigfox Region not supported\r\n");
+		}
+
+		itsdk_config.sdk.sigfox.rcz = __rcz;
 		itsdk_config.sdk.sigfox.sgfxKey = ITSDK_SIGFOX_KEY_TYPE;
 		sfx_u32 config_words_2[3] = RC2_SM_CONFIG;
 		bcopy(config_words_2,itsdk_config.sdk.sigfox.macroch_config_words_rc2,3*sizeof(sfx_u32));
@@ -88,7 +100,8 @@
 		bcopy(config_words_3,itsdk_config.sdk.sigfox.macroch_config_words_rc3,3*sizeof(sfx_u32));
 		sfx_u32 config_words_4[3] = RC4_SM_CONFIG;
 		bcopy(config_words_4,itsdk_config.sdk.sigfox.macroch_config_words_rc4,3*sizeof(sfx_u32));
-		__itsdk_sigfox_resetNvmToFactory();
+		// reset the Sigfox NVM if not yet already created
+		__itsdk_sigfox_resetNvmToFactory(false);
 		#if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_LOCALEPROM
 		  uint8_t pac[8] = ITSDK_SIGFOX_PAC;
 		  bcopy(pac,itsdk_config.sdk.sigfox.initialPac,8);
@@ -300,6 +313,10 @@ static bool __checkAndConvert(char * str,uint8_t start,uint8_t stop,uint8_t sz,u
 					itsdk_configuration_nvm_t * _c = &itsdk_config;
 					if (buffer[0]=='C') _c = &itsdk_config_shadow;
 					_itsdk_console_printf("sdk.version : %02X\r\n",_c->sdk.version);
+					#if ITSDK_WITH_SIGFOX_LIB == __ENABLE || ITSDK_WITH_LORAWAN_LIB == __ENABLE
+					_itsdk_console_printf("sdk.activeNetwork : %d\r\n",_c->sdk.activeNetwork);
+					_itsdk_console_printf("sdk.activeRegion : %04X\r\n",_c->sdk.activeRegion);
+					#endif
 					#if ITSDK_WITH_LORAWAN_LIB == __ENABLE
 					_itsdk_console_printf("sdk.lora.adrmode : %d\r\n",_c->sdk.lorawan.adrMode);
 					_itsdk_console_printf("sdk.lora.devEuiType : %d\r\n",_c->sdk.lorawan.devEuiType);
@@ -353,6 +370,11 @@ static itsdk_console_return_e _itsdk_config_consolePriv(char * buffer, uint8_t s
  			#if ITSDK_CONFIGURATION_MODE != __CONFIG_STATIC
 			  _itsdk_console_printf("S          : commit configuration\r\n");
 			  _itsdk_console_printf("F          : restore factory defaults\r\n");
+			  _itsdk_console_printf("m          : see eeprom configuration\r\n");
+			#endif
+			#if ITSDK_WITH_SIGFOX_LIB == __ENABLE || ITSDK_WITH_LORAWAN_LIB == __ENABLE
+			  _itsdk_console_printf("SC:N:x     : sdk.activeNetwork 1:SFX 2:LoRa\r\n");
+			  _itsdk_console_printf("SC:R:xxxx  : sdk.activeRegion __PLWAN_REGION_xx\r\n");
 			#endif
 			#if ITSDK_WITH_LORAWAN_LIB == __ENABLE
 			  _itsdk_console_printf("SC:0:x     : lora.adrmode 1:OFF/2:ON\r\n");
@@ -385,6 +407,36 @@ static itsdk_console_return_e _itsdk_config_consolePriv(char * buffer, uint8_t s
 			  itsdk_config_resetToFactory();
 			  _itsdk_console_printf("OK\r\n");
 			 return ITSDK_CONSOLE_SUCCES;
+		case 'm': {
+			  // print the eeprom memory mapping configuration
+			  uint32_t offset = 0;
+			  uint32_t size = 0;
+			  uint32_t totSize = 0;
+			  #if ITSDK_WITH_SECURESTORE == __ENABLE
+			  	itsdk_secstore_getStoreSize(&size);
+			  	_itsdk_console_printf("SecureStore: 0x%08X->0x%08X (%dB)\r\n",offset,offset+size,size);
+			  	offset += size;
+			  	totSize += size;
+			  #endif
+			  #if (ITSDK_WITH_ERROR_RPT == __ENABLE) && (ITSDK_ERROR_USE_EPROM == __ENABLE)
+			  	itsdk_error_getSize(&size);
+			  	_itsdk_console_printf("ErrorLog: 0x%08X->0x%08X (%dB)\r\n",offset,offset+size,size);
+			  	offset += size;
+			  	totSize += size;
+			  #endif
+			  #if (ITSDK_WITH_SIGFOX_LIB == __ENABLE)
+			  	itsdk_sigfox_getNvmSize(&size);
+			  	_itsdk_console_printf("SigfoxConfig: 0x%08X->0x%08X (%dB)\r\n",offset,offset+size,size);
+			  	offset += size;
+			  	totSize += size;
+			  #endif
+			  eeprom_getConfigSize(&size);
+  		  	  totSize += size;
+			  _itsdk_console_printf("ApplicationConfig: 0x%08X->0x%08X (%dB)\r\n",offset,offset+size,size);
+			  _itsdk_console_printf("UsedMemory: %dB on %dB\r\n",totSize,ITSDK_EPROM_SIZE);
+			  _itsdk_console_printf("OK\r\n");
+			 return ITSDK_CONSOLE_SUCCES;
+			}
 		#endif
 		default:
 			break;
@@ -392,6 +444,40 @@ static itsdk_console_return_e _itsdk_config_consolePriv(char * buffer, uint8_t s
 	} else if ( sz >= 6 ) {
 		if ( buffer[0] == 'S' && buffer[1] == 'C' && buffer[2] == ':' && buffer[4] == ':' ) {
 			switch(buffer[3]) {
+			#if ITSDK_WITH_SIGFOX_LIB == __ENABLE || ITSDK_WITH_LORAWAN_LIB == __ENABLE
+			case 'N': {
+				// sdk.activeNetwork
+				switch ( buffer[5] ) {
+					case '0':
+					   itsdk_config_shadow.sdk.activeNetwork = __ACTIV_NETWORK_NONE;
+					   break;
+					case '1':
+					   itsdk_config_shadow.sdk.activeNetwork = __ACTIV_NETWORK_SIGFOX;
+					   break;
+					case '2':
+					   itsdk_config_shadow.sdk.activeNetwork = __ACTIV_NETWORK_LORAWAN;
+					   break;
+					default:
+						_itsdk_console_printf("KO\r\n");
+						return ITSDK_CONSOLE_FAILED;
+				}
+				_itsdk_console_printf("OK\r\n");
+				return ITSDK_CONSOLE_SUCCES;
+			}
+			case 'R': {
+				if ( itdt_isHexString( &buffer[5],4,false) ) {
+					uint16_t v = itdt_convertHexChar4Int(&buffer[5]);
+					if ( itdt_count_bits_1(v) <= 1 ) {
+						itsdk_config_shadow.sdk.activeRegion = v;
+						_itsdk_console_printf("OK\r\n");
+						return ITSDK_CONSOLE_SUCCES;
+					}
+				}
+				_itsdk_console_printf("KO\r\n");
+				return ITSDK_CONSOLE_FAILED;
+			}
+			#endif
+
  	 	 	#if ITSDK_WITH_LORAWAN_LIB == __ENABLE
 			case '0':
 				// lora.adrmode
@@ -587,7 +673,7 @@ static itsdk_console_return_e _itsdk_config_consolePriv(char * buffer, uint8_t s
 				{
 					uint8_t b[4];
 					if ( __checkAndConvert(buffer,5,sz,4,b) ) {
-						bcopy(b,itsdk_config_shadow.sdk.sigfox.deviceId,4);
+						bcopy(b,&itsdk_config_shadow.sdk.sigfox.deviceId,4);
 						_itsdk_console_printf("OK\r\n");
 						return ITSDK_CONSOLE_SUCCES;
 					}

@@ -9,7 +9,7 @@
 
 ### Cube Mx configuration
 * The SPI pins need to be set including PA15 GPIO_SPEED_FREQ_VERY_HIGH => 32MHz
-* PA15
+* PA15 (SPI_NSS)
   * SPI_NSS pin should be configured PULL_UP with Set as initial state
   * Speed is VERY_HIGH
 * TIM2 is enable with Inetrnal Clock source / nothing specific it will be setup by the driver code
@@ -21,9 +21,6 @@
   * Enable DMA1 channel2 & 3 interrupt
   * Disable SPI1 global interrupt
   * Set GPIO as Very High Speed
-  
+* DIO4 must be declared as Interrupt to have the interrupt handler set for this pin  
 
-### CubeMx specific configuration :
-__SPI1_TX DMA Channel__ needs to be enable in Cube MX. Go to SPI1, Add a DMA entry, Select SPI1_TX in the DMA windows.
-This will generate the necessary IRQ Handler for SPI/DMA transmission.
 

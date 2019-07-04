@@ -29,11 +29,11 @@
 #include <it_sdk/config.h>
 #if ITSDK_PLATFORM == __PLATFORM_STM32L0
 #include <it_sdk/itsdk.h>
+#include <it_sdk/eeprom/sdk_state.h>
 #include <it_sdk/logger/error.h>
 #include <it_sdk/debug.h>
+#include <it_sdk/time/time.h>
 #include "stm32l0xx_hal.h"
-
-#define ADC_OPTIMIZED_CODE_FOR_SIZE	1
 
 #if ( ITSDK_WITH_ADC & __ADC_ENABLED ) > 0
 ADC_HandleTypeDef hadc;
@@ -46,11 +46,11 @@ ADC_HandleTypeDef hadc;
 #define CAL1_VALUE          ((uint16_t*)((uint32_t)0x1FF8007A))
 #define VREFINT_CAL       ((uint16_t*) ((uint32_t) 0x1FF80078))
 #elif ITSDK_DEVICE == __DEVICE_STM32L053R8 || ITSDK_DEVICE == __DEVICE_STM32L072XX
-#define CAL2_TEMP			110 // 130 selon DS ?
+#define CAL2_TEMP			130 // 110 acording to certain sources but 130 from Datasheet
 #define CAL2_VALUE          ((uint16_t*)((uint32_t)0x1FF8007E))
 #define CAL1_TEMP			30
 #define CAL1_VALUE          ((uint16_t*)((uint32_t)0x1FF8007A))
-#define VREFINT_CAL       ((uint16_t*) ((uint32_t) 0x1FF80078))
+#define VREFINT_CAL         ((uint16_t*) ((uint32_t) 0x1FF80078))
 #else
 #warning DEVICE IS NOT DEFINED FOR CALIBRATION
 #define CAL2_TEMP			130
@@ -64,7 +64,7 @@ ADC_HandleTypeDef hadc;
 #define VDD_APPLI 			((uint16_t) (ITSDK_VDD_MV))			// VDD voltage value
 
 
-#if ADC_OPTIMIZED_CODE_FOR_SIZE > 0
+#if ITSDK_ADC_OPTIMIZE_SIZE == __ENABLE
 
 /**
  * Read adc
@@ -112,6 +112,10 @@ uint16_t readADC(uint32_t ch)
   __NOP();
   __NOP();
   __NOP();
+  __NOP();
+  __NOP();
+  __NOP();
+  __NOP();
 
 
   // ENABLE ADC
@@ -128,15 +132,15 @@ uint16_t readADC(uint32_t ch)
   ADC1->SMPR |= ADC_SMPR_SMP_0 | ADC_SMPR_SMP_1 | ADC_SMPR_SMP_2;
   	  	  	  	  	  	  	  	  	  	  	  	// Select a sampling mode of 111 (very slow)
 
-  // DO CONVERSION
+  // DO MUTIPLE READ & AVERAGE
   data = 0;
-  for( i = 0; i < 8; i++ )
+  for( i = 0; i < ITSDK_ADC_OVERSAMPLING ; i++ )
   {
     ADC1->CR |= ADC_CR_ADSTART; 				// start the ADC conversion
     while ((ADC1->ISR & ADC_ISR_EOC) == 0); 	// wait end of conversion
     data += ADC1->DR;							// get ADC result and clear the ISR_EOC flag
   }
-  data >>= 3;
+  data = data / ITSDK_ADC_OVERSAMPLING;
 
   // DISABLE ADC
   // at this point the end of sampling and end of sequence bits are also set in ISR registr
@@ -157,12 +161,9 @@ uint16_t readADC(uint32_t ch)
 }
 
 #else
-uint8_t __ADC_init = 0;
-void _ADC_MspInit(ADC_HandleTypeDef* adcHandle);
-void _ADC_MspDeInit(ADC_HandleTypeDef* adcHandle);
 
 uint32_t __getAdcValue(uint32_t channel) {
-	  if ( __ADC_init == 0 ) _ADC_MspInit(ADC1);
+	  __HAL_RCC_ADC1_CLK_ENABLE();
 
 	  ADC_ChannelConfTypeDef sConfig;
 
@@ -199,56 +200,33 @@ uint32_t __getAdcValue(uint32_t channel) {
 		  ITSDK_ERROR_REPORT(ITSDK_ERROR_ADC_CONFCHANNEL_FAILED,0);
 	  }
 
-	  HAL_ADC_Start(&hadc);
-	  if (HAL_ADC_PollForConversion(&hadc, 100) == HAL_OK) {
-		  uint32_t v = HAL_ADC_GetValue(&hadc);
+	  uint32_t v = 0;
+	  for( int i = 0; i < ITSDK_ADC_OVERSAMPLING ; i++ ) {
+		  HAL_ADC_Start(&hadc);
+		  if (HAL_ADC_PollForConversion(&hadc, 100) != HAL_OK) {
+		  		  HAL_ADC_Stop(&hadc);
+		  		  return ADC_TEMPERATURE_ERROR;
+		  }
+		  v += HAL_ADC_GetValue(&hadc);
 		  HAL_ADC_Stop(&hadc);
-		  return (uint32_t)v;
-      }
-	  HAL_ADC_Stop(&hadc);
-	  return ADC_TEMPERATURE_ERROR;
+	  }
+	  v = v / ITSDK_ADC_OVERSAMPLING;
+	  return v;
 }
 
-void _ADC_MspInit(ADC_HandleTypeDef* adcHandle)
-{
-
- // GPIO_InitTypeDef GPIO_InitStruct;
-  if(adcHandle->Instance==ADC1)
-  {
-    __HAL_RCC_ADC1_CLK_ENABLE();
-    __ADC_init=1;
-/*
-    GPIO_InitStruct.Pin = GPIO_PIN_4;
-    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-*/
-  }
-}
-
-void _ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
-{
-
-  if(adcHandle->Instance==ADC1)
-  {
-    __HAL_RCC_ADC1_CLK_DISABLE();
-    __ADC_init=0;
-
-/*
-    HAL_GPIO_DeInit(GPIOA, GPIO_PIN_4);
-    */
-  }
-}
 
 #endif
 
 /**
- * Return temperature from Adc the temp is in centi°C
+ * Return temperature from Adc the temp is in centi-degrÃ©s Celcius
+ * Ensure to read Temperature at least 8ms after wake up ...
+ * Time to get accurate getVdd response
  */
 int16_t adc_getTemperature() {
 
-#if ADC_OPTIMIZED_CODE_FOR_SIZE > 0
 	uint16_t vdd = adc_getVdd();
+
+#if ITSDK_ADC_OPTIMIZE_SIZE == __ENABLE
 	uint32_t v = readADC(ADC_CHSELR_CHSEL18);
 #else
 	uint32_t v = __getAdcValue(ADC_CHANNEL_TEMPSENSOR);
@@ -258,7 +236,7 @@ int16_t adc_getTemperature() {
 	uint16_t cal1_vdd = (*CAL1_VALUE * VDD_CALIB) / vdd;
 	uint16_t cal2_vdd = (*CAL2_VALUE * VDD_CALIB) / vdd;
 
-	// convert in 0.01°C according to the calibration ref
+	// convert in 0.01ï¿½C according to the calibration ref
 	int32_t temperature = 100 * (CAL2_TEMP - CAL1_TEMP)*(v - cal1_vdd);
 	temperature /= (cal2_vdd - cal1_vdd);
     temperature = temperature + (100*CAL1_TEMP);
@@ -268,9 +246,16 @@ int16_t adc_getTemperature() {
 
 /**
  * Return VDD in mV ( internal VDD )
+ * Be Careful -> right after wakeup from STOP the
+ * value can be invalid (200mv error). The solution is to
+ * sleep a bit (8ms recommanded) before sampling Vdd
  */
 uint16_t adc_getVdd() {
-	//return  ( ((uint32_t)VDD_APPLI * (*VREFINT_CAL) )/ adc_getValue(0));
+	// The value measured is not good until we wait about 8ms after MCU wakeup from stop
+	uint64_t t = ( itsdk_time_get_us() - itsdk_state.lastWakeUpTimeUs) / 1000;
+	if ( t < 8 ) {
+		itsdk_delayMs(8 - t);
+	}
 	return adc_getValue(0);
 }
 
@@ -353,15 +338,15 @@ uint16_t adc_getValue(uint32_t pin) {
 		HAL_GPIO_Init(GPIO_TypeDefStruct, &GPIO_InitStruct);
 	}
 
-#if ADC_OPTIMIZED_CODE_FOR_SIZE > 0
+#if ITSDK_ADC_OPTIMIZE_SIZE == __ENABLE
 	uint32_t v = readADC(channel);
 #else
 	uint32_t v = __getAdcValue(channel);
 #endif
 
 	if (pin == 0) {
-		if ( v == 0 ) v=1; // securing
-		int32_t vdd = 1200 * 4096 / v; //(((v * VDD_CALIB) / VDD_APPLI));
+		if ( v == 0 ) return 0; // securing
+   	    int32_t vdd = ((int32_t)(*VREFINT_CAL) * VDD_CALIB) / v;
 	    return (uint16_t)vdd;
 	} else {
 		int32_t vdd = (adc_getVdd() * v )/4096;

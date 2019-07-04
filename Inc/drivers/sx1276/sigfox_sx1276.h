@@ -35,7 +35,8 @@
 typedef enum {
 	SX1276_SIGFOX_ERR_NONE = 0,
 	SX1276_SIGFOX_ERR_BREAK,			// Force to break a wait loop
-	SX1276_SIGFOX_ERR_LIBINIT			// Impossible to open Sigfox Lib
+	SX1276_SIGFOX_ERR_LIBINIT,			// Impossible to open Sigfox Lib
+	SX1276_SIGFOX_ERR_CONFIG			// Error on Set Std Config
 
 
 } sx1276_sigfox_ret_t;
@@ -65,7 +66,7 @@ sx1276_sigfox_ret_t sx1276_sigfox_idle_used( void );
 #define LOG_ERROR_SFXSX1276(x)		log_error x
 #define LOG_DEBUG_SFXSX1276(x)		log_debug x
 #else
-#define LOG_INFO_SFXSX1276P(x)
+#define LOG_INFO_SFXSX1276(x)
 #define LOG_WARN_SFXSX1276(x)
 #define LOG_ERROR_SFXSX1276(x)
 #define LOG_DEBUG_SFXSX1276(x)

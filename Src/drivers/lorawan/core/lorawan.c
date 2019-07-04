@@ -149,7 +149,7 @@ __weak void lorawan_driver_onJoinFailed() {
  * Callback function on Send Success
  */
 __weak void lorawan_driver_onSendSuccess() {
-   log_info("[LoRaWAN] Send success\r\n");
+	LOG_INFO_LORAWAN(("[LoRaWAN] Send success\r\n"));
 }
 
 /**
@@ -406,7 +406,7 @@ void lorawan_driver_LORA_Init(
         	break;
 		#endif
         default:
-        	log_error("[LoRaWan] Invalid region selected\r\n");
+        	LOG_ERROR_LORAWAN(("[LoRaWan] Invalid region selected\r\n"));
     		ITSDK_ERROR_REPORT(ITSDK_ERROR_LORAWAN_INVALID_REGION,(uint16_t)config->region);
         	return;
         }
@@ -434,6 +434,10 @@ void lorawan_driver_LORA_Init(
   	    LoRaMacMibSetRequestConfirm( &mibReq );
 
   	    __loraWanState.txDatarate = __convertDR(config->txDatarate);
+  	    mibReq.Type = MIB_CHANNELS_DEFAULT_DATARATE;
+  	    mibReq.Param.ChannelsDefaultDatarate = __convertDR(config->txDatarate);
+  	    LoRaMacMibSetRequestConfirm( &mibReq );
+
   	    __loraWanState.JoinType = config->JoinType;
   	    if ( config->JoinType == __LORAWAN_OTAA ) {
   	    	mibReq.Type = MIB_APP_KEY;
@@ -490,11 +494,11 @@ void lorawan_driver_LORA_Init(
   	    LoRaMacMibSetRequestConfirm( &mibReq );
 
 	    mibReq.Type = MIB_SYSTEM_MAX_RX_ERROR;
-		mibReq.Param.SystemMaxRxError = 20;
+		mibReq.Param.SystemMaxRxError = ITSDK_LORAWAN_MAX_RX_ERROR;
 		LoRaMacMibSetRequestConfirm( &mibReq );
 
 
-		// this part of the code is not yes clear...
+		// Sounds like this is remapping the channels
 		#if defined( HYBRID )
                 uint16_t channelMask[] = { 0x00FF, 0x0000, 0x0000, 0x0000, 0x0001, 0x0000};
                 mibReq.Type = MIB_CHANNELS_MASK;
@@ -616,6 +620,13 @@ itsdk_lorawan_send_t lorawan_driver_LORA_Send(
       return false;
     }
 
+    // Update the Datarate information this is important to correctly calculate the max size of frame
+    // for the LoRaMacQueryTxPossible function
+    MibRequestConfirm_t set;
+    set.Type = MIB_CHANNELS_DATARATE;
+    set.Param.ChannelsDatarate = __convertDR(dataRate);
+    LoRaMacMibSetRequestConfirm(&set);
+
     // Verify if a command can be proceed by the MAC Layer
     if( LoRaMacQueryTxPossible( size, &txInfo ) != LORAMAC_STATUS_OK ) {
         // Send empty frame in order to flush MAC commands
@@ -623,6 +634,8 @@ itsdk_lorawan_send_t lorawan_driver_LORA_Send(
         mcpsReq.Req.Unconfirmed.fBuffer = NULL;
         mcpsReq.Req.Unconfirmed.fBufferSize = 0;
         mcpsReq.Req.Unconfirmed.Datarate = __convertDR(dataRate);
+        // @TODO here we do not send the expected payload so we may have a callback to notice this
+		#warning "Manage the Flush MAC case"
     } else {
     	__loraWanState.lastRetries = 0;
     	// Ok To proceed
@@ -675,7 +688,7 @@ itsdk_lorawan_send_t lorawan_driver_LORA_Send(
 							*rSize = __lorawan_driver_lastDownlink.size;
 						}
     	    		} else {
-    	    			log_warn(("[LoRaWan] Receiving downlink but can't return it\r\n"));
+    	    			LOG_WARN_LORAWAN(("[LoRaWan] Receiving downlink but can't return it\r\n"));
     	    		}
     	    		return (__loraWanState.sendState ==LORAWAN_SEND_STATE_ACKED_WITH_DOWNLINK)?LORAWAN_SEND_ACKED_WITH_DOWNLINK:LORAWAN_SEND_ACKED_WITH_DOWNLINK_PENDING;
     	    	case LORAWAN_SEND_STATE_ACKED_NO_DOWNLINK:
@@ -698,7 +711,7 @@ itsdk_lorawan_send_t lorawan_driver_LORA_Send(
     		return LORAWAN_SEND_NOT_JOINED;
     	default:
     		__loraWanState.sendState = LORAWAN_SEND_STATE_FAILED;
-    		log_warn("[LoRaWan] can't send err(%d)\r\n",r);
+    		LOG_WARN_LORAWAN(("[LoRaWan] can't send err(%d)\r\n",r));
     		return LORAWAN_SEND_FAILED;
     }
 
@@ -742,13 +755,38 @@ itsdk_lorawan_channel_t lorawan_driver_LORA_AddChannel(
 		case LORAMAC_STATUS_FREQ_AND_DR_INVALID:
 		case LORAMAC_STATUS_DATARATE_INVALID:
 		case LORAMAC_STATUS_FREQUENCY_INVALID:
-			log_warn("[LoRaWan] Invalid channel configuration (%d)\r\n",r);
+			LOG_WARN_LORAWAN(("[LoRaWan] Invalid channel configuration (%d)\r\n",r));
 			return LORAWAN_CHANNEL_INVALID_PARAMS;
 		default:
-			log_warn("[LoRaWan] Channel configuration error (%d)\r\n",r);
+			LOG_WARN_LORAWAN(("[LoRaWan] Channel configuration error (%d)\r\n",r));
 			return LORAWAN_CHANNEL_FAILED;
 	}
 }
+
+/**
+ * Change channel mask to enable only the one we need
+ * The channels parameter is a table containing x time 16b corresponding
+ * to the possible channels
+ * for US915 as an example we have 6 entries of 16b in the tab for the 72 possible channels
+ */
+itsdk_lorawan_channel_t lorawan_driver_LORA_SelectChannels(uint16_t region, uint16_t * channels ){
+	LOG_INFO_LORAWAN(("lorawan_driver_LORA_SelectChannels (%d)\r\n",channelId));
+	ChanMaskSetParams_t chanMaskSet;
+	chanMaskSet.ChannelsMaskType = CHANNELS_REINIT_MASK;
+	chanMaskSet.ChannelsMaskIn = channels;
+	switch ( region ) {
+	case __LORAWAN_REGION_US915:
+		if ( RegionChanMaskSet(LORAMAC_REGION_US915,&chanMaskSet) ) {
+			return LORAWAN_CHANNEL_SUCCESS;
+		}
+		break;
+	default:
+		break;
+	}
+	LOG_WARN_LORAWAN(("[LoRaWan] Channel configuration error\r\n"));
+	return LORAWAN_CHANNEL_FAILED;
+}
+
 
 /**
  * Remove a previously defined channel
@@ -759,7 +797,7 @@ itsdk_lorawan_channel_t lorawan_driver_LORA_RemoveChannel(uint8_t channelId){
 	if ( LoRaMacChannelRemove(channelId) == LORAMAC_STATUS_OK ) {
 		return LORAWAN_CHANNEL_SUCCESS;
 	} else {
-		log_warn("[LoRaWan] Channel removal error\r\n");
+		LOG_WARN_LORAWAN(("[LoRaWan] Channel removal error\r\n"));
 		return LORAWAN_CHANNEL_FAILED;
 	}
 }
@@ -918,7 +956,7 @@ static void McpsConfirm( McpsConfirm_t *mcpsConfirm )
     	lorawan_driver_onSendSuccessAckFailed();
     	break;
     default:
-    	log_warn("[LoRaWan] MCPSc returns(%d)\r\n",mcpsConfirm->Status);
+    	LOG_WARN_LORAWAN(("[LoRaWan] MCPSc returns(%d)\r\n",mcpsConfirm->Status));
     	__loraWanState.sendState = LORAWAN_SEND_STATE_FAILED;
 	}
 
@@ -937,7 +975,7 @@ static void McpsIndication( McpsIndication_t *mcpsIndication )
     //lora_AppData_t _AppData;
     if( mcpsIndication->Status != LORAMAC_EVENT_INFO_STATUS_OK )
     {
-    	log_warn("[LoRaWan] MCPSi returns(%d)\r\n",mcpsIndication->Status);
+    	LOG_WARN_LORAWAN(("[LoRaWan] MCPSi returns(%d)\r\n",mcpsIndication->Status));
     	__loraWanState.sendState = LORAWAN_SEND_STATE_FAILED;
         return;
     }
@@ -955,7 +993,7 @@ static void McpsIndication( McpsIndication_t *mcpsIndication )
         }
         case MCPS_CONFIRMED:
         {
-        	log_info("??? MCPS_CONFIRMED\r\n");
+        	LOG_WARN_LORAWAN(("??? MCPS_CONFIRMED\r\n"));
             break;
         }
         case MCPS_PROPRIETARY:
@@ -1080,7 +1118,7 @@ static void MlmeConfirm( MlmeConfirm_t *mlmeConfirm )
                 if (certif_running() == true ){
                      certif_linkCheck(mlmeConfirm);
                 }
-                log_info("### link_Check\r\n");
+                LOG_DEBUG_LORAWAN(("### link_Check\r\n"));
             }
             break;
         }

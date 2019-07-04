@@ -778,7 +778,12 @@ typedef enum eChannelsMask
     /*!
      * The channels default mask.
      */
-    CHANNELS_DEFAULT_MASK
+    CHANNELS_DEFAULT_MASK,
+	/*!
+	 * The channels mask (added by disk91)
+	 * Reinit all the mask
+	 */
+	CHANNELS_REINIT_MASK
 }ChannelsMask_t;
 
 /*!

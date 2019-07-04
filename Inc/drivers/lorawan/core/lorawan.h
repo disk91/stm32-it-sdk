@@ -162,6 +162,7 @@ itsdk_lorawan_channel_t lorawan_driver_LORA_AddChannel(
 		uint8_t		maxDataRate,
 		uint8_t		band
 );
+itsdk_lorawan_channel_t lorawan_driver_LORA_SelectChannels(uint16_t region, uint16_t * channels );
 void lorawan_driver_loop();
 
 // ===========================================================================

@@ -53,7 +53,9 @@
 #define ITSDK_CLK_BEST_SOURCE		__CLK_BEST_SRC_RTC						// The RTC is the most accurate clk source to ADJUST Others
 #define ITSDK_CLK_CORRECTION		1000									// correct clock with 1200 o/oo (+20%) of the ticks (used when clk_adjust = 0 or for RTC when CLK_BEST_SRC_RTC)
 #define ITSDK_WITH_ADC				__ADC_ENABLED							// Use of Adc (includes the structures)
+#define ITSDK_ADC_OPTIMIZE_SIZE		__DISABLE								// When __ENABLE adc code is optimized for code size (when relevant)
 #define ITSDK_ADC1_PIN				14										// Map the channel for ADC on PIN 14 (PA0)
+#define ITSDK_ADC_OVERSAMPLING		16										// Number of ADC read time before averaging
 #define ITSDK_VDD_MV				3300									// VDD value in mV
 #define ITSDK_VBAT_MIN				2000									// MIN value for VBAT in mv
 #define ITSDK_VBAT_MAX				3300									// MAX value for VBAT in mv
@@ -225,6 +227,7 @@
 #define ITSDK_PROTECT_KEY			0xA7459BC3 	 	/* CHANGE ME */			// A random value used to protect the SIGFOX (and others) KEY in memory (better than nothing)
 
 #define ITSDK_DEFAULT_NETWORK		__ACTIV_NETWORK_SIGFOX					// Default network to activate
+#define ITSDK_DEFAULT_REGION		__LPWAN_REGION_EU868				    // default region to activate 
 
 
 #define ITSDK_ENCRYPT_AES_SHAREDKEY	( 0xAE632397 ^ ITSDK_PROTECT_KEY )      // CHANGE ME

@@ -43,6 +43,7 @@ typedef enum {
 } lowPower_state_e;
 
 void lowPower_switch();
+uint32_t lowPower_delayMs(uint32_t duration);
 
 // ------------------------------------------------------------------------
 // LowPower enable / disable

@@ -34,6 +34,7 @@
 
 typedef struct {
 	uint8_t		activeNetwork;			// Currently active network see __ACTIV_NETWORK_*
+	uint64_t	lastWakeUpTimeUs;		// Store time from last reset in uS (use by adc to ensure reference are stabel before read)
 	#if ITSDK_WITH_SIGFOX_LIB == __ENABLE
 	struct {
 		bool					initialized;
@@ -48,5 +49,6 @@ extern itsdk_state_t itsdk_state;
 
 
 void itsdk_state_init();
+void itsdk_print_state();
 
 #endif // IT_SDK_EEPROM_SDK_STATE_H_

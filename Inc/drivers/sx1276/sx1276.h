@@ -65,7 +65,7 @@ extern gpio_irq_chain_t __sx1276_gpio_irq[];
 /*!
  * Radio wake-up time from sleep
  */
-#define RADIO_WAKEUP_TIME                           2 // [ms]
+//#define RADIO_WAKEUP_TIME                           2 // [ms]
 
 #define RF_MID_BAND_THRESH                          525000000
 /*!

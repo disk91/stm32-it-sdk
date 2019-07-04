@@ -622,7 +622,7 @@ static itsdk_console_return_e _itsdk_secStore_consolePriv(char * buffer, uint8_t
 			_itsdk_console_printf("SS:0:xxxx  : change the secure store dyn Key (12B)\r\n");
 			_itsdk_console_printf("SS:1:xxxx  : change the console password (max 15 char)\r\n");
 		 #if defined(ITSDK_WITH_SIGFOX_LIB) && ITSDK_WITH_SIGFOX_LIB == __ENABLE
-			_itsdk_console_printf("SS:S       : Sigfox key restore factory setting\r\n");
+			_itsdk_console_printf("ss:S       : Sigfox key restore factory setting\r\n");
 			_itsdk_console_printf("SS:2:xxxx  : change the sigfox key (16B hex)\r\n");
 		 #endif
 		 #if ( defined(ITSDK_SIGFOX_ENCRYPTION) && ( ITSDK_SIGFOX_ENCRYPTION > 0 )) || (defined(ITSDK_LORAWAN_ENCRYPTION) && ( ITSDK_LORAWAN_ENCRYPTION > 0))
@@ -658,29 +658,29 @@ static itsdk_console_return_e _itsdk_secStore_consolePriv(char * buffer, uint8_t
 			_itsdk_console_printf("SS:H:xxxx  : Encrypt change Speck Key (8B hex)\r\n");
 		  #endif
 		  #if ITSDK_SECSTORE_USRBLOCK >= 1
-			_itsdk_console_printf("SS:I:xxxx  : User changer key 0 (16B hex)\r\n");
+			_itsdk_console_printf("SS:I:xxxx  : User change key 0 (16B hex)\r\n");
 		  #endif
  		  #if ITSDK_SECSTORE_USRBLOCK >= 2
 			_itsdk_console_printf("ss:J       : User print key 1 (16B)\r\n");
-			_itsdk_console_printf("SS:J:xxxx  : User changer key 1 (16B hex)\r\n");
+			_itsdk_console_printf("SS:J:xxxx  : User change key 1 (16B hex)\r\n");
 		  #endif
 		  #if ITSDK_SECSTORE_USRBLOCK >= 3
-			_itsdk_console_printf("SS:K:xxxx  : User changer key 2 (16B hex)\r\n");
+			_itsdk_console_printf("SS:K:xxxx  : User change key 2 (16B hex)\r\n");
 		  #endif
  	 	  #if ITSDK_SECSTORE_USRBLOCK >= 4
-			_itsdk_console_printf("SS:L:xxxx  : User changer key 3 (16B hex)\r\n");
+			_itsdk_console_printf("SS:L:xxxx  : User change key 3 (16B hex)\r\n");
 		  #endif
  		  #if ITSDK_SECSTORE_USRBLOCK >= 5
-			_itsdk_console_printf("SS:M:xxxx  : User changer key 4 (16B hex)\r\n");
+			_itsdk_console_printf("SS:M:xxxx  : User change key 4 (16B hex)\r\n");
 		  #endif
 		  #if ITSDK_SECSTORE_USRBLOCK >= 6
-			_itsdk_console_printf("SS:N:xxxx  : User changer key 5 (16B hex)\r\n");
+			_itsdk_console_printf("SS:N:xxxx  : User change key 5 (16B hex)\r\n");
 		  #endif
 		  #if ITSDK_SECSTORE_USRBLOCK >= 7
-			_itsdk_console_printf("SS:O:xxxx  : User changer key 6 (16B hex)\r\n");
+			_itsdk_console_printf("SS:O:xxxx  : User change key 6 (16B hex)\r\n");
 		  #endif
 		  #if ITSDK_SECSTORE_USRBLOCK >= 8
-			_itsdk_console_printf("SS:P:xxxx  : User changer key 7 (16B hex)\r\n");
+			_itsdk_console_printf("SS:P:xxxx  : User change key 7 (16B hex)\r\n");
 		  #endif
 		  return ITSDK_CONSOLE_SUCCES;
 		  break;

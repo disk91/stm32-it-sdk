@@ -112,6 +112,16 @@ uint32_t itdt_convertHexChar8Int(char * v) {
 }
 
 /* -----------------------------------------------------------
+ *  Convert a 16bit hex string value into uint16_t value
+ */
+uint16_t itdt_convertHexChar4Int(char * v) {
+  uint16_t ret = itdt_convertHexChar2Int(&v[0]);
+  ret <<= 8;
+  ret += itdt_convertHexChar2Int(&v[2]);
+  return ret;
+}
+
+/* -----------------------------------------------------------
  *  Convert a 4 char decimal (+ sign) string value into uint16_t value
  */
 int16_t itdt_convertDecChar4Int(char * v) {
@@ -209,5 +219,18 @@ uint32_t itdt_align_32b(uint32_t v) {
 		v += 4;
 	}
 	return v;
+}
+
+
+/* ---------------------------------------------------
+ * Count the number of bit at 1 in a given word
+ */
+uint8_t itdt_count_bits_1(uint32_t v) {
+	uint8_t ret = 0;
+	while ( v > 0 ) {
+		if ( v & 1 ) ret++;
+		v >>= 1;
+	}
+	return ret;
 }
 

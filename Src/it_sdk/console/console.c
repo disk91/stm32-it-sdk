@@ -166,6 +166,11 @@ static itsdk_console_return_e _itsdk_console_public(char * buffer, uint8_t sz) {
 			_itsdk_console_printf("IT_SDK Version %s\r\n",ITSDK_VERSION);
 			return ITSDK_CONSOLE_SUCCES;
 			break;
+		case 's':
+			// State
+			itsdk_print_state();
+			return ITSDK_CONSOLE_SUCCES;
+			break;
 		}
 	}
 	return ITSDK_CONSOLE_NOTFOUND;
@@ -380,11 +385,18 @@ static void _itsdk_console_processChar(char c) {
 
 	if ( c == '\n' || c == '\r' || c == '\0' ) {
 		if ( __console.pBuffer > 0 ) {
+//			log_info("RET");
 			_itsdk_console_processLine();
 			__console.pBuffer = 0;
 		}
+//		log_info("ESC");
 	} else {
 		if ( __console.pBuffer < ITSDK_CONSOLE_LINEBUFFER ) {
+
+//			if ( c > 32 ) {
+//			  log_info("[%c]",c);
+//			} else log_info("(%02X)",c);
+
 			__console.serialBuffer[__console.pBuffer] = c;
 			__console.pBuffer++;
 		}

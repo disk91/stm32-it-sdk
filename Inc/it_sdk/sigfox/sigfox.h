@@ -76,11 +76,13 @@ typedef enum
 } itdsk_sigfox_oob_t;
 
 
+#define SIGFOX_UNSUPPORTED	0
 #define SIGFOX_RCZ1		1
 #define SIGFOX_RCZ2 	2
 #define SIGFOX_RCZ3C 	3
 #define SIGFOX_RCZ4		4
 #define SIGFOX_RCZ5		5
+#define SIGFOX_RCZ6		6
 
 #define SIGFOX_KEY_PRIVATE	0
 #define SIGFOX_KEY_PUBLIC	1
@@ -91,6 +93,18 @@ typedef enum
 typedef uint32_t itsdk_sigfox_device_is_t;
 
 #define SIGFOX_POWER_DEFAULT	-1
+
+// --------------------------------------------------------------------
+// Header for NVM storage
+// --------------------------------------------------------------------
+#define ITSDK_SIGFOX_NVM_MAGIC	0x5178
+
+typedef struct {
+	uint16_t	magic;
+	uint8_t		size;
+	uint8_t		reserved;
+} itsdk_sigfox_nvm_header_t;
+
 
 // --------------------------------------------------------------------
 // Public Functions
@@ -111,6 +125,7 @@ itsdk_sigfox_init_t itsdk_sigfox_setRcSyncPeriod(uint16_t numOfFrame);
 itsdk_sigfox_init_t itsdk_sigfox_getLastSeqId(uint16_t * seqId);
 itsdk_sigfox_init_t itsdk_sigfox_getNextSeqId(uint16_t * seqId);
 itsdk_sigfox_init_t itsdk_sigfox_getSigfoxLibVersion(uint8_t ** version);
+itsdk_sigfox_init_t itsdk_sigfox_getRczFromRegion(uint32_t region, uint8_t * rcz);
 
 itdsk_sigfox_txrx_t itsdk_sigfox_sendFrame(
 		uint8_t * buf,
@@ -151,7 +166,8 @@ itsdk_sigfox_init_t itsdk_sigfox_continuousModeStop();
 itsdk_sigfox_init_t itsdk_sigfox_getNvmSize(uint32_t * sz);
 itsdk_sigfox_init_t itsdk_sigfox_getNvmOffset(uint32_t * offset);
 itsdk_sigfox_init_t itsdk_sigfox_getSeNvmOffset(uint32_t * offset);
-itsdk_sigfox_init_t __itsdk_sigfox_resetNvmToFactory();
+itsdk_sigfox_init_t itsdk_sigfox_getSigfoxNvmOffset(uint32_t * offset);
+itsdk_sigfox_init_t __itsdk_sigfox_resetNvmToFactory(bool force);
 
 // --------------------------------------------------------------------
 // Function to be overloaded in the main program

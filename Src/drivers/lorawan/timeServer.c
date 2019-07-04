@@ -141,7 +141,6 @@ static void TimerCallback( uint32_t value ) {
 
 	TimerEvent_t *obj = (TimerEvent_t *)value;
 	LOG_DEBUG_LORAWAN(("TimerCallback (%d)\r\n",obj->ReloadValue));
-
 	obj->IsStarted = false;
 	if (obj->Callback != NULL) {
 		obj->Callback(obj->Context);

@@ -338,7 +338,6 @@ gpio_irq_chain_t __gpio_irq_chain = { NULL, 0, NULL };
 gpio_irq_chain_t * __gpio_irq_wakeup = NULL;
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-	//log_info(".");
 
 	// When the __gpio_irq_wakeup handler is set this handler is called
 	// Because we do not want the normal handler to be called until the
