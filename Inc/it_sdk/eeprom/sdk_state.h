@@ -49,5 +49,6 @@ extern itsdk_state_t itsdk_state;
 
 
 void itsdk_state_init();
+void itsdk_print_state();
 
 #endif // IT_SDK_EEPROM_SDK_STATE_H_

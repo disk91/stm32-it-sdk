@@ -46,6 +46,9 @@
   static itsdk_console_return_e _itsdk_config_consolePublic(char * buffer, uint8_t sz);
 #endif
 
+#if ITSDK_WITH_SECURESTORE == __ENABLE
+  #include <it_sdk/eeprom/securestore.h>
+#endif
 
 /**
  * In Memory configuration image
@@ -79,7 +82,7 @@
 		// ----------- Sigfox settings --------------------------------------------------
 		#if ITSDK_WITH_SIGFOX_LIB == __ENABLE
 		itsdk_config.sdk.sigfox.rssiCal = ITSDK_SIGFOX_RSSICAL;
-		itsdk_config.sdk.sigfox.txPower = ITSDK_SIGFOX_TXPOWER;
+		itsdk_config.sdk.sigfox.txPower = (ITSDK_SIGFOX_TXPOWER < ITSDK_SIGFOX_MAXPOWER )?ITSDK_SIGFOX_TXPOWER:ITSDK_SIGFOX_MAXPOWER;
 		itsdk_config.sdk.sigfox.speed = ITSDK_SIGFOX_SPEED;
 		uint8_t __rcz = 0;
 
@@ -670,7 +673,7 @@ static itsdk_console_return_e _itsdk_config_consolePriv(char * buffer, uint8_t s
 				{
 					uint8_t b[4];
 					if ( __checkAndConvert(buffer,5,sz,4,b) ) {
-						bcopy(b,itsdk_config_shadow.sdk.sigfox.deviceId,4);
+						bcopy(b,&itsdk_config_shadow.sdk.sigfox.deviceId,4);
 						_itsdk_console_printf("OK\r\n");
 						return ITSDK_CONSOLE_SUCCES;
 					}

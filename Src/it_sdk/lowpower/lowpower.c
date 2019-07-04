@@ -70,9 +70,9 @@ void lowPower_switch() {
 		if ( duration > ITSDK_LOWPOWER_MINDUR_MS ) {
 			#if ITSDK_PLATFORM == __PLATFORM_STM32L0
 			// sleeping
-			if ( stm32l_lowPowerSetup(duration) == STM32L_LOWPOWER_SUCCESS ) {
+			if ( stm32l_lowPowerSetup(duration,STM32L_LOWPOWER_NORMAL_STOP) == STM32L_LOWPOWER_SUCCESS ) {
 				// waking up
-				stm32l_lowPowerResume();
+				stm32l_lowPowerResume(STM32L_LOWPOWER_NORMAL_STOP);
 				itsdk_state.lastWakeUpTimeUs = itsdk_time_get_us();
 			}
 			#endif
@@ -95,4 +95,33 @@ void lowPower_disable() {
 	__lowPowerState= LOWPRW_DISABLE;
 }
 
+/**
+ * Have a delay in low power with no wake-up reason other than RTC
+ * end. The duration won't be respected if a timer ends before the
+ * expected duration. The pending duration is returned
+ */
+uint32_t lowPower_delayMs(uint32_t duration) {
+	uint32_t pendingDur = 0;
+	uint32_t maxDur = itsdk_stimer_nextTimeoutMs();
+	if ( maxDur < duration ) {
+		pendingDur = duration - maxDur;
+		duration = maxDur;
+	}
+	if ( itsdk_stimer_isLowPowerSwitchAutorized()  && __lowPowerState == LOWPRW_ENABLE ) {
+		if ( duration > ITSDK_LOWPOWER_MINDUR_MS ) {
+			#if ITSDK_PLATFORM == __PLATFORM_STM32L0
+			// sleeping
+			if ( stm32l_lowPowerSetup(duration,STM32L_LOWPOWER_RTCONLY_STOP) == STM32L_LOWPOWER_SUCCESS ) {
+				// waking up
+				stm32l_lowPowerResume(STM32L_LOWPOWER_RTCONLY_STOP);
+			}
+			#endif
+		} else {
+			itsdk_delayMs(duration);
+		}
+	} else {
+		itsdk_delayMs(duration);
+	}
 
+	return pendingDur;
+}

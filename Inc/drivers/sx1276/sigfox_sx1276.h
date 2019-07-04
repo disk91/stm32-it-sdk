@@ -35,7 +35,8 @@
 typedef enum {
 	SX1276_SIGFOX_ERR_NONE = 0,
 	SX1276_SIGFOX_ERR_BREAK,			// Force to break a wait loop
-	SX1276_SIGFOX_ERR_LIBINIT			// Impossible to open Sigfox Lib
+	SX1276_SIGFOX_ERR_LIBINIT,			// Impossible to open Sigfox Lib
+	SX1276_SIGFOX_ERR_CONFIG			// Error on Set Std Config
 
 
 } sx1276_sigfox_ret_t;

@@ -27,6 +27,9 @@
 #include <it_sdk/config.h>
 #include <it_sdk/eeprom/sdk_config.h>
 #include <it_sdk/eeprom/sdk_state.h>
+#if ITSDK_WITH_CONSOLE == __ENABLE
+#include <it_sdk/console/console.h>
+#endif
 itsdk_state_t itsdk_state;
 
 void itsdk_state_init() {
@@ -53,7 +56,7 @@ void itsdk_state_init() {
   #elif ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_CONFIG_STATIC
 	uint8_t __rcz = 0;
 	itsdk_sigfox_getRczFromRegion(ITSDK_DEFAULT_REGION, &itsdk_state.sigfox.rcz);
-	itsdk_state.sigfox.current_power = ITSDK_SIGFOX_TXPOWER;
+	itsdk_state.sigfox.current_power = (ITSDK_SIGFOX_TXPOWER < ITSDK_SIGFOX_MAXPOWER )?ITSDK_SIGFOX_TXPOWER:ITSDK_SIGFOX_MAXPOWER;;
 	itsdk_state.sigfox.current_speed = ITSDK_SIGFOX_SPEED;
   #elif ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_M95640
 	// The setting will be made later during sigfox init part
@@ -64,3 +67,34 @@ void itsdk_state_init() {
 
 	return;
 }
+
+#if ITSDK_WITH_CONSOLE == __ENABLE
+void itsdk_print_state() {
+	_itsdk_console_printf("state.lastWakeUpTimeUs %d ms\r\n",(uint32_t)(itsdk_state.lastWakeUpTimeUs/1000));
+#if ITSDK_CONFIGURATION_MODE != __CONFIG_STATIC
+   #if ITSDK_WITH_SIGFOX_LIB == __ENABLE || ITSDK_WITH_LORAWAN_LIB == __ENABLE
+	_itsdk_console_printf("state.activeNetwork : %d\r\n",itsdk_state.activeNetwork);
+   #endif
+#else
+   #if ITSDK_WITH_SIGFOX_LIB == __ENABLE || ITSDK_WITH_LORAWAN_LIB == __ENABLE
+	_itsdk_console_printf("state.activeNetwork %d\r\n",itsdk_state.activeNetwork);
+	#if ITSDK_WITH_SIGFOX_LIB == __ENABLE
+	#endif
+   #endif
+#endif
+
+#if ITSDK_WITH_SIGFOX_LIB == __ENABLE
+	_itsdk_console_printf("state.sigfox.initialized : %d\r\n",itsdk_state.sigfox.initialized);
+  #if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_LOCALEPROM || ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_CONFIG_STATIC
+	_itsdk_console_printf("state.sigfox.rcz %d\r\n",itsdk_state.sigfox.rcz);
+	_itsdk_console_printf("state.sigfox.current_power : %d\r\n",itsdk_state.sigfox.current_power);
+	_itsdk_console_printf("state.sigfox.current_speed : %d\r\n",itsdk_state.sigfox.current_speed);
+  #elif ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_M95640
+	// The setting will be made later during sigfox init part
+  #else
+    #error INVALID ITSDK_SIGFOX_NVM_SOURCE VALUE
+  #endif
+#endif
+
+}
+#endif

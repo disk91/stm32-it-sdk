@@ -61,6 +61,8 @@
 									  0x00, 0x00, 0x00, 0x00 }				// The device PAC when NVM_SOURCE is HEADERS
 #define ITSDK_SIGFOX_KEY_TYPE		SIGFOX_KEY_PRIVATE						// Type of key to be used SIGFOX_KEY_PRIVATE / SIGFOX_KEY_PUBLI	
 #define ITSDK_SIGFOX_TXPOWER		SIGFOX_DEFAULT_POWER					// Default Tx power in dB - can be replaced by a value in dB	
+#define ITSDK_SIGFOX_MAXPOWER		20										// Max power for the board (the stack returns send error when 
+																			// power higher than stack supports
 #define ITSDK_SIGFOX_SPEED			SIGFOX_DEFAULT_SPEED					// Default Speed in bps - can be replaced by a value in BPS		
 #define ITSDK_SIGFOX_RSSICAL		0	
 #define ITSDK_SIGFOX_IF_TX_RCZ1	 	500										// Interframe time for TX Frame

@@ -36,12 +36,21 @@ typedef enum {
 	STM32L_LOWPOWER_ERROR
 } stm32l_lowPowerReturn_e;
 
+typedef enum {
+	STM32L_LOWPOWER_NORMAL_STOP = 0,	// the normal mode for deep sleep with a lot of wake up and optim posssibilties
+	STM32L_LOWPOWER_RTCONLY_STOP,		// The simplified low power mode with no wakeup other than GPS and all peripheral unchanged
+
+
+	STM32_LOWPOWER_END
+} stm32_lowPowerMode_e;
+
 #define STM32L_MINIMUM_SLEEPDURATION_MS		5
 #define STM32L_LOWPOWER_MAXDURATION_MS		(8*3600*1000)		// wake up every 8h
 
 // Public functions
-stm32l_lowPowerReturn_e stm32l_lowPowerSetup(uint32_t durationMs);
-stm32l_lowPowerReturn_e stm32l_lowPowerResume();
+stm32l_lowPowerReturn_e stm32l_lowPowerSetup(uint32_t durationMs,stm32_lowPowerMode_e mode);
+stm32l_lowPowerReturn_e stm32l_lowPowerResume(stm32_lowPowerMode_e mode);
+uint32_t lowPower_delayMs(uint32_t duration);
 void stm32l_lowPowerRestoreGpioConfig();
 
 // Private functions

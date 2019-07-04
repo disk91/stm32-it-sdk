@@ -115,7 +115,7 @@ bool eeprom_read(void * data, uint16_t len, uint8_t version, uint8_t * versionR)
  * Memory have SecureStore then Log then Sigfox config, then Device config
  */
 bool eeprom_getConfigOffset(uint32_t * _offset) {
-  uint32_t offset = 0, sstore=0, ssError=0, sSigfox=0;
+  uint32_t sstore=0, ssError=0, sSigfox=0;
   #if ITSDK_WITH_SECURESTORE == __ENABLE
 	itsdk_secstore_getStoreSize(&sstore);
   #endif
@@ -153,7 +153,6 @@ bool eeprom_getConfigSize(uint32_t * _size) {
  * change the config area size.
  */
 bool eeprom_getPostConfigOffset(uint32_t * _offset) {
-	t_eeprom_entry t;
 
 	uint32_t size = 0;
 	uint32_t offset = 0;

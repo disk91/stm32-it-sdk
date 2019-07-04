@@ -46,8 +46,8 @@ sx1276_sigfox_ret_t sx1276_sigfox_init( void ) {
 	LOG_INFO_SFXSX1276((">> sx1276_sigfox_init\r\n"));
 
 	sfx_error_t error = SX1276_SIGFOX_ERR_NONE;
-	sfx_rc_t  prcz;
-	sfx_u32   pconfig_words[3];
+	static sfx_rc_t  prcz;
+	static sfx_u32   pconfig_words[3];
 
 	// Hardware Init
 	SX1276IoInit();
@@ -116,6 +116,10 @@ sx1276_sigfox_ret_t sx1276_sigfox_init( void ) {
 		break;
 	}
 
+	if ( error != SFX_ERR_NONE ) {
+		LOG_ERROR_SFXSX1276(("[ERROR] Sigfox set config(%08X)\r\n",error));
+		error = SX1276_SIGFOX_ERR_CONFIG;
+	}
 	return error;
 }
 

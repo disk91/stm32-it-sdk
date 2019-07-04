@@ -41,6 +41,7 @@
 #include <it_sdk/wrappers.h>
 #include <it_sdk/time/timer.h>
 #include <it_sdk/logger/error.h>
+#include <it_sdk/lowpower/lowpower.h>
 
 // =============================================================================================
 // MCU API
@@ -296,12 +297,17 @@ sfx_u8 MCU_API_timer_stop(void)
 
 }
 
+/**
+ * Rq : this function wait for 2x10s in RCZ2 communication, assuming to ensure the 20s duty cycle between transmissions
+ * switch to low power mode with rtc wakeup only.
+ */
 sfx_u8 MCU_API_timer_wait_for_end(void)
 {
    LOG_DEBUG_SFXSX1276((">> MCU_API_timer_wait_for_end\r\n"));
-   //SCH_WaitEvt( TIMOUT_EVT );
    while (sx1276_sigfox_state.timerEvent == SIGFOX_EVENT_CLEAR) {
+	   lowPower_delayMs(1000);
 	   if ( sx1276_sigfox_idle() == SX1276_SIGFOX_ERR_BREAK ) break;
+	   wdg_refresh();
    }
    return SFX_ERR_NONE;
 }
@@ -372,17 +378,20 @@ sfx_u8 RF_API_stop(void)
  */
 sfx_u8 RF_API_send(sfx_u8 *stream, sfx_modulation_type_t type, sfx_u8 size)
 {
-  LOG_DEBUG_SFXSX1276(("RF_API_send\r\n"));
+  LOG_DEBUG_SFXSX1276(("RF_API_send (%d)\r\n",type));
   sfx_u8 status =SFX_ERR_NONE;
+  mod_error_t err;
   switch (type)
   {
     case SFX_DBPSK_100BPS :
-      if ( SGFX_SX1276_tx( (uint8_t *)stream, (uint8_t) size, 100 ) != MOD_SUCCESS) {
+      if ( (err = SGFX_SX1276_tx( (uint8_t *)stream, (uint8_t) size, 100 )) != MOD_SUCCESS) {
+    	  LOG_DEBUG_SFXSX1276(("Send Error (%d)\r\n",err));
           status = RF_ERR_API_SEND;
       }
       break;
     case SFX_DBPSK_600BPS :
-      if ( SGFX_SX1276_tx( (uint8_t *)stream, (uint8_t) size, 600 ) != MOD_SUCCESS) {
+      if ( (err = SGFX_SX1276_tx( (uint8_t *)stream, (uint8_t) size, 600 )) != MOD_SUCCESS) {
+    	  LOG_DEBUG_SFXSX1276(("Send Error  (%d)\r\n",err));
           status = RF_ERR_API_SEND;
       }
       break;
