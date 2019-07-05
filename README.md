@@ -146,6 +146,43 @@ Work in progress...
 The examples are published on different Git repo to simplify the distribution of the SDK.
 See **/Example** directory for a direct access to these ready to use projects.
 
+# Version Upgrade
+When upgrading the SDK from a new version, the main impact is to add the new Settings expected in the different
+configuration file. Please find the different settings added version after version
+
+## from version 1.5.0
+### config.h
+- ITSDK_ADC_OPTIMIZE_SIZE
+- ITSDK_ADC_OVERSAMPLING
+- ITSDK_DEFAULT_REGION
+
+### confgiDriver.h
+- ITSDK_DRIVERS_SL353
+
+### configLoRaWan.h
+ - ITSDK_MURATA_TCXO_WARMUP
+ - ITSDK_MURATA_WAKEUP_TIME
+ - ITSDK_MURATA_ANTSW_RX_BANK (typo fixed)
+ - ITSDK_MURATA_ANTSW_RX_PIN (typo fixed)
+ - ITSDK_MURATA_ANTSW_TXBOOST_PIN (typo fixed)
+ - ITSDK_MURATA_ANTSW_TXRFO_PIN (typo fixed)
+ - header define name changed
+ 
+### configSigfox.h
+ - ITSDK_MURATA_ANTSW_RX_BANK (typo fixed)
+ - ITSDK_MURATA_ANTSW_RX_PIN (typo fixed)
+ - ITSDK_MURATA_ANTSW_TXBOOST_PIN (typo fixed)
+ - ITSDK_MURATA_ANTSW_TXRFO_PIN (typo fixed)
+ - ITSDK_SIGFOX_IF_TX_RCZ1
+ - ITSDK_SIGFOX_IF_TX_RCZ3
+ - ITSDK_SIGFOX_IF_TXRX_RCZ1
+ - ITSDK_SIGFOX_IF_TXRX_RCZ3
+ - ITSDK_MURATA_TCXO_WARMUP
+ - ITSDK_SX1276_SFXWAKEUP_TIME
+ - ITSDK_SIGFOX_MAXPOWER
+ - ITDSK_SIGFOX_RCZ (removed)
+ 
+
 # License 
 
 This code and ItSdk are under GPLv3. You can use it freely, you can modify, redistribute but *you must* publish your source code. 
