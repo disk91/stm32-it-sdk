@@ -181,7 +181,7 @@ configuration file. Please find the different settings added version after versi
  - ITSDK_SX1276_SFXWAKEUP_TIME
  - ITSDK_SIGFOX_MAXPOWER
  - ITDSK_SIGFOX_RCZ (removed)
- 
+ - ITSDK_MURATA_WAKEUP_TIME
 
 # License 
 

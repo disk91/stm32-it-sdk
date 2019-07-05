@@ -130,6 +130,7 @@
 #define ITSDK_SX1276_SPIDMATX		hdma_spi1_tx						   // Associated DMA
 #ifndef ITSDK_MURATA_TCXO_WARMUP
 #define ITSDK_MURATA_TCXO_WARMUP	50									   // Warmup time for TCXO
+#define ITSDK_MURATA_WAKEUP_TIME    53 									   // WakeUp time correction for RX window start at least TCXO Time [ms]
 #endif
 #define ITSDK_SX1276_SFXWAKEUP_TIME 60 								   	   // WakeUp time correction interframe timing (includes TCXO)
 
