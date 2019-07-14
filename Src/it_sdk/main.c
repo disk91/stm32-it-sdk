@@ -92,7 +92,7 @@ void itsdk_setup() {
 	  wdg_setupWithMaxMs(ITSDK_WDG_MS);
 	#endif
 	#if ITSDK_WITH_CONSOLE == __ENABLE
-	  itsdk_console_setup();
+		itsdk_console_setup();
 	#endif
 	#if ITSDK_WITH_ERROR_RPT == __ENABLE
 	  itsdk_error_setup();
@@ -106,7 +106,6 @@ void itsdk_setup() {
 	  itsdk_encrypt_resetFactoryDefaults(false);	// on first boot init the ss communication credentials
 	  itsdk_secStore_RegisterConsole();
 	#endif
-
 	// load the configuration according to setting
 	itsdk_config_loadConfiguration(CONFIG_NORMAL_LOAD);
 	itsdk_state_init();

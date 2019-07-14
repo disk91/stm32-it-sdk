@@ -40,6 +40,7 @@
 #include <it_sdk/wrappers.h>
 #include <it_sdk/time/time.h>
 #include <it_sdk/lowpower/lowpower.h>
+#include <it_sdk/eeprom/sdk_state.h>
 #if ITSDK_WITH_SECURESTORE == __ENABLE
 #include <it_sdk/eeprom/securestore.h>
 #endif

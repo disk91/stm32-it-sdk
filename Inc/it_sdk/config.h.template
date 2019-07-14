@@ -79,6 +79,8 @@
 #define ITSDK_LOGGER_CONF			0x0070									// error->info level on serial1 => USART2 (see logger.c)
 #define ITSDK_LOGGER_MODULE			( \
 									  __LOG_MOD_NONE		  \
+								/*	| __LOG_MOD_STATEMINF  */ \
+								/*	| __LOG_MOD_STATEMDBG  */ \
 								/*	| __LOG_MOD_LOWSIGFOX  */ \
 								/*	| __LOG_MOD_STKSIGFOX  */ \
 								/*	| __LOG_MOD_STKLORA    */ \
