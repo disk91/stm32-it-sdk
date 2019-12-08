@@ -5,6 +5,7 @@ It implements different usefull function is (I hope) a cleaner code than the usu
 
 Most is done to preserve code size. 
 Made for being compiled with open-source environment GCC / AC6
+Also tested and working with CubeMXIDE environment
 
 * Supported MCU functions
   * Low Power switch with regular auto-wakeup / LPUART / UART /GPIO Wake-up
@@ -86,7 +87,7 @@ When generating the Project
 # Import the SDK (this repository)
 
 1. Clone this repository into the root of your project.
-2. Add in project properties >> C/C++ General >> Path&Symbol >> Source location >> the repository ItSdk directory.
+2. Add in project properties >> C/C++ General >> Path&Symbol >> Source location >> the repository ItSdk Src directory.
 3. Add in project properties >> C/C++ Build >> Settings >> Tool Settings >> MCU GCC Compiler >> Includes the ItSdk >> Inc directory.
 4. Copy *ItSdk/Src/project_main.c.template* file into Core/Src/project_main.c and make the modification you want to get started. 
 
@@ -149,6 +150,10 @@ See **/Example** directory for a direct access to these ready to use projects.
 # Version Upgrade
 When upgrading the SDK from a new version, the main impact is to add the new Settings expected in the different
 configuration file. Please find the different settings added version after version
+
+## from version 1.6.0
+### config.h
+ - ITSDK_WITH_WDG / allows to disable the watchdog 
 
 ## from version 1.5.0
 ### config.h

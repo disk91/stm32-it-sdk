@@ -30,6 +30,7 @@
 
 #include <stdbool.h>
 #include <it_sdk/config.h>
+#if ITSDK_DRIVERS_M95640 == __ENABLE
 #include <it_sdk/wrappers.h>
 #if ITSDK_PLATFORM == __PLATFORM_STM32L0
 	#include <stm32l_sdk/spi/spi.h>
@@ -114,4 +115,5 @@ uint8_t eeprom_m95640_setSRWD(
 												    // when false, CS must be already activ
 );
 
+#endif // ITSDK_DRIVERS_M95640
 #endif /* IT_SDK_DRIVERS_EEPROM_M95640_H_ */

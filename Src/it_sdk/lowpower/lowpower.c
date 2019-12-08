@@ -27,6 +27,7 @@
 #include <it_sdk/config.h>
 #include <it_sdk/lowpower/lowpower.h>
 #include <it_sdk/time/time.h>
+#include <it_sdk/wrappers.h>
 #include <it_sdk/eeprom/sdk_state.h>
 #if ITSDK_PLATFORM == __PLATFORM_STM32L0
 	#include <stm32l_sdk/lowpower/lowpower.h>

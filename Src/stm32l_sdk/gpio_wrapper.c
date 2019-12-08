@@ -46,7 +46,9 @@ GPIO_TypeDef * getPortFromBankId(uint8_t bankId) {
 	case __BANK_A: return GPIOA;
 	case __BANK_B: return GPIOB;
 	case __BANK_C: return GPIOC;
+#if ITSDK_DEVICE == __DEVICE_STM32L072XX || ITSDK_DEVICE == __DEVICE_STM32L053R8
 	case __BANK_D: return GPIOD;
+#endif
 #if ITSDK_DEVICE == __DEVICE_STM32L072XX
 	case __BANK_E: return GPIOE;
 #endif
@@ -105,9 +107,11 @@ void gpio_configure_ext(uint8_t bank, uint16_t id, itsdk_gpio_type_t type, itsdk
 	case __BANK_C:
 		  __GPIOC_CLK_ENABLE();
 		  break;
+    #if ITSDK_DEVICE == __DEVICE_STM32L072XX || ITSDK_DEVICE == __DEVICE_STM32L053R8
 	case __BANK_D:
 		  __GPIOD_CLK_ENABLE();
 		  break;
+	#endif
 	#if ITSDK_DEVICE == __DEVICE_STM32L072XX
 	case __BANK_E:
 		  __GPIOE_CLK_ENABLE();

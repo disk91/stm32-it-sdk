@@ -33,8 +33,8 @@
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // | SDK SETTING                   | USER SELECTED VALUE                  | SETTING DESCRIPTION                   |
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#define ITSDK_VERSION				"1.5.0-master"							// SDK Version String (do not change it)
-#define ITSDK_VERSION_BYTE			0x15									//  SDK 1 Byte version corresponding to previous on (do not change it)
+#define ITSDK_VERSION				"1.6.0-master"							// SDK Version String (do not change it)
+#define ITSDK_VERSION_BYTE			0x16									//  SDK 1 Byte version corresponding to previous on (do not change it)
 
 #define ITSDK_USER_VERSION			"0.1"									// CHANGE ME - Version of your firwmare
 #define ITSDK_USER_VERSION_BYTE		0x01									// CHANGE ME - Version of your firwmare 4bits MAJOR / 4bits MINOR
@@ -72,6 +72,7 @@
 #define ITSDK_HW_TIMER1_FREQ		32000000								// Primary timer base frequency
 #define ITSDK_HW_TIMER1_MAX			65536									// Timer's counter max value ( 2^size )
 #define ITSDK_TIMER_SLOTS			5										// Maximum number of SOFT TIMER available in parallel - 0 disable SOFT TIMER code
+#define ITSDK_WITH_WDG				__WDG_IWDG								// Enable Watchdog type iWDG
 #define ITSDK_WDG_MS				16000									// WatchDog time out in ms 1 --> 28000 / 0 to disable
 #define ITSDK_WDG_CLKFREQ			37000									// Watchdog clock source frequency
 #define ITSDK_CORE_CLKFREQ			32000000								// Core Frequency of the chip

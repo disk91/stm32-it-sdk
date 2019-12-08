@@ -88,7 +88,7 @@ void itsdk_setup() {
 	#if ITSDK_LOGGER_CONF > 0
 	log_init(ITSDK_LOGGER_CONF);
 	#endif
-	#if ITSDK_WDG_MS > 0
+	#if ITSDK_WITH_WDG != __WDG_NONE && ITSDK_WDG_MS > 0
 	  wdg_setupWithMaxMs(ITSDK_WDG_MS);
 	#endif
 	#if ITSDK_WITH_CONSOLE == __ENABLE
@@ -136,7 +136,7 @@ void itsdk_restart() {
  */
 void itsdk_loop() {
 
-	#if ITSDK_WDG_MS > 0
+    #if ITSDK_WITH_WDG != __WDG_NONE && ITSDK_WDG_MS > 0
 	   wdg_refresh();
 	#endif
 	#if ITSDK_TIMER_SLOTS > 0

@@ -33,12 +33,14 @@
  */
 #include <it_sdk/config.h>
 #if ITSDK_PLATFORM == __PLATFORM_STM32L0
+#if ITSDK_WITH_WDG != __WDG_NONE
 #include <it_sdk/wrappers.h>
 #include <it_sdk/debug.h>
 #include <stm32l_sdk/rtc/rtc.h>
 #include <it_sdk/logger/error.h>
+#if ITSDK_WITH_WDG == __WDG_IWDG
 #include "iwdg.h"
-
+#endif
 
 /**
  * Setup the WatchDog for fireing a reset after the given Ms time
@@ -77,5 +79,6 @@ void wdg_setupWithMaxMs(uint32_t ms) {
 void wdg_refresh() {
 	HAL_IWDG_Refresh(&hiwdg);
 }
+#endif
 
 #endif

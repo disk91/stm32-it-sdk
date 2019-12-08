@@ -66,9 +66,11 @@ static itsdk_console_return_e _itsdk_console_private(char * buffer, uint8_t sz) 
 			_itsdk_console_printf("l / L      : switch LowPower ON / OFF\r\n");
 			_itsdk_console_printf("s          : print device state\r\n");
 			_itsdk_console_printf("t          : print current time in S\r\n");
+#if ITSDK_WITH_ADC != __ADC_NONE
 			_itsdk_console_printf("T          : print current temperature in oC\r\n");
 			_itsdk_console_printf("b          : print battery level\r\n");
 			_itsdk_console_printf("B          : print VCC level\r\n");
+#endif
 			_itsdk_console_printf("r          : print last Reset Cause\r\n");
 
 			return ITSDK_CONSOLE_SUCCES;
@@ -82,6 +84,7 @@ static itsdk_console_return_e _itsdk_console_private(char * buffer, uint8_t sz) 
 			_itsdk_console_printf("Run time is %d s\r\n",(uint32_t)(itsdk_time_get_ms()/1000L));
 			_itsdk_console_printf("OK\r\n");
 			return ITSDK_CONSOLE_SUCCES;
+#if ITSDK_WITH_ADC != __ADC_NONE
 		case 'T':
 			// print temperature
 			{
@@ -100,6 +103,7 @@ static itsdk_console_return_e _itsdk_console_private(char * buffer, uint8_t sz) 
 			_itsdk_console_printf("VCC level %dmV\r\n",(uint32_t)(adc_getVdd()));
 			_itsdk_console_printf("OK\r\n");
 			return ITSDK_CONSOLE_SUCCES;
+#endif
 		case 'r':
 			// Last Reset cause
 			_itsdk_console_printf("Reset: ");

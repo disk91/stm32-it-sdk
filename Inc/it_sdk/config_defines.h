@@ -47,6 +47,7 @@
 #define __DEVICE_STM32L011D4		1
 #define __DEVICE_STM32L072XX		2
 #define __DEVICE_STM32L053R8		3
+#define __DEVICE_STM32L031K6		4
 
 /**
  * Supported Low Power Mode
@@ -95,6 +96,13 @@
 #define __CLK_BEST_SRC_UNDEFINED	0x00			// The most accurate source is unknonw
 #define __CLK_BEST_SRC_RTC			0x01			// The RTC clock is the most accurate source
 #define __CLK_BEST_SRC_CLK			0x02			// The main CLK is the most accurated source
+
+/**
+ * WDG configuration
+ */
+#define __WDG_NONE					0x00			// No WDG
+#define __WDG_IWDG					0x01			// with iWDG
+
 
 /**
  * ADC configuration

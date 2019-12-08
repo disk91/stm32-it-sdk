@@ -27,6 +27,7 @@
  */
 #include <it_sdk/config.h>
 #if ITSDK_PLATFORM == __PLATFORM_STM32L0
+#if ITSDK_WITH_HW_TIMER != __TIMER_NONE
 #include <it_sdk/debug.h>
 #include <it_sdk/time/timer.h>
 #include <stm32l_sdk/timer/timer.h>
@@ -124,5 +125,5 @@ itsdk_timer_return_t stm32l_hwtimer_sync_run(
 
 
 
-
+#endif
 #endif

@@ -25,6 +25,7 @@
  * ==========================================================
  */
 #include <it_sdk/config.h>
+#if ITSDK_WITH_RTC != __RTC_NONE
 #include <it_sdk/time/time.h>
 #include <it_sdk/logger/logger.h>
 #include <it_sdk/logger/error.h>
@@ -334,4 +335,4 @@ uint32_t rtc_calcClockRatio() {
 #endif
 }
 
-
+#endif

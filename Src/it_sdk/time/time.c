@@ -83,11 +83,13 @@ uint64_t itsdk_time_get_us() {
  * Reset the time to 0
  */
 void itsdk_time_reset() {
-	#if ITSDK_PLATFORM == __PLATFORM_STM32L0
-		rtc_resetTime();
-	#else
+    #if ITSDK_WITH_RTC != __RTC_NONE
+      #if ITSDK_PLATFORM == __PLATFORM_STM32L0
+  		rtc_resetTime();
+  	  #else
 		#error "platform not supported"
-	#endif
+	  #endif
+    #endif
 	__timeus = 0;
 }
 
@@ -96,10 +98,14 @@ void itsdk_time_reset() {
  */
 void itsdk_time_init() {
 #if ITSDK_PLATFORM == __PLATFORM_STM32L0
+  #if ITSDK_WITH_RTC != __RTC_NONE
 	rtc_resetTime();
 	rtc_adjustTime();
+  #endif
 	systick_adjustTime();
+  #if ITSDK_WITH_RTC != __RTC_NONE
 	itsdk_time_set_ms(rtc_getTimestampMs());
+  #endif
 #else
 	#error "platform not supported"
 #endif

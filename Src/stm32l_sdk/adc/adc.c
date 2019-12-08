@@ -45,8 +45,8 @@ ADC_HandleTypeDef hadc;
 #define CAL1_TEMP			30
 #define CAL1_VALUE          ((uint16_t*)((uint32_t)0x1FF8007A))
 #define VREFINT_CAL       ((uint16_t*) ((uint32_t) 0x1FF80078))
-#elif ITSDK_DEVICE == __DEVICE_STM32L053R8 || ITSDK_DEVICE == __DEVICE_STM32L072XX
-#define CAL2_TEMP			130 // 110 acording to certain sources but 130 from Datasheet
+#elif ITSDK_DEVICE == __DEVICE_STM32L031K6 || ITSDK_DEVICE == __DEVICE_STM32L053R8 || ITSDK_DEVICE == __DEVICE_STM32L072XX
+#define CAL2_TEMP			130 // 110 according to certain sources but 130 from Datasheet
 #define CAL2_VALUE          ((uint16_t*)((uint32_t)0x1FF8007E))
 #define CAL1_TEMP			30
 #define CAL1_VALUE          ((uint16_t*)((uint32_t)0x1FF8007A))
