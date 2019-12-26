@@ -54,6 +54,31 @@ uint32_t calculateCRC32(const uint8_t *data, uint16_t length) {
   return crc;
 }
 
+/**
+ * Compute a CRC from a stream data after data.
+ * The size is the number of bit of the given value
+ */
+uint32_t __itsdk_crc;
+
+void itsdk_inlineCRC32_init() {
+	__itsdk_crc = 0xffffffff;
+}
+
+uint32_t itsdk_inlineCRC32_next(uint32_t c, uint8_t size) {
+	for (uint32_t i = (1 << (size-1)) ; i > 0; i >>= 1) {
+	   bool bit = __itsdk_crc & 0x80000000;
+	   if (c & i) {
+	      bit = !bit;
+	   }
+	   __itsdk_crc <<= 1;
+	   if (bit) {
+		   __itsdk_crc ^= 0x04c11db7;
+	   }
+	}
+	return __itsdk_crc;
+}
+
+
 // =======================================================================================
 // Converters
 // =======================================================================================

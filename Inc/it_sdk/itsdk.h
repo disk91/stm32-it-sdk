@@ -33,6 +33,11 @@
 #include <it_sdk/config.h>
 #include <it_sdk/wrappers.h>
 
+typedef enum {
+	BOOL_FALSE=0,
+	BOOL_TRUE,
+} itsdk_bool_e;
+
 // ------------------------------------------------------------------------
 // Function every project needs to implement
 void project_setup();
@@ -51,6 +56,9 @@ void itsdk_restart();
 // ------------------------------------------------------------------------
 // Tool.c
 uint32_t calculateCRC32(const uint8_t *data, uint16_t length);
+void itsdk_inlineCRC32_init();
+uint32_t itsdk_inlineCRC32_next(uint32_t c, uint8_t size);
+
 char itdt_convertHalfInt2HexChar(uint8_t v,bool upper);
 void itdt_convertInt2HexChar(uint8_t v, char * dest, bool upper);
 void itdt_convertIntTab2Hex(char * dest, uint8_t * tab, int len, bool upper);
