@@ -37,11 +37,13 @@ void serial1_flush();
 void serial2_flush();
 void debug_flush();
 
+void serial1_init();
 void serial1_print(char * msg);
 void serial2_print(char * msg);
 void debug_print(char * msg);
 void logfile_print(char * msg);
 
+void serial2_init();
 void serial1_println(char * msg);
 void serial2_println(char * msg);
 void debug_println(char * msg);
