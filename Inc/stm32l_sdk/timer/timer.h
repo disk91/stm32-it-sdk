@@ -36,4 +36,8 @@ itsdk_timer_return_t stm32l_hwtimer_sync_run(
 		uint32_t value								// value to pass to called function
 );
 
+itsdk_timer_return_t stm32l_hwtimer_background_start();
+uint64_t stm32l_hwtimer_getDurationUs(itsdk_bool_e stop);
+
+
 #endif /* STM32L_SDK_TIMER_TIMER_H_ */

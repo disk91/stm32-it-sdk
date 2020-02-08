@@ -56,6 +56,10 @@ itsdk_timer_return_t itsdk_hwtimer_sync_run(
 		uint32_t value							//   value to be pass to the callback function
 );
 
+uint64_t itsdk_hwtimer_getRunningDurationUs();
+itsdk_timer_return_t itsdk_hwtimer_background_start();
+itsdk_timer_return_t itsdk_hwtimer_background_stop();
+
 // =====================================================================================
 // SOFT TIMERS
 // =====================================================================================
