@@ -72,7 +72,7 @@ to make it a portable SDK. The SDK have a it-sdk directory where everything need
 * rtc timer : TIM21 is enable with clock source internal
 * lowPower : 
   * LPUART1 (Async 9600 - 8/N/1) WakeUp => clock mode need to be HSI, max speed 9600
-  * RTC WakeUp => Activate ClkSource, Calendar, Internal WakeUp, Clk config : LSI, RTC/NVIC => Interrupt activated
+  * RTC WakeUp => Activate ClkSource, Calendar, Internal WakeUp, Clk config : LSI, RTC/NVIC => Interrupt activated, Async prediv: 127, Sync prediv: 255
   * GPIO WakeUp => Activate the GPIO as ExtInterrupt, set with Pull & Trigger en Fall/Rise, activate NVIC EXI1_15
 * adc : Select an adc like for temperature to get the needed headers
 
@@ -87,16 +87,19 @@ When generating the Project
 # Import the SDK (this repository)
 
 1. Clone this repository into the root of your project.
-2. Add in project properties >> C/C++ General >> Path&Symbol >> Source location >> the repository ItSdk Src directory.
-3. Add in project properties >> C/C++ Build >> Settings >> Tool Settings >> MCU GCC Compiler >> Includes the ItSdk >> Inc directory.
-4. Copy *ItSdk/Src/project_main.c.template* file into Core/Src/project_main.c and make the modification you want to get started. 
+2. For the next configuration, you need to do it ifor both Debug *and* Release configuration 
+3. Add in project properties >> C/C++ General >> Path&Symbol >> Source location >> the repository ItSdk Src directory.
+4. Add in project properties >> C/C++ Build >> Settings >> Tool Settings >> MCU GCC Compiler >> Includes the ItSdk >> Inc directory.
+5. In C/C++ Build / Settings / Build Step / pre-build steps you can add the command _touch "${workspace_loc:/${ProjName}/stm32-it-sdk/Src/it_sdk/console/console.c}"_ this will update the compile date on every build
+6. Copy *ItSdk/Src/project_main.c.template* file into Core/Src/project_main.c and make the modification you want to get started. 
 
 # Configure the SDK
 
 1. Copy the *ItSdk/Inc/it_sdk/config.h.template* file into *Core/Inc/it_sdk/config.h*
 2. Copy the *ItSdk/Inc/it_sdk/configDrivers.h.template* file into *Core/Inc/it_sdk/configDrivers.h* [needed when using some of the drivers]
 3. Copy the *ItSdk/Inc/it_sdk/configSigfox.h.template* file into *Core/Inc/it_sdk/configSigfox.h* [needed when using sigfox drivers]
-4. Edit these files and fill the different settings according to your environment and your choices.
+4. Copy the *ItSdk/Inc/it_sdk/configLoRaWan.h.template* file into *Core/Inc/it_sdk/configLoRaWan.h* [needed when using LoRaWAn drivers]
+5. Edit these files and fill the different settings according to your environment and your choices.
 
 
 # Modify the Cube Mx skeleton
