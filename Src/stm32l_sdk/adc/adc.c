@@ -175,7 +175,7 @@ uint32_t __getAdcValue(uint32_t channel) {
 	  // Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
 	  hadc.Instance = ADC1;
 	  hadc.Init.OversamplingMode = DISABLE;
-	  hadc.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV1;
+	  hadc.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
 	  hadc.Init.Resolution = ADC_RESOLUTION_12B;
 	  hadc.Init.SamplingTime = ADC_SAMPLETIME_160CYCLES_5;
 	  hadc.Init.ScanConvMode = DISABLE;
@@ -194,7 +194,6 @@ uint32_t __getAdcValue(uint32_t channel) {
 		  ITSDK_ERROR_REPORT(ITSDK_ERROR_ADC_INIT_FAILED,0);
 	  }
 
-
 	  if ( HAL_ADCEx_Calibration_Start(&hadc, ADC_SINGLE_ENDED) != HAL_OK) {
 		  ITSDK_ERROR_REPORT(ITSDK_ERROR_ADC_CALIBRATION_FAILED,0);
 	  }
@@ -205,11 +204,6 @@ uint32_t __getAdcValue(uint32_t channel) {
 	  if (HAL_ADC_ConfigChannel(&hadc, &sConfig) != HAL_OK) {
 		  ITSDK_ERROR_REPORT(ITSDK_ERROR_ADC_CONFCHANNEL_FAILED,0);
 	  }
-      ADC->CCR |= ADC_CCR_VREFEN; 			// Wake-up the VREFINT
-      ADC->CCR |= ADC_CCR_TSEN; 			// Wake-up the temperature sensor
-      __NOP();
-      __NOP();
-
 
 	  uint32_t v = 0;
 	  for( int i = 0; i < ITSDK_ADC_OVERSAMPLING ; i++ ) {
