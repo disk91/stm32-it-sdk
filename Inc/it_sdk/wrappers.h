@@ -71,6 +71,7 @@ bool _eeprom_read(uint8_t bank, uint32_t offset, void * data, int len);
 // ================================================
 // adc
 #define ADC_TEMPERATURE_ERROR		-500
+#define ADC_CONVERSION_ERROR	0xFFFFFFFF
 int16_t adc_getTemperature();
 uint16_t adc_getVdd();
 uint16_t adc_getValue(uint32_t pin);

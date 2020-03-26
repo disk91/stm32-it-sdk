@@ -69,8 +69,8 @@ ADC_HandleTypeDef hadc;
 /**
  * Read adc
  */
-uint16_t readADC(uint32_t ch)
-{
+uint32_t __getAdcValue(uint32_t channel) {
+
   uint32_t data;
   uint32_t i;
 
@@ -128,7 +128,7 @@ uint16_t readADC(uint32_t ch)
   ADC1->CFGR1 &= ~ADC_CFGR1_EXTEN;				// software enabled conversion start
   ADC1->CFGR1 &= ~ADC_CFGR1_ALIGN;				// right alignment
   ADC1->CFGR1 &= ~ADC_CFGR1_RES;				// 12 bit resolution
-  ADC1->CHSELR = ch; 							// Select channel (1 << channel number)
+  ADC1->CHSELR = channel & ADC_CHANNEL_MASK; 	// Select channel (1 << channel number)
   ADC1->SMPR |= ADC_SMPR_SMP_0 | ADC_SMPR_SMP_1 | ADC_SMPR_SMP_2;
   	  	  	  	  	  	  	  	  	  	  	  	// Select a sampling mode of 111 (very slow)
 
@@ -165,14 +165,19 @@ uint16_t readADC(uint32_t ch)
 uint32_t __getAdcValue(uint32_t channel) {
 	  __HAL_RCC_ADC1_CLK_ENABLE();
 
+	  __HAL_RCC_ADC1_FORCE_RESET();			// without reset the values were not correct
+	  __NOP();
+	  __NOP();
+	  __HAL_RCC_ADC1_RELEASE_RESET();
+
 	  ADC_ChannelConfTypeDef sConfig;
 
 	  // Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
 	  hadc.Instance = ADC1;
 	  hadc.Init.OversamplingMode = DISABLE;
-	  hadc.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
+	  hadc.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV1;
 	  hadc.Init.Resolution = ADC_RESOLUTION_12B;
-	  hadc.Init.SamplingTime = ADC_SAMPLETIME_39CYCLES_5;
+	  hadc.Init.SamplingTime = ADC_SAMPLETIME_160CYCLES_5;
 	  hadc.Init.ScanConvMode = DISABLE;
 	  hadc.Init.DataAlign = ADC_DATAALIGN_RIGHT;
 	  hadc.Init.ContinuousConvMode = DISABLE;
@@ -184,10 +189,11 @@ uint32_t __getAdcValue(uint32_t channel) {
 	  hadc.Init.Overrun = ADC_OVR_DATA_PRESERVED;
 	  hadc.Init.LowPowerAutoWait = DISABLE;
 	  hadc.Init.LowPowerFrequencyMode = DISABLE;
-	  hadc.Init.LowPowerAutoPowerOff = ENABLE;
+	  hadc.Init.LowPowerAutoPowerOff = DISABLE;
 	  if (HAL_ADC_Init(&hadc) != HAL_OK) {
 		  ITSDK_ERROR_REPORT(ITSDK_ERROR_ADC_INIT_FAILED,0);
 	  }
+
 
 	  if ( HAL_ADCEx_Calibration_Start(&hadc, ADC_SINGLE_ENDED) != HAL_OK) {
 		  ITSDK_ERROR_REPORT(ITSDK_ERROR_ADC_CALIBRATION_FAILED,0);
@@ -195,22 +201,30 @@ uint32_t __getAdcValue(uint32_t channel) {
 
 	  // Configure for the selected ADC regular channel to be converted.
 	  sConfig.Channel = channel;
-	  sConfig.Rank = 1;
+	  sConfig.Rank = ADC_RANK_CHANNEL_NUMBER;
 	  if (HAL_ADC_ConfigChannel(&hadc, &sConfig) != HAL_OK) {
 		  ITSDK_ERROR_REPORT(ITSDK_ERROR_ADC_CONFCHANNEL_FAILED,0);
 	  }
+      ADC->CCR |= ADC_CCR_VREFEN; 			// Wake-up the VREFINT
+      ADC->CCR |= ADC_CCR_TSEN; 			// Wake-up the temperature sensor
+      __NOP();
+      __NOP();
+
 
 	  uint32_t v = 0;
 	  for( int i = 0; i < ITSDK_ADC_OVERSAMPLING ; i++ ) {
 		  HAL_ADC_Start(&hadc);
 		  if (HAL_ADC_PollForConversion(&hadc, 100) != HAL_OK) {
 		  		  HAL_ADC_Stop(&hadc);
-		  		  return ADC_TEMPERATURE_ERROR;
+		  		  __HAL_RCC_ADC1_CLK_DISABLE();
+		  		  return ADC_CONVERSION_ERROR;
 		  }
 		  v += HAL_ADC_GetValue(&hadc);
-		  HAL_ADC_Stop(&hadc);
 	  }
 	  v = v / ITSDK_ADC_OVERSAMPLING;
+
+	  HAL_ADC_Stop(&hadc);
+	  __HAL_RCC_ADC1_CLK_DISABLE();
 	  return v;
 }
 
@@ -225,12 +239,7 @@ uint32_t __getAdcValue(uint32_t channel) {
 int16_t adc_getTemperature() {
 
 	uint16_t vdd = adc_getVdd();
-
-#if ITSDK_ADC_OPTIMIZE_SIZE == __ENABLE
-	uint32_t v = readADC(ADC_CHSELR_CHSEL18);
-#else
 	uint32_t v = __getAdcValue(ADC_CHANNEL_TEMPSENSOR);
-#endif
 
 	// adapt the calibration values to the current VDD reference
 	uint16_t cal1_vdd = (*CAL1_VALUE * VDD_CALIB) / vdd;
@@ -302,32 +311,98 @@ uint16_t adc_getValue(uint32_t pin) {
 #elif ITSDK_DEVICE == __DEVICE_STM32L053R8
 	switch (pin) {
 	case 14:		// PA0
-		GPIO_InitStruct.Pin = 0;
+		GPIO_InitStruct.Pin = GPIO_PIN_0;
 		GPIO_TypeDefStruct = GPIOA;
 		channel = ADC_CHANNEL_0;
 		break;
 	case 15:		// PA1
-		GPIO_InitStruct.Pin = 1;
+		GPIO_InitStruct.Pin = GPIO_PIN_1;
 		GPIO_TypeDefStruct = GPIOA;
 		channel = ADC_CHANNEL_1;
 		break;
 	case 27:		// PB1
-		GPIO_InitStruct.Pin = 1;
+		GPIO_InitStruct.Pin = GPIO_PIN_1;
 		GPIO_TypeDefStruct = GPIOB;
 		channel = ADC_CHANNEL_9;
 		break;
 	case 0:
-		channel = ADC_CHSELR_CHSEL17;
+		channel = ADC_CHANNEL_VREFINT;
 		break;
 	default:
   	    ITSDK_ERROR_REPORT(ITSDK_ERROR_ADC_INVALID_PIN,(uint16_t)pin);
 	}
 #elif  ITSDK_DEVICE == __DEVICE_STM32L072XX
-#warning "We may define the pin association with ADC properly for this MCU"
+	// For the BGA device I consider the pin number as Line||Column 65 => line 6 Column 5
 	switch (pin) {
 	case 0:
-		channel = ADC_CHSELR_CHSEL17;
+		channel = ADC_CHANNEL_VREFINT; 	// VDD
 		break;
+	case 55:
+		GPIO_InitStruct.Pin = GPIO_PIN_0;
+		GPIO_TypeDefStruct = GPIOA;
+		channel = ADC_CHANNEL_0;	// PA0
+		break;
+	case 54:
+		GPIO_InitStruct.Pin = GPIO_PIN_1;
+		GPIO_TypeDefStruct = GPIOA;
+		channel = ADC_CHANNEL_1;	// PA1
+		break;
+	case 66:
+		GPIO_InitStruct.Pin = GPIO_PIN_2;
+		GPIO_TypeDefStruct = GPIOA;
+		channel = ADC_CHANNEL_2;	// PA2
+		break;
+	case 77:
+		GPIO_InitStruct.Pin = GPIO_PIN_3;
+		GPIO_TypeDefStruct = GPIOA;
+		channel = ADC_CHANNEL_3;	// PA3
+		break;
+	case 65:
+		GPIO_InitStruct.Pin = GPIO_PIN_4;
+		GPIO_TypeDefStruct = GPIOA;
+		channel = ADC_CHANNEL_4; 	// PA4
+		break;
+	case 76:
+		GPIO_InitStruct.Pin = GPIO_PIN_5;
+		GPIO_TypeDefStruct = GPIOA;
+		channel = ADC_CHANNEL_5;	// PA5
+		break;
+	case 75:
+		GPIO_InitStruct.Pin = GPIO_PIN_6;
+		GPIO_TypeDefStruct = GPIOA;
+		channel = ADC_CHANNEL_6;	// PA6
+		break;
+	case 64:
+		GPIO_InitStruct.Pin = GPIO_PIN_7;
+		GPIO_TypeDefStruct = GPIOA;
+		channel = ADC_CHANNEL_7;	// PA7
+		break;
+	case 74:
+		GPIO_InitStruct.Pin = GPIO_PIN_0;
+		GPIO_TypeDefStruct = GPIOB;
+		channel = ADC_CHANNEL_8;	// PB0
+		break;
+	case 43:
+		GPIO_InitStruct.Pin = GPIO_PIN_1;
+		GPIO_TypeDefStruct = GPIOB;
+		channel = ADC_CHANNEL_9;	// PB1
+		break;
+	case 35:
+		GPIO_InitStruct.Pin = GPIO_PIN_0;
+		GPIO_TypeDefStruct = GPIOC;
+		channel = ADC_CHANNEL_10;	// PC0
+		break;
+	case 34:
+		GPIO_InitStruct.Pin = GPIO_PIN_1;
+		GPIO_TypeDefStruct = GPIOC;
+		channel = ADC_CHANNEL_11;	// PC1
+		break;
+	case 57:
+		GPIO_InitStruct.Pin = GPIO_PIN_2;
+		GPIO_TypeDefStruct = GPIOC;
+		channel = ADC_CHANNEL_12;	// PC2
+		break;
+
 	default:
   	    ITSDK_ERROR_REPORT(ITSDK_ERROR_ADC_INVALID_PIN,(uint16_t)pin);
 	}
@@ -338,18 +413,13 @@ uint16_t adc_getValue(uint32_t pin) {
 		HAL_GPIO_Init(GPIO_TypeDefStruct, &GPIO_InitStruct);
 	}
 
-#if ITSDK_ADC_OPTIMIZE_SIZE == __ENABLE
-	uint32_t v = readADC(channel);
-#else
 	uint32_t v = __getAdcValue(channel);
-#endif
-
 	if (pin == 0) {
 		if ( v == 0 ) return 0; // securing
    	    int32_t vdd = ((int32_t)(*VREFINT_CAL) * VDD_CALIB) / v;
 	    return (uint16_t)vdd;
 	} else {
-		int32_t vdd = (adc_getVdd() * v )/4096;
+		int32_t vdd = ((uint32_t)adc_getVdd() * v )/4096;
 	    return (uint16_t)vdd;
 	}
 
