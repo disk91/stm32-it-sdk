@@ -2,7 +2,7 @@
  * max17205.h -  Maxim 17205 - Gauge 3 cells
  * Project : Disk91 SDK
  * ----------------------------------------------------------
- * Created on: 24 févr. 2019
+ * Created on: 24 fï¿½vr. 2019
  *     Author: Paul Pinault aka Disk91
  * ----------------------------------------------------------
  * Copyright (C) 2019 Disk91
@@ -136,7 +136,7 @@ drivers_max17205_ret_e drivers_max17205_isReady();
 #define ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_A1EN_SHIFT 		12
 #define ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_A1EN_DISABLE	0x0000
 #define ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_A1EN_ENABLE		0x1000
-#define ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_A2EN_MSK	 	0x2000	// Enable A1 Temperature
+#define ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_A2EN_MSK	 	0x2000	// Enable A2 Temperature
 #define ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_A2EN_SHIFT 		13
 #define ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_A2EN_DISABLE	0x0000
 #define ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_A2EN_ENABLE		0x2000

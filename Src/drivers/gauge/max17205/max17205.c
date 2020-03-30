@@ -105,6 +105,27 @@ drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode) {
 	__max17205_config.mode = mode;
 	__max17205_config.initialized = MAX17205_FAILED;
 
+	// Preconfiguration related to MAX17205 bug - thank you Martin Cornu
+	// see https://github.com/disk91/stm32-it-sdk/issues/26
+	switch ( mode ) {
+		case MAX17205_MODE_3CELLS_INT_TEMP:
+			// 3 cells - 0x00 -- 03 -- Num of cells
+			__writeRegister(ITSDK_DRIVERS_MAX17205_REG_BNPACKCFG_ADR,
+							  ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_VBAT_DISABLE
+							| ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_CHEN_DISABLE
+							| ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_TDEN_DISABLE
+							| ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_A1EN_DISABLE
+							| ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_FGT_DISABLE
+					        | 3 << ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_NCELL_SHIFT
+						    );
+			break;
+		default:
+		case MAX17205_MODE_DEFAULT:
+			break;
+
+		}
+
+
 	// Search for the device type
 	uint16_t v;
 	if ( __readRegister(ITSDK_DRIVERS_MAX17205_REG_DEVNAME_ADR,&v) != I2C_OK ) {
