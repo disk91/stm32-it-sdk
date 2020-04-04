@@ -28,15 +28,16 @@
 #ifndef IT_SDK_ITSDK_H_
 #define IT_SDK_ITSDK_H_
 
+typedef enum {
+	BOOL_FALSE=0,
+	BOOL_TRUE,
+} itsdk_bool_e;
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <it_sdk/config.h>
 #include <it_sdk/wrappers.h>
 
-typedef enum {
-	BOOL_FALSE=0,
-	BOOL_TRUE,
-} itsdk_bool_e;
 
 // ------------------------------------------------------------------------
 // Function every project needs to implement

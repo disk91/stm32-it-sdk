@@ -219,6 +219,12 @@
 #define __LOG_MOD_CUSTOMF		0x40000000			// User level logging
 #define __LOG_MOD_RESERVED		0x80000000			// Reserved Level
 
+#define __LOG_LEVEL_VERBOSE_DEBUG	5
+#define __LOG_LEVEL_VERBOSE_STD 	4
+#define __LOG_LEVEL_STANDARD    	3
+#define __LOG_LEVEL_QUIET			2
+#define __LOG_LEVEL_CRITIAL_ONLY 	1
+
 /**
  * Network to activate
  */
