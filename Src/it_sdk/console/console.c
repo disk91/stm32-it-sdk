@@ -67,7 +67,7 @@ static itsdk_console_return_e _itsdk_console_private(char * buffer, uint8_t sz) 
 			_itsdk_console_printf("s          : print device state\r\n");
 			_itsdk_console_printf("t          : print current time in S\r\n");
 #if ITSDK_WITH_ADC != __ADC_NONE
-			_itsdk_console_printf("T          : print current temperature in oC\r\n");
+			_itsdk_console_printf("T          : print current cpu temperature in oC\r\n");
 			_itsdk_console_printf("b          : print battery level\r\n");
 			_itsdk_console_printf("B          : print VCC level\r\n");
 #endif

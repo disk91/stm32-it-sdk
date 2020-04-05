@@ -91,7 +91,7 @@ drivers_lis2dh12_ret_e lis2dh_init_i(
         // __lis2dh_writeMaskedRegisterI(LIS2DH_CTRL_REG0, LIS2DH_REG0_SA0PULLUP_MASK, LIS2DH_REG0_SA0PULLUP_DISABLE);
     }
 
-    if ( lis2dh_whoAmI() ) {
+    if ( lis2dh_whoAmI() == LIS2DH_SUCCESS ) {
       // connection success
 
       // set a default configuration with 10Hz - Low Power ( 8b resolution )
@@ -1452,14 +1452,13 @@ uint8_t __lis2dh_readRegister(const uint8_t register_addr) {
 
 /**
  * Read 16b data from the Fifo in bust/sequential mode
- * The data are store in a int8/6_t[][3] regarding the RESOLUTION MODE
- * Empty the fifo is the buffer size is larger. maxSz is the max number
+ * The data are store in a int8/16_t[][3] regarding the RESOLUTION MODE
+ * Empty the fifo if the buffer size is larger. maxSz is the max number
  * of X,Y,Z triple
- * Return the number of tripe read from Fifo
+ * Return the number of triple read from Fifo
  */
 uint8_t __lis2dh_readFifo(int16_t * _buffer,const uint8_t maxSz) {
-	uint8_t fifoReg = 0x80 | LIS2DH_OUT_X_L; // Force most significant bit to 1 to indicate a multiple read (according to doc)
-	uint8_t v;
+	//uint8_t fifoReg = 0x80 | LIS2DH_OUT_X_L; // Force most significant bit to 1 to indicate a multiple read (according to doc)
     int16_t (*buffer16)[3] = (int16_t (*)[3]) _buffer;
     int sz = (__lis2dh_conf._fifoMode == LIS2DH_FM_BYPASS)?1:lis2dh_getFiFoSize();
     if ( sz > maxSz ) sz = maxSz;
@@ -1468,42 +1467,32 @@ uint8_t __lis2dh_readFifo(int16_t * _buffer,const uint8_t maxSz) {
       int k = 0;
       while ( toRead > 0 ) {
         int transferSize = (toRead >= 30)?30:toRead;
-
-        if ( i2c_write(
-							&ITSDK_DRIVERS_ACCEL_LIS2DH_I2C,
-							__lis2dh_conf._address,			// Non shifted device address
-							&fifoReg,
-							1
-        			  ) != I2C_OK
-        	) {
-        		LIS2DH_LOG_ERROR(("Lis2dh - I2C fifo read error\r\n"));
-        		return 0;
-        }
-
+        int8_t __buff[30];
+        i2c_memRead(
+         		&ITSDK_DRIVERS_ACCEL_LIS2DH_I2C,			// i2c handler
+ 				__lis2dh_conf._address,						// Device Address => 7 bits non shifted
+         		(0x80 | LIS2DH_OUT_X_L),					// Memory address to access
+         		8,											// 8 for 8b, 16 for 16 bits ...
+         		(uint8_t *)__buff,							// Where to store data to be read
+				transferSize								// Size of the data to be read
+        );
         for ( int i = 0 ; i < transferSize/6 ; i++ ) {
-          if ( __lis2dh_conf._resolution == LIS2DH_RESOLUTION_8B ) {
-            i2c_read(&ITSDK_DRIVERS_ACCEL_LIS2DH_I2C,__lis2dh_conf._address,&v,1);
-            buffer16[k][0] = (int8_t)v;
-            i2c_read(&ITSDK_DRIVERS_ACCEL_LIS2DH_I2C,__lis2dh_conf._address,&v,1);
-            buffer16[k][1] = (int8_t)v;
-            i2c_read(&ITSDK_DRIVERS_ACCEL_LIS2DH_I2C,__lis2dh_conf._address,&v,1);
-            buffer16[k][2] = (int8_t)v;
+          if ( __lis2dh_conf._resolution == LIS2DH_RESOLUTION_MODE_8B ) {
+            buffer16[k][0] = __buff[(i*6)+1];
+            buffer16[k][1] = __buff[(i*6)+3];
+            buffer16[k][2] = __buff[(i*6)+5];
           } else {
-             int shift = ( __lis2dh_conf._resolution == LIS2DH_RESOLUTION_10B)?6:4;
-             i2c_read(&ITSDK_DRIVERS_ACCEL_LIS2DH_I2C,__lis2dh_conf._address,&v,1);
-             buffer16[k][0] = v;
-             i2c_read(&ITSDK_DRIVERS_ACCEL_LIS2DH_I2C,__lis2dh_conf._address,&v,1);
-             buffer16[k][0] += (int16_t)v << 8;
+             int shift = ( __lis2dh_conf._resolution == LIS2DH_RESOLUTION_MODE_10B)?6:4;
+             buffer16[k][0] = __buff[(i*6)+0];
+             buffer16[k][0] += ((int16_t)__buff[(i*6)+1]) << 8;
              buffer16[k][0] >>= shift;
-             i2c_read(&ITSDK_DRIVERS_ACCEL_LIS2DH_I2C,__lis2dh_conf._address,&v,1);
-             buffer16[k][1] = v;
-             i2c_read(&ITSDK_DRIVERS_ACCEL_LIS2DH_I2C,__lis2dh_conf._address,&v,1);
-             buffer16[k][1] += (int16_t)v << 8;
+
+             buffer16[k][1] = __buff[(i*6)+2];
+             buffer16[k][1] += ((int16_t)__buff[(i*6)+3]) << 8;
              buffer16[k][1] >>= shift;
-             i2c_read(&ITSDK_DRIVERS_ACCEL_LIS2DH_I2C,__lis2dh_conf._address,&v,1);
-             buffer16[k][2] = v;
-             i2c_read(&ITSDK_DRIVERS_ACCEL_LIS2DH_I2C,__lis2dh_conf._address,&v,1);
-             buffer16[k][2] += (int16_t)v << 8;
+
+             buffer16[k][2] = __buff[(i*6)+4];
+             buffer16[k][2] += ((int16_t)__buff[(i*6)+5]) << 8;
              buffer16[k][2] >>= shift;
           }
           k++;
