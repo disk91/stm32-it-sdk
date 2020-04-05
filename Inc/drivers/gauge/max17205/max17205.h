@@ -77,6 +77,8 @@ drivers_max17205_ret_e drivers_max17205_getCurrent(int32_t * uAmp);
 drivers_max17205_ret_e drivers_max17205_getCoulomb(uint16_t * coulomb);
 drivers_max17205_ret_e drivers_max17205_isReady();
 
+drivers_max17205_ret_e drivers_max17205_getRemainingNVMUpdates(uint16_t * upd);
+
 // ====================================================================
 // Registers
 // ====================================================================
@@ -104,6 +106,14 @@ drivers_max17205_ret_e drivers_max17205_isReady();
 #define ITSDK_DRIVERS_MAX17205_REG_QH_ADR				0x4D	// Coulomb
 
 #define ITSDK_DRIVERS_MAX17205_REG_COMMAND_ADR			0x60	// Command register
+#define ITSDK_DRIVERS_MAX17205_CMD_RECALL				0xE2FA	// Command to recall NV memory
+#define ITSDK_DRIVERS_MAX17205_CMD_BLOCKCPY				0xE904	// Command to copy block into NV Memory
+
+#define ITSDK_DRIVERS_MAX17205_REG_COMMSTAT_ADR			0x61	// CommStat register
+#define ITSDK_DRIVERS_MAX17205_REG_COMMSTAT_NVERR_MSK	0x0004	// Indicating an error and potentialy something processing
+#define ITSDK_DRIVERS_MAX17205_REG_COMMSTAT_NVBUSY_MSK	0x0002	// Indicating the NV Memory is busy
+
+
 #define ITSDK_DRIVERS_MAX17205_REG_CONFIG2_ADR			0xBB	// Config 2 register
 
 #define ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_ADR			0x1B5	// Config 2 register
@@ -157,9 +167,13 @@ typedef enum {												//  Temp Source    RegisterToRead
 #define ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_TEMP_MSK	 	0xB800	// Mask to clean the Temperature source selection
 
 
-#define ITSDK_DRIVERS_MAX17205_REG_NRSENSE				0x1CF	//  setup the Rsense value
+#define ITSDK_DRIVERS_MAX17205_REG_NRSENSE					0x1CF	//  setup the Rsense value
+
+#define ITSDK_DRIVERS_MAX17205_REG_REMAINUPD_ADR			0x1ED   // Remaing nv memory updates
 
 
-
+#define ITSDK_DRIVERS_MAX17205_TIME_FOR_NVRECALL			 8	// Time to recall the NV memory content (5ms according to doc + margin)
+#define ITSDK_DRIVERS_MAX17205_TIME_FOR_NVSAVE_100MS_LOOP   75	// Time to write the NV memory content (up to 7360ms according to doc)
+#define ITSDK_DRIVERS_MAX17205_NVSAVE_MAX_TRY				 2	// Max try to save the NV MEMORY
 
 #endif /* DRIVERS_GAUGE_MAX17205_MAX17205_H_ */

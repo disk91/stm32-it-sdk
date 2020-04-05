@@ -105,29 +105,86 @@ drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode) {
 	__max17205_config.mode = mode;
 	__max17205_config.initialized = MAX17205_FAILED;
 
-	// Preconfiguration related to MAX17205 bug - thank you Martin Cornu
-	// see https://github.com/disk91/stm32-it-sdk/issues/26
-	switch ( mode ) {
-		case MAX17205_MODE_3CELLS_INT_TEMP:
-			// 3 cells - 0x00 -- 03 -- Num of cells
-			__writeRegister(ITSDK_DRIVERS_MAX17205_REG_BNPACKCFG_ADR,
-							  ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_VBAT_DISABLE
-							| ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_CHEN_DISABLE
-							| ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_TDEN_DISABLE
-							| ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_A1EN_DISABLE
-							| ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_FGT_DISABLE
-					        | 3 << ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_NCELL_SHIFT
-						    );
-			break;
-		default:
-		case MAX17205_MODE_DEFAULT:
-			break;
+	uint16_t v;
+	if ( __readRegister(ITSDK_DRIVERS_MAX17205_REG_DEVNAME_ADR,&v) != I2C_OK ) {
+
+		// Preconfiguration related to MAX17205 bug - thank you Martin Cornu
+		// see https://github.com/disk91/stm32-it-sdk/issues/26
+		switch ( mode ) {
+			case MAX17205_MODE_3CELLS_INT_TEMP:
+				// 3 cells - 0x00 -- 03 -- Num of cells
+				__writeRegister(ITSDK_DRIVERS_MAX17205_REG_BNPACKCFG_ADR,
+								  ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_VBAT_DISABLE
+								| ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_CHEN_DISABLE
+								| ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_TDEN_DISABLE
+								| ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_A1EN_DISABLE
+								| ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_FGT_DISABLE
+						        | 3 << ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_NCELL_SHIFT
+							    );
+				break;
+			default:
+			case MAX17205_MODE_DEFAULT:
+				break;
 
 		}
+#if ITSDK_WITH_EXPERIMENTAL == __ENABLE
+		// We can assume this is the first run and the chip configuration is invalid
+		// we are going to fix it by storing the right value in the NV Memory. But this
+		// memory can we updated only 7 times... so we are going to try to update it not too
+		// much until the device could be locked
+
+		// We can assume this is the first run and the chip configuration is invalid
+		// we are going to fix it
+		#warning "This part of the code has not yet been tested use carefully"
+		if ( drivers_max17205_getRemainingNVMUpdates(&v) == MAX17205_SUCCESS ) {
+			if ( v > 5 ) {
+			    int _try = 0;
+				do {
+					// Repeat until CommStat.NVError == 0
+					__readRegister(ITSDK_DRIVERS_MAX17205_REG_COMMSTAT_ADR,&v);
+					v &= ~ITSDK_DRIVERS_MAX17205_REG_COMMSTAT_NVERR_MSK; // force NVError = 0
+					__writeRegister(ITSDK_DRIVERS_MAX17205_REG_COMMSTAT_ADR,v);
+					__writeRegister(ITSDK_DRIVERS_MAX17205_REG_COMMAND_ADR,ITSDK_DRIVERS_MAX17205_CMD_BLOCKCPY);
+					itsdk_delayMs(ITSDK_DRIVERS_MAX17205_TIME_FOR_NVRECALL);
+					for ( int l = 0 ; l < ITSDK_DRIVERS_MAX17205_TIME_FOR_NVSAVE_100MS_LOOP ; l++ ) {
+						#if ITSDK_WITH_WDG != __WDG_NONE && ITSDK_WDG_MS > 0
+						   wdg_refresh();
+						#endif
+						itsdk_delayMs(100);
+					}
+					__readRegister(ITSDK_DRIVERS_MAX17205_REG_COMMSTAT_ADR,&v);
+					_try++;
+				} while ( (v & ITSDK_DRIVERS_MAX17205_REG_COMMSTAT_NVERR_MSK) != 0 && _try < ITSDK_DRIVERS_MAX17205_NVSAVE_MAX_TRY );
+				if ( (v & ITSDK_DRIVERS_MAX17205_REG_COMMSTAT_NVERR_MSK) != 0 ) {
+					// Too many failed in trying to store the NV Memory
+					ITSDK_ERROR_REPORT(ITSDK_ERROR_DRV_MAX17205_NVFAILED,0);
+				} else {
+					// Sound good - reset the device
+					__writeRegister(ITSDK_DRIVERS_MAX17205_REG_COMMAND_ADR,0x000F);
+					itsdk_delayMs(15);
+					__writeRegister(ITSDK_DRIVERS_MAX17205_REG_CONFIG2_ADR,0x0001);
+					itsdk_delayMs(15);
+				}
+
+			} else {
+				// We prefer to not update the device to avoid locking it
+				ITSDK_ERROR_REPORT(ITSDK_ERROR_DRV_MAX17205_NVUPDREM,v);
+				// By the way, it seems this can help to correctly detect the chip
+				itsdk_delayMs(1000);
+			}
+
+		} else {
+			// not a success, basically the device could not be here
+			// make a try for a wait ... just because
+			// This is for the debug period @TODO remove this part of the code
+			itsdk_delayMs(1000);
+			log_error("Max17205 si agin not found\r\n");
+		}
+#endif
+	}
 
 
-	// Search for the device type
-	uint16_t v;
+	// Search for the device type ( aging but this time it is supposed to be ok
 	if ( __readRegister(ITSDK_DRIVERS_MAX17205_REG_DEVNAME_ADR,&v) != I2C_OK ) {
 		ITSDK_ERROR_REPORT(ITSDK_ERROR_DRV_MAX17205_NOTFOUND,0);
 		return MAX17205_NOTFOUND;
@@ -155,7 +212,7 @@ drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode) {
 		// This can be due to undervoltage powering.
 		// When the power supply is under 5V ( level not tested but higher the spec minimal documented level )
 		//  the devId returned is just shit ; The device works but really badly
-		uint16_t vbat;
+		uint16_t vbat=0;
 		drivers_max17205_getVoltage(MAX17205_VBAT,&vbat);
 		if ( vbat < ITSDK_DRIVERS_MAX17205_UNDERVOLTAGE ) {
 			// assuming this is the undervoltage condition
@@ -311,6 +368,36 @@ drivers_max17205_ret_e drivers_max17205_getCoulomb(uint16_t * coulomb) {
  */
 drivers_max17205_ret_e drivers_max17205_isReady() {
 	return __max17205_config.initialized;
+}
+
+/**
+ * Return the remaining update of the NV Memory
+ * The Nv Memory can only be updated 7 times.
+ */
+drivers_max17205_ret_e drivers_max17205_getRemainingNVMUpdates(uint16_t * upd) {
+
+	uint16_t v;
+	__writeRegister(ITSDK_DRIVERS_MAX17205_REG_COMMAND_ADR,ITSDK_DRIVERS_MAX17205_CMD_RECALL);
+	itsdk_delayMs(ITSDK_DRIVERS_MAX17205_TIME_FOR_NVRECALL);
+	__readRegister(ITSDK_DRIVERS_MAX17205_REG_REMAINUPD_ADR,&v);
+	uint16_t l = v & 0xFF;
+	uint16_t h = (v >> 8) & 0xFF;
+	v = l | h;
+	switch (v) {
+		case 1: *upd = 7; break;
+		case 3: *upd = 6; break;
+		case 7: *upd = 5; break;
+		case 15: *upd = 4; break;
+		case 31: *upd = 3; break;
+		case 63: *upd = 2; break;
+		case 127: *upd = 1; break;
+		default:
+			*upd=0;
+			return MAX17205_FAILED;
+			break;
+	}
+	return MAX17205_SUCCESS;
+
 }
 
 
