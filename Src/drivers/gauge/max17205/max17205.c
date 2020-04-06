@@ -106,13 +106,33 @@ drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode) {
 	__max17205_config.initialized = MAX17205_FAILED;
 
 	uint16_t v;
-	if ( __readRegister(ITSDK_DRIVERS_MAX17205_REG_DEVNAME_ADR,&v) != I2C_OK ) {
+
+#if ITSDK_WITH_EXPERIMENTAL == __ENABLE
+	// remove after test made
+	__readRegister(ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_ADR, &v);
+	log_info("NPACKCFC value : 0x%04X\r\n",v);
+#endif
+
+	if (   __readRegister(ITSDK_DRIVERS_MAX17205_REG_DEVNAME_ADR,&v) == I2C_OK
+	    && (( v & ITSDK_DRIVERS_MAX17205_REG_DEVNAME_MSK ) != MAX17205_TYPE_SINGLE_CELL )
+		&& (( v & ITSDK_DRIVERS_MAX17205_REG_DEVNAME_MSK ) != MAX17205_TYPE_MULTI_CELL  )
+	) {
 
 		// Preconfiguration related to MAX17205 bug - thank you Martin Cornu
 		// see https://github.com/disk91/stm32-it-sdk/issues/26
 		switch ( mode ) {
 			case MAX17205_MODE_3CELLS_INT_TEMP:
-				// 3 cells - 0x00 -- 03 -- Num of cells
+				// 3 cells - 0x00 -- 03 -- Num of cells - in shadow ram
+				__writeRegister(ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_ADR,
+								  ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_VBAT_DISABLE
+								| ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_CHEN_DISABLE
+								| ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_TDEN_DISABLE
+								| ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_A1EN_DISABLE
+								| ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_FGT_DISABLE
+						        | 3 << ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_NCELL_SHIFT
+							    );
+#if ITSDK_WITH_EXPERIMENTAL == __DISABLE
+				// Also in volatile RAM
 				__writeRegister(ITSDK_DRIVERS_MAX17205_REG_BNPACKCFG_ADR,
 								  ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_VBAT_DISABLE
 								| ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_CHEN_DISABLE
@@ -121,6 +141,8 @@ drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode) {
 								| ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_FGT_DISABLE
 						        | 3 << ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_NCELL_SHIFT
 							    );
+				itsdk_delayMs(1000);
+#endif
 				break;
 			default:
 			case MAX17205_MODE_DEFAULT:
