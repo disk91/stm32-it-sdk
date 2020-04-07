@@ -111,6 +111,8 @@ drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode) {
 	// remove after test made
 	__readRegister(ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_ADR, &v);
 	log_info("NPACKCFC value : 0x%04X\r\n",v);
+	__readRegister(ITSDK_DRIVERS_MAX17205_REG_BNPACKCFG_ADR, &v);
+	log_info("BNPACKCFC value : 0x%04X\r\n",v);
 #endif
 
 	if (   __readRegister(ITSDK_DRIVERS_MAX17205_REG_DEVNAME_ADR,&v) == I2C_OK
@@ -132,6 +134,7 @@ drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode) {
 						        | 3 << ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_NCELL_SHIFT
 							    );
 #if ITSDK_WITH_EXPERIMENTAL == __DISABLE
+				itsdk_delayMs(1000);
 				// Also in volatile RAM
 				__writeRegister(ITSDK_DRIVERS_MAX17205_REG_BNPACKCFG_ADR,
 								  ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_VBAT_DISABLE
@@ -141,7 +144,6 @@ drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode) {
 								| ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_FGT_DISABLE
 						        | 3 << ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_NCELL_SHIFT
 							    );
-				itsdk_delayMs(1000);
 #endif
 				break;
 			default:
@@ -168,8 +170,7 @@ drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode) {
 						__readRegister(ITSDK_DRIVERS_MAX17205_REG_COMMSTAT_ADR,&v);
 						itsdk_delayMs(10);
 						_trywait++;
-					} while ((v & ITSDK_DRIVERS_MAX17205_REG_COMMSTAT_NVBUSY_MSK) != 0 && _trywait < 1000);
-					log_info("%d\r\n",_trywait);
+					} while ((v & ITSDK_DRIVERS_MAX17205_REG_COMMSTAT_NVBUSY_MSK) != 0 && _trywait < 10);
 
 					v &= ~ITSDK_DRIVERS_MAX17205_REG_COMMSTAT_NVERR_MSK; // force NVError = 0
 					__writeRegister(ITSDK_DRIVERS_MAX17205_REG_COMMSTAT_ADR,v);
@@ -419,6 +420,7 @@ drivers_max17205_ret_e drivers_max17205_getRemainingNVMUpdates(uint16_t * upd) {
 		case 31: *upd = 3; break;
 		case 63: *upd = 2; break;
 		case 127: *upd = 1; break;
+		case 255: *upd = 0; break;
 		default:
 			*upd=0;
 			return MAX17205_FAILED;
