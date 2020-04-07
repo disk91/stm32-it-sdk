@@ -163,11 +163,17 @@ drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode) {
 			    int _try = 0;
 				do {
 					// Repeat until CommStat.NVError == 0
-					__readRegister(ITSDK_DRIVERS_MAX17205_REG_COMMSTAT_ADR,&v);
+					int _trywait = 0;
+					do {
+						__readRegister(ITSDK_DRIVERS_MAX17205_REG_COMMSTAT_ADR,&v);
+						itsdk_delayMs(10);
+						_trywait++;
+					} while ((v & ITSDK_DRIVERS_MAX17205_REG_COMMSTAT_NVBUSY_MSK) != 0 && _trywait < 1000);
+					log_info("%d\r\n",_trywait);
+
 					v &= ~ITSDK_DRIVERS_MAX17205_REG_COMMSTAT_NVERR_MSK; // force NVError = 0
 					__writeRegister(ITSDK_DRIVERS_MAX17205_REG_COMMSTAT_ADR,v);
 					__writeRegister(ITSDK_DRIVERS_MAX17205_REG_COMMAND_ADR,ITSDK_DRIVERS_MAX17205_CMD_BLOCKCPY);
-					itsdk_delayMs(ITSDK_DRIVERS_MAX17205_TIME_FOR_NVRECALL);
 					for ( int l = 0 ; l < ITSDK_DRIVERS_MAX17205_TIME_FOR_NVSAVE_100MS_LOOP ; l++ ) {
 						#if ITSDK_WITH_WDG != __WDG_NONE && ITSDK_WDG_MS > 0
 						   wdg_refresh();

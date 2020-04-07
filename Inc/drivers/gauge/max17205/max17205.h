@@ -174,6 +174,6 @@ typedef enum {												//  Temp Source    RegisterToRead
 
 #define ITSDK_DRIVERS_MAX17205_TIME_FOR_NVRECALL			 8	// Time to recall the NV memory content (5ms according to doc + margin)
 #define ITSDK_DRIVERS_MAX17205_TIME_FOR_NVSAVE_100MS_LOOP   75	// Time to write the NV memory content (up to 7360ms according to doc)
-#define ITSDK_DRIVERS_MAX17205_NVSAVE_MAX_TRY				 2	// Max try to save the NV MEMORY
+#define ITSDK_DRIVERS_MAX17205_NVSAVE_MAX_TRY				 1	// Max try to save the NV MEMORY (1 == no retry)
 
 #endif /* DRIVERS_GAUGE_MAX17205_MAX17205_H_ */
