@@ -108,7 +108,7 @@ drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode) {
 	uint16_t v;
 
 #if ITSDK_WITH_EXPERIMENTAL == __ENABLE
-	// remove after test made
+	// remove after test made - used to see if the value has been previously written into NVMem
 	__readRegister(ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_ADR, &v);
 	log_info("NPACKCFC value : 0x%04X\r\n",v);
 	__readRegister(ITSDK_DRIVERS_MAX17205_REG_BNPACKCFG_ADR, &v);
@@ -134,7 +134,6 @@ drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode) {
 						        | 3 << ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_NCELL_SHIFT
 							    );
 #if ITSDK_WITH_EXPERIMENTAL == __DISABLE
-				itsdk_delayMs(1000);
 				// Also in volatile RAM
 				__writeRegister(ITSDK_DRIVERS_MAX17205_REG_BNPACKCFG_ADR,
 								  ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_VBAT_DISABLE
@@ -144,6 +143,7 @@ drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode) {
 								| ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_FGT_DISABLE
 						        | 3 << ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_NCELL_SHIFT
 							    );
+				itsdk_delayMs(1000);
 #endif
 				break;
 			default:
@@ -159,6 +159,12 @@ drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode) {
 
 		// We can assume this is the first run and the chip configuration is invalid
 		// we are going to fix it
+
+		// The current status of theis patch is the following. Sometime we have seen it
+		// working but the condition to get the NV Memory written is still not clear.
+		// most of the time the NVErr flag is position after writing for unidentified reason
+		// yet. As a consequence we lost awrite possibility and the value is unchanged. But
+		// sometime it worked. More tests are needed to understand this.
 		#warning "This part of the code has not yet been tested use carefully"
 		if ( drivers_max17205_getRemainingNVMUpdates(&v) == MAX17205_SUCCESS ) {
 			if ( v > 5 ) {
@@ -207,7 +213,7 @@ drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode) {
 			// make a try for a wait ... just because
 			// This is for the debug period @TODO remove this part of the code
 			itsdk_delayMs(1000);
-			log_error("Max17205 si agin not found\r\n");
+			log_error("Max17205 is another time not found\r\n");
 		}
 #endif
 	}
