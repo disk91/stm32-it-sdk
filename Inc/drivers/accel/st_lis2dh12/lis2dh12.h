@@ -21,12 +21,14 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  * ==========================================================
  */
+#include <it_sdk/configDrivers.h>
+#include <it_sdk/itsdk.h>
+#include <it_sdk/accel/accel.h>
+
 
 #ifndef SRC_DRIVERS_ACCEL_ST_LIS2DH12_LIS2DH12_H_
 #define SRC_DRIVERS_ACCEL_ST_LIS2DH12_LIS2DH12_H_
 
-#include <it_sdk/configDrivers.h>
-#include <it_sdk/itsdk.h>
 
 // Error have to be a bit field.
 typedef enum {
@@ -35,6 +37,21 @@ typedef enum {
 	LIS2DH_FAILED=0x80
 } drivers_lis2dh12_ret_e;
 
+
+// ====== HIGH Pass filter mode
+// see http://www.st.com/content/ccc/resource/technical/document/application_note/60/52/bd/69/28/f4/48/2b/DM00165265.pdf/files/DM00165265.pdf/jcr:content/translations/en.DM00165265.pdf
+// HPCF[2:1]\ft    @1Hz    @10Hz  @25Hz  @50Hz @100Hz @200Hz @400Hz @1kHz6 ft@5kHz
+//  * AGGRESSIVE   0.02Hz  0.2Hz  0.5Hz  1Hz   2Hz    4Hz    8Hz    32Hz   100Hz
+//  * STRONG       0.008Hz 0.08Hz 0.2Hz  0.5Hz 1Hz    2Hz    4Hz    16Hz   50Hz
+//  * MEDIUM       0.004Hz 0.04Hz 0.1Hz  0.2Hz 0.5Hz  1Hz    2Hz    8Hz    25Hz
+//  * LIGHT        0.002Hz 0.02Hz 0.05Hz 0.1Hz 0.2Hz  0.5Hz  1Hz    4Hz    12Hz
+typedef enum {
+	LIS2DH_HPF_MODE_DISABLE = 		0,
+	LIS2DH_HPF_MODE_LIGHT = 		1,
+	LIS2DH_HPF_MODE_MEDIUM = 		2,
+	LIS2DH_HPF_MODE_STRONG = 		3,
+	LIS2DH_HPF_MODE_AGGRESSIVE = 	4
+} drivers_lis2dh12_hpcfmode_e;
 
 #define DRIVER_LIS2DH_DEFAULT_ADDRESS	0x18		// default I2C address
 
@@ -148,7 +165,7 @@ typedef enum {
 #define LIS2DH_HPIA1_MASK       0x01        // Apply filtering on interrupt 1
 
 #define LIS2DH_HPM_SHIFT          6
-#define LIS2DH_HPM_NORMAL_RESET   0x00      // In this mode - when reading on of the XL/XH_REFERENCE register the current acceleration is reset on the corresponding axe (manuela reset)
+#define LIS2DH_HPM_NORMAL_RESET   0x00      // In this mode - when reading on of the XL/XH_REFERENCE register the current acceleration is reset on the corresponding axe (manuel reset)
 #define LIS2DH_HPM_REFSIG         0x01      // In this mode acceleration is the difference with the XL/XH_REFERENCE content for each axis
 #define LIS2DH_HPM_NORMAL2        0x02      // In this mode I assume we have no filtering
 #define LIS2DH_HPM_AUTORESET      0x03      // In this mode the interrupt event will reset the filter
@@ -474,30 +491,44 @@ typedef enum {
 
 typedef struct {
 	uint8_t _address;									// I2C address
+	drivers_lis2dh12_resolution_e 	_resolution;       	// store the current resolution (bits)
+	drivers_lis2dh12_frequency_e 	_frequency;    		// store the current frequency (Hz) - ODR
+    drivers_lis2dh12_scale_e 		_scale;         	// store the current scale (xG)
+    drivers_lis2dh12_fifomode_e 	_fifoMode;          // store the current fifo mode
+    drivers_lis2dh12_hpcf_e 		_hpcf;              // store the current cut-off frequency on ODR mode
+    itsdk_bool_e					_tiltModeEnable;	// true when the tilt mode is running in background
+    itsdk_accel_trigger_e			_tiltTriggerMsk;	// Desired Triggers for tilt detection
+    void(* _tiltCB)(itsdk_accel_trigger_e reason);		// callback action on tilt event
 
-	drivers_lis2dh12_resolution_e _resolution;        	// store the current resolution (bits)
-	drivers_lis2dh12_frequency_e _frequency;    		// store the current frequency (Hz) - ODR
-    drivers_lis2dh12_scale_e _scale;             		// store the current scale (xG)
-    drivers_lis2dh12_fifomode_e _fifoMode;          	// store the current fifo mode
-    drivers_lis2dh12_hpcf_e _hpcf;               		// store the current cut-off frequency on ODR mode
 } drivers_lis2dh12_conf_t;
 
 // Main function to be use
-drivers_lis2dh12_ret_e lis2dh_init(void);                                                                    // Default Init 8b, 10Hz, 2G
-drivers_lis2dh12_ret_e lis2dh_init_i(
+drivers_lis2dh12_ret_e lis2dh_simple_setup(void);                                                                    // Default Init 8b, 10Hz, 2G
+drivers_lis2dh12_ret_e lis2dh_setup(
 		drivers_lis2dh12_resolution_e resolution,
 		drivers_lis2dh12_frequency_e frequency,
 		drivers_lis2dh12_scale_e scale);
 drivers_lis2dh12_ret_e lis2dh_initPosition6D();                                                              // Configure the 6D position function on INT1
 drivers_lis2dh12_ret_e lis2dh_reinit();                                                                      // Do not change the device config but restore the lis2dh12 structure
+void lis2dh12_process(void);
 void lis2dh_dumpConfig(void);
 
 uint8_t lis2dh_getPendingMotions( int16_t * _buffer, uint8_t size);                        // Get all the FiFo pending measure for X,Y,Z
 uint8_t lis2dh_getPendingAcceleration( int16_t * _buffer, uint8_t size);                   // Get all the Fifo pending measure in Mg ( x,y,z )
 uint8_t lis2dh_getPendingForces( int16_t * _buffer, uint8_t size);                         // Get all the Fifo pending measure into a force in Mg array |A|
 
-drivers_lis2dh12_ret_e lis2dh_runBackgroundTiltDetection(uint16_t forceMg);                                  // Configure Interrupt for being fired if the force is detected any axis
-drivers_lis2dh12_ret_e lis2dh_hasTiltDetected();                                                             // Return true when a tilt has been detected and clear the interrupt
+drivers_lis2dh12_ret_e lis2dh_setupBackgroundTiltDetection(								   // Configure a background movement detection with Interrupt or activ scan
+		uint16_t forceMg, 							// force level
+		drivers_lis2dh12_scale_e scale,				// scale 2G/4G...
+		drivers_lis2dh12_frequency_e frequency, 	// capture frequency 1/10/25/50Hz..
+		drivers_lis2dh12_resolution_e resolution,	// data precision 8B/10B/12B...
+		drivers_lis2dh12_hpcfmode_e hpf,			// High Frequency Filter strategy
+		itsdk_accel_trigger_e triggers,				// Select the triggers
+		void(* cb)(itsdk_accel_trigger_e reason) 	// callback function
+);
+
+itsdk_bool_e lis2dh_hasTiltDetected();                                                     // Return true when a tilt has been detected and clear the interrupt
+itsdk_accel_trigger_e __lis2dh_determineTilt();
 
 uint8_t lis2dh_getPosition6D();                                                            // Return one of the 6D positions
 
@@ -512,8 +543,8 @@ int8_t lis2dh_getAxisZ_LR(void);                                                
 void lis2dh_getMotion_LR(int8_t* ax, int8_t* ay, int8_t* az);                              // Get the last measured X,Y,Z acceleration in LowpowerR mode (8bits)
 
 
-drivers_lis2dh12_ret_e lis2dh_tempHasOverrun(void);
-drivers_lis2dh12_ret_e lis2dh_tempDataAvailable(void);
+itsdk_bool_e lis2dh_tempHasOverrun(void);
+itsdk_bool_e lis2dh_tempDataAvailable(void);
 int16_t lis2dh_getTemperature(void);
 drivers_lis2dh12_ret_e lis2dh_whoAmI(void);
 drivers_lis2dh12_ret_e lis2dh_getTempEnabled(void);
@@ -538,6 +569,9 @@ itsdk_bool_e lis2dh_isYAxisEnabled(void);
 drivers_lis2dh12_ret_e lis2dh_enableAxisZ(void);
 drivers_lis2dh12_ret_e lis2dh_disableAxisZ(void);
 itsdk_bool_e lis2dh_isZAxisEnabled(void);
+drivers_lis2dh12_hpcf_e __lis2dh_getCutOffODRValueFromHPFMode(
+		drivers_lis2dh12_hpcfmode_e mode
+);
 uint8_t lis2dh_getHPFilterMode();
 drivers_lis2dh12_ret_e lis2dh_setHPFilterMode(uint8_t mode);
 drivers_lis2dh12_hpcf_e lis2dh_getHPFilterCutOff();
@@ -603,7 +637,7 @@ itsdk_bool_e lis2dh_isFiFoFull();
 itsdk_bool_e lis2dh_isFiFoEmpty();
 uint8_t lis2dh_getFiFoSize();
 
-drivers_lis2dh12_ret_e lis2dh_enableClickEvent(uint8_t _clicEvent);
+drivers_lis2dh12_ret_e lis2dh_enableClickEvent(itsdk_accel_trigger_e clicTrigger);
 itsdk_bool_e lis2dh_isClickInterruptFired();
 itsdk_bool_e lis2dh_isDoubleClickFired();
 itsdk_bool_e lis2dh_isSimpleClickFired();
@@ -611,17 +645,18 @@ itsdk_bool_e lis2dh_isClickFiredOnZ();
 itsdk_bool_e lis2dh_isClickFiredOnY();
 itsdk_bool_e lis2dh_isClickFiredOnX();
 itsdk_bool_e lis2dh_isSignClickFired();
-uint16_t lis2dh_getClickStatus();
+itsdk_accel_trigger_e lis2dh_getClickStatus();
 drivers_lis2dh12_ret_e lis2dh_setClickThreshold(uint8_t ths);
 drivers_lis2dh12_ret_e lis2dh_setClickThresholdMg(uint16_t mg, const drivers_lis2dh12_scale_e scale);
 drivers_lis2dh12_ret_e lis2dh_setClickInterruptMode(uint8_t _mode);
 drivers_lis2dh12_ret_e lis2dh_setClickTimeLimit(uint8_t raw);
 drivers_lis2dh12_ret_e lis2dh_setClickTimeLatency(uint8_t raw);
 drivers_lis2dh12_ret_e lis2dh_setClickTimeWindow(uint8_t raw);
-
+drivers_lis2dh12_ret_e lis2dh_setClickInterrupt(itsdk_bool_e enable);
 
 // Internal function not supposed to be used other than lis driver
 void __lis2dh_readSetting();                                                                                                   // Restore scale, resolution, frequency based on chip current config
+
 
 drivers_lis2dh12_ret_e __lis2dh_getAcceleration_i(const drivers_lis2dh12_resolution_e resolution, const drivers_lis2dh12_scale_e scale, int16_t * ax, int16_t * ay, int16_t * az);        // return acceleration in mg instead of raw values
 drivers_lis2dh12_ret_e __lis2dh_getAcceleration(int16_t * x, int16_t * y, int16_t * z);                                                          // equivalent but use internal known config for this.
@@ -637,6 +672,11 @@ uint8_t __lis2dh_readFifo(int16_t * _buffer,const uint8_t maxSz);
 
 drivers_lis2dh12_ret_e __lis2dh_convertMgToRaw(uint8_t * _raw, uint16_t mg, drivers_lis2dh12_scale_e scale);
 drivers_lis2dh12_ret_e __lis2dh_convertMsToRaw(uint8_t * _raw, uint32_t ms, const drivers_lis2dh12_frequency_e odr);
+
+// Converter function to adapt with itsdk acces generic driver
+drivers_lis2dh12_scale_e lis2dh12_convertScale(itsdk_accel_scale_e intput);
+drivers_lis2dh12_frequency_e lis2dh_converFrequency(itsdk_accel_frequency_e input);
+drivers_lis2dh12_resolution_e lis2dh_convertPrecision(itsdk_accel_precision_e input);
 
 
 // Logger wrapper
