@@ -28,6 +28,7 @@
 #include <it_sdk/config.h>
 #include <it_sdk/eeprom/sdk_config.h>
 #include <it_sdk/logger/error.h>
+#include <it_sdk/logger/logger.h>
 #if ITSDK_CONFIGURATION_MODE == __CONFIG_EEPROM
   #include <it_sdk/eeprom/eeprom.h>
   #include <it_sdk/wrappers.h>

@@ -152,7 +152,7 @@ itsdk_accel_ret_e accel_configMovementDetection(
 	if ( lis2dh_setupBackgroundTiltDetection(
 			mg,
 			lis2dh12_convertScale(scale),
-			lis2dh_converFrequency(frequency),
+			lis2dh_converFrequency(frequency,precision),
 			lis2dh_convertPrecision(precision),
 			((hpf==BOOL_TRUE)?LIS2DH_HPF_MODE_AGGRESSIVE:LIS2DH_HPF_MODE_DISABLE),
 			triggers,
@@ -170,7 +170,7 @@ itsdk_accel_ret_e accel_configMovementDetection(
 
 void __accel_triggerCallback(itsdk_accel_trigger_e triggers) {
 
-	log_info("trigger status: 0x%04X\r\n",triggers);
+	log_info("trigger status: 0x%08X\r\n",triggers);
 
 
 }

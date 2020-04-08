@@ -159,6 +159,10 @@ configuration file. Please find the different settings added version after versi
  - ITSDK_WITH_WDG / allows to disable the watchdog 
  - ITSDK_WITH_UART_RXIRQ / allows to enable an RX IRQ on Serial communications with internal circular buffer
  - ITSDK_WITH_UART_RXIRQ_BUFSZ / size of the RX IRQ circular buffer for each of the serial channel (power of two)
+ - ITSDK_WITH_EXPERIMENTAL / activate or deactivate some experimental code by default set it to DISABLE
+
+### configDriver.h
+ - ITSDK_DRIVERS_ACCEL_LIS2DH12 
 
 ## from version 1.5.0
 ### config.h

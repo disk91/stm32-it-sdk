@@ -33,6 +33,7 @@
 // Error have to be a bit field.
 typedef enum {
 	LIS2DH_SUCCESS=0,
+	LIS2DH_NOTSUPPORTED=1,
 
 	LIS2DH_FAILED=0x80
 } drivers_lis2dh12_ret_e;
@@ -129,16 +130,16 @@ typedef enum {
 
 #define LIS2DH_ODR_SHIFT      	4
 #define LIS2DH_ODR_POWER_DOWN 	0x00
-#define LIS2DH_ODR_1HZ        	0x01
-#define LIS2DH_ODR_10HZ       	0x02
-#define LIS2DH_ODR_25HZ       	0x03
-#define LIS2DH_ODR_50HZ       	0x04
-#define LIS2DH_ODR_100HZ      	0x05
-#define LIS2DH_ODR_200HZ      	0x06
-#define LIS2DH_ODR_400HZ      	0x07
-#define LIS2DH_ODR_1620HZ     	0x08
-#define LIS2DH_ODR_1344HZ     	0x09
-#define LIS2DH_ODR_5376HZ     	0x09
+#define LIS2DH_ODR_1HZ        	0x01		// HR & Normal & Low Power
+#define LIS2DH_ODR_10HZ       	0x02		// HR & Normal & Low Power
+#define LIS2DH_ODR_25HZ       	0x03		// HR & Normal & Low Power
+#define LIS2DH_ODR_50HZ       	0x04		// HR & Normal & Low Power
+#define LIS2DH_ODR_100HZ      	0x05		// HR & Normal & Low Power
+#define LIS2DH_ODR_200HZ      	0x06		// HR & Normal & Low Power
+#define LIS2DH_ODR_400HZ      	0x07		// HR & Normal & Low Power
+#define LIS2DH_ODR_1620HZ     	0x08		// Low Power
+#define LIS2DH_ODR_1344HZ     	0x09		// HR & Normal
+#define LIS2DH_ODR_5376HZ     	0x09		// Low Power
 #define LIS2DH_ODR_MAXVALUE   	0x09
 
 typedef enum {
@@ -304,9 +305,9 @@ typedef enum {
 #define LIS2DH_FSS_MASK          	0x1F
 
 // INT1/2_CFG masks
-#define LIS2DH_AOI_MASK         	0x80
+#define LIS2DH_AOI_MASK         	0x80	// INT 1 specific
 #define LIS2DH_6D_MASK          	0x40
-#define LIS2DH_INT_MODE_MASK    	0xC0
+#define LIS2DH_INT_MODE_MASK    	0xC0	// INT 2
 #define LIS2DH_ZHIE_MASK        	0x20
 #define LIS2DH_ZLIE_MASK        	0x10
 #define LIS2DH_YHIE_MASK        	0x08
@@ -323,11 +324,17 @@ typedef enum {
 #define LIS2DH_INT_MODE_POS     	0x03      // Interrupt fired when the orientation is in a known zone and stay until we stay in this zone => Position
 #define LIS2DH_INT_MODE_MAXVALUE  	0x03
 
+#define LIS2DH_INT_MODE_6D_STABLE	0x03	 // Active as soon as a stable position is detected, remain until the position is unknown
+#define LIS2DH_INT_MODE_6D_CHANGE   0x01	 // Active when the position is becoming stable (state change detection)
+
 typedef enum {
 	LIS2DH_INTERRUPT_MODE_OR = LIS2DH_INT_MODE_OR,
 	LIS2DH_INTERRUPT_MODE_AND = LIS2DH_INT_MODE_AND,
 	LIS2DH_INTERRUPT_MODE_MOV = LIS2DH_INT_MODE_MOV,
-	LIS2DH_INTERRUPT_MODE_POS = LIS2DH_INT_MODE_POS
+	LIS2DH_INTERRUPT_MODE_POS = LIS2DH_INT_MODE_POS,
+	LIS2DH_INTERRUPT_MODE_6D_STABLE = LIS2DH_INT_MODE_6D_STABLE,
+	LIS2DH_INTERRUPT_MODE_6D_CHANGE = LIS2DH_INT_MODE_6D_CHANGE
+
 } drivers_lis2dh12_intmode_e;
 
 #define LIS2DH_INTEVENT_SHIFT   	0
@@ -473,6 +480,7 @@ typedef enum {
 #define LIS2DH_POSITION_TOP_ON_LEFT     0x01
 #define LIS2DH_POSITION_TOP_ON_FRONT    0x04
 #define LIS2DH_POSITION_TOP_ON_BACK     0x08
+#define LIS2DH_POSITION_TOP_ON_ANY      0x3F
 
 #define LIS2DH_TEMPERATURE_INVALID      0x1FFF
 
@@ -498,6 +506,7 @@ typedef struct {
     drivers_lis2dh12_hpcf_e 		_hpcf;              // store the current cut-off frequency on ODR mode
     itsdk_bool_e					_tiltModeEnable;	// true when the tilt mode is running in background
     itsdk_accel_trigger_e			_tiltTriggerMsk;	// Desired Triggers for tilt detection
+    itsdk_accel_trigger_e			_tiltTriggerLast;	// Last trigger state for position change detection
     void(* _tiltCB)(itsdk_accel_trigger_e reason);		// callback action on tilt event
 
 } drivers_lis2dh12_conf_t;
@@ -508,7 +517,7 @@ drivers_lis2dh12_ret_e lis2dh_setup(
 		drivers_lis2dh12_resolution_e resolution,
 		drivers_lis2dh12_frequency_e frequency,
 		drivers_lis2dh12_scale_e scale);
-drivers_lis2dh12_ret_e lis2dh_initPosition6D();                                                              // Configure the 6D position function on INT1
+drivers_lis2dh12_ret_e lis2dh_initPosition6D(drivers_lis2dh12_scale_e scale, drivers_lis2dh12_frequency_e frequency); // Configure the 6D position function on INT1
 drivers_lis2dh12_ret_e lis2dh_reinit();                                                                      // Do not change the device config but restore the lis2dh12 structure
 void lis2dh12_process(void);
 void lis2dh_dumpConfig(void);
@@ -649,9 +658,9 @@ itsdk_accel_trigger_e lis2dh_getClickStatus();
 drivers_lis2dh12_ret_e lis2dh_setClickThreshold(uint8_t ths);
 drivers_lis2dh12_ret_e lis2dh_setClickThresholdMg(uint16_t mg, const drivers_lis2dh12_scale_e scale);
 drivers_lis2dh12_ret_e lis2dh_setClickInterruptMode(uint8_t _mode);
-drivers_lis2dh12_ret_e lis2dh_setClickTimeLimit(uint8_t raw);
-drivers_lis2dh12_ret_e lis2dh_setClickTimeLatency(uint8_t raw);
-drivers_lis2dh12_ret_e lis2dh_setClickTimeWindow(uint8_t raw);
+drivers_lis2dh12_ret_e lis2dh_setClickTimeLimitMs(uint16_t ms, const drivers_lis2dh12_frequency_e dr);
+drivers_lis2dh12_ret_e lis2dh_setClickTimeLatencyMs(uint16_t ms, const drivers_lis2dh12_frequency_e dr);
+drivers_lis2dh12_ret_e lis2dh_setClickTimeWindowMs(uint16_t ms, const drivers_lis2dh12_frequency_e dr);
 drivers_lis2dh12_ret_e lis2dh_setClickInterrupt(itsdk_bool_e enable);
 
 // Internal function not supposed to be used other than lis driver
@@ -675,7 +684,7 @@ drivers_lis2dh12_ret_e __lis2dh_convertMsToRaw(uint8_t * _raw, uint32_t ms, cons
 
 // Converter function to adapt with itsdk acces generic driver
 drivers_lis2dh12_scale_e lis2dh12_convertScale(itsdk_accel_scale_e intput);
-drivers_lis2dh12_frequency_e lis2dh_converFrequency(itsdk_accel_frequency_e input);
+drivers_lis2dh12_frequency_e lis2dh_converFrequency(itsdk_accel_frequency_e input, itsdk_accel_precision_e p);
 drivers_lis2dh12_resolution_e lis2dh_convertPrecision(itsdk_accel_precision_e input);
 
 

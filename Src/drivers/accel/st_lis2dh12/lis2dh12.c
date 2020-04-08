@@ -186,7 +186,7 @@ void lis2dh12_process(void) {
   if (true || ITSDK_DRIVERS_LIS2DH12_INT2_PIN == __LP_GPIO_NONE ) {
 	  if ( __lis2dh_conf._tiltModeEnable == BOOL_TRUE ) {
 
-		  itsdk_accel_trigger_e reason = (__lis2dh_determineTilt( )) & __lis2dh_conf._tiltTriggerMsk;
+		  itsdk_accel_trigger_e reason = (__lis2dh_determineTilt( ));
 		  if ( reason != ACCEL_TRIGGER_ON_NONE && __lis2dh_conf._tiltCB != NULL ) {
 			  __lis2dh_conf._tiltCB(reason);
 		  }
@@ -324,6 +324,10 @@ drivers_lis2dh12_ret_e lis2dh_setupBackgroundTiltDetection(
   drivers_lis2dh12_ret_e ret = LIS2DH_SUCCESS;
 
   // reconfigure the accelerometer
+  if ( (triggers & ACCEL_TRIGGER_ON_ANYCLICK) > 0  && frequency < LIS2DH_FREQUENCY_400HZ ) {
+	  // Click detection requires a 400Hz sampling rate for good results
+	  frequency = LIS2DH_FREQUENCY_400HZ;
+  }
   ret |= lis2dh_setDataRate(frequency);
   ret |= lis2dh_setResolutionMode(resolution);
   ret |= lis2dh_setAccelerationScale(scale);
@@ -336,11 +340,7 @@ drivers_lis2dh12_ret_e lis2dh_setupBackgroundTiltDetection(
       ret |= lis2dh_enableHPFDS();
       ret |= lis2dh_disableHPIA1();
       ret |= lis2dh_enableHPIA2();
-      if ( triggers & ACCEL_TRIGGER_ON_ANYCLICK ) {
-    	  ret |= lis2dh_enableHPClick();
-      } else {
-          ret |= lis2dh_disableHPClick();
-      }
+      ret |= lis2dh_disableHPClick();
   } else {
       ret |= lis2dh_disableHPFDS();
       ret |= lis2dh_disableHPIA1();
@@ -356,16 +356,25 @@ drivers_lis2dh12_ret_e lis2dh_setupBackgroundTiltDetection(
 
   // Click configuration if needed
   if ( (triggers & ACCEL_TRIGGER_ON_ANYCLICK) > 0 ) {
-	  lis2dh_setClickThresholdMg(750,scale);
+	 // return LIS2DH_NOTSUPPORTED;		// until we make it working.
 	  /* @TODO - unclear but this is detecting nothing :( :( */
-	  ret |= lis2dh_setClickTimeLimit(0x18);
-	  ret |= lis2dh_setClickTimeLatency(0x02);
-	  ret |= lis2dh_setClickTimeWindow(0xE0);
-	  ret |= lis2dh_setClickInterruptMode(LIS2DH_CLK_INTDUR_UNTILREAD);
-	  ret |= lis2dh_isClickInterruptFired(); // clear any pending flags
+
+	  ret |= lis2dh_enableHPClick();
 	  ret |= lis2dh_setClickInterrupt(BOOL_TRUE);
 	  ret |= lis2dh_enableClickEvent(triggers);
+	  ret |= lis2dh_setClickThresholdMg(750,scale);
+	  ret |= lis2dh_setClickTimeLimitMs(60,frequency);
+	  ret |= lis2dh_setClickTimeLatencyMs(10,frequency);
+	  ret |= lis2dh_setClickTimeWindowMs(500,frequency);
+
+	  ret |= lis2dh_setClickInterruptMode(LIS2DH_CLK_INTDUR_UNTILREAD);
+	  ret |= lis2dh_isClickInterruptFired(); // clear any pending flags
 	  ret |= lis2dh_disableLowPower();
+  }
+
+  // Position detection if needed
+  if ( ( triggers & ACCEL_TRIGGER_ON_ANYPOS ) > 0 ) {
+	  ret |= lis2dh_initPosition6D(scale,frequency);
   }
 
 
@@ -414,24 +423,54 @@ drivers_lis2dh12_ret_e lis2dh_cancelBackgroundTiltDetection(void) {
 }
 
 /**
- * Analyse the tilt status and retrun the reason of the tilt when happen
+ * Analyse the tilt status and return the reason of the tilt when happen
  */
 itsdk_accel_trigger_e __lis2dh_determineTilt() {
 	// Read the Latch Interrupt status. This clear the register and allow a new detection
 	itsdk_accel_trigger_e reason = ACCEL_TRIGGER_ON_NONE;
 	uint8_t status = __lis2dh_readRegister(LIS2DH_INT2_SOURCE);
 	if (( status & LIS2DH_INT_IA_MASK ) != 0 ) {
-
 		if ( (status & LIS2DH_ZH_MASK) > 0 ) reason |= ACCEL_TRIGGER_ON_Z_HIGH;
 		if ( (status & LIS2DH_ZL_MASK) > 0 ) reason |= ACCEL_TRIGGER_ON_Z_LOW;
 		if ( (status & LIS2DH_YH_MASK) > 0 ) reason |= ACCEL_TRIGGER_ON_Y_HIGH;
 		if ( (status & LIS2DH_YL_MASK) > 0 ) reason |= ACCEL_TRIGGER_ON_Y_LOW;
 		if ( (status & LIS2DH_XH_MASK) > 0 ) reason |= ACCEL_TRIGGER_ON_X_HIGH;
 		if ( (status & LIS2DH_XL_MASK) > 0 ) reason |= ACCEL_TRIGGER_ON_X_LOW;
-
 	}
-	reason |= lis2dh_getClickStatus();
 
+	// Update click status
+	if ( (__lis2dh_conf._tiltTriggerMsk & ACCEL_TRIGGER_ON_ANYCLICK) > 0 ) {
+		reason |= lis2dh_getClickStatus();
+	}
+
+	// Update position
+	if ( (__lis2dh_conf._tiltTriggerMsk & ACCEL_TRIGGER_ON_ANYPOS) > 0 ) {
+		uint8_t p = lis2dh_getPosition6D();
+		if ( (p & LIS2DH_POSITION_TOP_ON_ANY ) == 0 ) {
+			// position unstable
+			__lis2dh_conf._tiltTriggerLast &= ~ACCEL_TRIGGER_ON_ANYPOS;
+		} else if ( (p & LIS2DH_POSITION_TOP_ON_TOP) > 0 && (__lis2dh_conf._tiltTriggerLast & ACCEL_TRIGGER_ON_POS_TOP) == 0 ) {
+			reason |= ACCEL_TRIGGER_ON_POS_TOP; log_info("Top\r\n");
+			__lis2dh_conf._tiltTriggerLast = reason;
+		} else if ( (p & LIS2DH_POSITION_TOP_ON_BOTTOM) > 0 && (__lis2dh_conf._tiltTriggerLast & ACCEL_TRIGGER_ON_POS_BOTTOM) == 0 ) {
+			reason |= ACCEL_TRIGGER_ON_POS_BOTTOM; log_info("Bottom\r\n");
+			__lis2dh_conf._tiltTriggerLast = reason;
+		} else if ( (p & LIS2DH_POSITION_TOP_ON_RIGHT) > 0 && (__lis2dh_conf._tiltTriggerLast & ACCEL_TRIGGER_ON_POS_RIGHT) == 0 ) {
+			reason |= ACCEL_TRIGGER_ON_POS_RIGHT; log_info("Right\r\n");
+			__lis2dh_conf._tiltTriggerLast = reason;
+		} else if ( (p & LIS2DH_POSITION_TOP_ON_LEFT) > 0  && (__lis2dh_conf._tiltTriggerLast & ACCEL_TRIGGER_ON_POS_LEFT) == 0 ) {
+			reason |= ACCEL_TRIGGER_ON_POS_LEFT; log_info("Left\r\n");
+			__lis2dh_conf._tiltTriggerLast = reason;
+		} else if ( (p & LIS2DH_POSITION_TOP_ON_FRONT) > 0 && (__lis2dh_conf._tiltTriggerLast & ACCEL_TRIGGER_ON_POS_FRONT) == 0) {
+			reason |= ACCEL_TRIGGER_ON_POS_FRONT; log_info("Front\r\n");
+			__lis2dh_conf._tiltTriggerLast = reason;
+		} else if ( (p & LIS2DH_POSITION_TOP_ON_BACK) > 0 && (__lis2dh_conf._tiltTriggerLast & ACCEL_TRIGGER_ON_POS_BACK) == 0) {
+			reason |= ACCEL_TRIGGER_ON_POS_BACK; log_info("Back\r\n");
+			__lis2dh_conf._tiltTriggerLast = reason;
+		}
+	}
+
+	reason &= __lis2dh_conf._tiltTriggerMsk;
 	return reason;
 }
 
@@ -452,14 +491,19 @@ itsdk_bool_e lis2dh_hasTiltDetected() {
 /**
  * Init 6D position detection on INT1
  * With automatic restart every 1 S
+ * Use of int1 to have this particular setting on the interrupt when the int2 have
+ * a different setting for the other tilt options
  */
-drivers_lis2dh12_ret_e lis2dh_initPosition6D() {
+drivers_lis2dh12_ret_e lis2dh_initPosition6D(drivers_lis2dh12_scale_e scale, drivers_lis2dh12_frequency_e frequency) {
    drivers_lis2dh12_ret_e ret;
-   ret  = lis2dh_intWorkingMode(LIS2DH_INTERRUPT1, LIS2DH_INT_MODE_POS);
+
+   ret  = lis2dh_intWorkingMode(LIS2DH_INTERRUPT1, LIS2DH_INTERRUPT_MODE_6D_STABLE);
    ret |= lis2dh_enableInterruptEvent(LIS2DH_INTERRUPT1, LIS2DH_INTEVENT_ALL);
    ret |= lis2dh_enableLatchInterrupt(LIS2DH_INTERRUPT1, BOOL_FALSE);
-   ret |= lis2dh_setInterruptThresholdMg(LIS2DH_INTERRUPT1, 100, __lis2dh_conf._scale);
-   ret |= lis2dh_setInterruptDurationMs(LIS2DH_INTERRUPT1, 1000, __lis2dh_conf._frequency);
+   ret |= lis2dh_setInterruptThresholdMg(LIS2DH_INTERRUPT1, 100, scale);
+   ret |= lis2dh_setInterruptDurationMs(LIS2DH_INTERRUPT1, 1000, frequency);
+   ret |= lis2dh_enableInterruptInt1(LIS2DH_I1_IA1);
+
    return ret;
 }
 
@@ -1361,14 +1405,14 @@ drivers_lis2dh12_ret_e lis2dh_enableClickEvent(itsdk_accel_trigger_e clicTrigger
   if ( (clicTrigger & ACCEL_TRIGGER_ON_CLICK_XYZ) > 0 ) {
 	  // when single-clic is requested we give a priority on it as on this chip we can't manage botyh single and double in parallel
 	  // double could be managed by upper layer accel driver when two single clic come quickly
-	  if ( clicTrigger & ( ACCEL_TRIGGER_ON_CLICK_X_P | ACCEL_TRIGGER_ON_CLICK_X_N ) ) _clicEvent |= LIS2DH_CLICEVENT_SINGLE_X;
-	  if ( clicTrigger & ( ACCEL_TRIGGER_ON_CLICK_Y_P | ACCEL_TRIGGER_ON_CLICK_Y_N ) ) _clicEvent |= LIS2DH_CLICEVENT_SINGLE_Y;
-	  if ( clicTrigger & ( ACCEL_TRIGGER_ON_CLICK_Z_P | ACCEL_TRIGGER_ON_CLICK_Z_N ) ) _clicEvent |= LIS2DH_CLICEVENT_SINGLE_Z;
+	  if ( (clicTrigger & ( ACCEL_TRIGGER_ON_CLICK_X_P | ACCEL_TRIGGER_ON_CLICK_X_N ) ) > 0 ) _clicEvent |= LIS2DH_CLICEVENT_SINGLE_X;
+	  if ( (clicTrigger & ( ACCEL_TRIGGER_ON_CLICK_Y_P | ACCEL_TRIGGER_ON_CLICK_Y_N ) ) > 0 ) _clicEvent |= LIS2DH_CLICEVENT_SINGLE_Y;
+	  if ( (clicTrigger & ( ACCEL_TRIGGER_ON_CLICK_Z_P | ACCEL_TRIGGER_ON_CLICK_Z_N ) ) > 0 ) _clicEvent |= LIS2DH_CLICEVENT_SINGLE_Z;
 	  __lis2dh_writeMaskedRegisterI(LIS2DH_CLICK_SRC, LIS2DH_SCLICK_MASK | LIS2DH_DCLICK_MASK, LIS2DH_SCLICK_MASK);
   } else if ((clicTrigger & ACCEL_TRIGGER_ON_DBLCLICK_XYZ) > 0 ) {
-	  if ( clicTrigger & ( ACCEL_TRIGGER_ON_DBLCLICK_X_P | ACCEL_TRIGGER_ON_DBLCLICK_X_N ) ) _clicEvent |= LIS2DH_CLICEVENT_DBLE_X;
-	  if ( clicTrigger & ( ACCEL_TRIGGER_ON_DBLCLICK_Y_P | ACCEL_TRIGGER_ON_DBLCLICK_Y_N ) ) _clicEvent |= LIS2DH_CLICEVENT_DBLE_Y;
-	  if ( clicTrigger & ( ACCEL_TRIGGER_ON_DBLCLICK_Z_P | ACCEL_TRIGGER_ON_DBLCLICK_Z_N ) ) _clicEvent |= LIS2DH_CLICEVENT_DBLE_Z;
+	  if ( (clicTrigger & ( ACCEL_TRIGGER_ON_DBLCLICK_X_P | ACCEL_TRIGGER_ON_DBLCLICK_X_N ) ) > 0 ) _clicEvent |= LIS2DH_CLICEVENT_DBLE_X;
+	  if ( (clicTrigger & ( ACCEL_TRIGGER_ON_DBLCLICK_Y_P | ACCEL_TRIGGER_ON_DBLCLICK_Y_N ) ) > 0 ) _clicEvent |= LIS2DH_CLICEVENT_DBLE_Y;
+	  if ( (clicTrigger & ( ACCEL_TRIGGER_ON_DBLCLICK_Z_P | ACCEL_TRIGGER_ON_DBLCLICK_Z_N ) ) > 0 ) _clicEvent |= LIS2DH_CLICEVENT_DBLE_Z;
 	  __lis2dh_writeMaskedRegisterI(LIS2DH_CLICK_SRC, LIS2DH_SCLICK_MASK | LIS2DH_DCLICK_MASK, LIS2DH_DCLICK_MASK);
   }
   if(_clicEvent > LIS2DH_CLICEVENT_MAXVALUE) {
@@ -1534,12 +1578,16 @@ drivers_lis2dh12_ret_e lis2dh_setClickInterruptMode(uint8_t _mode) {
  * (Question to ST : how can you such bad for documentation ?)
  * I assume time limit is the maximum time to detect a clic or double clic, but starting from ?
  */
-drivers_lis2dh12_ret_e lis2dh_setClickTimeLimit(uint8_t raw){
-  if(raw > LIS2DH_TLI_MAXVALUE) {
-        return LIS2DH_FAILED;
+drivers_lis2dh12_ret_e lis2dh_setClickTimeLimitMs(uint16_t ms, const drivers_lis2dh12_frequency_e dr){
+  uint8_t raw = 0;
+  if ( __lis2dh_convertMsToRaw(&raw, ms, dr) == LIS2DH_SUCCESS ) {
+	  if(raw > LIS2DH_TLI_MAXVALUE) {
+			return LIS2DH_FAILED;
+	  }
+	  raw = raw << LIS2DH_TLI_SHIFT;
+	  return __lis2dh_writeMaskedRegisterI(LIS2DH_TIME_LIMIT, LIS2DH_TLI_MASK, raw);
   }
-  raw = raw << LIS2DH_TLI_SHIFT;
-  return __lis2dh_writeMaskedRegisterI(LIS2DH_TIME_LIMIT, LIS2DH_TLI_MASK, raw);
+  return LIS2DH_FAILED;
 }
 
 /**
@@ -1548,12 +1596,16 @@ drivers_lis2dh12_ret_e lis2dh_setClickTimeLimit(uint8_t raw){
  * (Question to ST : how can you such bad for documentation ?)
  * I do not know what this timer do
  */
-drivers_lis2dh12_ret_e lis2dh_setClickTimeLatency(uint8_t raw){
-  if(raw > LIS2DH_TIME_LATENCY_MAXVALUE) {
-        return LIS2DH_FAILED;
+drivers_lis2dh12_ret_e lis2dh_setClickTimeLatencyMs(uint16_t ms, const drivers_lis2dh12_frequency_e dr){
+  uint8_t raw = 0;
+  if ( __lis2dh_convertMsToRaw(&raw, ms, dr) == LIS2DH_SUCCESS ) {
+	  if(raw > LIS2DH_TIME_LATENCY_MAXVALUE) {
+			return LIS2DH_FAILED;
+	  }
+	  raw = raw << LIS2DH_TIME_LATENCY_SHIFT;
+	  return __lis2dh_writeMaskedRegisterI(LIS2DH_TIME_LATENCY, LIS2DH_TIME_LATENCY_MASK, raw);
   }
-  raw = raw << LIS2DH_TIME_LATENCY_SHIFT;
-  return __lis2dh_writeMaskedRegisterI(LIS2DH_TIME_LATENCY, LIS2DH_TIME_LATENCY_MASK, raw);
+  return LIS2DH_FAILED;
 }
 
 
@@ -1563,12 +1615,16 @@ drivers_lis2dh12_ret_e lis2dh_setClickTimeLatency(uint8_t raw){
  * (Question to ST : how can you such bad for documentation ?)
  * I do not know what this timer do
  */
-drivers_lis2dh12_ret_e lis2dh_setClickTimeWindow(uint8_t raw){
-  if(raw > LIS2DH_TIME_WINDOW_MAXVALUE) {
-        return LIS2DH_FAILED;
+drivers_lis2dh12_ret_e lis2dh_setClickTimeWindowMs(uint16_t ms, const drivers_lis2dh12_frequency_e dr){
+  uint8_t raw = 0;
+  if ( __lis2dh_convertMsToRaw(&raw, ms, dr) == LIS2DH_SUCCESS ) {
+	  if(raw > LIS2DH_TIME_WINDOW_MAXVALUE) {
+			return LIS2DH_FAILED;
+	  }
+	  raw = raw << LIS2DH_TIME_WINDOW_SHIFT;
+	  return __lis2dh_writeMaskedRegisterI(LIS2DH_TIME_WINDOW, LIS2DH_TIME_WINDOW_MASK, raw);
   }
-  raw = raw << LIS2DH_TIME_WINDOW_SHIFT;
-  return __lis2dh_writeMaskedRegisterI(LIS2DH_TIME_WINDOW, LIS2DH_TIME_WINDOW_MASK, raw);
+  return LIS2DH_FAILED;
 }
 
 
@@ -1661,7 +1717,7 @@ uint8_t __lis2dh_readRegister(const uint8_t register_addr) {
 	) {
       return v;
 	} else {
-		LIS2DH_LOG_ERROR(("Lis2dh - I2C read error\r\n"));
+		LIS2DH_LOG_ERROR(("Lis2dh - I2C read error on Ox%02X / 0x%02X\r\n",__lis2dh_conf._address, register_addr));
  	}
     return 0;
 }
@@ -1904,7 +1960,7 @@ drivers_lis2dh12_scale_e lis2dh12_convertScale(itsdk_accel_scale_e input) {
 
 }
 
-drivers_lis2dh12_frequency_e lis2dh_converFrequency(itsdk_accel_frequency_e input) {
+drivers_lis2dh12_frequency_e lis2dh_converFrequency(itsdk_accel_frequency_e input, itsdk_accel_precision_e p) {
 	switch (input) {
 	default:
 	case ACCEL_WISH_FREQUENCY_PWRDWN: return LIS2DH_FREQUENCY_POWERDOWN;
@@ -1914,7 +1970,9 @@ drivers_lis2dh12_frequency_e lis2dh_converFrequency(itsdk_accel_frequency_e inpu
 	case ACCEL_WISH_FREQUENCY_50HZ: return LIS2DH_FREQUENCY_50HZ;
 	case ACCEL_WISH_FREQUENCY_100HZ: return LIS2DH_FREQUENCY_100HZ;
 	case ACCEL_WISH_FREQUENCY_500HZ: return LIS2DH_FREQUENCY_400HZ;
-	case ACCEL_WISH_FREQUENCY_1000HZ: return LIS2DH_FREQUENCY_1344HZ;
+	case ACCEL_WISH_FREQUENCY_1000HZ:
+		if ( p == ACCEL_WISH_PRECSION_8B ) return LIS2DH_FREQUENCY_1620HZ;
+		else return LIS2DH_FREQUENCY_1344HZ;
 	}
 }
 
