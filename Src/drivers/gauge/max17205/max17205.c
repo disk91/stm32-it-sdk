@@ -384,6 +384,7 @@ drivers_max17205_ret_e drivers_max17205_getCurrent(int32_t * uAmp) {
 /**
  * Return Current in Coulomb
  * The counter decrease when the battery is consumed and increased when the battery is charging
+ * A a consequence the first returned value is 0xFFFF then 0xFFFE ...
  */
 drivers_max17205_ret_e drivers_max17205_getCoulomb(uint16_t * coulomb) {
 
