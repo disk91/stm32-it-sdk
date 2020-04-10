@@ -634,6 +634,8 @@ drivers_lis2dh12_ret_e lis2dh_reboot();
 drivers_lis2dh12_ret_e lis2dh_enableFifo(itsdk_bool_e enable);
 
 drivers_lis2dh12_ret_e lis2dh_setReference(uint8_t ref);
+drivers_lis2dh12_ret_e lis2dh_getReference(uint8_t * ref);
+drivers_lis2dh12_ret_e lis2dh_resetFilteringBlock();
 uint8_t lis2dh_getDataStatus();
 drivers_lis2dh12_ret_e lis2dh_setResolutionMode(drivers_lis2dh12_resolution_e res);
 drivers_lis2dh12_resolution_e lis2dh_getResolutionMode();

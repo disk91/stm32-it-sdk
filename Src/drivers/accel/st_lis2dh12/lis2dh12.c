@@ -62,27 +62,35 @@ drivers_lis2dh12_conf_t __lis2dh_conf;
 
 
 /**
- * Interrupt handler
+ * Interrupt handler - we can have a new interrupt rising during the preivous
+ * interrupt processing. for this reason we have a loop inside the interrupt.
+ * It's really important to have this interrupt processing as fast as possible
+ * to avoid infinite loop here (and wdg restart)
  */
 static void __lis2dh12_interrupt(uint16_t GPIO_Pin) {
-	log_info("I\r\n");
+	do {
+		// Manage tilt detection & clear the interrupt signal
+		if ( __lis2dh_conf._tiltModeEnable == BOOL_TRUE ) {
+			  itsdk_accel_trigger_e reason = __lis2dh_determineTilt();
+			  if ( reason != ACCEL_TRIGGER_ON_NONE && __lis2dh_conf._tiltCB != NULL ) {
+				  __lis2dh_conf._tiltCB(reason);
+			  }
+		}
 
-	// Manage tilt detection & clear the interrupt signal
-	if ( __lis2dh_conf._tiltModeEnable == BOOL_TRUE ) {
-		  itsdk_accel_trigger_e reason = __lis2dh_determineTilt();
-		  if ( reason != ACCEL_TRIGGER_ON_NONE && __lis2dh_conf._tiltCB != NULL ) {
-			  __lis2dh_conf._tiltCB(reason);
-		  }
-    }
 
+		if ( __lis2dh_conf._tiltModeEnable == BOOL_FALSE && false ) {
+			// we have an interrupt faired but no running activites.
+			// let deactivate the interrupts
+			// @TODO
 
-	if ( __lis2dh_conf._tiltModeEnable == BOOL_FALSE && false ) {
-		// we have an interrupt faired but no running activites.
-		// let deactivate the interrupts
-		// @TODO
-
-	}
-
+		}
+	} while (
+			( (ITSDK_DRIVERS_LIS2DH12_INT2_PIN != __LP_GPIO_NONE )
+			   && gpio_read(ITSDK_DRIVERS_LIS2DH12_INT2_BANK,ITSDK_DRIVERS_LIS2DH12_INT2_PIN) > 0 )
+			||
+			( (ITSDK_DRIVERS_LIS2DH12_INT1_PIN != __LP_GPIO_NONE )
+			   && gpio_read(ITSDK_DRIVERS_LIS2DH12_INT1_BANK,ITSDK_DRIVERS_LIS2DH12_INT1_PIN) > 0 )
+			);
 }
 
 static gpio_irq_chain_t __lis2dh12_gpio_irq1 = {
@@ -123,14 +131,20 @@ drivers_lis2dh12_ret_e lis2dh_setup(
     __lis2dh_conf._address = ITSDK_DRIVERS_ACCEL_LIS2DH_ADDRESS;
     __lis2dh_conf._tiltModeEnable = BOOL_FALSE;
 
-    if ( ( ITSDK_DRIVERS_ACCEL_LIS2DH_ADDRESS & __ACCEL_LIS2DH12_SA0_HIGH ) == 0 ) {
-    	// SA0 is low
-        // Not working way to disable pull-down
-        __lis2dh_writeMaskedRegisterI(LIS2DH_CTRL_REG0, LIS2DH_REG0_SA0PULLUP_MASK, LIS2DH_REG0_SA0PULLUP_DISABLE);
-    }
-
     if ( lis2dh_whoAmI() == LIS2DH_SUCCESS ) {
+      // reboot memory content
+      lis2dh_reboot();
+      itsdk_delayMs(2);
+
+
+      if ( ( ITSDK_DRIVERS_ACCEL_LIS2DH_ADDRESS & __ACCEL_LIS2DH12_SA0_HIGH ) == 0 ) {
+      	// SA0 is low
+          // Not working way to disable pull-down
+          __lis2dh_writeMaskedRegisterI(LIS2DH_CTRL_REG0, LIS2DH_REG0_SA0PULLUP_MASK, LIS2DH_REG0_SA0PULLUP_DISABLE);
+      }
+
       // connection success
+      ret |= lis2dh_resetFilteringBlock();	// clear the filtering block
 
       // set a default configuration with 10Hz - Low Power ( 8b resolution )
       ret |= lis2dh_setDataRate(frequency);
@@ -162,11 +176,11 @@ drivers_lis2dh12_ret_e lis2dh_setup(
       // set highpass filter (Reset when reading xhlREFERENCE register)
       // activate High Pass filter on Output and Int1
       ret |= lis2dh_setHPFilterMode(LIS2DH_HPM_NORMAL_RESET);
-      ret |= lis2dh_setHPFilterCutOff(LIS2DH_HPCF_ODR_50); // 0.2Hz high pass Fcut for 10Hz frequence = AGGRESSIVE Politic
+      ret |= lis2dh_setHPFilterCutOff(__lis2dh_getCutOffODRValueFromHPFMode(LIS2DH_HPF_MODE_AGGRESSIVE)); // 0.2Hz high pass Fcut for 10Hz frequence = AGGRESSIVE Politic
       ret |= lis2dh_enableHPFDS();
       ret |= lis2dh_disableHPIA1();
       ret |= lis2dh_enableHPIA2();
-      ret |= lis2dh_enableHPClick();
+      ret |= lis2dh_disableHPClick();
 
     } else {
       ITSDK_ERROR_REPORT(ITSDK_ERROR_DRV_LIS2DH_NOTFOUND,0);
@@ -394,6 +408,7 @@ drivers_lis2dh12_ret_e lis2dh_setupBackgroundTiltDetection(
 	  _intMask |= (triggers & ACCEL_TRIGGER_ON_Z_HIGH)?LIS2DH_INTEVENT_Z_HIGH:0;
 	  _intMask |= (triggers &  ACCEL_TRIGGER_ON_Z_LOW)? LIS2DH_INTEVENT_Z_LOW:0;
 	  ret |= lis2dh_enableInterruptEvent(LIS2DH_INTERRUPT2, _intMask);
+	  ret |= lis2dh_enableInterruptInt2(LIS2DH_I2_IA2);
   }
 
   ret |= lis2dh_enableLatchInterrupt(LIS2DH_INTERRUPT2, BOOL_TRUE);
@@ -402,18 +417,17 @@ drivers_lis2dh12_ret_e lis2dh_setupBackgroundTiltDetection(
 
   if ( ret == LIS2DH_SUCCESS ) {
 	  __lis2dh_conf._tiltModeEnable = BOOL_TRUE;
-	  log_info("good\r\n");
+	  __lis2dh_conf._tiltTriggerMsk = triggers;
+      __lis2dh_conf._tiltCB = cb;
   	  if (ITSDK_DRIVERS_LIS2DH12_INT2_PIN != __LP_GPIO_NONE ) {
 		  gpio_interruptClear(ITSDK_DRIVERS_LIS2DH12_INT2_BANK, ITSDK_DRIVERS_LIS2DH12_INT2_PIN);
 		  gpio_interruptEnable(ITSDK_DRIVERS_LIS2DH12_INT2_BANK, ITSDK_DRIVERS_LIS2DH12_INT2_PIN);
 		  ret |= lis2dh_enableInterruptInt2(LIS2DH_I2_IA2);
       }
-      __lis2dh_conf._tiltCB = cb;
   } else {
 	  log_error("Lis2dh - tilt config failed\r\n");
   }
 
-  __lis2dh_conf._tiltTriggerMsk = triggers;
   return ret;
 }
 
@@ -439,6 +453,7 @@ itsdk_accel_trigger_e __lis2dh_determineTilt() {
 	// Read the Latch Interrupt status. This clear the register and allow a new detection
 	itsdk_accel_trigger_e reason = ACCEL_TRIGGER_ON_NONE;
 	uint8_t status = __lis2dh_readRegister(LIS2DH_INT2_SOURCE);
+
 	if (( status & LIS2DH_INT_IA_MASK ) != 0 ) {
 		if ( (status & LIS2DH_ZH_MASK) > 0 ) reason |= ACCEL_TRIGGER_ON_Z_HIGH;
 		if ( (status & LIS2DH_ZL_MASK) > 0 ) reason |= ACCEL_TRIGGER_ON_Z_LOW;
@@ -460,27 +475,26 @@ itsdk_accel_trigger_e __lis2dh_determineTilt() {
 			// position unstable
 			__lis2dh_conf._tiltTriggerLast &= ~ACCEL_TRIGGER_ON_ANYPOS;
 		} else if ( (p & LIS2DH_POSITION_TOP_ON_TOP) > 0 && (__lis2dh_conf._tiltTriggerLast & ACCEL_TRIGGER_ON_POS_TOP) == 0 ) {
-			reason |= ACCEL_TRIGGER_ON_POS_TOP; log_info("Top\r\n");
+			reason |= ACCEL_TRIGGER_ON_POS_TOP;
 			__lis2dh_conf._tiltTriggerLast = reason;
 		} else if ( (p & LIS2DH_POSITION_TOP_ON_BOTTOM) > 0 && (__lis2dh_conf._tiltTriggerLast & ACCEL_TRIGGER_ON_POS_BOTTOM) == 0 ) {
-			reason |= ACCEL_TRIGGER_ON_POS_BOTTOM; log_info("Bottom\r\n");
+			reason |= ACCEL_TRIGGER_ON_POS_BOTTOM;
 			__lis2dh_conf._tiltTriggerLast = reason;
 		} else if ( (p & LIS2DH_POSITION_TOP_ON_RIGHT) > 0 && (__lis2dh_conf._tiltTriggerLast & ACCEL_TRIGGER_ON_POS_RIGHT) == 0 ) {
-			reason |= ACCEL_TRIGGER_ON_POS_RIGHT; log_info("Right\r\n");
+			reason |= ACCEL_TRIGGER_ON_POS_RIGHT;
 			__lis2dh_conf._tiltTriggerLast = reason;
 		} else if ( (p & LIS2DH_POSITION_TOP_ON_LEFT) > 0  && (__lis2dh_conf._tiltTriggerLast & ACCEL_TRIGGER_ON_POS_LEFT) == 0 ) {
-			reason |= ACCEL_TRIGGER_ON_POS_LEFT; log_info("Left\r\n");
+			reason |= ACCEL_TRIGGER_ON_POS_LEFT;
 			__lis2dh_conf._tiltTriggerLast = reason;
 		} else if ( (p & LIS2DH_POSITION_TOP_ON_FRONT) > 0 && (__lis2dh_conf._tiltTriggerLast & ACCEL_TRIGGER_ON_POS_FRONT) == 0) {
-			reason |= ACCEL_TRIGGER_ON_POS_FRONT; log_info("Front\r\n");
+			reason |= ACCEL_TRIGGER_ON_POS_FRONT;
 			__lis2dh_conf._tiltTriggerLast = reason;
 		} else if ( (p & LIS2DH_POSITION_TOP_ON_BACK) > 0 && (__lis2dh_conf._tiltTriggerLast & ACCEL_TRIGGER_ON_POS_BACK) == 0) {
-			reason |= ACCEL_TRIGGER_ON_POS_BACK; log_info("Back\r\n");
+			reason |= ACCEL_TRIGGER_ON_POS_BACK;
 			__lis2dh_conf._tiltTriggerLast = reason;
 		}
 	}
 
-	log_info("%08X\r\n",reason);
 	reason &= __lis2dh_conf._tiltTriggerMsk;
 	return reason;
 }
@@ -508,10 +522,14 @@ itsdk_bool_e lis2dh_hasTiltDetected() {
 drivers_lis2dh12_ret_e lis2dh_initPosition6D(drivers_lis2dh12_scale_e scale, drivers_lis2dh12_frequency_e frequency) {
    drivers_lis2dh12_ret_e ret;
 
-   ret  = lis2dh_intWorkingMode(LIS2DH_INTERRUPT1, LIS2DH_INTERRUPT_MODE_6D_STABLE);
+   ret  = lis2dh_intWorkingMode(LIS2DH_INTERRUPT1, LIS2DH_INTERRUPT_MODE_6D_CHANGE);
    ret |= lis2dh_enableInterruptEvent(LIS2DH_INTERRUPT1, LIS2DH_INTEVENT_ALL);
-   ret |= lis2dh_enableLatchInterrupt(LIS2DH_INTERRUPT1, BOOL_FALSE);
+   ret |= lis2dh_enableLatchInterrupt(LIS2DH_INTERRUPT1, BOOL_TRUE);
    ret |= lis2dh_setInterruptThresholdMg(LIS2DH_INTERRUPT1, 100, scale);
+   /*
+    * Other setting - get a periodic interrupt on a device stable position
+   ret  = lis2dh_intWorkingMode(LIS2DH_INTERRUPT1, LIS2DH_INTERRUPT_MODE_6D_STABLE);
+   ret |= lis2dh_enableLatchInterrupt(LIS2DH_INTERRUPT1, BOOL_FALSE);
    switch ( frequency ) {
 	   case LIS2DH_FREQUENCY_1HZ:
 	   case LIS2DH_FREQUENCY_10HZ:
@@ -531,6 +549,7 @@ drivers_lis2dh12_ret_e lis2dh_initPosition6D(drivers_lis2dh12_scale_e scale, dri
 		   ret |= lis2dh_setInterruptDurationMs(LIS2DH_INTERRUPT1, 75, frequency);
 		   break;
    }
+   */
    ret |= lis2dh_enableInterruptInt1(LIS2DH_I1_IA1);
    return ret;
 }
@@ -541,9 +560,9 @@ drivers_lis2dh12_ret_e lis2dh_initPosition6D(drivers_lis2dh12_scale_e scale, dri
  */
 uint8_t lis2dh_getPosition6D() {
   uint8_t position = __lis2dh_readRegister(LIS2DH_INT1_SOURCE);
-  if ( (position & LIS2DH_INT_IA_MASK) > 0 ) {
+  //if ( (position & LIS2DH_INT_IA_MASK) > 0 ) {
     return ( position & LIS2DH_INT_POS_MASK );
-  }
+  //}
   return LIS2DH_POSITION_TOP_ON_NONE;
 }
 
@@ -823,6 +842,7 @@ drivers_lis2dh12_ret_e lis2dh_setResolutionMode(drivers_lis2dh12_resolution_e re
   if (res > LIS2DH_RESOLUTION_MAXVALUE) return LIS2DH_FAILED;
   drivers_lis2dh12_ret_e ret;
   __lis2dh_conf._resolution=res;
+  ret |= lis2dh_resetFilteringBlock();
   switch (res) {
     default:
     case LIS2DH_RESOLUTION_MODE_8B:
@@ -1343,6 +1363,15 @@ drivers_lis2dh12_ret_e lis2dh_setReference(uint8_t ref) {
   return __lis2dh_writeRegister(LIS2DH_REFERENCE,ref);
 }
 
+drivers_lis2dh12_ret_e lis2dh_getReference(uint8_t * ref) {
+  * ref =  __lis2dh_readRegister(LIS2DH_REFERENCE);
+  return LIS2DH_SUCCESS;
+}
+
+drivers_lis2dh12_ret_e lis2dh_resetFilteringBlock() {
+  __lis2dh_readRegister(LIS2DH_REFERENCE);
+  return LIS2DH_SUCCESS;
+}
 // ========= STATUS
 /**
  * Return the Data status bit filed.
@@ -1729,22 +1758,31 @@ drivers_lis2dh12_ret_e __lis2dh_writeMaskedRegisterI(const int register_addr, co
 
 /**
  * Read 8bits of data from the chip, return the value
+ * Retry as we have seen some problem reading the interrupt status flag.
+ * This can block the process by stopping interrupt generation
  */
 uint8_t __lis2dh_readRegister(const uint8_t register_addr) {
 	uint8_t v;
-	if ( i2c_read8BRegister(
-			&ITSDK_DRIVERS_ACCEL_LIS2DH_I2C,
-			__lis2dh_conf._address,			// Non shifted device address
-			register_addr,					// Register address (8b or 16b�
-			&v,								// 8B value to be read
-			1								// Register address size 1B or 2B
-		) == I2C_OK
-	) {
-      return v;
-	} else {
-		LIS2DH_LOG_ERROR(("Lis2dh - I2C read error on Ox%02X / 0x%02X\r\n",__lis2dh_conf._address, register_addr));
+	uint8_t retry = 0;
+	_I2C_Status ret = 0;
+	do {
+		ret = i2c_read8BRegister(
+				&ITSDK_DRIVERS_ACCEL_LIS2DH_I2C,
+				__lis2dh_conf._address,			// Non shifted device address
+				register_addr,					// Register address (8b or 16b�
+				&v,								// 8B value to be read
+				1								// Register address size 1B or 2B
+			);
+		retry++;
+		if ( ret != I2C_OK ) {					// I've experience I2C error in certain situation, unclear why but secured here
+			itsdk_delayMs(1);
+		}
+	} while ( ret != I2C_OK && retry < 10 );
+	if ( retry == 10 ) {
+		LIS2DH_LOG_ERROR(("Lis2dh - I2C read error on 0x%02X\r\n", register_addr));
+	    return 0;
  	}
-    return 0;
+	return v;
 }
 
 /**
