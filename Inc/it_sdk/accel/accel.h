@@ -106,6 +106,15 @@ typedef enum {
 	ACCEL_TRIGGER_ON_ANYPOS			= 0x3F00000,
 } itsdk_accel_trigger_e;
 
+#define ACCEL_TRIGGER_QUEUE_SIZE	8					// Power of two
+
+
+typedef struct itsdk_accel_eventHandler_s {
+	itsdk_accel_trigger_e						triggerMask;		// responding mask
+	void(* callback)(itsdk_accel_trigger_e t);						// end-user function to call
+	struct itsdk_accel_eventHandler_s		*	next;				// next in list
+} itsdk_accel_eventHandler_t;
+
 // =======================================================================================
 
 
@@ -117,11 +126,19 @@ itsdk_accel_ret_e accel_configMovementDetection(
 		itsdk_bool_e				hpf, 		// enable High pass filter
 		itsdk_accel_trigger_e		triggers 	// List of triggers
 );
+itsdk_accel_ret_e accel_addTriggerCallBack(
+		itsdk_accel_eventHandler_t * handler
+);
+itsdk_accel_ret_e accel_delTriggerCallBack(
+		itsdk_accel_eventHandler_t * handler
+);
+
 void accel_process(void);
 
 
 // Internal functions
 void __accel_triggerCallback(itsdk_accel_trigger_e triggers);
+void __accel_asyncTriggerProcess();
 
 
 //void accel_configMovementDetection(uint16_t mg, uint8_t ms, /* axis list, sampling freq, scale */);

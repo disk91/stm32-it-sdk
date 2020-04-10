@@ -30,6 +30,14 @@
 #if ITSDK_WITH_DRIVERS == __ENABLE
 #include <it_sdk/configDrivers.h>
 
+/**
+ * EventQueue for asynchronous processing
+ */
+itsdk_accel_trigger_e 			__triggerQueue[ACCEL_TRIGGER_QUEUE_SIZE];
+uint8_t				  			__triggerQueueRd;
+uint8_t				 			__triggerQueueWr;
+itsdk_accel_eventHandler_t * 	__accel_eventQueue;
+
 
 /**
  * Init the accelerometer driver switching it in powerdown mode
@@ -48,6 +56,9 @@ itsdk_accel_ret_e accel_initPowerDown() {
 	}
    #endif
 
+	__triggerQueueRd = 0;
+	__triggerQueueWr = 0;
+	__accel_eventQueue = NULL;
 	return ret;
 }
 
@@ -59,6 +70,8 @@ void accel_process(void) {
 	#if ITSDK_DRIVERS_ACCEL_LIS2DH12 == __ENABLE
 	  lis2dh12_process();
 	#endif
+
+	__accel_asyncTriggerProcess();
 }
 
 
@@ -161,21 +174,108 @@ itsdk_accel_ret_e accel_configMovementDetection(
 	#endif
 
 
-
-
-
 	return ACCEL_SUCCESS;
+}
+
+/** *********************************************************************
+ *  Manage a Queue of event to be proceeded by application
+ */
+
+itsdk_accel_ret_e accel_addTriggerCallBack(
+		itsdk_accel_eventHandler_t * handler
+) {
+
+	handler->next = NULL;
+	if ( __accel_eventQueue == NULL ) {
+		__accel_eventQueue = handler;
+	} else {
+		itsdk_accel_eventHandler_t * c = __accel_eventQueue;
+		while ( c->next != NULL ) c = c->next;
+		c->next = handler;
+	}
+	return ACCEL_SUCCESS;
+}
+
+itsdk_accel_ret_e accel_delTriggerCallBack(
+		itsdk_accel_eventHandler_t * handler
+) {
+
+	itsdk_accel_eventHandler_t * c = __accel_eventQueue;
+	if ( c == handler ) {
+		// head
+		__accel_eventQueue = c->next;
+	} else {
+		while ( c != NULL && c->next != handler ) c = c->next;
+		if ( c!= NULL ) {
+		   c->next = (c->next)->next;
+		} else return ACCEL_FAILED;
+	}
+	return ACCEL_SUCCESS;
+
+}
+
+
+
+
+/**
+ * This callback is fired by the interrupt process.
+ * To reduce the interrupt processing time, the trigger will be
+ * queued and then process in the accel_process loop.
+ * Circular buffer power of 2 sized. Old values are cleared by new
+ * values
+ */
+void __accel_addToQueue(itsdk_accel_trigger_e triggers) {
+	itsdk_enterCriticalSection();
+
+	__triggerQueue[__triggerQueueWr] = triggers;
+	__triggerQueueWr = (__triggerQueueWr + 1) & (ACCEL_TRIGGER_QUEUE_SIZE-1);
+	if ( __triggerQueueWr == __triggerQueueRd ) {
+		// Buffer full
+		__triggerQueueRd = (__triggerQueueRd + 1) & (ACCEL_TRIGGER_QUEUE_SIZE-1);
+	}
+
+	itsdk_leaveCriticalSection();
+}
+
+itsdk_accel_trigger_e __accel_getFromQueue(void) {
+	itsdk_accel_trigger_e t;
+
+	itsdk_enterCriticalSection();
+	if ( __triggerQueueWr != __triggerQueueRd ) {
+		 t = __triggerQueue[__triggerQueueRd];
+		__triggerQueueRd = (__triggerQueueRd + 1) & (ACCEL_TRIGGER_QUEUE_SIZE-1);
+	} else {
+		t= ACCEL_TRIGGER_ON_NONE;
+	}
+	itsdk_leaveCriticalSection();
+	return t;
 }
 
 
 void __accel_triggerCallback(itsdk_accel_trigger_e triggers) {
-
-	log_info("trigger status: 0x%08X\r\n",triggers);
-
-
+	__accel_addToQueue(triggers);
 }
 
 
+// -----
+// Process the Queue of event coming from the Interrupt
+// call the list of callback registered by the application to react on events
+void __accel_asyncTriggerProcess() {
+
+	itsdk_accel_trigger_e triggers = __accel_getFromQueue();
+	while ( triggers != ACCEL_TRIGGER_ON_NONE ) {
+
+		itsdk_accel_eventHandler_t * c = __accel_eventQueue;
+		while ( c != NULL ) {
+			if ( (triggers & c->triggerMask) > 0 ) {
+				if ( c->callback != NULL ) c->callback(triggers & c->triggerMask);
+			}
+			c = c->next;
+		}
+		triggers = __accel_getFromQueue();
+	}
+
+}
 
 
 
