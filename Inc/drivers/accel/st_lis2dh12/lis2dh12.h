@@ -437,8 +437,8 @@ typedef enum {
 
 #define LIS2DH_CLK_INTDUR_MASK        0x80
 #define LIS2DH_CLK_INTDUR_SHIFT       7
-#define LIS2DH_CLK_INTDUR_UNTILREAD   0x00    // Click interrupt is pending until the register CLICK_SRC has been read
-#define LIS2DH_CLK_INTDUR_LATWINDOW   0x01    // Click interrupt is automatically cancel after the latency window duration ( TIME_LATENCY register )
+#define LIS2DH_CLK_INTDUR_UNTILREAD   0x01    // Click interrupt is pending until the register CLICK_SRC has been read
+#define LIS2DH_CLK_INTDUR_LATWINDOW   0x00    // Click interrupt is automatically cancel after the latency window duration ( TIME_LATENCY register )
 #define LIS2DH_CLK_INTDUR_MAXVALUE    0x01
 
 // TIME_LIMIT masks
@@ -505,6 +505,7 @@ typedef struct {
     drivers_lis2dh12_fifomode_e 	_fifoMode;          // store the current fifo mode
     drivers_lis2dh12_hpcf_e 		_hpcf;              // store the current cut-off frequency on ODR mode
     itsdk_bool_e					_tiltModeEnable;	// true when the tilt mode is running in background
+    itsdk_bool_e					_clicModeReadClear;	// true when the clic_src register is cleared on reading because reading is differnt
     itsdk_accel_trigger_e			_tiltTriggerMsk;	// Desired Triggers for tilt detection
     itsdk_accel_trigger_e			_tiltTriggerLast;	// Last trigger state for position change detection
     void(* _tiltCB)(itsdk_accel_trigger_e reason);		// callback action on tilt event

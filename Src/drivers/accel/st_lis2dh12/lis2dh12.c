@@ -378,17 +378,20 @@ drivers_lis2dh12_ret_e lis2dh_setupBackgroundTiltDetection(
   // Click configuration if needed
   if ( (triggers & ACCEL_TRIGGER_ON_ANYCLICK) > 0 ) {
 	 // return LIS2DH_NOTSUPPORTED;		// until we make it working.
-	  /* @TODO - unclear but this is detecting nothing :( :( */
 	  ret |= lis2dh_disableLowPower();
 	  ret |= lis2dh_setClickInterruptMode(LIS2DH_CLK_INTDUR_UNTILREAD);
+	  	  	  	  	  	  	  	  	  	  	  	  	  	  	// Apparently in the UNTIELREAD MODE the read of the CLICSRC kills
+	  	  	  	  	  	  	  	  	  	  	  	  	  	  	// The interrupt status and the Double / Single clic bits
+	  	  	  	  	  	  	  	  	  	  	  	  	  	  	// decoding is a bit special
+	  __lis2dh_conf._clicModeReadClear = BOOL_TRUE;
 
 	  ret |= lis2dh_enableHPClick();
 	  lis2dh_isClickInterruptFired(); 						// clear any pending flags
 	  ret |= lis2dh_setClickInterrupt(BOOL_TRUE);
 	  ret |= lis2dh_enableClickEvent(triggers);
-	  ret |= lis2dh_setClickThresholdMg(750,scale);
-	  ret |= lis2dh_setClickTimeLimitMs(60,frequency);
-	  ret |= lis2dh_setClickTimeLatencyMs(30,frequency);
+	  ret |= lis2dh_setClickThresholdMg(750,scale);			// 750
+	  ret |= lis2dh_setClickTimeLimitMs(100,frequency);		// 60
+	  ret |= lis2dh_setClickTimeLatencyMs(50,frequency);	// 30
 	  ret |= lis2dh_setClickTimeWindowMs(560,frequency);
  }
 
@@ -423,6 +426,11 @@ drivers_lis2dh12_ret_e lis2dh_setupBackgroundTiltDetection(
 		  gpio_interruptClear(ITSDK_DRIVERS_LIS2DH12_INT2_BANK, ITSDK_DRIVERS_LIS2DH12_INT2_PIN);
 		  gpio_interruptEnable(ITSDK_DRIVERS_LIS2DH12_INT2_BANK, ITSDK_DRIVERS_LIS2DH12_INT2_PIN);
 		  ret |= lis2dh_enableInterruptInt2(LIS2DH_I2_IA2);
+
+		  // clear pending interrupt - can lock the communication if INT is already active
+		  __lis2dh_readRegister(LIS2DH_INT2_SOURCE);
+		  __lis2dh_readRegister(LIS2DH_INT1_SOURCE);
+		  __lis2dh_readRegister(LIS2DH_CLICK_SRC);
       }
   } else {
 	  log_error("Lis2dh - tilt config failed\r\n");
@@ -452,8 +460,14 @@ drivers_lis2dh12_ret_e lis2dh_cancelBackgroundTiltDetection(void) {
 itsdk_accel_trigger_e __lis2dh_determineTilt() {
 	// Read the Latch Interrupt status. This clear the register and allow a new detection
 	itsdk_accel_trigger_e reason = ACCEL_TRIGGER_ON_NONE;
-	uint8_t status = __lis2dh_readRegister(LIS2DH_INT2_SOURCE);
 
+	// Update click status
+	if ( (__lis2dh_conf._tiltTriggerMsk & ACCEL_TRIGGER_ON_ANYCLICK) > 0 ) {
+		reason |= lis2dh_getClickStatus();
+	}
+
+
+	uint8_t status = __lis2dh_readRegister(LIS2DH_INT2_SOURCE);
 	if (( status & LIS2DH_INT_IA_MASK ) != 0 ) {
 		if ( (status & LIS2DH_ZH_MASK) > 0 ) reason |= ACCEL_TRIGGER_ON_Z_HIGH;
 		if ( (status & LIS2DH_ZL_MASK) > 0 ) reason |= ACCEL_TRIGGER_ON_Z_LOW;
@@ -463,10 +477,6 @@ itsdk_accel_trigger_e __lis2dh_determineTilt() {
 		if ( (status & LIS2DH_XL_MASK) > 0 ) reason |= ACCEL_TRIGGER_ON_X_LOW;
 	}
 
-	// Update click status
-	if ( (__lis2dh_conf._tiltTriggerMsk & ACCEL_TRIGGER_ON_ANYCLICK) > 0 ) {
-		reason |= lis2dh_getClickStatus();
-	}
 
 	// Update position
 	if ( (__lis2dh_conf._tiltTriggerMsk & ACCEL_TRIGGER_ON_ANYPOS) > 0 ) {
@@ -1460,7 +1470,7 @@ drivers_lis2dh12_ret_e lis2dh_enableClickEvent(itsdk_accel_trigger_e clicTrigger
 
   uint8_t 	_clicEvent = 0;
   if ( (clicTrigger & ACCEL_TRIGGER_ON_CLICK_XYZ) > 0 ) {
-	  // when single-clic is requested we give a priority on it as on this chip we can't manage botyh single and double in parallel
+	  // when single-clic is requested we give a priority on it as on this chip we can't manage both single and double in parallel
 	  // double could be managed by upper layer accel driver when two single clic come quickly
 	  if ( (clicTrigger & ( ACCEL_TRIGGER_ON_CLICK_X_P | ACCEL_TRIGGER_ON_CLICK_X_N ) ) > 0 ) _clicEvent |= LIS2DH_CLICEVENT_SINGLE_X;
 	  if ( (clicTrigger & ( ACCEL_TRIGGER_ON_CLICK_Y_P | ACCEL_TRIGGER_ON_CLICK_Y_N ) ) > 0 ) _clicEvent |= LIS2DH_CLICEVENT_SINGLE_Y;
@@ -1513,59 +1523,96 @@ itsdk_bool_e lis2dh_isSignClickFired() {
  */
 itsdk_accel_trigger_e lis2dh_getClickStatus() {
   uint8_t clic=__lis2dh_readMaskedRegister(LIS2DH_CLICK_SRC, LIS2DH_CLICK_SRC_MASK);
-  uint16_t ret = ACCEL_TRIGGER_ON_NONE;
-  if ( (clic & LIS2DH_CLK_IA_MASK) > 0 ) {
-    if ( (clic & LIS2DH_X_CLICK_MASK) > 0 ) {
-      if ( (clic & LIS2DH_SCLICK_MASK) > 0 ) {
-        if ( (clic & LIS2DH_SIGN_MASK ) > 0 ) {
-          ret |= ACCEL_TRIGGER_ON_CLICK_X_N;
-        } else{
-          ret |= ACCEL_TRIGGER_ON_CLICK_X_P;
-        }
-      }
-      if ( (clic & LIS2DH_DCLICK_MASK) > 0 ) {
-        if ( (clic & LIS2DH_SIGN_MASK ) > 0 ) {
-          ret |= ACCEL_TRIGGER_ON_DBLCLICK_X_N;
-        } else{
-          ret |= ACCEL_TRIGGER_ON_DBLCLICK_X_P;
-        }
-      }
-    }
+  itsdk_accel_trigger_e ret = ACCEL_TRIGGER_ON_NONE;
 
-    if ( (clic & LIS2DH_Y_CLICK_MASK) > 0 ) {
-      if ( (clic & LIS2DH_SCLICK_MASK) > 0 ) {
-        if ( (clic & LIS2DH_SIGN_MASK ) > 0 ) {
-          ret |= ACCEL_TRIGGER_ON_CLICK_Y_N;
-        } else{
-          ret |= ACCEL_TRIGGER_ON_CLICK_Y_P;
-        }
-      }
-      if ( (clic & LIS2DH_DCLICK_MASK) > 0 ) {
-        if ( (clic & LIS2DH_SIGN_MASK ) > 0 ) {
-          ret |= ACCEL_TRIGGER_ON_DBLCLICK_Y_N;
-        } else{
-          ret |= ACCEL_TRIGGER_ON_DBLCLICK_Y_P;
-        }
-      }
-    }
+  if ( __lis2dh_conf._clicModeReadClear == BOOL_TRUE ) {
+	    if ( (clic & LIS2DH_X_CLICK_MASK) > 0 ) {
+	        if ( (clic & LIS2DH_SIGN_MASK ) > 0 ) {
+	          ret |= ACCEL_TRIGGER_ON_CLICK_X_N;
+	          ret |= ACCEL_TRIGGER_ON_DBLCLICK_X_N;
+	        } else{
+	          ret |= ACCEL_TRIGGER_ON_CLICK_X_P;
+	          ret |= ACCEL_TRIGGER_ON_DBLCLICK_X_P;
+	        }
+	    }
+	    if ( (clic & LIS2DH_Y_CLICK_MASK) > 0 ) {
+	        if ( (clic & LIS2DH_SIGN_MASK ) > 0 ) {
+	          ret |= ACCEL_TRIGGER_ON_CLICK_Y_N;
+	          ret |= ACCEL_TRIGGER_ON_DBLCLICK_Y_N;
+	        } else{
+	          ret |= ACCEL_TRIGGER_ON_CLICK_Y_P;
+	          ret |= ACCEL_TRIGGER_ON_DBLCLICK_Y_P;
+	      }
+	    }
 
-    if ( (clic & LIS2DH_Z_CLICK_MASK) > 0 ) {
-      if ( (clic & LIS2DH_SCLICK_MASK) > 0 ) {
-        if ( (clic & LIS2DH_SIGN_MASK ) > 0 ) {
-          ret |= ACCEL_TRIGGER_ON_CLICK_Z_N;
-        } else{
-          ret |= ACCEL_TRIGGER_ON_CLICK_Z_P;
+	    if ( (clic & LIS2DH_Z_CLICK_MASK) > 0 ) {
+	        if ( (clic & LIS2DH_SIGN_MASK ) > 0 ) {
+	          ret |= ACCEL_TRIGGER_ON_CLICK_Z_N;
+	          ret |= ACCEL_TRIGGER_ON_DBLCLICK_Z_N;
+	        } else{
+	          ret |= ACCEL_TRIGGER_ON_CLICK_Z_P;
+	          ret |= ACCEL_TRIGGER_ON_DBLCLICK_Z_P;
+	        }
         }
-      }
-      if ( (clic & LIS2DH_DCLICK_MASK) > 0 ) {
-        if ( (clic & LIS2DH_SIGN_MASK ) > 0 ) {
-          ret |= ACCEL_TRIGGER_ON_DBLCLICK_Z_N;
-        } else{
-          ret |= ACCEL_TRIGGER_ON_DBLCLICK_Z_P;
-        }
-      }
-    }
+   	    if ( __lis2dh_conf._tiltTriggerMsk &  ACCEL_TRIGGER_ON_CLICK_XYZ ) {
+			  // Single click is the priority
+   	    	return ret & ACCEL_TRIGGER_ON_CLICK_XYZ;
+		} else {
+			return ret & ACCEL_TRIGGER_ON_DBLCLICK_XYZ;
+		}
+  } else {
+	  if ( (clic & LIS2DH_CLK_IA_MASK) > 0 ) {
+		if ( (clic & LIS2DH_X_CLICK_MASK) > 0 ) {
+		  if ( (clic & LIS2DH_SCLICK_MASK) > 0 ) {
+			if ( (clic & LIS2DH_SIGN_MASK ) > 0 ) {
+			  ret |= ACCEL_TRIGGER_ON_CLICK_X_N;
+			} else{
+			  ret |= ACCEL_TRIGGER_ON_CLICK_X_P;
+			}
+		  }
+		  if ( (clic & LIS2DH_DCLICK_MASK) > 0 ) {
+			if ( (clic & LIS2DH_SIGN_MASK ) > 0 ) {
+			  ret |= ACCEL_TRIGGER_ON_DBLCLICK_X_N;
+			} else{
+			  ret |= ACCEL_TRIGGER_ON_DBLCLICK_X_P;
+			}
+		  }
+		}
 
+		if ( (clic & LIS2DH_Y_CLICK_MASK) > 0 ) {
+		  if ( (clic & LIS2DH_SCLICK_MASK) > 0 ) {
+			if ( (clic & LIS2DH_SIGN_MASK ) > 0 ) {
+			  ret |= ACCEL_TRIGGER_ON_CLICK_Y_N;
+			} else{
+			  ret |= ACCEL_TRIGGER_ON_CLICK_Y_P;
+			}
+		  }
+		  if ( (clic & LIS2DH_DCLICK_MASK) > 0 ) {
+			if ( (clic & LIS2DH_SIGN_MASK ) > 0 ) {
+			  ret |= ACCEL_TRIGGER_ON_DBLCLICK_Y_N;
+			} else{
+			  ret |= ACCEL_TRIGGER_ON_DBLCLICK_Y_P;
+			}
+		  }
+		}
+
+		if ( (clic & LIS2DH_Z_CLICK_MASK) > 0 ) {
+		  if ( (clic & LIS2DH_SCLICK_MASK) > 0 ) {
+			if ( (clic & LIS2DH_SIGN_MASK ) > 0 ) {
+			  ret |= ACCEL_TRIGGER_ON_CLICK_Z_N;
+			} else{
+			  ret |= ACCEL_TRIGGER_ON_CLICK_Z_P;
+			}
+		  }
+		  if ( (clic & LIS2DH_DCLICK_MASK) > 0 ) {
+			if ( (clic & LIS2DH_SIGN_MASK ) > 0 ) {
+			  ret |= ACCEL_TRIGGER_ON_DBLCLICK_Z_N;
+			} else{
+			  ret |= ACCEL_TRIGGER_ON_DBLCLICK_Z_P;
+			}
+		  }
+		}
+	  }
   }
   return ret;
 }
