@@ -54,8 +54,9 @@ typedef enum {
 	LIS2DH_HPF_MODE_AGGRESSIVE = 	4
 } drivers_lis2dh12_hpcfmode_e;
 
-#define DRIVER_LIS2DH_DEFAULT_ADDRESS	0x18		// default I2C address
+#define DRIVER_LIS2DH_DEFAULT_ADDRESS		0x18		// default I2C address
 
+#define DRIVER_LIS2DH_DEFAULT_WATERMARK		16			// default watermark 50% of the FIFO
 
 // ********************************************************************************
 // Registers
@@ -291,8 +292,8 @@ typedef enum {
 #define LIS2DH_TR_MAXVALUE      0x01
 
 typedef enum {
-	LIS2DH_TRIGGERON_INT1_8B  = LIS2DH_TR_INT1,
-	LIS2DH_TRIGGERON_INT2_10B = LIS2DH_TR_INT2
+	LIS2DH_ONTRIGGER_INT1  = LIS2DH_TR_INT1,
+	LIS2DH_ONTRIGGER_INT2  = LIS2DH_TR_INT2
 } drivers_lis2dh12_triggers_e;
 
 #define LIS2DH_FTH_SHIFT        0
@@ -315,7 +316,7 @@ typedef enum {
 #define LIS2DH_XHIE_MASK        	0x02
 #define LIS2DH_XLIE_MASK        	0x01
 #define LIS2DH_INTEVENT_MASK    	0x3F
-
+#define LIS2DH_ALL_MASK    			0xFF
 
 #define LIS2DH_INT_MODE_SHIFT   	6
 #define LIS2DH_INT_MODE_OR      	0x00      // If one of the event triggers, the interrupt is fired
@@ -510,6 +511,9 @@ typedef struct {
     itsdk_accel_trigger_e			_tiltTriggerLast;	// Last trigger state for position change detection
     void(* _tiltCB)(itsdk_accel_trigger_e reason);		// callback action on tilt event
 
+    itsdk_bool_e					_captureModeEnable;	// true when the capture mode is running in background
+    void (* _captureCB)(itsdk_accel_data_t * data, itsdk_accel_dataFormat_e format, uint8_t count, itsdk_bool_e overrun);
+
 } drivers_lis2dh12_conf_t;
 
 // Main function to be use
@@ -523,9 +527,9 @@ drivers_lis2dh12_ret_e lis2dh_reinit();                                         
 void lis2dh12_process(void);
 void lis2dh_dumpConfig(void);
 
-uint8_t lis2dh_getPendingMotions( int16_t * _buffer, uint8_t size);                        // Get all the FiFo pending measure for X,Y,Z
-uint8_t lis2dh_getPendingAcceleration( int16_t * _buffer, uint8_t size);                   // Get all the Fifo pending measure in Mg ( x,y,z )
-uint8_t lis2dh_getPendingForces( int16_t * _buffer, uint8_t size);                         // Get all the Fifo pending measure into a force in Mg array |A|
+uint8_t lis2dh_getPendingMotions( itsdk_accel_data_t * _buffer, uint8_t size);                        // Get all the FiFo pending measure for X,Y,Z
+uint8_t lis2dh_getPendingAcceleration( itsdk_accel_data_t * _buffer, uint8_t size);                   // Get all the Fifo pending measure in Mg ( x,y,z )
+uint8_t lis2dh_getPendingForces( uint16_t * _buffer, uint8_t size);                         // Get all the Fifo pending measure into a force in Mg array |A|
 
 drivers_lis2dh12_ret_e lis2dh_setupBackgroundTiltDetection(								   // Configure a background movement detection with Interrupt or activ scan
 		uint16_t forceMg, 							// force level
@@ -536,9 +540,23 @@ drivers_lis2dh12_ret_e lis2dh_setupBackgroundTiltDetection(								   // Configu
 		itsdk_accel_trigger_e triggers,				// Select the triggers
 		void(* cb)(itsdk_accel_trigger_e reason) 	// callback function
 );
-
+drivers_lis2dh12_ret_e lis2dh_cancelBackgroundTiltDetection(void);
 itsdk_bool_e lis2dh_hasTiltDetected();                                                     // Return true when a tilt has been detected and clear the interrupt
 itsdk_accel_trigger_e __lis2dh_determineTilt();
+
+
+drivers_lis2dh12_ret_e lis2dh_setupDataAquisition(
+		drivers_lis2dh12_scale_e 		scale,				// scale 2G/4G...
+		drivers_lis2dh12_frequency_e 	frequency, 			// capture frequency 1/10/25/50Hz..
+		drivers_lis2dh12_resolution_e 	resolution,			// data precision 8B/10B/12B...
+		itsdk_accel_trigger_e 			axis,				// Select the axis
+		drivers_lis2dh12_hpcfmode_e 	hpf,				// High Frequency Filter strategy
+		uint8_t							dataBlock,			// Expected data to be returned by callback
+		void (* callback)(itsdk_accel_data_t * data, itsdk_accel_dataFormat_e format, uint8_t count, itsdk_bool_e overrun)
+															// callback function the interrupt will call
+															// data format is always raw
+);
+
 
 uint8_t lis2dh_getPosition6D();                                                            // Return one of the 6D positions
 
@@ -601,10 +619,10 @@ itsdk_bool_e lis2dh_isHPFDSEnabled(void);
 drivers_lis2dh12_ret_e lis2dh_enableAxisXYZ(void);
 drivers_lis2dh12_ret_e lis2dh_disableAxisXYZ(void);
 
-drivers_lis2dh12_ret_e lis2dh_enableInterruptInt1(uint8_t _int);
-drivers_lis2dh12_ret_e lis2dh_disableInterruptInt1(uint8_t _int);
-drivers_lis2dh12_ret_e lis2dh_enableInterruptInt2(uint8_t _int);
-drivers_lis2dh12_ret_e lis2dh_disableInterruptInt2(uint8_t _int);
+drivers_lis2dh12_ret_e lis2dh_enableInterruptPin1(uint8_t _int);
+drivers_lis2dh12_ret_e lis2dh_disableInterruptPin1(uint8_t _int);
+drivers_lis2dh12_ret_e lis2dh_enableInterruptPin2(uint8_t _int);
+drivers_lis2dh12_ret_e lis2dh_disableInterruptPin2(uint8_t _int);
 drivers_lis2dh12_ret_e lis2dh_disableAllInterrupt();
 drivers_lis2dh12_ret_e lis2dh_setInterruptPolarity(drivers_lis2dh12_interruptPol_e polarity);
 drivers_lis2dh12_ret_e lis2dh_triggerSelect(drivers_lis2dh12_triggers_e triggerMode);
@@ -680,7 +698,8 @@ drivers_lis2dh12_ret_e __lis2dh_writeMaskedRegisterI(const int register_addr, co
 uint8_t __lis2dh_readRegister(const uint8_t register_addr);
 uint16_t __lis2dh_readRegisters(const uint8_t msb_register, const uint8_t lsb_register);
 uint8_t __lis2dh_readMaskedRegister(const uint8_t register_addr, const uint8_t mask);
-uint8_t __lis2dh_readFifo(int16_t * _buffer,const uint8_t maxSz);
+//uint8_t __lis2dh_readFifo(int16_t * _buffer,const uint8_t maxSz);
+uint8_t __lis2dh_readFifo(itsdk_accel_data_t * _buffer,const uint8_t maxSz);
 
 drivers_lis2dh12_ret_e __lis2dh_convertMgToRaw(uint8_t * _raw, uint16_t mg, drivers_lis2dh12_scale_e scale);
 drivers_lis2dh12_ret_e __lis2dh_convertMsToRaw(uint8_t * _raw, uint32_t ms, const drivers_lis2dh12_frequency_e odr);
@@ -689,7 +708,7 @@ drivers_lis2dh12_ret_e __lis2dh_convertMsToRaw(uint8_t * _raw, uint32_t ms, cons
 drivers_lis2dh12_scale_e lis2dh12_convertScale(itsdk_accel_scale_e intput);
 drivers_lis2dh12_frequency_e lis2dh_converFrequency(itsdk_accel_frequency_e input, itsdk_accel_precision_e p);
 drivers_lis2dh12_resolution_e lis2dh_convertPrecision(itsdk_accel_precision_e input);
-
+drivers_lis2dh12_ret_e lis2dh_convertRawToMg(itsdk_accel_data_t * data);
 
 // Logger wrapper
 

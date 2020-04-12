@@ -104,6 +104,8 @@ typedef enum {
 	ACCEL_TRIGGER_ON_POS_FRONT		= 0x1000000,
 	ACCEL_TRIGGER_ON_POS_BACK		= 0x2000000,
 	ACCEL_TRIGGER_ON_ANYPOS			= 0x3F00000,
+
+	ACCEL_TRIGGER_ON_NOMOVEMENT		= 0x8000000			// No movement after the given time
 } itsdk_accel_trigger_e;
 
 #define ACCEL_TRIGGER_QUEUE_SIZE	8					// Power of two
@@ -115,14 +117,34 @@ typedef struct itsdk_accel_eventHandler_s {
 	struct itsdk_accel_eventHandler_s		*	next;				// next in list
 } itsdk_accel_eventHandler_t;
 
+
+typedef struct {							// RAW  MG  FORCE
+	int16_t	x;								//  X   X   Force
+	int16_t y;								//  Y   Y	  0
+	int16_t z;								//  Z   Z     0
+} itsdk_accel_data_t;
+
+typedef enum {
+	ACCEL_DATAFORMAT_XYZ_RAW	= 0,		// data tab contains 16b raw data from the accelerometer
+	ACCEL_DATAFORMAT_XYZ_MG		= 1,		// data tab contains 16b data converted in Mg
+	ACCEL_DATAFORMAT_FORCE_MG	= 2,		// data tab contains in X the force vector
+	ACCEL_DATAFORMAT_ANGLES		= 3			// data tab contains the angle of the device
+} itsdk_accel_dataFormat_e;
+
+
 // =======================================================================================
 
 
 itsdk_accel_ret_e accel_initPowerDown();
+void accel_process(void);
+
+// ---
+// Event detection
 itsdk_accel_ret_e accel_configMovementDetection(
 		uint16_t 					mg,			// Force of the Movement for being detected
 		uint16_t					tolerence,	// +/- Acceptable force in 10xmg. 0 for any (absolute value)
 		uint16_t 					ms,			// Duration of the Movement for being detected
+		uint32_t					noMvtMs,	// Duration of no trigger notification before reporting No Movement - when NOMOVEMENT trigger requested
 		itsdk_bool_e				hpf, 		// enable High pass filter
 		itsdk_accel_trigger_e		triggers 	// List of triggers
 );
@@ -132,14 +154,33 @@ itsdk_accel_ret_e accel_addTriggerCallBack(
 itsdk_accel_ret_e accel_delTriggerCallBack(
 		itsdk_accel_eventHandler_t * handler
 );
+itsdk_accel_ret_e accel_stopMovementDetection(itsdk_bool_e removeHandler);
 
-void accel_process(void);
+// ----
+// Capture data
+itsdk_accel_ret_e accel_startMovementCapture(
+		itsdk_accel_scale_e 		scale,			// Movement Scale 2G, 4G...
+		itsdk_accel_frequency_e 	frequency,		// Capture sampling rate
+		itsdk_accel_precision_e 	precision,		// Raw Data size 8B, 10B...
+		itsdk_accel_trigger_e		axis,			// List of activated axis
+		itsdk_bool_e				hpf, 			// enable High pass filter
+		uint8_t						dataBlock,		// Expected data to be returned by callback
+		uint16_t					captureblock,	// Number of blocks to capture - 0 for non stop
+		itsdk_accel_dataFormat_e	format,			// Data format
+		itsdk_accel_data_t		*	targetBuffer,	// Data buffer to be used to push the data
+		void (* callback)(itsdk_accel_data_t * data, itsdk_accel_dataFormat_e format, uint8_t count, itsdk_bool_e overrun)
+													// callback function the interrupt will call
+);
+
+// ----
+// Conversion
+itsdk_accel_ret_e accel_convertDataPointMg2Force(itsdk_accel_data_t * data);
 
 
 // Internal functions
 void __accel_triggerCallback(itsdk_accel_trigger_e triggers);
-void __accel_asyncTriggerProcess();
-
+void __accel_asyncTriggerProcess(void);
+void __accel_asyncMovementCaptureProcess(void);
 
 //void accel_configMovementDetection(uint16_t mg, uint8_t ms, /* axis list, sampling freq, scale */);
 //void accel_addTriggerOnMovement(void(* callback)(uint8_t id), uint8_t id);

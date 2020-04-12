@@ -18,8 +18,10 @@ accel_configMovementDetection(
 			200,		// Tilt detection Force level in mg
 			50,			// Expected accuracy of the detection force level here we have from 150 to 250 mg
 			200,		// Minimal duration of the event in ms
+			30000,		// after >=30 seconds w/o movement a ACCEL_TRIGGER_ON_NOMOVEMENT is fired (latency related to RTC wakeup period)
+						//   0 when not used.
 			BOOL_TRUE,	// Enable the HP filter
-			ACCEL_TRIGGER_ON_XYZ_HIGH | ACCEL_TRIGGER_ON_ANYPOS | ACCEL_TRIGGER_ON_DBLCLICK_XYZ // List of expected triger to respond to
+			ACCEL_TRIGGER_ON_XYZ_HIGH | ACCEL_TRIGGER_ON_ANYPOS | ACCEL_TRIGGER_ON_DBLCLICK_XYZ | ACCEL_TRIGGER_ON_NOMOVEMENT // List of expected triger to respond to
 		)
 ``` 
 
@@ -63,6 +65,8 @@ typedef enum {
 	ACCEL_TRIGGER_ON_POS_FRONT		= 0x1000000,
 	ACCEL_TRIGGER_ON_POS_BACK		= 0x2000000,
 	ACCEL_TRIGGER_ON_ANYPOS			= 0x3F00000,
+
+	ACCEL_TRIGGER_ON_NOMOVEMENT		= 0x8000000			// No movement after the given time
 } itsdk_accel_trigger_e;
 ```
 
@@ -72,7 +76,7 @@ The _void accel_process(void)_ will process the circular buffer.
 The application needs to register eventHandler like this one:
 ```C
 itsdk_accel_eventHandler_t accelEventCallback = {
-		ACCEL_TRIGGER_ON_XYZ_HIGH | ACCEL_TRIGGER_ON_ANYPOS | ACCEL_TRIGGER_ON_DBLCLICK_XYZ,
+		ACCEL_TRIGGER_ON_XYZ_HIGH | ACCEL_TRIGGER_ON_ANYPOS | ACCEL_TRIGGER_ON_DBLCLICK_XYZ | ACCEL_TRIGGER_ON_NOMOVEMENT,
 		processAcceCallback,
 		NULL
 };
@@ -114,6 +118,8 @@ void processAcceCallback(itsdk_accel_trigger_e triggers) {
 	if ( triggers & ACCEL_TRIGGER_ON_POS_RIGHT ) log_info("Right ");
 	if ( triggers & ACCEL_TRIGGER_ON_POS_FRONT ) log_info("Front ");
 	if ( triggers & ACCEL_TRIGGER_ON_POS_BACK ) log_info("Back ");
+
+	if ( triggers & ACCEL_TRIGGER_ON_NOMOVEMENT ) log_info("No Movement ");
 	log_info("\r\n");
 }
 ```

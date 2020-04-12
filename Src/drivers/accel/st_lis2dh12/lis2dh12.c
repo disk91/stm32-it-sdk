@@ -20,6 +20,9 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  * ==========================================================
+ * Good App Note - AN5005 - https://www.st.com/resource/en/application_note/dm00365457-lis2dh12-mems-digital-output-motion-sensor-ultralowpower-highperformance-3axis-nano-accelerometer-stmicroelectronics.pdf
+ *
+ *
  */
 
 /** Based on ST MicroElectronics LIS2DH datasheet http://www.st.com/web/en/resource/technical/document/datasheet/DM00042751.pdf
@@ -67,21 +70,47 @@ drivers_lis2dh12_conf_t __lis2dh_conf;
  * It's really important to have this interrupt processing as fast as possible
  * to avoid infinite loop here (and wdg restart)
  */
+
+static void __lis2dh_processTilt(void) {
+	if ( __lis2dh_conf._tiltModeEnable == BOOL_TRUE ) {
+		  itsdk_accel_trigger_e reason = __lis2dh_determineTilt();
+		  if ( reason != ACCEL_TRIGGER_ON_NONE && __lis2dh_conf._tiltCB != NULL ) {
+			  __lis2dh_conf._tiltCB(reason);
+		  }
+	}
+}
+
+static void __lis2dh_processData(void) {
+	if ( __lis2dh_conf._captureModeEnable == BOOL_TRUE ) {
+	   if ( lis2dh_isFiFoWatermarkExceeded() == BOOL_TRUE ) {
+	  	  uint8_t sz = lis2dh_getFiFoSize();
+	  	  if ( sz == 0 ) log_info(">> 0\r\n");
+ 		  itsdk_bool_e ov = lis2dh_isFiFoFull();
+		  itsdk_accel_data_t	buffer[4];
+		  for ( int i = 0 ; i < (sz>>2) + 1 ; i++ ) {
+			uint8_t rsz = __lis2dh_readFifo(buffer,4);
+			if (__lis2dh_conf._captureCB != NULL ) {
+				__lis2dh_conf._captureCB(buffer,ACCEL_DATAFORMAT_XYZ_RAW,rsz,ov);
+			}
+		  }
+	   }
+    }
+}
+
 static void __lis2dh12_interrupt(uint16_t GPIO_Pin) {
 	do {
 		// Manage tilt detection & clear the interrupt signal
-		if ( __lis2dh_conf._tiltModeEnable == BOOL_TRUE ) {
-			  itsdk_accel_trigger_e reason = __lis2dh_determineTilt();
-			  if ( reason != ACCEL_TRIGGER_ON_NONE && __lis2dh_conf._tiltCB != NULL ) {
-				  __lis2dh_conf._tiltCB(reason);
-			  }
-		}
+		__lis2dh_processTilt();
+
+		// Manage data arrival interrupt signal
+		__lis2dh_processData();
 
 
-		if ( __lis2dh_conf._tiltModeEnable == BOOL_FALSE && false ) {
-			// we have an interrupt faired but no running activites.
+		if ( __lis2dh_conf._tiltModeEnable == BOOL_FALSE && __lis2dh_conf._captureModeEnable == BOOL_FALSE ) {
+			// we have an interrupt fired but no running activites.
 			// let deactivate the interrupts
 			// @TODO
+			log_error("Why do we have an interrupt ?\r\n");
 
 		}
 	} while (
@@ -92,6 +121,26 @@ static void __lis2dh12_interrupt(uint16_t GPIO_Pin) {
 			   && gpio_read(ITSDK_DRIVERS_LIS2DH12_INT1_BANK,ITSDK_DRIVERS_LIS2DH12_INT1_PIN) > 0 )
 			);
 }
+
+
+/**
+ * This function must be call in the main process loop to correctly manage the driver
+ * Basically when using the accel generic driver in the itsdk, you don't need to call
+ * it as the generic driver do it in the accel_process() function.
+ */
+void lis2dh12_process(void) {
+
+  // When the INT pin is not configured we can use scrutation system to detects tilts and
+  // retrieve information
+  if ( ITSDK_DRIVERS_LIS2DH12_INT2_PIN == __LP_GPIO_NONE ) {
+	  __lis2dh_processTilt();
+  }
+  if ( ITSDK_DRIVERS_LIS2DH12_INT1_PIN == __LP_GPIO_NONE ) {
+	  __lis2dh_processData();
+  }
+
+}
+
 
 static gpio_irq_chain_t __lis2dh12_gpio_irq1 = {
 		__lis2dh12_interrupt,
@@ -130,6 +179,7 @@ drivers_lis2dh12_ret_e lis2dh_setup(
     drivers_lis2dh12_ret_e ret = LIS2DH_SUCCESS;
     __lis2dh_conf._address = ITSDK_DRIVERS_ACCEL_LIS2DH_ADDRESS;
     __lis2dh_conf._tiltModeEnable = BOOL_FALSE;
+    __lis2dh_conf._captureModeEnable = BOOL_FALSE;
 
     if ( lis2dh_whoAmI() == LIS2DH_SUCCESS ) {
       // reboot memory content
@@ -190,27 +240,7 @@ drivers_lis2dh12_ret_e lis2dh_setup(
     return ret;
 }
 
-/**
- * This function must be call in the main process loop to correctly manage the driver
- * Basically when using the accel generic driver in the itsdk, you don't need to call
- * it as the generic driver do it in the accel_process() function.
- */
-void lis2dh12_process(void) {
 
-  // When the INT pin is not configured we can use scrutation system to detects tilts and
-  // retrieve information
-  if ( ITSDK_DRIVERS_LIS2DH12_INT2_PIN == __LP_GPIO_NONE ) {
-	  if ( __lis2dh_conf._tiltModeEnable == BOOL_TRUE ) {
-
-		  itsdk_accel_trigger_e reason = __lis2dh_determineTilt();
-		  if ( reason != ACCEL_TRIGGER_ON_NONE && __lis2dh_conf._tiltCB != NULL ) {
-			  __lis2dh_conf._tiltCB(reason);
-		  }
-
-	  }
-  }
-
-}
 
 /**
  * Reinit is not changing the device configuration but is preparing
@@ -278,6 +308,79 @@ void lis2dh_dumpConfig(void) {
 // -----------------------------------------------------
 
 
+drivers_lis2dh12_ret_e lis2dh_setupDataAquisition(
+		drivers_lis2dh12_scale_e 		scale,				// scale 2G/4G...
+		drivers_lis2dh12_frequency_e 	frequency, 			// capture frequency 1/10/25/50Hz..
+		drivers_lis2dh12_resolution_e 	resolution,			// data precision 8B/10B/12B...
+		itsdk_accel_trigger_e 			axis,				// Select the axis
+		drivers_lis2dh12_hpcfmode_e 	hpf,				// High Frequency Filter strategy
+		uint8_t							dataBlock,			// Expected data to be returned by callback
+		void (* callback)(itsdk_accel_data_t * data, itsdk_accel_dataFormat_e format, uint8_t count, itsdk_bool_e overrun)
+															// callback function the interrupt will call
+															// data format is always raw
+){
+   drivers_lis2dh12_ret_e ret = LIS2DH_SUCCESS;
+
+   if (__lis2dh_conf._tiltModeEnable == BOOL_TRUE) return LIS2DH_FAILED;
+   if ( dataBlock >= LIS2DH_FTH_MAXVALUE ) return LIS2DH_FAILED;
+
+   if (ITSDK_DRIVERS_LIS2DH12_INT2_PIN != __LP_GPIO_NONE ) {
+    // No interrupt during setup
+	gpio_interruptDisable(ITSDK_DRIVERS_LIS2DH12_INT2_BANK, ITSDK_DRIVERS_LIS2DH12_INT2_PIN);
+   }
+
+  ret |= lis2dh_setDataRate(frequency);
+  ret |= lis2dh_setResolutionMode(resolution);
+  ret |= lis2dh_setAccelerationScale(scale);
+
+  if ( hpf != LIS2DH_HPF_MODE_DISABLE ) {
+	  // set highpass filter (Reset when reading xhlREFERENCE register)
+      // activate High Pass filter on Output and Int1
+      ret |= lis2dh_setHPFilterMode(LIS2DH_HPM_NORMAL_RESET);
+      ret |= lis2dh_setHPFilterCutOff(__lis2dh_getCutOffODRValueFromHPFMode(hpf));
+      ret |= lis2dh_enableHPFDS();
+      ret |= lis2dh_disableHPIA1();
+      ret |= lis2dh_disableHPIA2();
+      ret |= lis2dh_disableHPClick();
+  } else {
+      ret |= lis2dh_disableHPFDS();
+      ret |= lis2dh_disableHPIA1();
+      ret |= lis2dh_disableHPIA2();
+      ret |= lis2dh_disableHPClick();
+  }
+  ret |= lis2dh_disableAllInterrupt();
+  if ( (axis & ACCEL_TRIGGER_ON_X) > 0 ) ret |= lis2dh_enableAxisX();
+  if ( (axis & ACCEL_TRIGGER_ON_Y) > 0 ) ret |= lis2dh_enableAxisY();
+  if ( (axis & ACCEL_TRIGGER_ON_Z) > 0 ) ret |= lis2dh_enableAxisZ();
+
+  ret |= lis2dh_setFiFoMode(LIS2DH_FM_STREAM);
+  ret |= lis2dh_setFiFoThreshold(dataBlock);
+  ret |= lis2dh_triggerSelect(LIS2DH_ONTRIGGER_INT2);
+  ret |= lis2dh_intWorkingMode(LIS2DH_INTERRUPT2, LIS2DH_INT_MODE_OR);
+  ret |= lis2dh_enableLatchInterrupt(LIS2DH_INTERRUPT2, BOOL_TRUE);
+  ret |= lis2dh_enableFifo(BOOL_TRUE);
+
+  if ( ret == LIS2DH_SUCCESS ) {
+ 	  __lis2dh_conf._captureModeEnable = BOOL_TRUE;
+      __lis2dh_conf._captureCB = callback;
+   	  if (ITSDK_DRIVERS_LIS2DH12_INT1_PIN != __LP_GPIO_NONE ) {
+ 		  gpio_interruptClear(ITSDK_DRIVERS_LIS2DH12_INT1_BANK, ITSDK_DRIVERS_LIS2DH12_INT1_PIN);
+ 		  gpio_interruptEnable(ITSDK_DRIVERS_LIS2DH12_INT1_BANK, ITSDK_DRIVERS_LIS2DH12_INT1_PIN);
+      }
+	  // clear pending interrupt - can lock the communication if INT is already active
+   	  __lis2dh_readRegister(LIS2DH_INT2_SOURCE);
+  	  __lis2dh_readRegister(LIS2DH_INT1_SOURCE);
+   	  __lis2dh_readRegister(LIS2DH_FIFO_SRC_REG);
+	  ret |= lis2dh_enableInterruptPin1(LIS2DH_I1_WTM);
+   } else {
+ 	  log_error("Lis2dh - data caq config failed\r\n");
+   }
+
+  return ret;
+}
+
+
+
 /**
  * Read the Fifo buffer until empty. Load the result into a
  * int8_t/int16_t [size][3] table and return the number of element
@@ -286,7 +389,7 @@ void lis2dh_dumpConfig(void) {
  * The resolution indicates how to read the data and also the buffer
  * type.
  */
-uint8_t lis2dh_getPendingMotions( int16_t * _buffer, uint8_t size) {
+uint8_t lis2dh_getPendingMotions( itsdk_accel_data_t * _buffer, uint8_t size) {
   return __lis2dh_readFifo(_buffer,size);
 }
 
@@ -295,11 +398,10 @@ uint8_t lis2dh_getPendingMotions( int16_t * _buffer, uint8_t size) {
  * is in mG taking into consideration the device configuration
  * return the fifo size really read
  */
-uint8_t lis2dh_getPendingAcceleration( int16_t * _buffer, uint8_t size) {
+uint8_t lis2dh_getPendingAcceleration( itsdk_accel_data_t * _buffer, uint8_t size) {
   uint8_t sz=__lis2dh_readFifo(_buffer,size);
-  int16_t (*buffer16)[3] = (int16_t (*)[3]) _buffer;
   for ( int i = 0 ; i < sz ; i++ ) {
-    __lis2dh_getAcceleration(&buffer16[i][0],&buffer16[i][1],&buffer16[i][2]);
+    __lis2dh_getAcceleration(&_buffer[i].x,&_buffer[i].y,&_buffer[i].z);
   }
   return sz;
 }
@@ -309,14 +411,14 @@ uint8_t lis2dh_getPendingAcceleration( int16_t * _buffer, uint8_t size) {
  * returns the force of the acceleration. only one value is returned
  * for all the axes.
  */
-uint8_t lis2dh_getPendingForces( int16_t * _buffer, uint8_t size) {
-  int16_t buffer16[32][3];
+uint8_t lis2dh_getPendingForces( uint16_t * _buffer, uint8_t size) {
+  itsdk_accel_data_t buffer16[32];
   uint32_t _force;
-  uint8_t sz=__lis2dh_readFifo((int16_t *)buffer16,size);
+  uint8_t sz=__lis2dh_readFifo(buffer16,size);
   for ( int i = 0 ; i < sz ; i++ ) {
-    __lis2dh_getAcceleration(&buffer16[i][0],&buffer16[i][1],&buffer16[i][2]);
-    _force = (int32_t)buffer16[i][0]*buffer16[i][0] + (int32_t)buffer16[i][1]*buffer16[i][1] + (int32_t)buffer16[i][2]*buffer16[i][2];
-    _force = sqrt(_force);
+    __lis2dh_getAcceleration(&buffer16[i].x,&buffer16[i].y,&buffer16[i].z);
+    _force = (int32_t)buffer16[i].x*buffer16[i].x + (int32_t)buffer16[i].y*buffer16[i].y + (int32_t)buffer16[i].z*buffer16[i].z;
+    _force = itsdk_isqtr(_force);
     _buffer[i] = _force;
   }
   return sz;
@@ -338,6 +440,8 @@ drivers_lis2dh12_ret_e lis2dh_setupBackgroundTiltDetection(
 		void(* cb)(itsdk_accel_trigger_e reason) 	// callback function
 ) {
   drivers_lis2dh12_ret_e ret = LIS2DH_SUCCESS;
+
+  if (__lis2dh_conf._captureModeEnable == BOOL_TRUE) return LIS2DH_FAILED;
 
   if (ITSDK_DRIVERS_LIS2DH12_INT2_PIN != __LP_GPIO_NONE ) {
     // No interrupt during setup
@@ -398,7 +502,7 @@ drivers_lis2dh12_ret_e lis2dh_setupBackgroundTiltDetection(
   // Position detection if needed
   if ( ( triggers & ACCEL_TRIGGER_ON_ANYPOS ) > 0 ) {
 	  ret |= lis2dh_initPosition6D(scale,frequency);
-	  ret |= lis2dh_enableInterruptInt2(LIS2DH_I2_IA1);
+	  ret |= lis2dh_enableInterruptPin2(LIS2DH_I2_IA1);
 
   }
   if ( ( triggers & ACCEL_TRIGGER_ON_XYZ ) > 0 ) {
@@ -411,7 +515,7 @@ drivers_lis2dh12_ret_e lis2dh_setupBackgroundTiltDetection(
 	  _intMask |= (triggers & ACCEL_TRIGGER_ON_Z_HIGH)?LIS2DH_INTEVENT_Z_HIGH:0;
 	  _intMask |= (triggers &  ACCEL_TRIGGER_ON_Z_LOW)? LIS2DH_INTEVENT_Z_LOW:0;
 	  ret |= lis2dh_enableInterruptEvent(LIS2DH_INTERRUPT2, _intMask);
-	  ret |= lis2dh_enableInterruptInt2(LIS2DH_I2_IA2);
+	  ret |= lis2dh_enableInterruptPin2(LIS2DH_I2_IA2);
   }
 
   ret |= lis2dh_enableLatchInterrupt(LIS2DH_INTERRUPT2, BOOL_TRUE);
@@ -425,7 +529,7 @@ drivers_lis2dh12_ret_e lis2dh_setupBackgroundTiltDetection(
   	  if (ITSDK_DRIVERS_LIS2DH12_INT2_PIN != __LP_GPIO_NONE ) {
 		  gpio_interruptClear(ITSDK_DRIVERS_LIS2DH12_INT2_BANK, ITSDK_DRIVERS_LIS2DH12_INT2_PIN);
 		  gpio_interruptEnable(ITSDK_DRIVERS_LIS2DH12_INT2_BANK, ITSDK_DRIVERS_LIS2DH12_INT2_PIN);
-		  ret |= lis2dh_enableInterruptInt2(LIS2DH_I2_IA2);
+		  ret |= lis2dh_enableInterruptPin2(LIS2DH_I2_IA2);
 
 		  // clear pending interrupt - can lock the communication if INT is already active
 		  __lis2dh_readRegister(LIS2DH_INT2_SOURCE);
@@ -440,18 +544,26 @@ drivers_lis2dh12_ret_e lis2dh_setupBackgroundTiltDetection(
 }
 
 drivers_lis2dh12_ret_e lis2dh_cancelBackgroundTiltDetection(void) {
+	drivers_lis2dh12_ret_e ret = LIS2DH_SUCCESS;
 
 	if ( __lis2dh_conf._tiltModeEnable ) {
-		lis2dh_enableInterruptEvent(LIS2DH_INTERRUPT2, LIS2DH_INTERRUPT_EVENT_NONE);
-		lis2dh_disableAllInterrupt();
+		// stop interruption
+		ret |= lis2dh_enableInterruptEvent(LIS2DH_INTERRUPT2, LIS2DH_INTERRUPT_EVENT_NONE);
+		ret |= lis2dh_disableAllInterrupt();
     	if (ITSDK_DRIVERS_LIS2DH12_INT2_PIN != __LP_GPIO_NONE ) {
     		gpio_interruptDisable(ITSDK_DRIVERS_LIS2DH12_INT2_BANK, ITSDK_DRIVERS_LIS2DH12_INT2_PIN);
     	}
 		__lis2dh_conf._tiltCB = NULL;
-		__lis2dh_conf._tiltModeEnable = BOOL_FALSE;
-		return LIS2DH_SUCCESS;
-	} else return LIS2DH_FAILED;
 
+		// switch powerdown
+		ret |= lis2dh_resetFilteringBlock();	// clear the filtering block
+		ret |= lis2dh_setDataRate(LIS2DH_FREQUENCY_POWERDOWN);
+		ret |= lis2dh_setResolutionMode(LIS2DH_RESOLUTION_MODE_8B);
+		ret |= lis2dh_setAccelerationScale(LIS2DH_SCALE_FACTOR_2G);
+
+		__lis2dh_conf._tiltModeEnable = BOOL_FALSE;
+		return ret;
+	} else return LIS2DH_FAILED;
 }
 
 /**
@@ -560,7 +672,7 @@ drivers_lis2dh12_ret_e lis2dh_initPosition6D(drivers_lis2dh12_scale_e scale, dri
 		   break;
    }
    */
-   ret |= lis2dh_enableInterruptInt1(LIS2DH_I1_IA1);
+   ret |= lis2dh_enableInterruptPin1(LIS2DH_I1_IA1);
    return ret;
 }
 
@@ -1046,22 +1158,22 @@ itsdk_bool_e lis2dh_isHPIA1Enabled(void) {
 /**
  * Enable / Disable an interrupt source on INT1
  */
-drivers_lis2dh12_ret_e lis2dh_enableInterruptInt1(uint8_t _int) {
+drivers_lis2dh12_ret_e lis2dh_enableInterruptPin1(uint8_t _int) {
   return __lis2dh_writeMaskedRegister8(LIS2DH_CTRL_REG3,_int,BOOL_TRUE);
 }
 
-drivers_lis2dh12_ret_e lis2dh_disableInterruptInt1(uint8_t _int) {
+drivers_lis2dh12_ret_e lis2dh_disableInterruptPin1(uint8_t _int) {
   return __lis2dh_writeMaskedRegister8(LIS2DH_CTRL_REG3,_int,BOOL_FALSE);
 }
 
 /**
  * Enable / Disable an interrupt source on INT2
  */
-drivers_lis2dh12_ret_e lis2dh_enableInterruptInt2(uint8_t _int) {
+drivers_lis2dh12_ret_e lis2dh_enableInterruptPin2(uint8_t _int) {
   return __lis2dh_writeMaskedRegister8(LIS2DH_CTRL_REG6,_int,BOOL_TRUE);
 }
 
-drivers_lis2dh12_ret_e lis2dh_disableInterruptInt2(uint8_t _int) {
+drivers_lis2dh12_ret_e lis2dh_disableInterruptPin2(uint8_t _int) {
   return __lis2dh_writeMaskedRegister8(LIS2DH_CTRL_REG6,_int,BOOL_FALSE);
 }
 
@@ -1071,6 +1183,8 @@ drivers_lis2dh12_ret_e lis2dh_disableInterruptInt2(uint8_t _int) {
 drivers_lis2dh12_ret_e lis2dh_disableAllInterrupt() {
   drivers_lis2dh12_ret_e ret = __lis2dh_writeRegister(LIS2DH_CTRL_REG3,LIS2DH_I1_INTERRUPT_NONE);
   ret |= __lis2dh_writeMaskedRegisterI(LIS2DH_CTRL_REG6,LIS2DH_I2_MASK,LIS2DH_I2_INTERRUPT_NONE);
+  ret |= __lis2dh_writeMaskedRegisterI(LIS2DH_INT1_CFG,LIS2DH_ALL_MASK,0x00);
+  ret |= __lis2dh_writeMaskedRegisterI(LIS2DH_INT2_CFG,LIS2DH_ALL_MASK,0x00);
   return ret;
 }
 
@@ -1104,7 +1218,7 @@ drivers_lis2dh12_ret_e lis2dh_enableLatchInterrupt(uint8_t _int, itsdk_bool_e en
 }
 
 /**
- * Select trigger event trigger signal on INT1/2
+ * Select trigger event for STREAM to FIFO trigger switch control by internal INT1/2
  * See LIS2DH_TR_XXX
  */
 drivers_lis2dh12_ret_e lis2dh_triggerSelect(drivers_lis2dh12_triggers_e triggerMode) {
@@ -1440,6 +1554,8 @@ itsdk_bool_e lis2dh_isFiFoWatermarkExceeded() {
 itsdk_bool_e lis2dh_isFiFoFull() {
   return ( __lis2dh_readMaskedRegister(LIS2DH_FIFO_SRC_REG, LIS2DH_OVRN_FIFO_MASK) > 0 )?BOOL_TRUE:BOOL_FALSE;
 }
+
+
 
 /**
  * Return true when the FIFO is empty
@@ -1839,6 +1955,7 @@ uint8_t __lis2dh_readRegister(const uint8_t register_addr) {
  * of X,Y,Z triple
  * Return the number of triple read from Fifo
  */
+/*
 uint8_t __lis2dh_readFifo(int16_t * _buffer,const uint8_t maxSz) {
 	//uint8_t fifoReg = 0x80 | LIS2DH_OUT_X_L; // Force most significant bit to 1 to indicate a multiple read (according to doc)
     int16_t (*buffer16)[3] = (int16_t (*)[3]) _buffer;
@@ -1876,6 +1993,52 @@ uint8_t __lis2dh_readFifo(int16_t * _buffer,const uint8_t maxSz) {
              buffer16[k][2] = __buff[(i*6)+4];
              buffer16[k][2] += ((int16_t)__buff[(i*6)+5]) << 8;
              buffer16[k][2] >>= shift;
+          }
+          k++;
+        }
+        toRead -= transferSize;
+      }
+    }
+    return sz;
+}
+*/
+
+uint8_t __lis2dh_readFifo(itsdk_accel_data_t * _buffer,const uint8_t maxSz) {
+	//uint8_t fifoReg = 0x80 | LIS2DH_OUT_X_L; // Force most significant bit to 1 to indicate a multiple read (according to doc)
+    int sz = (__lis2dh_conf._fifoMode == LIS2DH_FM_BYPASS)?1:lis2dh_getFiFoSize();
+    if ( sz > maxSz ) sz = maxSz;
+    if ( sz > 0 ) {
+      int toRead = sz*6;                      // 6 byte to read for each of the X,Y,Z
+      int k = 0;
+      while ( toRead > 0 ) {
+        int transferSize = (toRead >= 30)?30:toRead;
+        int8_t __buff[30];
+        i2c_memRead(
+         		&ITSDK_DRIVERS_ACCEL_LIS2DH_I2C,			// i2c handler
+ 				__lis2dh_conf._address,						// Device Address => 7 bits non shifted
+         		(0x80 | LIS2DH_OUT_X_L),					// Memory address to access
+         		8,											// 8 for 8b, 16 for 16 bits ...
+         		(uint8_t *)__buff,							// Where to store data to be read
+				transferSize								// Size of the data to be read
+        );
+        for ( int i = 0 ; i < transferSize/6 ; i++ ) {
+          if ( __lis2dh_conf._resolution == LIS2DH_RESOLUTION_MODE_8B ) {
+        	_buffer[k].x = __buff[(i*6)+1];
+        	_buffer[k].y = __buff[(i*6)+3];
+        	_buffer[k].z = __buff[(i*6)+5];
+          } else {
+             int shift = ( __lis2dh_conf._resolution == LIS2DH_RESOLUTION_MODE_10B)?6:4;
+             _buffer[k].x = __buff[(i*6)+0];
+             _buffer[k].x += ((int16_t)__buff[(i*6)+1]) << 8;
+             _buffer[k].x >>= shift;
+
+             _buffer[k].y = __buff[(i*6)+2];
+             _buffer[k].y += ((int16_t)__buff[(i*6)+3]) << 8;
+             _buffer[k].y >>= shift;
+
+             _buffer[k].z = __buff[(i*6)+4];
+             _buffer[k].z += ((int16_t)__buff[(i*6)+5]) << 8;
+             _buffer[k].z >>= shift;
           }
           k++;
         }
@@ -1944,6 +2107,7 @@ drivers_lis2dh12_ret_e __lis2dh_convertMgToRaw(uint8_t * _raw, uint16_t mg, driv
     return LIS2DH_FAILED;
   }
 }
+
 
 /**
  * Convert a duration in Ms to a raw duration based on the ODR value given as parameter
@@ -2057,6 +2221,14 @@ drivers_lis2dh12_ret_e __lis2dh_getAcceleration_i(
 
   return ret;
 }
+
+/**
+ * Convert a Raw data block into Mg with the current driver settings
+ */
+drivers_lis2dh12_ret_e lis2dh_convertRawToMg(itsdk_accel_data_t * data) {
+	return  __lis2dh_getAcceleration(&data->x, &data->y, &data->z);
+}
+
 
 
 drivers_lis2dh12_scale_e lis2dh12_convertScale(itsdk_accel_scale_e input) {

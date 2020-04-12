@@ -26,9 +26,14 @@
 #include <it_sdk/accel/accel.h>
 #include <it_sdk/config.h>
 #include <it_sdk/logger/logger.h>
+#include <it_sdk/time/time.h>
 
 #if ITSDK_WITH_DRIVERS == __ENABLE
 #include <it_sdk/configDrivers.h>
+
+// Do not compile is none of the supported drivers are enabled
+#if ITSDK_DRIVERS_ACCEL_LIS2DH12 == __ENABLE
+
 
 /**
  * EventQueue for asynchronous processing
@@ -37,6 +42,24 @@ itsdk_accel_trigger_e 			__triggerQueue[ACCEL_TRIGGER_QUEUE_SIZE];
 uint8_t				  			__triggerQueueRd;
 uint8_t				 			__triggerQueueWr;
 itsdk_accel_eventHandler_t * 	__accel_eventQueue;
+uint64_t						__accel_lastTriggerReportMs;
+uint32_t						__accel_noMovementDuration;
+itsdk_bool_e					__accel_noMovementReported;
+itsdk_accel_data_t				__accel_dataBuffer[ITSDK_DRIVERS_ACCEL_DATABLOCK_BUFFER_SZ];
+uint8_t							__accel_dataBufferRd;
+uint8_t							__accel_dataBufferWr;
+uint8_t							__accel_dataBufferSz;
+itsdk_bool_e					__accel_dataOverrun;
+uint8_t							__accel_dataBlockSz;
+uint8_t							__accel_dataBlockSzTransfered;
+uint16_t						__accel_dataBlockNb;
+itsdk_accel_dataFormat_e		__accel_dataFormat;
+itsdk_accel_data_t			*	__accel_dataDestBuffer;
+void (* __accel_dataCallback)(itsdk_accel_data_t * data, itsdk_accel_dataFormat_e format, uint8_t count, itsdk_bool_e overrun) ;
+
+// ========================================================================================
+// SETUP & LOOP
+// ========================================================================================
 
 
 /**
@@ -59,6 +82,11 @@ itsdk_accel_ret_e accel_initPowerDown() {
 	__triggerQueueRd = 0;
 	__triggerQueueWr = 0;
 	__accel_eventQueue = NULL;
+
+	__accel_dataBufferRd = 0;
+	__accel_dataBufferWr = 0;
+	__accel_dataBufferSz = 0;
+	__accel_dataOverrun = BOOL_FALSE;
 	return ret;
 }
 
@@ -72,7 +100,13 @@ void accel_process(void) {
 	#endif
 
 	__accel_asyncTriggerProcess();
+	__accel_asyncMovementCaptureProcess();
 }
+
+
+// ========================================================================================
+// EVENT DETECTION
+// ========================================================================================
 
 
 /**
@@ -84,6 +118,7 @@ itsdk_accel_ret_e accel_configMovementDetection(
 		uint16_t 					mg,			// Force of the Movement for being detected
 		uint16_t					tolerence,	// +/- Acceptable force in 10xmg. 0 for any (absolute value)
 		uint16_t 					ms,			// Duration of the Movement for being detected
+		uint32_t					noMvtMs,	// Duration of no trigger notification before reporting No Movement - when NOMOVEMENT trigger requested
 		itsdk_bool_e				hpf, 		// enable High pass filter
 		itsdk_accel_trigger_e		triggers 	// List of triggers
 ) {
@@ -174,8 +209,231 @@ itsdk_accel_ret_e accel_configMovementDetection(
 	#endif
 
 
+	if ( (triggers & ACCEL_TRIGGER_ON_NOMOVEMENT) > 0 ) {
+		__accel_noMovementDuration = noMvtMs;
+		__accel_lastTriggerReportMs = itsdk_time_get_ms();
+	} else {
+		__accel_noMovementDuration = 0;
+	}
+	__accel_noMovementReported = BOOL_FALSE;
+
 	return ACCEL_SUCCESS;
 }
+
+/**
+ * Stop the background event detection
+ * The event handler can be removed from the event list of kept for later reusing
+ */
+itsdk_accel_ret_e accel_stopMovementDetection(itsdk_bool_e removeHandler) {
+
+	#if ITSDK_DRIVERS_ACCEL_LIS2DH12 == __ENABLE
+	  if ( lis2dh_cancelBackgroundTiltDetection() == LIS2DH_FAILED ) return ACCEL_FAILED;
+	#endif
+
+	if (removeHandler == BOOL_TRUE ) {
+		__accel_eventQueue = NULL;
+	}
+	// clear pending events
+	__triggerQueueRd = 0;
+	__triggerQueueWr = 0;
+
+	return ACCEL_SUCCESS;
+}
+
+// ========================================================================================
+// DATA CAPTURE
+// ========================================================================================
+
+
+static void __accel_movementCaptureCallback(
+		itsdk_accel_data_t * data,
+		itsdk_accel_dataFormat_e format,
+		uint8_t count,
+		itsdk_bool_e overrun
+);
+
+/**
+ * Start data capture
+ */
+itsdk_accel_ret_e accel_startMovementCapture(
+		itsdk_accel_scale_e 		scale,			// Movement Scale 2G, 4G...
+		itsdk_accel_frequency_e 	frequency,		// Capture sampling rate
+		itsdk_accel_precision_e 	precision,		// Raw Data size 8B, 10B...
+		itsdk_accel_trigger_e		axis,			// List of activated axis
+		itsdk_bool_e				hpf, 			// enable High pass filter
+		uint8_t						dataBlock,		// Expected data to be returned by callback
+		uint16_t					captureBlock,	// Number of blocks to capture - 0 for non stop
+		itsdk_accel_dataFormat_e	format,			// Data format
+		itsdk_accel_data_t		*	targetBuffer,	// Data buffer to be used to push the data
+		void (* callback)(itsdk_accel_data_t * data, itsdk_accel_dataFormat_e format, uint8_t count, itsdk_bool_e overrun)
+													// callback function the interrupt will call
+){
+
+  #if ITSDK_DRIVERS_ACCEL_LIS2DH12 == __ENABLE
+
+	if ( lis2dh_setupDataAquisition(
+			lis2dh12_convertScale(scale),					// scale 2G/4G...
+			lis2dh_converFrequency(frequency,precision), 	// capture frequency 1/10/25/50Hz..
+			lis2dh_convertPrecision(precision),				// data precision 8B/10B/12B...
+			axis,											// Select the axis
+			((hpf==BOOL_TRUE)?LIS2DH_HPF_MODE_AGGRESSIVE:LIS2DH_HPF_MODE_DISABLE),	// High Frequency Filter strategy
+			DRIVER_LIS2DH_DEFAULT_WATERMARK,				// Expected data to be returned by callback (watermark)
+															// 50% of the fifo size
+			__accel_movementCaptureCallback
+															// callback function the interrupt will call
+															// data format is always raw
+	      )  == LIS2DH_FAILED ) return ACCEL_FAILED;
+
+  #endif
+
+  __accel_dataBlockSz = dataBlock;
+  __accel_dataBlockSzTransfered = 0;
+  __accel_dataBlockNb = captureBlock;
+  __accel_dataFormat = format;
+  __accel_dataDestBuffer = targetBuffer;
+  __accel_dataCallback = callback;
+
+
+  return ACCEL_SUCCESS;
+}
+
+itsdk_accel_ret_e accel_stopMovementCapture(void) {
+	 return ACCEL_SUCCESS;
+}
+
+/** *********************************************************************
+ *  Manage a Queue of data for asynchronous data process callback
+ *  as we want to limit the duration of the computing process inside
+ *  the interruption and allow interruption process during application
+ *  computation. This create a latency related to the difference between
+ *  the captured dataBlock at the underlaying driver and the application
+ *  dataBlock.
+ *  As an example, if app dataBlock is 10 and underlaying driver is 8 we
+ *  will call the first callback after 16 sample captured (latency +6);
+ *  the second time after 24 sample captured (latency +4) ...
+ *  Choice of the underlaying dataBlock size is important in regard of the
+ *  latency.
+ *  Asynchronous process is executed on wakeup, basically right after the
+ *  triggering interuption. Low latency on this point.
+ *  Application dataBlock can be larger than the underlaying device FiFo size
+ *  but it needs to be lower than ITSDK_DRIVERS_ACCEL_DATABLOCK_BUFFER_SZ
+ *  *********************************************************************
+ */
+
+/**
+ * Call by the IRQ to store movement data into the circular buffer
+ */
+static void __accel_movementCaptureCallback(
+		itsdk_accel_data_t * data,
+		itsdk_accel_dataFormat_e format,
+		uint8_t count,
+		itsdk_bool_e overrun
+) {
+
+	if ( overrun ) __accel_dataOverrun = BOOL_TRUE;
+	for (int i = 0 ; i < count ; i++ ) {
+		__accel_dataBuffer[__accel_dataBufferWr].x = data[i].x;
+		__accel_dataBuffer[__accel_dataBufferWr].y = data[i].y;
+		__accel_dataBuffer[__accel_dataBufferWr].z = data[i].z;
+		__accel_dataBufferSz++;
+		itsdk_enterCriticalSection();
+		__accel_dataBufferWr = ( __accel_dataBufferWr + 1 ) & (ITSDK_DRIVERS_ACCEL_DATABLOCK_BUFFER_SZ-1);
+		if ( __accel_dataBufferWr == __accel_dataBufferRd ) {
+			__accel_dataBufferRd = ( __accel_dataBufferRd + 1 ) & (ITSDK_DRIVERS_ACCEL_DATABLOCK_BUFFER_SZ-1);
+			__accel_dataOverrun = BOOL_TRUE;
+			__accel_dataBufferSz = (ITSDK_DRIVERS_ACCEL_DATABLOCK_BUFFER_SZ-1);
+		}
+		itsdk_leaveCriticalSection();
+	}
+}
+
+/**
+ * Call by the project loop to asynchronously compute and transfer the data to the
+ * application layer
+ */
+void __accel_asyncMovementCaptureProcess(void) {
+
+
+	// We move the data as soon as we have the remaining data available or when we touched the watermark
+	if (
+			(__accel_dataBlockSz <= __accel_dataBlockSzTransfered + __accel_dataBufferSz)
+		||  (__accel_dataBufferSz > ITSDK_DRIVERS_ACCEL_DATABLOCK_BUFFER_WTM )
+	) {
+		uint8_t toRead = (__accel_dataBlockSz <= __accel_dataBlockSzTransfered + __accel_dataBufferSz)?
+				__accel_dataBlockSz - __accel_dataBlockSzTransfered :
+				ITSDK_DRIVERS_ACCEL_DATABLOCK_BUFFER_WTM;
+
+		log_info("toRead %d\r\n",toRead);
+
+		// Buffer is ready for copy
+		itsdk_enterCriticalSection();
+		for (int i = 0 ; i < toRead ; i++ ) {
+			__accel_dataDestBuffer[__accel_dataBlockSzTransfered].x = __accel_dataBuffer[__accel_dataBufferRd].x;
+			__accel_dataDestBuffer[__accel_dataBlockSzTransfered].y = __accel_dataBuffer[__accel_dataBufferRd].y;
+			__accel_dataDestBuffer[__accel_dataBlockSzTransfered].z = __accel_dataBuffer[__accel_dataBufferRd].z;
+			__accel_dataBufferRd = ( __accel_dataBufferRd + 1 ) & (ITSDK_DRIVERS_ACCEL_DATABLOCK_BUFFER_SZ-1);
+			__accel_dataBufferSz--;
+			__accel_dataBlockSzTransfered++;
+		}
+		itsdk_leaveCriticalSection();
+
+		// Is Block completed
+		if ( __accel_dataBlockSzTransfered == __accel_dataBlockSz ) {
+			// convert the data
+			switch (__accel_dataFormat) {
+
+			case ACCEL_DATAFORMAT_XYZ_MG: {
+					for ( int i = 0 ; i < __accel_dataBlockSz ; i++ ) {
+						#if ITSDK_DRIVERS_ACCEL_LIS2DH12 == __ENABLE
+						 lis2dh_convertRawToMg(&__accel_dataDestBuffer[i]);
+						#endif
+					}
+				}
+				break;
+			case ACCEL_DATAFORMAT_FORCE_MG: {
+				for ( int i = 0 ; i < __accel_dataBlockSz ; i++ ) {
+					#if ITSDK_DRIVERS_ACCEL_LIS2DH12 == __ENABLE
+					 lis2dh_convertRawToMg(&__accel_dataDestBuffer[i]);
+					#endif
+					accel_convertDataPointMg2Force(&__accel_dataDestBuffer[i]);
+				}
+				}
+				break;
+
+			case ACCEL_DATAFORMAT_ANGLES: {
+
+			    }
+				break;
+			case ACCEL_DATAFORMAT_XYZ_RAW:
+			default:
+				break;
+			}
+
+
+
+			// report the data
+			if ( __accel_dataCallback != NULL ) {
+				__accel_dataCallback(__accel_dataDestBuffer,__accel_dataFormat,__accel_dataBlockSz,__accel_dataOverrun);
+			}
+
+			__accel_dataOverrun = BOOL_FALSE;	// reset until next transfer
+			__accel_dataBlockSzTransfered = 0;
+			if ( __accel_dataBlockNb > 0 ) {
+				// We are not in the infinite capture mode
+				__accel_dataBlockNb--;
+				if ( __accel_dataBlockNb == 0 ) {
+					// End of the requested capture
+					accel_stopMovementCapture();
+				}
+			}
+		}
+
+	}
+
+}
+
+
+
 
 /** *********************************************************************
  *  Manage a Queue of event to be proceeded by application
@@ -260,9 +518,24 @@ void __accel_triggerCallback(itsdk_accel_trigger_e triggers) {
 // -----
 // Process the Queue of event coming from the Interrupt
 // call the list of callback registered by the application to react on events
-void __accel_asyncTriggerProcess() {
+void __accel_asyncTriggerProcess(void) {
 
 	itsdk_accel_trigger_e triggers = __accel_getFromQueue();
+
+	if ( triggers == ACCEL_TRIGGER_ON_NONE && __accel_noMovementDuration > 0) {
+		// No pending trigger, update the NO_MOVEMENT_TRIGGER
+		if ( __accel_noMovementReported == BOOL_FALSE
+			 &&	itsdk_time_get_ms() > (__accel_lastTriggerReportMs + __accel_noMovementDuration) ) {
+
+			triggers = ACCEL_TRIGGER_ON_NOMOVEMENT;
+			__accel_noMovementReported = BOOL_TRUE;
+
+		}
+	} else {
+		__accel_lastTriggerReportMs = itsdk_time_get_ms();
+		__accel_noMovementReported = BOOL_FALSE;
+	}
+
 	while ( triggers != ACCEL_TRIGGER_ON_NONE ) {
 
 		itsdk_accel_eventHandler_t * c = __accel_eventQueue;
@@ -277,8 +550,28 @@ void __accel_asyncTriggerProcess() {
 
 }
 
+// ============================================================================
+// Data converter
+// ============================================================================
+
+/**
+ * Convert a point with forces expressed in Mg into a force in Mg
+ */
+itsdk_accel_ret_e accel_convertDataPointMg2Force(itsdk_accel_data_t * data) {
+	int32_t t = data->x;
+	int32_t f = t*t;
+	t = data->y;
+	f += t*t;
+	t = data->z;
+	f += t*t;
+	f = itsdk_isqtr(f);
+	data->x = (int16_t)f;
+	data->y = 0;
+	data->z = 0;
+	return ACCEL_SUCCESS;
+}
 
 
 
-
-#endif
+#endif  // ITSDK_DRIVERS_ACCEL_LIS2DH12 || ...
+#endif  // DRIVERS

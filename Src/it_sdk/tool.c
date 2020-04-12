@@ -78,6 +78,23 @@ uint32_t itsdk_inlineCRC32_next(uint32_t c, uint8_t size) {
 	return __itsdk_crc;
 }
 
+// =======================================================================================
+// Integer sqrt
+// =======================================================================================
+
+/**
+ * Integer sqrt, about 10x faster than double sqrt on a stm32L
+ */
+uint32_t itsdk_isqtr(uint32_t n) {
+    uint32_t c = 0x8000;
+    uint32_t g = 0x8000;
+    for(;;) {
+      if( g*g > n) g ^= c;
+      c >>= 1;
+      if(c == 0) return g;
+      g |= c;
+    }
+}
 
 // =======================================================================================
 // Converters
