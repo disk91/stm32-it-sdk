@@ -37,26 +37,26 @@ typedef enum {
 	ACCEL_TRIGGER_ON_Z_LOW			= 0x0000020,
 	ACCEL_TRIGGER_ON_XYZ_HIGH		= 0x0000015,
 	ACCEL_TRIGGER_ON_XYZ_LOW 		= 0x000002A,
-	ACCEL_TRIGGER_ON_X				= 0x0000003,
-	ACCEL_TRIGGER_ON_Y				= 0x000000C,
-	ACCEL_TRIGGER_ON_Z				= 0x0000030,
-	ACCEL_TRIGGER_ON_XYZ			= 0x000003F,
+	ACCEL_TRIGGER_ON_X              = 0x0000003,
+	ACCEL_TRIGGER_ON_Y              = 0x000000C,
+	ACCEL_TRIGGER_ON_Z              = 0x0000030,
+	ACCEL_TRIGGER_ON_XYZ            = 0x000003F,
 
-	ACCEL_TRIGGER_ON_CLICK_X_P		= 0x0000100,		// P for positive force (normal side)
-	ACCEL_TRIGGER_ON_DBLCLICK_X_P	= 0x0000200,
-	ACCEL_TRIGGER_ON_CLICK_Y_P		= 0x0000400,
-	ACCEL_TRIGGER_ON_DBLCLICK_Y_P	= 0x0000800,
-	ACCEL_TRIGGER_ON_CLICK_Z_P		= 0x0001000,
-	ACCEL_TRIGGER_ON_DBLCLICK_Z_P	= 0x0002000,
-	ACCEL_TRIGGER_ON_CLICK_X_N		= 0x0004000,		// N for positive force (opposite side)
-	ACCEL_TRIGGER_ON_DBLCLICK_X_N	= 0x0008000,
-	ACCEL_TRIGGER_ON_CLICK_Y_N		= 0x0010000,
-	ACCEL_TRIGGER_ON_DBLCLICK_Y_N	= 0x0020800,
-	ACCEL_TRIGGER_ON_CLICK_Z_N		= 0x0040000,
-	ACCEL_TRIGGER_ON_DBLCLICK_Z_N	= 0x0080000,
-	ACCEL_TRIGGER_ON_CLICK_XYZ		= 0x0055500,
-	ACCEL_TRIGGER_ON_DBLCLICK_XYZ	= 0x00AAA00,
-	ACCEL_TRIGGER_ON_ANYCLICK		= 0x00FFF00,
+	ACCEL_TRIGGER_ON_CLICK_X_P      = 0x0000100,		// P for positive force (normal side)
+	ACCEL_TRIGGER_ON_DBLCLICK_X_P   = 0x0000200,
+	ACCEL_TRIGGER_ON_CLICK_Y_P      = 0x0000400,
+	ACCEL_TRIGGER_ON_DBLCLICK_Y_P   = 0x0000800,
+	ACCEL_TRIGGER_ON_CLICK_Z_P      = 0x0001000,
+	ACCEL_TRIGGER_ON_DBLCLICK_Z_P   = 0x0002000,
+	ACCEL_TRIGGER_ON_CLICK_X_N      = 0x0004000,		// N for positive force (opposite side)
+	ACCEL_TRIGGER_ON_DBLCLICK_X_N   = 0x0008000,
+	ACCEL_TRIGGER_ON_CLICK_Y_N      = 0x0010000,
+	ACCEL_TRIGGER_ON_DBLCLICK_Y_N   = 0x0020800,
+	ACCEL_TRIGGER_ON_CLICK_Z_N      = 0x0040000,
+	ACCEL_TRIGGER_ON_DBLCLICK_Z_N   = 0x0080000,
+	ACCEL_TRIGGER_ON_CLICK_XYZ	    = 0x0055500,
+	ACCEL_TRIGGER_ON_DBLCLICK_XYZ   = 0x00AAA00,
+	ACCEL_TRIGGER_ON_ANYCLICK       = 0x00FFF00,
 
 	ACCEL_TRIGGER_ON_POS_TOP		= 0x0100000,		// Position detection, callback on position changed
 	ACCEL_TRIGGER_ON_POS_BOTTOM		= 0x0200000,
@@ -130,13 +130,13 @@ The capture interface allow to asynchronously get a dataset in the application l
 The capture process is initialized the following way:
 ```C
 itsdk_accel_ret_e accel_startMovementCapture(
-		itsdk_accel_scale_e 		scale,			// Movement Scale 2G, 4G...
-		itsdk_accel_frequency_e 	frequency,		// Capture sampling rate
-		itsdk_accel_precision_e 	precision,		// Raw Data size 8B, 10B...
-		itsdk_accel_trigger_e		axis,			// List of activated axis
-		itsdk_accel_hpf_e			hpf, 			// enable High pass filter
-		uint16_t					dataBlock,		// Expected data to be returned by callback
-		uint16_t					captureBlock,	// Number of blocks to capture - 0 for non stop
+		itsdk_accel_scale_e         scale,			// Movement Scale 2G, 4G...
+		itsdk_accel_frequency_e     frequency,		// Capture sampling rate
+		itsdk_accel_precision_e     precision,		// Raw Data size 8B, 10B...
+		itsdk_accel_trigger_e       axis,			// List of activated axis
+		itsdk_accel_hpf_e           hpf, 			// enable High pass filter
+		uint16_t                    dataBlock,		// Expected data to be returned by callback
+		uint16_t                    captureBlock,	// Number of blocks to capture - 0 for non stop
 		itsdk_accel_dataFormat_e	format,			// Data format
 		itsdk_accel_data_t		*	targetBuffer,	// Data buffer to be used to push the data
 		void (* callback)(itsdk_accel_data_t * data, itsdk_accel_dataFormat_e format, uint8_t count, itsdk_bool_e overrun)
@@ -162,10 +162,10 @@ typedef enum {
 
 Each of the data point have the following structure but the content can vary depends on the expected **format**:
 ```C
-typedef struct {							// RAW  MG  FORCE   ANGLE
-	int16_t	x;								//  X   X   Force    ROLL
-	int16_t y;								//  Y   Y	  0      PITCH
-	int16_t z;								//  Z   Z     0
+typedef struct {         // RAW  MG  FORCE   ANGLE
+	int16_t	x;           //  X   X   Force.   ROLL
+	int16_t y;           //  Y   Y   0        PITCH
+	int16_t z;           //  Z   Z   0
 } itsdk_accel_data_t;
 ```
 
