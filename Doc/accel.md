@@ -28,15 +28,15 @@ accel_configMovementDetection(
 The list of the possible trigger is:
 ```C
 typedef enum {
-	ACCEL_TRIGGER_ON_NONE			= 0x0000000,		// Tilt detection
-	ACCEL_TRIGGER_ON_X_HIGH			= 0x0000001,		//  Higher than the expected value
-	ACCEL_TRIGGER_ON_X_LOW			= 0x0000002,		//  Lower than the expected value
-	ACCEL_TRIGGER_ON_Y_HIGH			= 0x0000004,
-	ACCEL_TRIGGER_ON_Y_LOW			= 0x0000008,
-	ACCEL_TRIGGER_ON_Z_HIGH			= 0x0000010,
-	ACCEL_TRIGGER_ON_Z_LOW			= 0x0000020,
-	ACCEL_TRIGGER_ON_XYZ_HIGH		= 0x0000015,
-	ACCEL_TRIGGER_ON_XYZ_LOW 		= 0x000002A,
+	ACCEL_TRIGGER_ON_NONE           = 0x0000000,		// Tilt detection
+	ACCEL_TRIGGER_ON_X_HIGH         = 0x0000001,		//  Higher than the expected value
+	ACCEL_TRIGGER_ON_X_LOW          = 0x0000002,		//  Lower than the expected value
+	ACCEL_TRIGGER_ON_Y_HIGH         = 0x0000004,
+	ACCEL_TRIGGER_ON_Y_LOW          = 0x0000008,
+	ACCEL_TRIGGER_ON_Z_HIGH         = 0x0000010,
+	ACCEL_TRIGGER_ON_Z_LOW          = 0x0000020,
+	ACCEL_TRIGGER_ON_XYZ_HIGH       = 0x0000015,
+	ACCEL_TRIGGER_ON_XYZ_LOW        = 0x000002A,
 	ACCEL_TRIGGER_ON_X              = 0x0000003,
 	ACCEL_TRIGGER_ON_Y              = 0x000000C,
 	ACCEL_TRIGGER_ON_Z              = 0x0000030,
@@ -58,15 +58,15 @@ typedef enum {
 	ACCEL_TRIGGER_ON_DBLCLICK_XYZ   = 0x00AAA00,
 	ACCEL_TRIGGER_ON_ANYCLICK       = 0x00FFF00,
 
-	ACCEL_TRIGGER_ON_POS_TOP		= 0x0100000,		// Position detection, callback on position changed
-	ACCEL_TRIGGER_ON_POS_BOTTOM		= 0x0200000,
-	ACCEL_TRIGGER_ON_POS_LEFT		= 0x0400000,
-	ACCEL_TRIGGER_ON_POS_RIGHT		= 0x0800000,
-	ACCEL_TRIGGER_ON_POS_FRONT		= 0x1000000,
-	ACCEL_TRIGGER_ON_POS_BACK		= 0x2000000,
-	ACCEL_TRIGGER_ON_ANYPOS			= 0x3F00000,
+	ACCEL_TRIGGER_ON_POS_TOP        = 0x0100000,		// Position detection, callback on position changed
+	ACCEL_TRIGGER_ON_POS_BOTTOM     = 0x0200000,
+	ACCEL_TRIGGER_ON_POS_LEFT       = 0x0400000,
+	ACCEL_TRIGGER_ON_POS_RIGHT      = 0x0800000,
+	ACCEL_TRIGGER_ON_POS_FRONT      = 0x1000000,
+	ACCEL_TRIGGER_ON_POS_BACK       = 0x2000000,
+	ACCEL_TRIGGER_ON_ANYPOS         = 0x3F00000,
 
-	ACCEL_TRIGGER_ON_NOMOVEMENT		= 0x8000000			// No movement after the given time
+	ACCEL_TRIGGER_ON_NOMOVEMENT     = 0x8000000			// No movement after the given time
 } itsdk_accel_trigger_e;
 ```
 
@@ -148,15 +148,15 @@ The capture interface will call _callback_ the number of times indicated in **ca
 The **targetBuffer** is fill of datapoint in one of the expected format:
 ```C
 typedef enum {
-	ACCEL_DATAFORMAT_XYZ_RAW	= 0,		// data tab contains 16b raw data from the accelerometer
-	ACCEL_DATAFORMAT_XYZ_MG		= 1,		// data tab contains 16b data converted in Mg
-	ACCEL_DATAFORMAT_FORCE_MG	= 2,		// data tab contains in X the force vector
-	ACCEL_DATAFORMAT_ANGLES_RAD	= 3,		// data tab contains the angle of the device in milli-radian
-	ACCEL_DATAFORMAT_ANGLES_DEG	= 4,		// data tab contains the angle of the device in degrees
+	ACCEL_DATAFORMAT_XYZ_RAW    = 0,		// data tab contains 16b raw data from the accelerometer
+	ACCEL_DATAFORMAT_XYZ_MG     = 1,		// data tab contains 16b data converted in Mg
+	ACCEL_DATAFORMAT_FORCE_MG   = 2,		// data tab contains in X the force vector
+	ACCEL_DATAFORMAT_ANGLES_RAD = 3,		// data tab contains the angle of the device in milli-radian
+	ACCEL_DATAFORMAT_ANGLES_DEG = 4,		// data tab contains the angle of the device in degrees
 	ACCEL_DATAFORMAT_AVG_RAW    = 5,		// the block of data is averaged, first entry have the average RAW mode
 											//  then you can call the converter from the application
 
-	ACCEL_DATAFORMAT_END		= 0XFF
+	ACCEL_DATAFORMAT_END        = 0XFF
 } itsdk_accel_dataFormat_e;
 ```
 
