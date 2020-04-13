@@ -162,10 +162,10 @@ typedef enum {
 
 Each of the data point have the following structure but the content can vary depends on the expected **format**:
 ```C
-typedef struct {         // RAW  MG  FORCE   ANGLE
-	int16_t	x;           //  X   X   Force    ROLL
-	int16_t y;           //  Y   Y   0        PITCH
-	int16_t z;           //  Z   Z   0
+typedef struct {         // RAW  MG  FORCE    ANGLE
+    int16_t	x;           //  X   X   Force    ROLL
+    int16_t y;           //  Y   Y   0        PITCH
+    int16_t z;           //  Z   Z   0
 } itsdk_accel_data_t;
 ```
 
