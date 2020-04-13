@@ -1,11 +1,20 @@
 # Disk91 IoT_SDK not only for STM32
 
-This project is a low level SDK actually implementing STM32 for making IoT devices.
-It implements different usefull function is (I hope) a cleaner code than the usual ST SDK components. This SDK try to be fully configurable with header files. The objectif is to propose an abstraction layer between the software implementation and the MCU execution allowing to port the firmware on different plateform. 
+This project is a low level SDK with a harwdare abstraction layer designed to make IoT project. The purpose is to quickly be able to create communicating IoT device over LPWAN (LoRaWAn, Sigfox...) for fast prototyping but also being able to bring that firmware to production will all the necessary components avaoilable out-of-the-box. This SDK try to be fully configurable with header files. The objectif is to propose an abstraction layer between the software implementation and the MCU execution allowing to port the firmware on different plateform. 
 
-Most is done to preserve code size. 
-Made for being compiled with open-source environment GCC / AC6
-Also tested and working with CubeMXIDE environment
+![alt itsdk_architcture][achitecture]
+[achitecture]: Doc/it-sdk-architecture.png "IT-SDK Architecture"
+
+The SDK is currently implementing STM32L architecture. The abstraction layer allows to quickly add new platforms. 
+
+It implements different usefull function with (I hope) a cleaner code than the usual ST SDK components. 
+
+Most is done to preserve code size, the SDK can target small flash MCU from 16KB for simple applications.
+
+* IDE environement
+  * open-source environment GCC / AC6 (Eclipse)
+  * CubeIDE environment GCC / AC6 (Eclipse)
+  * May work with any others
 
 * Supported MCU functions
   * Low Power switch with regular auto-wakeup / LPUART / UART /GPIO Wake-up
@@ -26,6 +35,7 @@ Also tested and working with CubeMXIDE environment
   * Secured Storage in EEPROM for keys
   * End 2 End Sigfox & LoRaWan encryption
   * Configuration over serial for ID commissionning during manufacturing process
+  * Accelerometer abstraction layer
   
 * Communication protocols interface
   * Sigfox ( clear-text, AES128-CTR, SPECK32, Sigfox-EAS128-CTR-Encryption )
@@ -55,6 +65,8 @@ Also tested and working with CubeMXIDE environment
   	 * ST25DV - block access / serial console over FTM & memory
   * Hall Effect
      * sl353
+  * Accelerometer
+     * STM - LIS2DH12
        
 * Supported stacks
   * lorawan
@@ -68,13 +80,13 @@ to make it a portable SDK. The SDK have a it-sdk directory where everything need
 # Start your project by configuring a skeleton with Cube Mx 
 
 * Sys Clock Mux : HSI16
-* watchdog : configure IWDG with LSI 37KHz, IWDG_WINDOW 4095, IWDG_PRESCALER IWDG_PRESCALER_256
-* rtc timer : TIM21 is enable with clock source internal
-* lowPower : 
-  * LPUART1 (Async 9600 - 8/N/1) WakeUp => clock mode need to be HSI, max speed 9600
+* Watchdog : configure IWDG with LSI 37KHz, IWDG_WINDOW value 4095, IWDG_PRESCALER value 256
+* Rtc timer : TIM21 is enable with clock source internal for calibration
+* LowPower : 
+  * LPUART1/USART1/USART2 (Async 9600 - 8/N/1) for WakeUp => clock setting needs to be HSI and max speed needs to be 9600
   * RTC WakeUp => Activate ClkSource, Calendar, Internal WakeUp, Clk config : LSI, RTC/NVIC => Interrupt activated, Async prediv: 127, Sync prediv: 255
   * GPIO WakeUp => Activate the GPIO as ExtInterrupt, set with Pull & Trigger en Fall/Rise, activate NVIC EXI1_15
-* adc : Select an adc like for temperature to get the needed headers
+* adc : Select an adc like for temperature and Vcc to get the needed headers
 
 When generating the Project
 * Code generator:
