@@ -54,7 +54,7 @@ typedef enum {
 	ACCEL_TRIGGER_ON_DBLCLICK_Y_N   = 0x0020800,
 	ACCEL_TRIGGER_ON_CLICK_Z_N      = 0x0040000,
 	ACCEL_TRIGGER_ON_DBLCLICK_Z_N   = 0x0080000,
-	ACCEL_TRIGGER_ON_CLICK_XYZ	    = 0x0055500,
+	ACCEL_TRIGGER_ON_CLICK_XYZ      = 0x0055500,
 	ACCEL_TRIGGER_ON_DBLCLICK_XYZ   = 0x00AAA00,
 	ACCEL_TRIGGER_ON_ANYCLICK       = 0x00FFF00,
 
@@ -137,8 +137,8 @@ itsdk_accel_ret_e accel_startMovementCapture(
 		itsdk_accel_hpf_e           hpf, 			// enable High pass filter
 		uint16_t                    dataBlock,		// Expected data to be returned by callback
 		uint16_t                    captureBlock,	// Number of blocks to capture - 0 for non stop
-		itsdk_accel_dataFormat_e	format,			// Data format
-		itsdk_accel_data_t		*	targetBuffer,	// Data buffer to be used to push the data
+		itsdk_accel_dataFormat_e    format,			// Data format
+		itsdk_accel_data_t   *      targetBuffer,	// Data buffer to be used to push the data
 		void (* callback)(itsdk_accel_data_t * data, itsdk_accel_dataFormat_e format, uint8_t count, itsdk_bool_e overrun)
 													// callback function the interrupt will call
 )
@@ -163,7 +163,7 @@ typedef enum {
 Each of the data point have the following structure but the content can vary depends on the expected **format**:
 ```C
 typedef struct {         // RAW  MG  FORCE   ANGLE
-	int16_t	x;           //  X   X   Force.   ROLL
+	int16_t	x;           //  X   X   Force    ROLL
 	int16_t y;           //  Y   Y   0        PITCH
 	int16_t z;           //  Z   Z   0
 } itsdk_accel_data_t;
