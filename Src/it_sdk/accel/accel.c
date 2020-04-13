@@ -27,6 +27,7 @@
 #include <it_sdk/config.h>
 #include <it_sdk/logger/logger.h>
 #include <it_sdk/time/time.h>
+#include <math.h>
 
 #if ITSDK_WITH_DRIVERS == __ENABLE
 #include <it_sdk/configDrivers.h>
@@ -50,8 +51,8 @@ uint8_t							__accel_dataBufferRd;
 uint8_t							__accel_dataBufferWr;
 uint8_t							__accel_dataBufferSz;
 itsdk_bool_e					__accel_dataOverrun;
-uint8_t							__accel_dataBlockSz;
-uint8_t							__accel_dataBlockSzTransfered;
+uint16_t						__accel_dataBlockSz;
+uint16_t						__accel_dataBlockSzTransfered;
 uint16_t						__accel_dataBlockNb;
 itsdk_accel_dataFormat_e		__accel_dataFormat;
 itsdk_accel_data_t			*	__accel_dataDestBuffer;
@@ -119,7 +120,7 @@ itsdk_accel_ret_e accel_configMovementDetection(
 		uint16_t					tolerence,	// +/- Acceptable force in 10xmg. 0 for any (absolute value)
 		uint16_t 					ms,			// Duration of the Movement for being detected
 		uint32_t					noMvtMs,	// Duration of no trigger notification before reporting No Movement - when NOMOVEMENT trigger requested
-		itsdk_bool_e				hpf, 		// enable High pass filter
+		itsdk_accel_hpf_e			hpf, 		// enable High pass filter
 		itsdk_accel_trigger_e		triggers 	// List of triggers
 ) {
 
@@ -202,7 +203,7 @@ itsdk_accel_ret_e accel_configMovementDetection(
 			lis2dh12_convertScale(scale),
 			lis2dh_converFrequency(frequency,precision),
 			lis2dh_convertPrecision(precision),
-			((hpf==BOOL_TRUE)?LIS2DH_HPF_MODE_AGGRESSIVE:LIS2DH_HPF_MODE_DISABLE),
+			lis2dh_convertHPF(hpf),
 			triggers,
 			&__accel_triggerCallback
 			) == LIS2DH_FAILED ) return ACCEL_FAILED;
@@ -260,25 +261,48 @@ itsdk_accel_ret_e accel_startMovementCapture(
 		itsdk_accel_frequency_e 	frequency,		// Capture sampling rate
 		itsdk_accel_precision_e 	precision,		// Raw Data size 8B, 10B...
 		itsdk_accel_trigger_e		axis,			// List of activated axis
-		itsdk_bool_e				hpf, 			// enable High pass filter
-		uint8_t						dataBlock,		// Expected data to be returned by callback
+		itsdk_accel_hpf_e			hpf, 			// enable High pass filter
+		uint16_t					dataBlock,		// Expected data to be returned by callback
 		uint16_t					captureBlock,	// Number of blocks to capture - 0 for non stop
 		itsdk_accel_dataFormat_e	format,			// Data format
 		itsdk_accel_data_t		*	targetBuffer,	// Data buffer to be used to push the data
 		void (* callback)(itsdk_accel_data_t * data, itsdk_accel_dataFormat_e format, uint8_t count, itsdk_bool_e overrun)
 													// callback function the interrupt will call
 ){
+  // ****
+  // find the best watermark level for the underlaying driver
+  uint8_t fifoWatemark;
+  if (  dataBlock < __accel_getAccelMaxFifoWTM() ) fifoWatemark = dataBlock;
+  else {
+	// find the best divider
+	uint8_t maxWTM = 0;
+	uint8_t maxK = 0;
+	for ( int k = 1 ; k < __accel_getAccelMaxFifoWTM() ; k++ ) {
+		uint32_t p = (itsdk_pgcd(dataBlock,k));
+		if (p > maxWTM) {
+			maxWTM = p;
+			maxK = k;
+		}
+	}
+	fifoWatemark = maxK;
+  }
+  if ( fifoWatemark < __accel_getAccelMinFifoWTM() ) {
+	 // for low frequency we can target request under the minimum, the underlaying driver will take
+	 // the decision of accepting or refusing
+	 if ( frequency == ACCEL_WISH_FREQUENCY_10HZ ) fifoWatemark = __accel_getAccelMinFifoWTM() / 2;
+	 else if ( frequency > ACCEL_WISH_FREQUENCY_10HZ ) fifoWatemark = __accel_getAccelMinFifoWTM();
+  }
 
   #if ITSDK_DRIVERS_ACCEL_LIS2DH12 == __ENABLE
+	//uint8_t	driverWatermark = (dataBlock > DRIVER_LIS2DH_DEFAULT_WATERMARK)?
 
 	if ( lis2dh_setupDataAquisition(
 			lis2dh12_convertScale(scale),					// scale 2G/4G...
 			lis2dh_converFrequency(frequency,precision), 	// capture frequency 1/10/25/50Hz..
 			lis2dh_convertPrecision(precision),				// data precision 8B/10B/12B...
 			axis,											// Select the axis
-			((hpf==BOOL_TRUE)?LIS2DH_HPF_MODE_AGGRESSIVE:LIS2DH_HPF_MODE_DISABLE),	// High Frequency Filter strategy
-			DRIVER_LIS2DH_DEFAULT_WATERMARK,				// Expected data to be returned by callback (watermark)
-															// 50% of the fifo size
+			lis2dh_convertHPF(hpf),							// High Pass Filter strategy
+			fifoWatemark,									// Expected data to be returned by callback (watermark)
 			__accel_movementCaptureCallback
 															// callback function the interrupt will call
 															// data format is always raw
@@ -298,7 +322,10 @@ itsdk_accel_ret_e accel_startMovementCapture(
 }
 
 itsdk_accel_ret_e accel_stopMovementCapture(void) {
-	 return ACCEL_SUCCESS;
+   #if ITSDK_DRIVERS_ACCEL_LIS2DH12 == __ENABLE
+	if ( lis2dh_cancelDataAquisition() == LIS2DH_FAILED ) return ACCEL_FAILED;
+   #endif
+   return ACCEL_SUCCESS;
 }
 
 /** *********************************************************************
@@ -363,8 +390,6 @@ void __accel_asyncMovementCaptureProcess(void) {
 				__accel_dataBlockSz - __accel_dataBlockSzTransfered :
 				ITSDK_DRIVERS_ACCEL_DATABLOCK_BUFFER_WTM;
 
-		log_info("toRead %d\r\n",toRead);
-
 		// Buffer is ready for copy
 		itsdk_enterCriticalSection();
 		for (int i = 0 ; i < toRead ; i++ ) {
@@ -384,32 +409,45 @@ void __accel_asyncMovementCaptureProcess(void) {
 
 			case ACCEL_DATAFORMAT_XYZ_MG: {
 					for ( int i = 0 ; i < __accel_dataBlockSz ; i++ ) {
-						#if ITSDK_DRIVERS_ACCEL_LIS2DH12 == __ENABLE
-						 lis2dh_convertRawToMg(&__accel_dataDestBuffer[i]);
-						#endif
+						accel_convertDataPointRaw2Mg(&__accel_dataDestBuffer[i]);
 					}
 				}
 				break;
 			case ACCEL_DATAFORMAT_FORCE_MG: {
-				for ( int i = 0 ; i < __accel_dataBlockSz ; i++ ) {
-					#if ITSDK_DRIVERS_ACCEL_LIS2DH12 == __ENABLE
-					 lis2dh_convertRawToMg(&__accel_dataDestBuffer[i]);
-					#endif
-					accel_convertDataPointMg2Force(&__accel_dataDestBuffer[i]);
-				}
+					for ( int i = 0 ; i < __accel_dataBlockSz ; i++ ) {
+						accel_convertDataPointRaw2Mg(&__accel_dataDestBuffer[i]);
+						accel_convertDataPointMg2Force(&__accel_dataDestBuffer[i]);
+					}
 				}
 				break;
-
-			case ACCEL_DATAFORMAT_ANGLES: {
-
+			case ACCEL_DATAFORMAT_ANGLES_RAD: {
+					for ( int i = 0 ; i < __accel_dataBlockSz ; i++ ) {
+						accel_convertDataPointRaw2Angle(&__accel_dataDestBuffer[i],BOOL_FALSE);
+					}
 			    }
+				break;
+			case ACCEL_DATAFORMAT_ANGLES_DEG: {
+					for ( int i = 0 ; i < __accel_dataBlockSz ; i++ ) {
+						accel_convertDataPointRaw2Angle(&__accel_dataDestBuffer[i],BOOL_TRUE);
+					}
+			    }
+				break;
+			case ACCEL_DATAFORMAT_AVG_RAW: {
+				    int32_t x=0 ,y=0 ,z=0;
+					for ( int i = 0 ; i < __accel_dataBlockSz ; i++ ) {
+						x+=__accel_dataDestBuffer[i].x;
+						y+=__accel_dataDestBuffer[i].y;
+						z+=__accel_dataDestBuffer[i].z;
+					}
+					__accel_dataDestBuffer[0].x = (int16_t)(x/__accel_dataBlockSz);
+					__accel_dataDestBuffer[0].y = (int16_t)(y/__accel_dataBlockSz);
+					__accel_dataDestBuffer[0].z = (int16_t)(z/__accel_dataBlockSz);
+				}
 				break;
 			case ACCEL_DATAFORMAT_XYZ_RAW:
 			default:
 				break;
 			}
-
-
 
 			// report the data
 			if ( __accel_dataCallback != NULL ) {
@@ -557,6 +595,18 @@ void __accel_asyncTriggerProcess(void) {
 /**
  * Convert a point with forces expressed in Mg into a force in Mg
  */
+itsdk_accel_ret_e accel_convertDataPointRaw2Mg(itsdk_accel_data_t * data) {
+	#if ITSDK_DRIVERS_ACCEL_LIS2DH12 == __ENABLE
+	 lis2dh_convertRawToMg(data);
+	#endif
+	return ACCEL_SUCCESS;
+}
+
+
+
+/**
+ * Convert a point with forces expressed in Mg into a force in Mg
+ */
 itsdk_accel_ret_e accel_convertDataPointMg2Force(itsdk_accel_data_t * data) {
 	int32_t t = data->x;
 	int32_t f = t*t;
@@ -571,7 +621,42 @@ itsdk_accel_ret_e accel_convertDataPointMg2Force(itsdk_accel_data_t * data) {
 	return ACCEL_SUCCESS;
 }
 
+/**
+ * Convert a point into angles
+ * Value in milli-radian or degrees when toDegrees is true
+ */
+itsdk_accel_ret_e accel_convertDataPointRaw2Angle(itsdk_accel_data_t * data, itsdk_bool_e toDegrees) {
 
+	double x = (double)data->x;
+	double y = (double)data->y;
+	double z = (double)data->z;
+	data->x = (int16_t)(1000.0*(atan2(y , z))); // roll in radian
+	data->y = (int16_t)(1000.0*atan2((-x) , sqrt(y * y + z * z))); // pitch in radian
+	data->z = 0;
+
+	if ( toDegrees == BOOL_TRUE ) {
+		data->x = (180*data->x)/3141;
+		data->y = (180*data->y)/3141;
+	}
+	return ACCEL_SUCCESS;
+}
+
+
+uint8_t __accel_getAccelMinFifoWTM(void) {
+#if ITSDK_DRIVERS_ACCEL_LIS2DH12 == __ENABLE
+	return DRIVER_LIS2DH_MIN_WATERMARK;
+#else
+	#error "need to define DRIVER_XXXXX_MIN_WATREMARK"
+#endif
+}
+
+uint8_t __accel_getAccelMaxFifoWTM(void) {
+#if ITSDK_DRIVERS_ACCEL_LIS2DH12 == __ENABLE
+	return DRIVER_LIS2DH_MAX_WATERMARK;
+#else
+	#error "need to define DRIVER_XXXXX_MAX_WATREMARK"
+#endif
+}
 
 #endif  // ITSDK_DRIVERS_ACCEL_LIS2DH12 || ...
 #endif  // DRIVERS

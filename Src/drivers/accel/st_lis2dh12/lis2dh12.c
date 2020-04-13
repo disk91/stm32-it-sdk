@@ -84,7 +84,6 @@ static void __lis2dh_processData(void) {
 	if ( __lis2dh_conf._captureModeEnable == BOOL_TRUE ) {
 	   if ( lis2dh_isFiFoWatermarkExceeded() == BOOL_TRUE ) {
 	  	  uint8_t sz = lis2dh_getFiFoSize();
-	  	  if ( sz == 0 ) log_info(">> 0\r\n");
  		  itsdk_bool_e ov = lis2dh_isFiFoFull();
 		  itsdk_accel_data_t	buffer[4];
 		  for ( int i = 0 ; i < (sz>>2) + 1 ; i++ ) {
@@ -322,7 +321,9 @@ drivers_lis2dh12_ret_e lis2dh_setupDataAquisition(
    drivers_lis2dh12_ret_e ret = LIS2DH_SUCCESS;
 
    if (__lis2dh_conf._tiltModeEnable == BOOL_TRUE) return LIS2DH_FAILED;
-   if ( dataBlock >= LIS2DH_FTH_MAXVALUE ) return LIS2DH_FAILED;
+   if ( dataBlock >= LIS2DH_FTH_MAXVALUE ) dataBlock = DRIVER_LIS2DH_MAX_WATERMARK;
+   if ( dataBlock < DRIVER_LIS2DH_MIN_WATERMARK && frequency > LIS2DH_FREQUENCY_10HZ ) dataBlock = DRIVER_LIS2DH_MIN_WATERMARK;
+
 
    if (ITSDK_DRIVERS_LIS2DH12_INT2_PIN != __LP_GPIO_NONE ) {
     // No interrupt during setup
@@ -353,11 +354,12 @@ drivers_lis2dh12_ret_e lis2dh_setupDataAquisition(
   if ( (axis & ACCEL_TRIGGER_ON_Y) > 0 ) ret |= lis2dh_enableAxisY();
   if ( (axis & ACCEL_TRIGGER_ON_Z) > 0 ) ret |= lis2dh_enableAxisZ();
 
-  ret |= lis2dh_setFiFoMode(LIS2DH_FM_STREAM);
+  ret |= lis2dh_setFiFoMode(LIS2DH_FM_BYPASS);				// clear FiFo content
+  ret |= lis2dh_setFiFoMode(LIS2DH_FM_STREAM);				// set the desired mode
   ret |= lis2dh_setFiFoThreshold(dataBlock);
-  ret |= lis2dh_triggerSelect(LIS2DH_ONTRIGGER_INT2);
-  ret |= lis2dh_intWorkingMode(LIS2DH_INTERRUPT2, LIS2DH_INT_MODE_OR);
-  ret |= lis2dh_enableLatchInterrupt(LIS2DH_INTERRUPT2, BOOL_TRUE);
+  ret |= lis2dh_intWorkingMode(LIS2DH_INTERRUPT1, LIS2DH_INT_MODE_OR);
+  ret |= lis2dh_enableLatchInterrupt(LIS2DH_INTERRUPT1, BOOL_TRUE);
+
   ret |= lis2dh_enableFifo(BOOL_TRUE);
 
   if ( ret == LIS2DH_SUCCESS ) {
@@ -373,13 +375,34 @@ drivers_lis2dh12_ret_e lis2dh_setupDataAquisition(
    	  __lis2dh_readRegister(LIS2DH_FIFO_SRC_REG);
 	  ret |= lis2dh_enableInterruptPin1(LIS2DH_I1_WTM);
    } else {
- 	  log_error("Lis2dh - data caq config failed\r\n");
+ 	  log_error("Lis2dh - data capture config failed\r\n");
    }
 
   return ret;
 }
 
 
+drivers_lis2dh12_ret_e lis2dh_cancelDataAquisition(void) {
+	drivers_lis2dh12_ret_e ret = LIS2DH_SUCCESS;
+
+	if ( __lis2dh_conf._captureModeEnable ) {
+		// stop interruption
+		ret |= lis2dh_disableAllInterrupt();
+    	if (ITSDK_DRIVERS_LIS2DH12_INT1_PIN != __LP_GPIO_NONE ) {
+    		gpio_interruptDisable(ITSDK_DRIVERS_LIS2DH12_INT1_BANK, ITSDK_DRIVERS_LIS2DH12_INT1_PIN);
+    	}
+		__lis2dh_conf._captureCB = NULL;
+
+		// switch powerdown
+		ret |= lis2dh_resetFilteringBlock();	// clear the filtering block
+		ret |= lis2dh_setDataRate(LIS2DH_FREQUENCY_POWERDOWN);
+		ret |= lis2dh_setResolutionMode(LIS2DH_RESOLUTION_MODE_8B);
+		ret |= lis2dh_setAccelerationScale(LIS2DH_SCALE_FACTOR_2G);
+
+		__lis2dh_conf._captureModeEnable = BOOL_FALSE;
+		return ret;
+	} else return LIS2DH_FAILED;
+}
 
 /**
  * Read the Fifo buffer until empty. Load the result into a
@@ -477,6 +500,7 @@ drivers_lis2dh12_ret_e lis2dh_setupBackgroundTiltDetection(
   // Activate data capture and mask interruption before reconfiguring it
   ret |= lis2dh_disableAllInterrupt();
   ret |= lis2dh_enableAxisXYZ();
+  ret |= lis2dh_setFiFoMode(LIS2DH_FM_BYPASS);				// clear FiFo content
   ret |= lis2dh_setFiFoMode(LIS2DH_FM_STREAM);
   ret |= lis2dh_enableFifo(BOOL_TRUE);
   // Click configuration if needed
@@ -2266,6 +2290,10 @@ drivers_lis2dh12_resolution_e lis2dh_convertPrecision(itsdk_accel_precision_e in
 		case ACCEL_WISH_PRECSION_16B:
 		case ACCEL_WISH_PRECSION_12B: return LIS2DH_RESOLUTION_MODE_12B;
 	}
+}
+
+drivers_lis2dh12_hpcfmode_e lis2dh_convertHPF(itsdk_accel_hpf_e hpfm) {
+	return (drivers_lis2dh12_hpcfmode_e)hpfm;
 }
 
 

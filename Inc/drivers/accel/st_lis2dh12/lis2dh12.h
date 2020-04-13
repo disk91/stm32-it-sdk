@@ -56,7 +56,8 @@ typedef enum {
 
 #define DRIVER_LIS2DH_DEFAULT_ADDRESS		0x18		// default I2C address
 
-#define DRIVER_LIS2DH_DEFAULT_WATERMARK		16			// default watermark 50% of the FIFO
+#define DRIVER_LIS2DH_MIN_WATERMARK			 4			//  because we do not want frequency to be too high
+#define DRIVER_LIS2DH_MAX_WATERMARK			28			//  -4 margin
 
 // ********************************************************************************
 // Registers
@@ -556,7 +557,7 @@ drivers_lis2dh12_ret_e lis2dh_setupDataAquisition(
 															// callback function the interrupt will call
 															// data format is always raw
 );
-
+drivers_lis2dh12_ret_e lis2dh_cancelDataAquisition(void);
 
 uint8_t lis2dh_getPosition6D();                                                            // Return one of the 6D positions
 
@@ -709,6 +710,7 @@ drivers_lis2dh12_scale_e lis2dh12_convertScale(itsdk_accel_scale_e intput);
 drivers_lis2dh12_frequency_e lis2dh_converFrequency(itsdk_accel_frequency_e input, itsdk_accel_precision_e p);
 drivers_lis2dh12_resolution_e lis2dh_convertPrecision(itsdk_accel_precision_e input);
 drivers_lis2dh12_ret_e lis2dh_convertRawToMg(itsdk_accel_data_t * data);
+drivers_lis2dh12_hpcfmode_e lis2dh_convertHPF(itsdk_accel_hpf_e hpfm) ;
 
 // Logger wrapper
 

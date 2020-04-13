@@ -60,7 +60,7 @@ uint32_t calculateCRC32(const uint8_t *data, uint16_t length);
 void itsdk_inlineCRC32_init();
 uint32_t itsdk_inlineCRC32_next(uint32_t c, uint8_t size);
 uint32_t itsdk_isqtr(uint32_t n);
-
+uint32_t itsdk_pgcd(uint32_t a, uint32_t b);
 char itdt_convertHalfInt2HexChar(uint8_t v,bool upper);
 void itdt_convertInt2HexChar(uint8_t v, char * dest, bool upper);
 void itdt_convertIntTab2Hex(char * dest, uint8_t * tab, int len, bool upper);

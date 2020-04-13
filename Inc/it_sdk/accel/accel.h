@@ -66,6 +66,15 @@ typedef enum {
 	ACCEL_WISH_SCALE_FACTOR_16G	= 3
 } itsdk_accel_scale_e;
 
+// High pass filter
+typedef enum {
+	ACCEL_WISH_HPF_MODE_DISABLE = 		0,
+	ACCEL_WISH_HPF_MODE_LIGHT   = 		1,
+	ACCEL_WISH_HPF_MODE_MEDIUM  = 		2,
+	ACCEL_WISH_HPF_MODE_STRONG  = 		3,
+	ACCEL_WISH_HPF_MODE_AGGRESSIVE = 	4
+} itsdk_accel_hpf_e;
+
 typedef enum {
 	ACCEL_TRIGGER_ON_NONE			= 0x0000000,
 	ACCEL_TRIGGER_ON_X_HIGH			= 0x0000001,
@@ -118,9 +127,9 @@ typedef struct itsdk_accel_eventHandler_s {
 } itsdk_accel_eventHandler_t;
 
 
-typedef struct {							// RAW  MG  FORCE
-	int16_t	x;								//  X   X   Force
-	int16_t y;								//  Y   Y	  0
+typedef struct {							// RAW  MG  FORCE   ANGLE
+	int16_t	x;								//  X   X   Force    ROLL
+	int16_t y;								//  Y   Y	  0      PITCH
 	int16_t z;								//  Z   Z     0
 } itsdk_accel_data_t;
 
@@ -128,7 +137,12 @@ typedef enum {
 	ACCEL_DATAFORMAT_XYZ_RAW	= 0,		// data tab contains 16b raw data from the accelerometer
 	ACCEL_DATAFORMAT_XYZ_MG		= 1,		// data tab contains 16b data converted in Mg
 	ACCEL_DATAFORMAT_FORCE_MG	= 2,		// data tab contains in X the force vector
-	ACCEL_DATAFORMAT_ANGLES		= 3			// data tab contains the angle of the device
+	ACCEL_DATAFORMAT_ANGLES_RAD	= 3,		// data tab contains the angle of the device in milli-radian
+	ACCEL_DATAFORMAT_ANGLES_DEG	= 4,		// data tab contains the angle of the device in degrees
+	ACCEL_DATAFORMAT_AVG_RAW    = 5,		// the block of data is averaged, first entry have the average RAW mode
+											//  then you can call the converter from the application
+
+	ACCEL_DATAFORMAT_END		= 0XFF
 } itsdk_accel_dataFormat_e;
 
 
@@ -145,7 +159,7 @@ itsdk_accel_ret_e accel_configMovementDetection(
 		uint16_t					tolerence,	// +/- Acceptable force in 10xmg. 0 for any (absolute value)
 		uint16_t 					ms,			// Duration of the Movement for being detected
 		uint32_t					noMvtMs,	// Duration of no trigger notification before reporting No Movement - when NOMOVEMENT trigger requested
-		itsdk_bool_e				hpf, 		// enable High pass filter
+		itsdk_accel_hpf_e			hpf, 		// enable High pass filter
 		itsdk_accel_trigger_e		triggers 	// List of triggers
 );
 itsdk_accel_ret_e accel_addTriggerCallBack(
@@ -163,24 +177,28 @@ itsdk_accel_ret_e accel_startMovementCapture(
 		itsdk_accel_frequency_e 	frequency,		// Capture sampling rate
 		itsdk_accel_precision_e 	precision,		// Raw Data size 8B, 10B...
 		itsdk_accel_trigger_e		axis,			// List of activated axis
-		itsdk_bool_e				hpf, 			// enable High pass filter
-		uint8_t						dataBlock,		// Expected data to be returned by callback
+		itsdk_accel_hpf_e			hpf, 			// enable High pass filter
+		uint16_t					dataBlock,		// Expected data to be returned by callback
 		uint16_t					captureblock,	// Number of blocks to capture - 0 for non stop
 		itsdk_accel_dataFormat_e	format,			// Data format
 		itsdk_accel_data_t		*	targetBuffer,	// Data buffer to be used to push the data
 		void (* callback)(itsdk_accel_data_t * data, itsdk_accel_dataFormat_e format, uint8_t count, itsdk_bool_e overrun)
 													// callback function the interrupt will call
 );
+itsdk_accel_ret_e accel_stopMovementCapture(void);
 
 // ----
 // Conversion
+itsdk_accel_ret_e accel_convertDataPointRaw2Mg(itsdk_accel_data_t * data);
 itsdk_accel_ret_e accel_convertDataPointMg2Force(itsdk_accel_data_t * data);
-
+itsdk_accel_ret_e accel_convertDataPointRaw2Angle(itsdk_accel_data_t * data, itsdk_bool_e toDegrees);
 
 // Internal functions
 void __accel_triggerCallback(itsdk_accel_trigger_e triggers);
 void __accel_asyncTriggerProcess(void);
 void __accel_asyncMovementCaptureProcess(void);
+uint8_t __accel_getAccelMinFifoWTM(void);
+uint8_t __accel_getAccelMaxFifoWTM(void);
 
 //void accel_configMovementDetection(uint16_t mg, uint8_t ms, /* axis list, sampling freq, scale */);
 //void accel_addTriggerOnMovement(void(* callback)(uint8_t id), uint8_t id);
