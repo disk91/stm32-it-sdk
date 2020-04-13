@@ -152,7 +152,7 @@ Other modifications (need to be done on every CubeMx project regeneration):
   
 # Documentation
 
-The documentation about the different components is available in **[/Docs](Docs/)** directory.
+The documentation about the different components is available in **[/Doc](Doc/)** directory.
 The function API are not documented in the _.h_ files but more generally in the _.c_ files.
 Work in progress...
 
