@@ -2,8 +2,7 @@
 
 This project is a low level SDK with a harwdare abstraction layer designed to make IoT project. The purpose is to quickly be able to create communicating IoT device over LPWAN (LoRaWAn, Sigfox...) for fast prototyping but also being able to bring that firmware to production will all the necessary components avaoilable out-of-the-box. This SDK try to be fully configurable with header files. The objectif is to propose an abstraction layer between the software implementation and the MCU execution allowing to port the firmware on different plateform. 
 
-![alt itsdk_architcture][achitecture]
-[achitecture]: (Doc/it-sdk-architecture.png) "IT-SDK Architecture"
+![itsdk_architcture](Doc/it-sdk-architecture.png) "IT-SDK Architecture"
 
 The SDK is currently implementing STM32L architecture. The abstraction layer allows to quickly add new platforms. 
 
