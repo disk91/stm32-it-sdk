@@ -186,7 +186,7 @@ drivers_lis2dh12_ret_e lis2dh_setup(
       itsdk_delayMs(2);
 
 
-      if ( ( ITSDK_DRIVERS_ACCEL_LIS2DH_ADDRESS & __ACCEL_LIS2DH12_SA0_HIGH ) == 0 ) {
+      if ( ( ITSDK_DRIVERS_ACCEL_LIS2DH_ADDRESS & DRIVER_LIS2DH12_SA0_HIGH ) == 0 ) {
       	// SA0 is low
           // Not working way to disable pull-down
           __lis2dh_writeMaskedRegisterI(LIS2DH_CTRL_REG0, LIS2DH_REG0_SA0PULLUP_MASK, LIS2DH_REG0_SA0PULLUP_DISABLE);

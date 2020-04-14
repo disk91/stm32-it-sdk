@@ -33,12 +33,13 @@
 #include <it_sdk/configDrivers.h>
 
 // Do not compile is none of the supported drivers are enabled
-#if ITSDK_DRIVERS_ACCEL_LIS2DH12 == __ENABLE
+#if ITSDK_DRIVERS_WITH_ACCEL_DRIVER == __ENABLE
 
 
 /**
  * EventQueue for asynchronous processing
  */
+itsdk_bool_e					__accel_setupDone = BOOL_FALSE;
 itsdk_accel_trigger_e 			__triggerQueue[ACCEL_TRIGGER_QUEUE_SIZE];
 uint8_t				  			__triggerQueueRd;
 uint8_t				 			__triggerQueueWr;
@@ -88,6 +89,7 @@ itsdk_accel_ret_e accel_initPowerDown() {
 	__accel_dataBufferWr = 0;
 	__accel_dataBufferSz = 0;
 	__accel_dataOverrun = BOOL_FALSE;
+	__accel_setupDone = BOOL_TRUE;
 	return ret;
 }
 
@@ -95,7 +97,8 @@ itsdk_accel_ret_e accel_initPowerDown() {
  * This function must be called by the main loop to manage the
  * accelerometer on regular basis.
  */
-void accel_process(void) {
+void accel_process_loop(void) {
+	if ( __accel_setupDone == BOOL_FALSE ) return;
 	#if ITSDK_DRIVERS_ACCEL_LIS2DH12 == __ENABLE
 	  lis2dh12_process();
 	#endif
@@ -658,5 +661,5 @@ uint8_t __accel_getAccelMaxFifoWTM(void) {
 #endif
 }
 
-#endif  // ITSDK_DRIVERS_ACCEL_LIS2DH12 || ...
+#endif  // ITSDK_DRIVERS_WITH_ACCEL_DRIVER || ...
 #endif  // DRIVERS

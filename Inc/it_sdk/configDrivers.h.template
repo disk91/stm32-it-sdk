@@ -85,23 +85,44 @@
 #define __MAX44009_A0_LOW						0x0
 #define ITSDK_DRIVERS_MAX44009_ADDRESS			(DRIVER_MAX44009_DEVICE_ADR | __MAX44009_A0_LOW)	// Device address, based on the schematics
 
+// *************************************** ACCELEROMETERS *****************************************************************
+
+// -------------------------------------------------------------------------
+// Accelerometers : COMMON
+
+#define ITSDK_DRIVERS_WITH_ACCEL_DRIVER				__DISABLE				// Enable ACCELEROMETER code
+#define ITSDK_DRIVERS_ACCEL_DATABLOCK_BUFFER_SZ		64						// Buffer size to store the pending accelerometer data
+																			//  x6 Bytes / Must be a power of 2
+#define ITSDK_DRIVERS_ACCEL_DATABLOCK_BUFFER_WTM	32						// Software Watermark to process the DATABLOCK Transfert to
+																			//  the application layer
+
 // -------------------------------------------------------------------------
 // Accelerometers : LIS2DH12
 
 #define ITSDK_DRIVERS_ACCEL_LIS2DH12			__DISABLE
+#define ITSDK_DRIVERS_ACCEL_LIS2DH_LOG_LEVEL 	__LOG_LEVEL_VERBOSE_DEBUG
 #if ITSDK_DRIVERS_ACCEL_LIS2DH12 == __ENABLE
 	#ifndef __I2C_INCLUDED
 	  #define __I2C_INCLUDED
 	  #include "i2c.h"
 	#endif
 	#include <drivers/accel/st_lis2dh12/lis2dh12.h>
-#endif
-#define ITSDK_DRIVERS_ACCEL_LIS2DH_I2C			hi2c1						// I2C port to be used for communications
-#define __ACCEL_LIS2DH12_SA0_HIGH				0x1
-#define __ACCEL_LIS2DH12_SA0_LOW				0x0
-#define ITSDK_DRIVERS_ACCEL_LIS2DH_ADDRESS	  (DRIVER_LIS2DH_DEFAULT_ADDRESS | __ACCEL_LIS2DH12_SA0_HIGH)
+	#define ITSDK_DRIVERS_ACCEL_LIS2DH_ADDRESS	  (DRIVER_LIS2DH_DEFAULT_ADDRESS | DRIVER_LIS2DH12_SA0_HIGH)
 																			// Device address, based on the schematics
 																			// Change it to fit the right configuration
+																			// SA0_LOW can cause extra consumption as the device
+																			//  setting to deactivate pull up seems to not working
+#endif
+#define ITSDK_DRIVERS_ACCEL_LIS2DH_I2C			hi2c1						// I2C port to be used for communications
+#define ITSDK_DRIVERS_LIS2DH12_INT2_BANK		__BANK_B					// INT2 Pin ( the one used by the driver )
+#define ITSDK_DRIVERS_LIS2DH12_INT2_PIN			__LP_GPIO_13				//   __LP_GPIO_NONE if not used
+																			// -> the driver has been made to support at
+																			//    least this interruption line. This is the default one
+#define ITSDK_DRIVERS_LIS2DH12_INT1_BANK		__BANK_B					// INT1 Pin
+#define ITSDK_DRIVERS_LIS2DH12_INT1_PIN			__LP_GPIO_NONE				//   __LP_GPIO_NONE if not used
+																			//   This interrupt line is mandatory to manage fifo interrupt
+
+
 
 
 // *************************************** ENERGY ****************************************************************

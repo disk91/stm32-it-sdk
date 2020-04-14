@@ -173,7 +173,10 @@ configuration file. Please find the different settings added version after versi
  - ITSDK_WITH_EXPERIMENTAL / activate or deactivate some experimental code by default set it to DISABLE
 
 ### configDriver.h
+ - ITSDK_DRIVERS_WITH_ACCEL_DRIVER
  - ITSDK_DRIVERS_ACCEL_LIS2DH12 
+ - ITSDK_DRIVERS_WITH_GNSS_DRIVER
+ - ITSDK_DRIVERS_GNSS_QUECTEL
 
 ## from version 1.5.0
 ### config.h

@@ -50,7 +50,6 @@
  * See each of the function for details.
  *
  * ----------------------------------------------------------
- * @TODO - Backlog features
  *
  * ==========================================================
  */
@@ -76,6 +75,15 @@
 #include <it_sdk/logger/error.h>
 #endif
 
+#if ITSDK_WITH_DRIVERS == __ENABLE
+#include <it_sdk/configDrivers.h>
+  #if ITSDK_DRIVERS_WITH_ACCEL_DRIVER == __ENABLE
+	#include <it_sdk/accel/accel.h>
+  #endif
+  #if ITSDK_DRIVERS_WITH_GNSS_DRIVER == __ENABLE
+	#include <it_sdk/gnss/gnss.h>
+  #endif
+#endif
 
 /**
  * The setup function is called on every MCU Reset but not on wakeup from sleep
@@ -146,6 +154,12 @@ void itsdk_loop() {
 	#endif
 	#if ITSDK_SHEDULER_TASKS > 0
 	   itdt_sched_execute();
+	#endif
+	#if ITSDK_DRIVERS_WITH_ACCEL_DRIVER == __ENABLE
+	   accel_process_loop();
+    #endif
+	#if ITSDK_DRIVERS_WITH_GNSS_DRIVER == __ENABLE
+	   gnss_process_loop();
 	#endif
 	project_loop();
 	#if ITSDK_WITH_CONSOLE == __ENABLE
