@@ -193,8 +193,6 @@ void itsdk_console_setup() {
 	__console_head_chain.console_private = _itsdk_console_private;
 	__console_head_chain.console_public = _itsdk_console_public;
 	__console_head_chain.next = NULL;
-
-
 }
 
 

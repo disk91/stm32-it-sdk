@@ -7,7 +7,7 @@ The driver deals with the underlaying accelerometer configuration. By-the-way a 
 
 ## Make the Accelerometer working
 At first you need to call _itsdk_accel_ret_e accel_initPowerDown()_ from your **project_setup** function.
-Then you need to call the _void accel_process(void)_ in your **project_loop** function.
+Then you need to call the _void accel_process_loop(void)_ in your **project_loop** function. This last function is already added in the _itsdk_loop()_ so you don't need to add it in the application layer. 
 
 
 ## Tilt / position / click detection

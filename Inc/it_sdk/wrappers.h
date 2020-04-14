@@ -25,11 +25,11 @@
  * ==========================================================
  */
 
-#ifndef STM32L_SDK_WRAPPERS_H_
-#define STM32L_SDK_WRAPPERS_H_
-
 #include <stdbool.h>
 #include <it_sdk/config.h>
+
+#ifndef STM32L_SDK_WRAPPERS_H_
+#define STM32L_SDK_WRAPPERS_H_
 
 // ================================================
 // Serial wrappers

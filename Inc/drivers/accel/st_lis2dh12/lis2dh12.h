@@ -55,6 +55,9 @@ typedef enum {
 } drivers_lis2dh12_hpcfmode_e;
 
 #define DRIVER_LIS2DH_DEFAULT_ADDRESS		0x18		// default I2C address
+#define DRIVER_LIS2DH12_SA0_HIGH			0x1
+#define DRIVER_LIS2DH12_SA0_LOW				0x0
+
 
 #define DRIVER_LIS2DH_MIN_WATERMARK			 4			//  because we do not want frequency to be too high
 #define DRIVER_LIS2DH_MAX_WATERMARK			28			//  -4 margin

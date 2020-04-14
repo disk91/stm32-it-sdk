@@ -150,7 +150,7 @@ typedef enum {
 
 
 itsdk_accel_ret_e accel_initPowerDown();
-void accel_process(void);
+void accel_process_loop(void); // Loop process automatically included in the itsdk_loop
 
 // ---
 // Event detection
