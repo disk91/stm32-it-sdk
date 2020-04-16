@@ -133,7 +133,6 @@ drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode) {
 								| ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_FGT_DISABLE
 						        | 3 << ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_NCELL_SHIFT
 							    );
-#if ITSDK_WITH_EXPERIMENTAL == __DISABLE
 				// Also in volatile RAM
 				__writeRegister(ITSDK_DRIVERS_MAX17205_REG_BNPACKCFG_ADR,
 								  ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_VBAT_DISABLE
@@ -144,7 +143,6 @@ drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode) {
 						        | 3 << ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_NCELL_SHIFT
 							    );
 				itsdk_delayMs(1000);
-#endif
 				break;
 			default:
 			case MAX17205_MODE_DEFAULT:
