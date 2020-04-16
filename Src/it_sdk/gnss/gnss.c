@@ -33,6 +33,7 @@
 #endif
 
 #include <it_sdk/logger/logger.h>
+#include <it_sdk/time/time.h>
 
 // ---------------------------------------------------------
 // Some local functions
@@ -51,28 +52,28 @@ gnss_ret_e gnss_setup() {
 	#endif
 
 	// Reset the data structure
-	__gnss_config.data.gpsTime.isSet = BOOL_FALSE;
+	__gnss_config.data.gpsTime.status = GNSS_TIME_NOTSET;
 	__gnss_config.data.lastRefreshS = 0;
 	__gnss_config.data.satInView = 0;
 
 	#if ITSDK_DRIVERS_GNSS_WITHGPSSAT == __ENABLE
 	for (int i = 0 ; i < ITSDK_GNSS_GPSSAT_NB ; i++) {
 		__gnss_config.data.sat_gps[i].updateTime=0;
-		__gnss_config.data.sat_gps[i].signal=0;
+		__gnss_config.data.sat_gps[i].signal=0xFF;
 		__gnss_config.data.sat_gps[i].maxSignal=0xFF;
 	}
 	#endif
 	#if ITSDK_DRIVERS_GNSS_WITHGLOSAT == __ENABLE
 	for (int i = 0 ; i < ITSDK_GNSS_GLOSAT_NB ; i++) {
 		__gnss_config.data.sat_glonas[i].updateTime=0;
-		__gnss_config.data.sat_glonas[i].signal=0;
+		__gnss_config.data.sat_glonas[i].signal=0xFF;
 		__gnss_config.data.sat_glonas[i].maxSignal=0xFF;
 	}
 	#endif
 	#if ITSDK_DRIVERS_GNSS_WITHGALSAT == __ENABLE
 	for (int i = 0 ; i < ITSDK_GNSS_GALSAT_NB ; i++) {
 		__gnss_config.data.sat_galileo[i].updateTime=0;
-		__gnss_config.data.sat_galileo[i].signal=0;
+		__gnss_config.data.sat_galileo[i].signal=0xFF;
 		__gnss_config.data.sat_galileo[i].maxSignal=0xFF;
 	}
 	#endif
@@ -183,8 +184,8 @@ static void __gnss_processChar(char c) {
 void gnss_printState(void) {
 
 	log_debug("Last Refresh : %d\r\n",__gnss_config.data.lastRefreshS);
-	if ( __gnss_config.data.gpsTime.isSet == BOOL_TRUE ) {
-		log_debug("Date was %02d/%02d/%02d %02d:%02d:%02\r\n",
+	if ( (__gnss_config.data.gpsTime.status & GNSS_TIME_TMDATE) == GNSS_TIME_TMDATE ) {
+		log_debug("Date was %02d/%02d/%02d %02d:%02d:%02d\r\n",
 				__gnss_config.data.gpsTime.day,
 				__gnss_config.data.gpsTime.month,
 				__gnss_config.data.gpsTime.year,
@@ -193,25 +194,34 @@ void gnss_printState(void) {
 				__gnss_config.data.gpsTime.minutes,
 				__gnss_config.data.gpsTime.seconds
 		);
-		log_debug("  S from Epoc is %d\r\n",itsdk_time_get_EPOC_s());
 		log_debug("  S from UTC Midnight is %d this is %d:%d:%d\r\n",
 				itsdk_time_get_UTC_s(),
 				itsdk_time_get_UTC_hour(),
 				itsdk_time_get_UTC_min(),
 				itsdk_time_get_UTC_sec()
 		);
+
+		if ( (__gnss_config.data.gpsTime.status & GNSS_TIME_EPOC) == GNSS_TIME_EPOC ) {
+			log_debug("  S from Epoc is %d\r\n",itsdk_time_get_EPOC_s());
+		}
 	} else {
-		log_debug("Date not set\r\n");
+		log_debug("Date/Time not set\r\n");
 	}
 
-	log_debug("Sat in view  : %d\r\n",__gnss_config.data.satInView);
 	log_debug("Fix status   : %s\r\n",((__gnss_config.data.fixInfo.fixType==GNSS_FIX_NONE)?"NONE":((__gnss_config.data.fixInfo.fixType==GNSS_FIX_2D)?"FIX2D":"FIX3D")));
-	if ( __gnss_config.data.fixInfo.fixType > GNSS_FIX_NONE ) {
+	if ( __gnss_config.data.fixInfo.fixType >= GNSS_FIX_2D ) {
+		log_debug("  Lat             : %d\r\n",__gnss_config.data.fixInfo.latitude);
+		log_debug("  Lng             : %d\r\n",__gnss_config.data.fixInfo.longitude);
+		log_debug("  Alt             : %d\r\n",__gnss_config.data.fixInfo.altitude);
+		log_debug("  Speed knots     : %d\r\n",__gnss_config.data.fixInfo.speed_knot);
+		log_debug("  Speed kmh       : %d\r\n",__gnss_config.data.fixInfo.speed_kmh);
 		log_debug("  Sat use in Fix  : %d\r\n",__gnss_config.data.fixInfo.nbSatUsed);
 		log_debug("  PDOP            : %d\r\n",__gnss_config.data.fixInfo.pdop);
 		log_debug("  VDOP            : %d\r\n",__gnss_config.data.fixInfo.vdop);
 		log_debug("  HDOP            : %d\r\n",__gnss_config.data.fixInfo.hdop);
 	}
+
+	log_debug("Sat in view  : %d\r\n",__gnss_config.data.satInView);
 	#if ITSDK_DRIVERS_GNSS_WITHGPSSAT == __ENABLE
 	log_debug("GPS Sats \r\n");
 	for (int i = 0 ; i < ITSDK_GNSS_GPSSAT_NB ; i++) {

@@ -20,6 +20,16 @@
  * ----------------------------------------------------------
  * Copyright : Paul Pinault aka Disk91 2020
  * ==========================================================
+ * Supports Messages
+ *            Position  Altitude  Speed  Hdop Pdop Vdop Time Date  SatStatus
+ *  - --RMC     x                   x                     x   x
+ *  - --GGA     x          x               x              x
+ *  - --GSA                                x   x    x
+ *  - --GSV                                                            x
+ *  - --GLL     x                                         x
+ *
+ * Not Yet suported
+ *  - --VTG                         x
  */
 
 #include <it_sdk/itsdk.h>
@@ -44,7 +54,7 @@ gnss_ret_e nmea_processNMEA(gnss_data_t * data, uint8_t * line, uint16_t sz) {
 	// check for start delimiter
 	gnss_ret_e ret = GNSS_SUCCESS;
 	if ( (ret = nmea_verifyChecksum(line,sz)) == GNSS_SUCCESS ) {
-		if ( line[1] == 'G' && (line[2] == 'P' || line[2] == 'N') ) {
+		if ( line[1] == 'G' && (line[2] == 'P' || line[2] == 'N' || line[2] == 'L' ) ) {
 			// talker Global Positioning System or Global Navigation System
 			if ( sz > 6 && line[3]=='R' && line[4] == 'M' && line[5] == 'C' ) {
 				uint8_t * pt = &line[5];
@@ -101,10 +111,175 @@ gnss_ret_e nmea_processNMEA(gnss_data_t * data, uint8_t * line, uint16_t sz) {
 				#if ITSDK_DRIVERS_GNSS_WITH_UTCDATE_FULL == __ENABLE
 				  itsdk_time_sync_EPOC_s(data->gpsTime.epoc);
 				#endif
+				if ( data->fixInfo.fixType == GNSS_FIX_NONE ) {
+				   data->fixInfo.fixType = GNSS_FIX_TIME;
+				}
+
+				// process speed
+				data->fixInfo.speed_knot = speed/100;
+				uint32_t kmh = speed;
+				kmh = (kmh * 1852) / 100000;
+				data->fixInfo.speed_kmh = (uint16_t)kmh;
 
 				// process position
+				int32_t ilat=0;
+				if ( nmea_getLatLngField(lat, &ilat, ns) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
+				int32_t ilon=0;
+				if ( nmea_getLatLngField(lon, &ilon, ew) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
+				data->fixInfo.latitude = ilat;
+				data->fixInfo.longitude = ilon;
+				if ( data->fixInfo.fixType < GNSS_FIX_2D ) {
+				   data->fixInfo.fixType = GNSS_FIX_2D;
+				}
+
+			} else if ( sz > 6 && line[3]=='G' && line[4]=='G' && line[5]=='A' ) {
+				// -- GGA - Global positionning fix data with 3D information
+				//     UTC Time hhmmss.sss
+				//	   Latitude ddmm.mmmm, N/S, Longitude dddmm.mmmm, E/W
+				//	   Fix Status 0 - invalid, 1 - Gnss fix, 2 - DGPS fix, 6 - estimated , 3 -  PPS, 4 Real Time Kinematic, 5 float RTK, 7 manual input, 8 simulator
+				//     Number of stats used
+				//	   Hdop x.xx
+				//	   Altitude in meter x.x
+				//	   M => means Meter
+				//     Height of GeoId above see level ? x.x
+				//     M => means Meter
+				//     DGPS age, Dgps station ID
+				// ex - before fix - $GPGGA,161423.000,,,,,0,0,,,M,,M,,*4B
+				//      when fix -- $GPGGA,161438.000,4533.4708,N,00215.7051,E,1,5,2.63,382.7,M,48.7,M,,*5E
+				uint8_t * pt = &line[5];
+
+				// Time
+				if ( nmea_goNextField(&pt) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
+				uint8_t * time = pt;
+
+			    data->fixInfo.fixType = GNSS_FIX_TIME;
+				// Update time
+				if ( nmea_getUTCTimeDateField(&data->gpsTime, time, NULL) == GNSS_SUCCESS ) {
+					itsdk_time_sync_UTC_s(data->gpsTime.hours*3600+data->gpsTime.minutes*60+data->gpsTime.seconds);
+				}
+				itsdk_time_is_UTC_s(&data->lastRefreshS);
+
+				// Position
+				if ( nmea_goNextField(&pt) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
+				if ( *pt != ',' ) {
+					// in this case it means we got a fix
+					uint8_t * lat = pt;
+					if ( nmea_goNextField(&pt) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
+					uint8_t ns = *pt;
+					if ( nmea_goNextField(&pt) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
+					uint8_t * lon = pt;
+					if ( nmea_goNextField(&pt) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
+					uint8_t ew = *pt;
+
+					if ( nmea_goNextField(&pt) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
+					//uint8_t fixstat = *pt;
+
+					if ( nmea_goNextField(&pt) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
+					uint16_t nSatUsed;
+					if ( nmea_getDecimalField(pt,&nSatUsed) == GNSS_INVALIDFORMAT ) return GNSS_INVALIDFORMAT;
+
+					if ( nmea_goNextField(&pt) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
+					uint16_t hdop;
+					if ( nmea_getRationalField(pt,&hdop) == GNSS_INVALIDFORMAT ) return GNSS_INVALIDFORMAT;
+
+					if ( nmea_goNextField(&pt) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
+					uint16_t altitude; // in meter, we get only decimal part to support up-to 65km
+					itsdk_bool_e fix3d = BOOL_FALSE;
+					if ( *pt != ',' ) {
+						if ( nmea_getDecimalField(pt,&altitude) == GNSS_INVALIDFORMAT ) return GNSS_INVALIDFORMAT;
+						fix3d = BOOL_TRUE;
+					}
+
+					if ( nmea_goNextField(&pt) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
+					if ( nmea_goNextField(&pt) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
+					uint16_t hgeoid; // in decimeter
+					if ( nmea_getRationalField(pt,&hgeoid) == GNSS_INVALIDFORMAT ) return GNSS_INVALIDFORMAT;
+
+					// skip the end
+					if ( nSatUsed > 0 ) {
+						data->fixInfo.nbSatUsed = nSatUsed;
+						int32_t ilat=0;
+						if ( nmea_getLatLngField(lat, &ilat, ns) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
+						int32_t ilon=0;
+						if ( nmea_getLatLngField(lon, &ilon, ew) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
+						data->fixInfo.latitude = ilat;
+						data->fixInfo.longitude = ilon;
+
+						if ( fix3d == BOOL_TRUE ) {
+						   data->fixInfo.fixType = GNSS_FIX_3D;
+						   data->fixInfo.altitude = altitude;
+						   //@TODO - let see what to do with the hgeoid
+						} else {
+						   data->fixInfo.fixType = GNSS_FIX_2D;
+						}
+
+						data->fixInfo.hdop = hdop;
+						itsdk_time_is_UTC_s(&data->fixInfo.fixTime);
+					}
+
+				}
+
+			} else if ( sz > 6 && line[3]=='G' && line[4]=='L' && line[5]=='L' ) {
+				// --GLL - Geographic Lat & Lon ...
+				//	   Latitude ddmm.mmmm, N/S, Longitude dddmm.mmmm, E/W
+				//     UTC Time hhmmss.sss
+				//     Data Valid 'V' when invalid, A when valid
+				//	   Position Mode like for RMC
+				uint8_t * pt = &line[5];
 
 
+				// Position
+				if ( nmea_goNextField(&pt) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
+				uint8_t * lat = pt;
+				if ( nmea_goNextField(&pt) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
+				uint8_t ns = *pt;
+				if ( nmea_goNextField(&pt) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
+				uint8_t * lon = pt;
+				if ( nmea_goNextField(&pt) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
+				uint8_t ew = *pt;
+
+				// Time
+				if ( nmea_goNextField(&pt) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
+				uint8_t * time = pt;
+
+				if ( nmea_goNextField(&pt) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
+				uint8_t isValid = *pt;
+				if ( isValid == 'V' ) {
+					// data are not valid - no need to parse more ?
+					data->fixInfo.fixType = GNSS_FIX_NONE;
+					return GNSS_SUCCESS;
+				}
+				// Position system Mode
+				if ( nmea_goNextField(&pt) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
+				uint8_t pmode = *pt;
+
+				if ( *time != ',' ) {
+					// Update time
+					if ( nmea_getUTCTimeDateField(&data->gpsTime, time, NULL) == GNSS_SUCCESS ) {
+						itsdk_time_sync_UTC_s(data->gpsTime.hours*3600+data->gpsTime.minutes*60+data->gpsTime.seconds);
+					}
+					if ( data->fixInfo.fixType < GNSS_FIX_TIME ) data->fixInfo.fixType = GNSS_FIX_TIME;
+					itsdk_time_is_UTC_s(&data->lastRefreshS);
+
+					int32_t ilat=0;
+					if ( nmea_getLatLngField(lat, &ilat, ns) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
+					int32_t ilon=0;
+					if ( nmea_getLatLngField(lon, &ilon, ew) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
+					data->fixInfo.latitude = ilat;
+					data->fixInfo.longitude = ilon;
+					if ( data->fixInfo.fixType < GNSS_FIX_2D ) data->fixInfo.fixType = GNSS_FIX_2D;
+
+					switch ( pmode ) {
+						case 'A': data->fixInfo.positionMode = GNSS_POSMODE_AUTONOMOUS; break;
+						case 'D': data->fixInfo.positionMode = GNSS_POSMODE_DIFFERENTIAL; break;
+						case 'E': data->fixInfo.positionMode = GNSS_POSMODE_ESTIMATED; break;
+						case 'M': data->fixInfo.positionMode = GNSS_POSMODE_MANUAL; break;
+						case 'S': data->fixInfo.positionMode = GNSS_POSMODE_SIMULATOR; break;
+						case 'N': data->fixInfo.positionMode = GNSS_POSMODE_INVALID; break;
+						default: data->fixInfo.positionMode = GNSS_POSMODE_UNKNOWN; break;
+					}
+
+				}
 
 			} else if ( sz > 6 && line[3]=='G' && line[4]=='S' && line[5]=='A' ) {
 				// --GSA - DOP and Active Satellites
@@ -225,12 +400,14 @@ gnss_ret_e nmea_processNMEA(gnss_data_t * data, uint8_t * line, uint16_t sz) {
 
 
 
-		} else if ( line[1] == 'P') return GNSS_PROPRIETARY;
-	   //log_info("=> %s\r\n",line);
-
+		} else if ( line[1] == 'P') {
+			return GNSS_PROPRIETARY;
+		} else {
+			log_info("[UNKNONWN] %s \r\n",line);
+		}
 
 	} else {
-		log_error(">> [%d] %s\r\n",ret, line);
+		//log_error(">> [%d] %s\r\n",ret, line);
 		return ret;
 	}
 	return ret;
@@ -257,7 +434,8 @@ log_info("## %d %d\r\n",chksumpos,sz);
 		return GNSS_INVALIDFORMAT;
 	}
 	if ( itdt_convertHexChar2Int((char*)&line[chksumpos+1]) != chksum ) {
-log_error("Chk error %02X %02X\r\n",(int)itdt_convertHexChar2Int((char*)&line[chksumpos+1]),chksum);
+//log_error("Chk error %02X %02X\r\n",(int)itdt_convertHexChar2Int((char*)&line[chksumpos+1]),chksum);
+log_info("!");
 		return GNSS_CHECKSUMERROR;
 	}
 	return GNSS_SUCCESS;
@@ -289,22 +467,32 @@ gnss_ret_e nmea_goNextField(uint8_t ** line) {
 }
 
 /**
- * Get a filed composed of base 10 digit up to the next comma of end of line
+ * Get a filed composed of base 10 digit up to the next comma or end of line or '.' when we want a decimal part of
+ * a rational number
  * return an error if non digit number are part of the content
  */
 gnss_ret_e nmea_getDecimalField(uint8_t * line, uint16_t * number) {
 	uint8_t sz = 0;
-	uint16_t num = 0;
+	uint16_t num;
+	uint32_t _num = 0;
 	while ( *line >= '0' && *line <= '9' ) {
-		num = 10*num;
-		num += *line - '0';
+		_num = 10*_num;
+		_num += *line - '0';
 		line++;
 		sz++;
 	}
-	if ( *line == ',' || *line == '*' ) {
-		*number = num;
-		if ( sz == 0 ) return GNSS_EMPTYFIELD;
-		return GNSS_SUCCESS;
+	if ( *line == ',' || *line == '*' || *line == '.' ) {
+		if ( _num > 0xFFFF ) {
+			_num = 0xFFFF;
+			num = (uint16_t)_num;
+			*number = num;
+			return GNSS_OVERFLOW;
+		} else {
+			num = (uint16_t)_num;
+			*number = num;
+			if ( sz == 0 ) return GNSS_EMPTYFIELD;
+			return GNSS_SUCCESS;
+		}
 	}
 	return GNSS_INVALIDFORMAT;
 }
@@ -317,19 +505,29 @@ gnss_ret_e nmea_getDecimalField(uint8_t * line, uint16_t * number) {
  */
 gnss_ret_e nmea_getRationalField(uint8_t * line, uint16_t * number) {
 	uint8_t sz = 0;
-	uint16_t num = 0;
+	uint16_t num;
+	uint32_t _num = 0;
 	while ( (*line >= '0' && *line <= '9') || *line == '.' ) {
 		if (*line != '.') {
-			num = 10*num;
-			num += *line - '0';
+			_num = 10*_num;
+			_num += *line - '0';
 			sz++;
 		}
 		line++;
 	}
 	if ( *line == ',' || *line == '*' ) {
-		*number = num;
-		if ( sz == 0 ) return GNSS_EMPTYFIELD;
-		return GNSS_SUCCESS;
+		if ( _num > 0xFFFF ) {
+			_num = 0xFFFF;
+			num = (uint16_t)_num;
+			*number = num;
+			return GNSS_OVERFLOW;
+		} else {
+			num = (uint16_t)_num;
+			*number = num;
+			if ( sz == 0 ) return GNSS_EMPTYFIELD;
+			return GNSS_SUCCESS;
+		}
+
 	}
 	return GNSS_INVALIDFORMAT;
 }
@@ -345,32 +543,79 @@ gnss_ret_e nmea_getRationalField(uint8_t * line, uint16_t * number) {
 #define __NMEA_CONVERT_CHAR(x) (x-'0')
 gnss_ret_e nmea_getUTCTimeDateField(gnss_date_t *pTime, uint8_t * timePt, uint8_t * datePt) {
 
+	if ( datePt == NULL && (pTime->status & GNSS_TIME_DATE) > 0 ) {
+		// It means we have a better source of date in the other messages
+		// it's better to not update
+		return GNSS_NOTUPDATED;
+	}
+
 	pTime->hours = 10*__NMEA_CONVERT_CHAR(timePt[0]) + __NMEA_CONVERT_CHAR(timePt[1]);
 	pTime->minutes = 10*__NMEA_CONVERT_CHAR(timePt[2]) + __NMEA_CONVERT_CHAR(timePt[3]);
 	pTime->seconds = 10*__NMEA_CONVERT_CHAR(timePt[4]) + __NMEA_CONVERT_CHAR(timePt[5]);
+	pTime->status |= GNSS_TIME_TIME;
 
-	pTime->day = 10*__NMEA_CONVERT_CHAR(datePt[0]) + __NMEA_CONVERT_CHAR(datePt[1]);
-	pTime->month = 10*__NMEA_CONVERT_CHAR(datePt[2]) + __NMEA_CONVERT_CHAR(datePt[3]);
-	pTime->year = 10*__NMEA_CONVERT_CHAR(datePt[4]) + __NMEA_CONVERT_CHAR(datePt[5]);
+	if ( datePt != NULL ){
+		pTime->day = 10*__NMEA_CONVERT_CHAR(datePt[0]) + __NMEA_CONVERT_CHAR(datePt[1]);
+		pTime->month = 10*__NMEA_CONVERT_CHAR(datePt[2]) + __NMEA_CONVERT_CHAR(datePt[3]);
+		pTime->year = 10*__NMEA_CONVERT_CHAR(datePt[4]) + __NMEA_CONVERT_CHAR(datePt[5]);
+		pTime->status |= GNSS_TIME_DATE;
 
-	#if ITSDK_DRIVERS_GNSS_WITH_UTCDATE_FULL == __ENABLE
-		// This cost 6KB of code size
-		struct tm t;
-		t.tm_year = pTime->year + 100;
-		t.tm_mon = pTime->month -1;
-		t.tm_mday = pTime->day;
-		t.tm_hour = pTime->hours;
-		t.tm_min = pTime->minutes;
-		t.tm_sec = pTime->seconds;
-		t.tm_isdst = 0;
-		pTime->epoc = mktime(&t);
-	#else
-		pTime->epoc = 0;
-	#endif
+		#if ITSDK_DRIVERS_GNSS_WITH_UTCDATE_FULL == __ENABLE
+			// This cost 6KB of code size
+			struct tm t;
+			t.tm_year = pTime->year + 100;
+			t.tm_mon = pTime->month -1;
+			t.tm_mday = pTime->day;
+			t.tm_hour = pTime->hours;
+			t.tm_min = pTime->minutes;
+			t.tm_sec = pTime->seconds;
+			t.tm_isdst = 0;
+			pTime->epoc = mktime(&t);
+			pTime->status |= GNSS_TIME_EPOC;
+		#else
+			pTime->epoc = 0;
+			pTime->status &= ~GNSS_TIME_EPOC;
+		#endif
 
-	pTime->isSet = BOOL_TRUE;
+	}
 	return GNSS_SUCCESS;
 }
+
+
+/**
+ * Convert a Lat or Lng field format [d]ddmm.mmmmm into degree * 100_000
+ * Value is negative when the direction is South or West
+ */
+gnss_ret_e nmea_getLatLngField(uint8_t * l, int32_t * degrees, uint8_t orientation) {
+
+	int32_t degree = 0;
+	int32_t minute = 0;
+	uint8_t shift;
+	if ( l[4] == '.' ) {
+		shift = 0;
+	} else if ( l[5] == '.' ) {
+		shift = 1;
+		degree+=10000000*__NMEA_CONVERT_CHAR(l[0]);
+	} else return GNSS_INVALIDFORMAT;
+	degree+=1000000*__NMEA_CONVERT_CHAR(l[0+shift])
+	       + 100000*__NMEA_CONVERT_CHAR(l[1+shift]);
+	minute = 1000000*__NMEA_CONVERT_CHAR(l[2+shift])
+		   +  100000*__NMEA_CONVERT_CHAR(l[3+shift])
+		   +   10000*__NMEA_CONVERT_CHAR(l[5+shift])
+	       +    1000*__NMEA_CONVERT_CHAR(l[6+shift])
+	       +     100*__NMEA_CONVERT_CHAR(l[7+shift])
+		   +      10*__NMEA_CONVERT_CHAR(l[8+shift]);
+	degree+= minute/60;
+
+	if ( orientation == 'S' || orientation == 'W' ) {
+		*degrees = -degree;
+	} else {
+		*degrees = degree;
+	}
+	return GNSS_SUCCESS;
+
+}
+
 
 
 #endif // ITSDK_DRIVERS_WITH_GNSS_DRIVER

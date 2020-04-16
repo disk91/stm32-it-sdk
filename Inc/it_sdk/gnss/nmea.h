@@ -38,6 +38,8 @@ gnss_ret_e nmea_getDecimalField(uint8_t * line, uint16_t * number);
 gnss_ret_e nmea_goNextField(uint8_t ** line);
 gnss_ret_e nmea_getRationalField(uint8_t * line, uint16_t * number);
 gnss_ret_e nmea_getUTCTimeDateField(gnss_date_t *pTime, uint8_t * timePt, uint8_t * datePt);
+gnss_ret_e nmea_getLatLngField(uint8_t * l, int32_t * degrees, uint8_t orientation);
+
 
 #endif /* INC_IT_SDK_GNSS_NMEA_H_ */
 

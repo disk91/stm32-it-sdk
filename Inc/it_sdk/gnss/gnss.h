@@ -34,15 +34,18 @@
 // =============================================================================
 // Error code
 typedef enum {
-	GNSS_SUCCESS=0,
+	GNSS_SUCCESS			=0,
 
-	GNSS_NOTSUPPORTED=1,
-	GNSS_INVALIDFORMAT=2,
-	GNSS_CHECKSUMERROR=3,
-	GNSS_PROPRIETARY=4,
-	GNSS_NOMOREFIELD=5,
-	GNSS_EMPTYFIELD=6,
-	GNSS_FAILED=0x80
+	GNSS_NOTSUPPORTED		=1,
+	GNSS_INVALIDFORMAT		=2,
+	GNSS_CHECKSUMERROR		=3,
+	GNSS_PROPRIETARY		=4,
+	GNSS_NOMOREFIELD		=5,
+	GNSS_EMPTYFIELD			=6,
+	GNSS_OVERFLOW			=7,
+	GNSS_NOTUPDATED			=8,
+
+	GNSS_FAILED				=0x80
 } gnss_ret_e;
 
 gnss_ret_e gnss_setup();
@@ -73,8 +76,9 @@ typedef struct {
 
 typedef enum {
 	GNSS_FIX_NONE = 0,
-	GNSS_FIX_2D = 1,
-	GNSS_FIX_3D = 2
+	GNSS_FIX_TIME = 1,			// Time is set
+	GNSS_FIX_2D = 2,			// Fix is 2D position
+	GNSS_FIX_3D = 3				// Fix is 3D position
 } gnss_fix_type_e;
 
 typedef enum {
@@ -105,8 +109,16 @@ typedef struct {
 	gnss_fix_mode_e		positionMode;	// Status and source of the position
 } gnss_fix_info_t;
 
+typedef enum {
+	GNSS_TIME_NOTSET	= 0,	// bit field
+	GNSS_TIME_TIME		= 1,
+	GNSS_TIME_DATE 		= 2,
+	GNSS_TIME_TMDATE	= 3,
+	GNSS_TIME_EPOC		= 4,
+} gnss_time_status_e;
+
 typedef struct {
-	itsdk_bool_e		isSet;			// date has been set
+	gnss_time_status_e	status;			// date has been set what fields are set
 	uint8_t				seconds;		// 0 .. 59
 	uint8_t				minutes;		// 0 .. 59
 	uint8_t				hours;			// 0 .. 23

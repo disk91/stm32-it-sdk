@@ -31,6 +31,7 @@
 #include <drivers/gnss/quectel/quectel.h>
 
 #include <it_sdk/wrappers.h>
+#include <it_sdk/logger/logger.h>
 #include <it_sdk/gnss/nmea.h>
 
 // --------------------------------------------------------------------------------
@@ -91,7 +92,12 @@ static gnss_ret_e __quectelNMEA(gnss_data_t * data, uint8_t * line, uint16_t sz)
 
 			}
 			break;
+		case GNSS_SUCCESS:
+			break;
+
 		default:
+			log_error("## error from nmea decoder %d\r\n",ret);
+			log_error("ON : %s\r\n",line);
 			break;
 	}
 	return ret;
