@@ -33,5 +33,20 @@
 
 gnss_ret_e quectel_lxx_initLowPower();
 
+typedef struct {
+	volatile uint8_t				hasboot:1; 			// flag indicating the device has reboot (and is responding)
+	volatile uint8_t				hasAckedSuccess:1;	// previous command acked success
+	volatile uint8_t				hasAckedFailed:1;	// previous command acked with a failure
+	volatile uint16_t				lastAckedCode;		// Last command code acked
+
+} quectel_status_t;
+
+#define DRIVER_GNSS_QUECTEL_CMD_MAXZ				80
+
+#define DRIVER_GNSS_QUECTEL_CMD_RESTART				0
+#define DRIVER_GNSS_QUECTEL_CMD_SET_NMEA_OUTPUT		314
+#define DRIVER_GNSS_QUECTEL_CMD_SET_GNSS_SEARCH		353
+#define DRIVER_GNSS_QUECTEL_CMD_SET_PERIODIC_MODE	225
+
 
 #endif /* INC_DRIVERS_GNSS_QUECTEL_QUECTEL_H_ */

@@ -21,15 +21,16 @@
  * Copyright : Paul Pinault aka Disk91 2020
  * ==========================================================
  * Supports Messages
- *            Position  Altitude  Speed  Hdop Pdop Vdop Time Date  SatStatus
- *  - --RMC     x                   x                     x   x
+ *            Position  Altitude  Speed  Hdop Pdop Vdop Time Date  SatStatus  COG
+ *  - --RMC     x                   x                     x   x                x
  *  - --GGA     x          x               x              x
  *  - --GSA                                x   x    x
  *  - --GSV                                                            x
  *  - --GLL     x                                         x
  *
  * Not Yet suported
- *  - --VTG                         x
+ *  - --VTG                         x                                          x
+ *  - --ZDA												  x   x
  */
 
 #include <it_sdk/itsdk.h>
@@ -45,6 +46,87 @@
 #include <it_sdk/time/time.h>
 
 #include <time.h>
+
+
+/**
+ * Setup the right number of NMEA messaging according to the request made by the user in term of
+ * information. Some of the information only exist in one type of message, some are redundant and
+ * we need to reduce the number of redundancy but keeping all the needed information.
+ * Currently only one type of GNSS is supported so it is not so complex... this can start to be a
+ * mess later .. subject to evolution.
+ * @TODO - match with supported message
+ */
+gnss_ret_e nmea_selectNMEAMessages(gnss_config_t * config, nmea_supported_e supported) {
+
+	gnss_ret_e ret = GNSS_SUCCESS;
+
+	config->driver.nmea.expectedRMC = 0;
+	config->driver.nmea.expectedGSA = 0;
+	config->driver.nmea.expectedGSV = 0;
+	config->driver.nmea.expectedGLL = 0;
+	config->driver.nmea.expectedVTG = 0;		// not yet supported
+	config->driver.nmea.expectedZDA = 0;		// not yet supported
+
+
+	if ( (supported & NMEA_GGA) > 0 ) {
+		config->driver.nmea.expectedGGA = 1;
+	} else {
+		// @TODO ... here the chose starts to be complex a bit, let see it later
+		config->driver.nmea.expectedRMC = 1;
+		if ((ITSDK_DRIVERS_GNSS_POSINFO & __GNSS_WITH_2DPOS) > 0) {
+			ret = GNSS_NOTSUPPORTED;
+		}
+	}
+
+	// Indicate to the driver the type of messages expected
+	if ( (ITSDK_DRIVERS_GNSS_POSINFO & ( __GNSS_WITH_SPEED ) ) > 0 ) {
+		if ( (supported & NMEA_RMC) == 0 ) {
+			ret = GNSS_NOTSUPPORTED;
+		} else {
+			config->driver.nmea.expectedRMC = 1;
+		}
+	}
+	if ( (ITSDK_DRIVERS_GNSS_POSINFO & ( __GNSS_WITH_COG ) ) > 0 ) {
+		if ( (supported & NMEA_RMC) == 0 ) {
+			ret = GNSS_NOTSUPPORTED;
+		} else {
+			config->driver.nmea.expectedRMC = 1;
+		}
+	}
+	if ( (ITSDK_DRIVERS_GNSS_POSINFO & __GNSS_WITH_DATE ) > 0 ) {
+		if ( (supported & NMEA_RMC) == 0 ) {
+			ret = GNSS_NOTSUPPORTED;
+		} else {
+			config->driver.nmea.expectedRMC = 1;
+		}
+	}
+	if ( (ITSDK_DRIVERS_GNSS_POSINFO & __GNSS_WITH_PDOP_VDOP ) > 0 ) {
+		if ( (supported & NMEA_GSA) == 0 ) {
+			ret = GNSS_NOTSUPPORTED;
+		} else {
+			config->driver.nmea.expectedGSA = 1;
+		}
+	}
+	if ( (ITSDK_DRIVERS_GNSS_POSINFO & __GNSS_WITH_SAT_DETAILS ) > 0 ) {
+		if ( (supported & NMEA_GSV) == 0 ) {
+			ret = GNSS_NOTSUPPORTED;
+		} else {
+			config->driver.nmea.expectedGSV = 1;
+		}
+	}
+	if ( config->driver.nmea.expectedRMC == 1 && (ITSDK_DRIVERS_GNSS_POSINFO & ( __GNSS_WITH_3DPOS | __GNSS_WITH_HDOP )) == 0 ) {
+		config->driver.nmea.expectedGGA = 0;
+	}
+	if ( (ITSDK_DRIVERS_GNSS_POSINFO & ~( __GNSS_WITH_2DPOS | __GNSS_WITH_TIME )) == 0 ) {
+		if ( (supported & NMEA_GLL) > 0 ) {
+			config->driver.nmea.expectedGGA = 0;
+			config->driver.nmea.expectedRMC = 0;
+			config->driver.nmea.expectedGLL = 1;
+		}
+	}
+
+	return ret;
+}
 
 /**
  * Process a NMEA line
@@ -84,8 +166,8 @@ gnss_ret_e nmea_processNMEA(gnss_data_t * data, uint8_t * line, uint16_t sz) {
 				if ( nmea_getRationalField(pt,&speed) == GNSS_INVALIDFORMAT ) return GNSS_INVALIDFORMAT;
 
 				if ( nmea_goNextField(&pt) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
-				uint16_t cov;
-				if ( nmea_getRationalField(pt,&cov) == GNSS_INVALIDFORMAT ) return GNSS_INVALIDFORMAT;
+				uint16_t cog;
+				if ( nmea_getRationalField(pt,&cog) == GNSS_INVALIDFORMAT ) return GNSS_INVALIDFORMAT;
 
 				if ( nmea_goNextField(&pt) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
 				uint8_t * date = pt;
@@ -131,6 +213,9 @@ gnss_ret_e nmea_processNMEA(gnss_data_t * data, uint8_t * line, uint16_t sz) {
 				if ( data->fixInfo.fixType < GNSS_FIX_2D ) {
 				   data->fixInfo.fixType = GNSS_FIX_2D;
 				}
+
+				// process direction
+				data->fixInfo.direction = cog;
 
 			} else if ( sz > 6 && line[3]=='G' && line[4]=='G' && line[5]=='A' ) {
 				// -- GGA - Global positionning fix data with 3D information
@@ -389,17 +474,11 @@ gnss_ret_e nmea_processNMEA(gnss_data_t * data, uint8_t * line, uint16_t sz) {
 						}
 						#endif
 					}
-				} else {
-					// in this case we have no more information
-
 				}
-
-
+			} else {
+				// Unsupported NMEA message
+				log_info("[UNKNONWN] %s \r\n",line);
 			}
-
-
-
-
 		} else if ( line[1] == 'P') {
 			return GNSS_PROPRIETARY;
 		} else {
@@ -440,6 +519,31 @@ log_info("!");
 	}
 	return GNSS_SUCCESS;
 }
+
+
+/**
+ * Add the checksum value to the end of the line
+ * The size is the max size of the buffer
+ */
+gnss_ret_e nmea_addChecksum(uint8_t * line, uint16_t sz) {
+	if ( line[0] != '$' ) return GNSS_INVALIDFORMAT;
+	// search for "*"xx for checksum
+	int chksumpos = 1;
+	uint8_t chksum = 0;
+	while ( chksumpos < sz && line[chksumpos] != '*' ) {
+		chksum ^= line[chksumpos];
+		chksumpos++;
+	}
+	if ( chksumpos >= sz-5 ) {
+		return GNSS_TOOSMALL;
+	}
+	itdt_convertInt2HexChar(chksum,(char*)&line[chksumpos+1],BOOL_TRUE);
+	line[chksumpos+3]='\r';
+	line[chksumpos+4]='\n';
+	line[chksumpos+5]='\0';
+	return GNSS_SUCCESS;
+}
+
 
 /**
  * Find the next field -> fields are seperated by comma

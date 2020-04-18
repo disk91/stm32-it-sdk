@@ -31,6 +31,10 @@
 #if ITSDK_DRIVERS_GNSS_QUECTEL == __ENABLE
 #include <drivers/gnss/quectel/quectel.h>
 #endif
+#include <stdio.h>
+#include <stdarg.h>
+#include <sys/types.h>
+
 
 #include <it_sdk/logger/logger.h>
 #include <it_sdk/time/time.h>
@@ -46,10 +50,6 @@ static void __gnss_process_serialLine(void);
 gnss_ret_e gnss_setup() {
 	gnss_ret_e ret = GNSS_SUCCESS;
 	__gnss_config.pBuffer = 0;
-
-	#if ITSDK_DRIVERS_GNSS_QUECTEL == __ENABLE
-	  ret |= quectel_lxx_initLowPower(&__gnss_config);
-	#endif
 
 	// Reset the data structure
 	__gnss_config.data.gpsTime.status = GNSS_TIME_NOTSET;
@@ -77,7 +77,15 @@ gnss_ret_e gnss_setup() {
 		__gnss_config.data.sat_galileo[i].maxSignal=0xFF;
 	}
 	#endif
+
+
+	#if ITSDK_DRIVERS_GNSS_QUECTEL == __ENABLE
+	  ret |= quectel_lxx_initLowPower(&__gnss_config);
+	#endif
+
 	__gnss_config.setupDone = 1;
+
+
 	return ret;
 }
 
@@ -87,8 +95,8 @@ gnss_ret_e gnss_setup() {
  * port and call the associated services and execeute all the asynchronous operation proposed
  * by gnss driver
  */
-void gnss_process_loop() {
-	if ( !__gnss_config.setupDone ) return;
+void gnss_process_loop(itsdk_bool_e force) {
+	if ( !__gnss_config.setupDone && force == BOOL_FALSE ) return;
 
 	// Manage data reception from receiver using a serial line
 	#if ITSDK_DRIVERS_GNSS_SERIAL != __UART_NONE
@@ -96,6 +104,27 @@ void gnss_process_loop() {
 	#endif
 
 
+}
+
+// =================================================================================================
+// Processing output
+// =================================================================================================
+
+void __gnss_printf(char *format, ...) {
+	va_list args;
+	char 	fmtBuffer[ITSDK_DRIVERS_GNSS_LINEBUFFER]; 				// buffer for log line formating before printing
+    va_start(args,format);
+	vsnprintf(fmtBuffer,ITSDK_DRIVERS_GNSS_LINEBUFFER,format,args);
+	va_end(args);
+#if ( ITSDK_DRIVERS_GNSS_SERIAL & ( __UART_LPUART1 | __UART_USART1 ) ) > 0
+	serial1_print(fmtBuffer);
+#endif
+#if ( ITSDK_DRIVERS_GNSS_SERIAL & __UART_USART2 ) > 0
+	serial2_print(fmtBuffer);
+#endif
+#if ( ITSDK_DRIVERS_GNSS_SERIAL & __UART_CUSTOM ) > 0
+	gnss_customSerial_print(fmtBuffer);
+#endif
 }
 
 
@@ -152,6 +181,8 @@ __weak serial_read_response_e gnss_customSerial_read(char * ch) {
 	return SERIAL_READ_NOCHAR;
 }
 #endif
+
+
 
 
 /**

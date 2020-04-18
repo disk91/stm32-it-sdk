@@ -31,14 +31,28 @@
 #ifndef INC_IT_SDK_GNSS_NMEA_H_
 #define INC_IT_SDK_GNSS_NMEA_H_
 
+typedef enum {
+	NMEA_RMC = 0x0001,		// list of message type a device is supporting
+	NMEA_GGA = 0x0002,
+	NMEA_GSA = 0x0004,
+	NMEA_GSV = 0x0008,
+	NMEA_GLL = 0x0010,
+	NMEA_VTG = 0x0020,
+	NMEA_ZDA = 0x0040
+
+} nmea_supported_e;
+
+gnss_ret_e nmea_selectNMEAMessages(gnss_config_t * config, nmea_supported_e supported);
 gnss_ret_e nmea_processNMEA(gnss_data_t * data, uint8_t * line, uint16_t sz);
 gnss_ret_e nmea_verifyChecksum(uint8_t * line, uint16_t sz);
+gnss_ret_e nmea_addChecksum(uint8_t * line, uint16_t sz);
 
 gnss_ret_e nmea_getDecimalField(uint8_t * line, uint16_t * number);
 gnss_ret_e nmea_goNextField(uint8_t ** line);
 gnss_ret_e nmea_getRationalField(uint8_t * line, uint16_t * number);
 gnss_ret_e nmea_getUTCTimeDateField(gnss_date_t *pTime, uint8_t * timePt, uint8_t * datePt);
 gnss_ret_e nmea_getLatLngField(uint8_t * l, int32_t * degrees, uint8_t orientation);
+
 
 
 #endif /* INC_IT_SDK_GNSS_NMEA_H_ */

@@ -117,9 +117,9 @@ uint32_t itsdk_pgcd(uint32_t a, uint32_t b) {
 /* -----------------------------------------------------------
  * Convert a 0-16 value to a upper/lower Char
  */
-char itdt_convertHalfInt2HexChar(uint8_t v,bool upper) {
+char itdt_convertHalfInt2HexChar(uint8_t v,itsdk_bool_e upper) {
   if ( v >= 0 && v <= 9 ) return '0'+v;
-  if ( v >= 10 && v <= 15 ) return (upper)?'A'+(v-10):'a'+(v+10);
+  if ( v >= 10 && v <= 15 ) return (upper==BOOL_TRUE)?'A'+(v-10):'a'+(v+10);
   return 0;
 }
 
@@ -137,7 +137,7 @@ uint8_t itdt_convertHexChar2HalfInt(char c) {
 /* -----------------------------------------------------------
  * Convert a 0-256 value to a 2 byte upper/lower case string
  */
-void itdt_convertInt2HexChar(uint8_t v, char * dest, bool upper) {
+void itdt_convertInt2HexChar(uint8_t v, char * dest, itsdk_bool_e upper) {
   uint8_t q0 = (v & 0xF0) >> 4;
   uint8_t q1 = (v & 0x0F);
   dest[0] = itdt_convertHalfInt2HexChar(q0,upper);
@@ -200,7 +200,7 @@ int16_t itdt_convertDecChar4Int(char * v) {
 /* -----------------------------------------------------------
  * Convert a 8bytes table to Upper Hex upper/lower string
  */
-void itdt_convertIntTab2Hex(char * dest, uint8_t * tab, int len, bool upper) {
+void itdt_convertIntTab2Hex(char * dest, uint8_t * tab, int len, itsdk_bool_e upper) {
   int i;
   for ( i = 0; i < len ; i++ ) {
 	  itdt_convertInt2HexChar(tab[i],&dest[2*i],upper);
@@ -236,7 +236,7 @@ bool itdt_isHexChar(char c, bool upper) {
 /* ----------------------------------------------------------
  * Verify a string is a valid Hex string with given size
  */
-bool itdt_isHexString(char * str,int n,bool upper) {
+bool itdt_isHexString(char * str,int n,itsdk_bool_e upper) {
   int i = 0;
   while ( i < n && str[i] != 0 ) {
     if (    (str[i] >= '0' && str[i] <= '9' )

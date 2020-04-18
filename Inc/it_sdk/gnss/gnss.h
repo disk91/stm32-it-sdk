@@ -44,18 +44,20 @@ typedef enum {
 	GNSS_EMPTYFIELD			=6,
 	GNSS_OVERFLOW			=7,
 	GNSS_NOTUPDATED			=8,
+	GNSS_NOTFOUND			=9,
+	GNSS_TOOSMALL			=10,
+	GNSS_TIMEOUT			=11,
 
 	GNSS_FAILED				=0x80
 } gnss_ret_e;
 
 gnss_ret_e gnss_setup();
-void gnss_process_loop();		// Loop process automatically included in the itsdk_loop
+void gnss_process_loop(itsdk_bool_e force);		// Loop process automatically included in the itsdk_loop
 
 
 
 void gnss_customSerial_print(char * msg);
 serial_read_response_e gnss_customSerial_read(char * ch);
-
 
 void gnss_printState(void);
 
@@ -105,6 +107,7 @@ typedef struct {
 	int16_t				altitude;		// meter above sea level
 	uint16_t			speed_knot;		// speed in knots
 	uint16_t			speed_kmh;		// speed in kmh
+	uint16_t			direction;		// COG / direction is centi-degree
 
 	gnss_fix_mode_e		positionMode;	// Status and source of the position
 } gnss_fix_info_t;
@@ -114,7 +117,7 @@ typedef enum {
 	GNSS_TIME_TIME		= 1,
 	GNSS_TIME_DATE 		= 2,
 	GNSS_TIME_TMDATE	= 3,
-	GNSS_TIME_EPOC		= 4,
+	GNSS_TIME_EPOC		= 4
 } gnss_time_status_e;
 
 typedef struct {
@@ -157,6 +160,13 @@ typedef struct {
 
 
 typedef struct {
+	uint8_t	expectedRMC:1;		// List of NEMA message the GPS must provide to respond
+	uint8_t	expectedGGA:1;		//  user data expected according to the configuration
+	uint8_t expectedGSA:1;
+	uint8_t expectedGSV:1;
+	uint8_t expectedGLL:1;
+	uint8_t expectedVTG:1;
+	uint8_t expectedZDA:1;
 	gnss_ret_e (*nmeaParser)(gnss_data_t * data, uint8_t * line, uint16_t sz);	// nmea parsing function for the activ driver
 
 } gnss_nmea_driver_t;
@@ -174,6 +184,22 @@ typedef struct {
 
 
 } gnss_config_t;
+
+
+// List of user expected option to filter the unneeded NMEA messages
+#define __GNSS_WITH_2DPOS 		0x0001
+#define __GNSS_WITH_3DPOS		0x0002
+#define __GNSS_WITH_TIME		0x0004
+#define __GNSS_WITH_DATE		0x0008
+#define __GNSS_WITH_HDOP		0x0010
+#define __GNSS_WITH_PDOP_VDOP	0x0020
+#define __GNSS_WITH_SAT_DETAILS	0x0040
+#define __GNSS_WITH_SPEED		0x0080
+#define __GNSS_WITH_COG			0x0100		// Direction
+
+
+// --- Internal function
+void __gnss_printf(char *format, ...);
 
 
 

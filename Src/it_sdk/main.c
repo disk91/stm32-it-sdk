@@ -159,7 +159,7 @@ void itsdk_loop() {
 	   accel_process_loop();
     #endif
 	#if ITSDK_DRIVERS_WITH_GNSS_DRIVER == __ENABLE
-	   gnss_process_loop();
+	   gnss_process_loop(BOOL_FALSE);
 	#endif
 	project_loop();
 	#if ITSDK_WITH_CONSOLE == __ENABLE
