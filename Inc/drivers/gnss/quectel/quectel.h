@@ -28,13 +28,15 @@
 #define INC_DRIVERS_GNSS_QUECTEL_QUECTEL_H_
 
 
-#define DRIVER_GNSS_QUECTEL_MODEL_L86	0
-#define DRIVER_GNSS_QUECTEL_MODEL_L80	0
+#define DRIVER_GNSS_QUECTEL_MODEL_L86	0				// Support GPS & GLONASS + wakeup with FORCE_ON pin
+#define DRIVER_GNSS_QUECTEL_MODEL_L80	1				// Supports GPS, backup mode by cutting VCC
 
 gnss_ret_e quectel_lxx_initLowPower();
 
 typedef struct {
 	volatile uint8_t				hasboot:1; 			// flag indicating the device has reboot (and is responding)
+			 uint8_t				hasBackupMode:1;	// The ultra low power backup mode is supported
+			 uint8_t				isInBackupMode:1;	// The device is currently in backup Mode
 	volatile uint8_t				hasAckedSuccess:1;	// previous command acked success
 	volatile uint8_t				hasAckedFailed:1;	// previous command acked with a failure
 	volatile uint16_t				lastAckedCode;		// Last command code acked
@@ -47,6 +49,8 @@ typedef struct {
 #define DRIVER_GNSS_QUECTEL_CMD_SET_NMEA_OUTPUT		314
 #define DRIVER_GNSS_QUECTEL_CMD_SET_GNSS_SEARCH		353
 #define DRIVER_GNSS_QUECTEL_CMD_SET_PERIODIC_MODE	225
+#define DRIVER_GNSS_QUECTEL_CMD_STANDBY_MODE		161
+#define DRIVER_GNSS_QUECTEL_CMD_HOT_START			101
 
 
 #endif /* INC_DRIVERS_GNSS_QUECTEL_QUECTEL_H_ */

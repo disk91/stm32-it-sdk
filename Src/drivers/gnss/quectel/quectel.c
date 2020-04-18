@@ -39,8 +39,13 @@
 // --------------------------------------------------------------------------------
 // Internal
 static gnss_ret_e __quectelNMEA(gnss_data_t * data, uint8_t * line, uint16_t sz);
+static gnss_ret_e __quectedSendCommand(char * cmd, uint8_t sz, uint16_t icmd);
 static gnss_ret_e __quectelWaitForAck(uint16_t commandCode);
+static gnss_ret_e __quectelSetRunMode(gnss_run_mode_e mode);
 static gnss_ret_e __quectelSwitchToStopWithMemoryRetention();
+static gnss_ret_e __quectelSwitchToStandbyWithMemoryRetention();
+static gnss_ret_e __quectelSwitchToHotStart();
+
 static quectel_status_t __quectel_status;
 
 
@@ -55,9 +60,10 @@ gnss_ret_e quectel_lxx_initLowPower(gnss_config_t * config) {
 		return GNSS_NOTSUPPORTED;
 	}
 
+	__quectel_status.hasboot = 0;
+	__quectel_status.isInBackupMode = 0;
 
 	// Configure the Reset pin and use it
-	__quectel_status.hasboot = 0;
 	if  ( ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN != __LP_GPIO_NONE ) {
 		gpio_configure(ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN,GPIO_OUTPUT_PP);
 		gpio_reset(ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN);
@@ -65,9 +71,34 @@ gnss_ret_e quectel_lxx_initLowPower(gnss_config_t * config) {
 		gpio_set(ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN);
 	}
 
+	#if ITSDK_DRIVERS_GNSS_QUECTEL_MODEL == DRIVER_GNSS_QUECTEL_MODEL_L86
+	if ( ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_PIN != __LP_GPIO_NONE ) {
+		gpio_configure(ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_PIN,GPIO_OUTPUT_PP);
+		gpio_set(ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_PIN);
+		itsdk_delayMs(2);
+		gpio_set(ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_PIN);
+		__quectel_status.hasBackupMode = 1;
+	} else {
+		__quectel_status.hasBackupMode = 0;
+	}
+	#endif
+
+	#if ITSDK_DRIVERS_GNSS_QUECTEL_MODEL == DRIVER_GNSS_QUECTEL_MODEL_L80
+	if ( ITSDK_DRIVERS_GNSS_QUECTEL_L80_POWERON_PIN != __LP_GPIO_NONE ) {
+		gpio_configure(ITSDK_DRIVERS_GNSS_QUECTEL_L80_POWERON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L80_POWERON_PIN,GPIO_OUTPUT_PP);
+		gpio_set(ITSDK_DRIVERS_GNSS_QUECTEL_L80_POWERON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L80_POWERON_PIN);
+		__quectel_status.hasBackupMode = 1;
+	} else {
+		__quectel_status.hasBackupMode = 0;
+	}
+	#endif
+
+
 	// Setup the gnss configuration
 	config->withNmeaDecodeur = 1;
 	config->driver.nmea.nmeaParser = &__quectelNMEA;
+	config->setRunMode = &__quectelSetRunMode;
+
 
 	// check Quectel presence
 	if( __quectelWaitForAck(DRIVER_GNSS_QUECTEL_CMD_RESTART) != GNSS_SUCCESS ) {
@@ -86,12 +117,7 @@ gnss_ret_e quectel_lxx_initLowPower(gnss_config_t * config) {
 			2*config->driver.nmea.expectedGSV,		// sat status update rate lower
 			config->driver.nmea.expectedZDA
 	);
-	nmea_addChecksum((uint8_t*)cmd, DRIVER_GNSS_QUECTEL_CMD_MAXZ);
-	__gnss_printf("%s",cmd);
-	if( __quectelWaitForAck(DRIVER_GNSS_QUECTEL_CMD_SET_NMEA_OUTPUT) != GNSS_SUCCESS ) {
-		log_error("Failed to setup the NMEA output\r\n");
-		// as all is better than cycle reboot... continue
-	}
+	__quectedSendCommand(cmd,DRIVER_GNSS_QUECTEL_CMD_MAXZ,DRIVER_GNSS_QUECTEL_CMD_SET_NMEA_OUTPUT);
 
 	// Setup the desired GNSS constellation
 	sprintf(cmd,"$PMTK353,%d,%d,%d*",
@@ -99,37 +125,122 @@ gnss_ret_e quectel_lxx_initLowPower(gnss_config_t * config) {
 			((ITSDK_DRIVERS_GNSS_WITHGLOSAT == __ENABLE)?1:0),
 			((0 && ITSDK_DRIVERS_GNSS_WITHGALSAT == __ENABLE)?1:0)
 	);
-	nmea_addChecksum((uint8_t*)cmd, DRIVER_GNSS_QUECTEL_CMD_MAXZ);
-	__gnss_printf("%s",cmd);
-	if( __quectelWaitForAck(DRIVER_GNSS_QUECTEL_CMD_SET_GNSS_SEARCH) != GNSS_SUCCESS ) {
-		log_error("Failed to setup the GNSS constelationt\r\n");
-		// as all is better than cycle reboot... continue
-	}
+	__quectedSendCommand(cmd,DRIVER_GNSS_QUECTEL_CMD_MAXZ,DRIVER_GNSS_QUECTEL_CMD_SET_GNSS_SEARCH);
 
 	// Switch to low power
 	__quectelSwitchToStopWithMemoryRetention();
 
-
 	return GNSS_SUCCESS;
 }
 
+/**
+ * Switch the device to the given mode
+ */
+static gnss_ret_e __quectelSetRunMode(gnss_run_mode_e mode) {
+	switch (mode) {
+		default:
+		case GNSS_STOP_MODE:
+		case GNSS_BACKUP_MDOE:
+			return __quectelSwitchToStopWithMemoryRetention();
+		case GNSS_SLEEP_MODE:
+			return __quectelSwitchToStandbyWithMemoryRetention();
+		case GNSS_RUN_COLD:
+		case GNSS_RUN_WARM:
+		case GNSS_RUN_HOT:
+			return __quectelSwitchToHotStart();
 
+	}
+}
+
+
+/**
+ * Switch the GPS in backup mode. in the mode only V_Backup is still activated
+ * to preserve the ephemeris. the power consumption is 7uA.
+ */
 static gnss_ret_e __quectelSwitchToStopWithMemoryRetention() {
 	char cmd[DRIVER_GNSS_QUECTEL_CMD_MAXZ];
 
+	if ( __quectel_status.hasBackupMode == 1 ) {
+
+		// Switch to Perpetual Backup mode
+		// Consumption 7uA
+		sprintf(cmd,"$PMTK225,4*");
+		if ( __quectedSendCommand(cmd,DRIVER_GNSS_QUECTEL_CMD_MAXZ,DRIVER_GNSS_QUECTEL_CMD_SET_PERIODIC_MODE) == GNSS_SUCCESS ) {
+			#if ITSDK_DRIVERS_GNSS_QUECTEL_MODEL == DRIVER_GNSS_QUECTEL_MODEL_L80
+			  itsdk_dealyMs(20);
+ 			  gpio_reset(ITSDK_DRIVERS_GNSS_QUECTEL_L80_POWERON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L80_POWERON_PIN);
+			#endif
+			__quectel_status.isInBackupMode = 1;
+			return GNSS_SUCCESS;
+		}
+		return GNSS_FAILED;
+
+	} else {
+		// fallback in standby mode
+		return __quectelSwitchToStandbyWithMemoryRetention();
+	}
+}
+
+/**
+ * Switch the GPS in standaby mode. in thiw mode the MCU is activated but low power
+ * and the sat search is stopped. It is possible to wake up the GPS using the UART
+ * power consumption is 1mA
+ */
+static gnss_ret_e __quectelSwitchToStandbyWithMemoryRetention() {
+	char cmd[DRIVER_GNSS_QUECTEL_CMD_MAXZ];
+
 	// Switch to Perpetual Backup mode
-	// Consumption 7uA
-	sprintf(cmd,"$PMTK225,4*");
-	nmea_addChecksum((uint8_t*)cmd, DRIVER_GNSS_QUECTEL_CMD_MAXZ);
+	// Consumption 1mA
+	sprintf(cmd,"$PMTK161,0*");
+	return __quectedSendCommand(cmd,DRIVER_GNSS_QUECTEL_CMD_MAXZ,DRIVER_GNSS_QUECTEL_CMD_STANDBY_MODE);
+}
+
+
+/**
+ * Switch the GPS in HOT start -> epehemris should be still valid to get a fix
+ */
+static gnss_ret_e __quectelSwitchToHotStart() {
+	char cmd[DRIVER_GNSS_QUECTEL_CMD_MAXZ];
+	if (__quectel_status.isInBackupMode == 1) {
+		// wake up if needed
+		#if ITSDK_DRIVERS_GNSS_QUECTEL_MODEL == DRIVER_GNSS_QUECTEL_MODEL_L86
+		  gpio_set(ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_PIN);
+		  itsdk_delayMs(1);
+		  __quectel_status.isInBackupMode = 0;
+		#endif
+
+		#if ITSDK_DRIVERS_GNSS_QUECTEL_MODEL == DRIVER_GNSS_QUECTEL_MODEL_L80
+  		  gpio_set(ITSDK_DRIVERS_GNSS_QUECTEL_L80_POWERON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L80_POWERON_PIN);
+		  __quectel_status.isInBackupMode = 0;
+		#endif
+
+	}
+
+
+	// Switch to Perpetual Backup mode
+	// Consumption 1mA
+	// @TODO this command has no response I think
+	sprintf(cmd,"$PMTK101*");
+	return __quectedSendCommand(cmd,DRIVER_GNSS_QUECTEL_CMD_MAXZ,DRIVER_GNSS_QUECTEL_CMD_HOT_START);
+}
+
+
+
+
+
+/**
+ * Send a command to the device and verify processing
+ * Add the checksum at end of the command
+ */
+static gnss_ret_e __quectedSendCommand(char * cmd, uint8_t sz, uint16_t icmd) {
+	nmea_addChecksum((uint8_t*)cmd, sz);
 	__gnss_printf("%s",cmd);
-	if( __quectelWaitForAck(DRIVER_GNSS_QUECTEL_CMD_SET_PERIODIC_MODE) != GNSS_SUCCESS ) {
-		log_error("Failed to get backup confirmation\r\n");
+	if( __quectelWaitForAck(icmd) != GNSS_SUCCESS ) {
+		log_error("Failed to get command confirmation on %d\r\n",icmd);
 		return GNSS_FAILED;
 	}
 	return GNSS_SUCCESS;
 }
-
-
 
 /**
  * Wait for a command ack

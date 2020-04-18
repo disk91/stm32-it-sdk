@@ -168,8 +168,17 @@ typedef struct {
 	uint8_t expectedVTG:1;
 	uint8_t expectedZDA:1;
 	gnss_ret_e (*nmeaParser)(gnss_data_t * data, uint8_t * line, uint16_t sz);	// nmea parsing function for the activ driver
-
 } gnss_nmea_driver_t;
+
+typedef enum {
+	GNSS_STOP_MODE		= 0,	// Stop - nothing kept
+	GNSS_BACKUP_MDOE  	= 1,	// Backup - memory preserved all rest off
+	GNSS_SLEEP_MODE		= 2,	// Sleep - low power mcu stay on and memory kept
+	GNSS_RUN_COLD		= 3,	// Run - assuming memory content obsolete
+	GNSS_RUN_WARM		= 4,	// Run - assuming memory is to be refreshed
+	GNSS_RUN_HOT		= 5		// Run - assuming data still valid
+
+} gnss_run_mode_e;
 
 
 typedef struct {
@@ -181,6 +190,8 @@ typedef struct {
 	union {
 		gnss_nmea_driver_t	nmea;									// setting for driver type Nmea
 	} driver;
+
+    gnss_ret_e (*setRunMode)(gnss_run_mode_e mode);					// change de GPS running mode see modes
 
 
 } gnss_config_t;
