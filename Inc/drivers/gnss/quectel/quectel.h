@@ -37,6 +37,7 @@ typedef struct {
 	volatile uint8_t				hasboot:1; 			// flag indicating the device has reboot (and is responding)
 			 uint8_t				hasBackupMode:1;	// The ultra low power backup mode is supported
 			 uint8_t				isInBackupMode:1;	// The device is currently in backup Mode
+			 uint8_t				isRunning:1;		// Position search in progress
 	volatile uint8_t				hasAckedSuccess:1;	// previous command acked success
 	volatile uint8_t				hasAckedFailed:1;	// previous command acked with a failure
 	volatile uint16_t				lastAckedCode;		// Last command code acked
@@ -45,12 +46,15 @@ typedef struct {
 
 #define DRIVER_GNSS_QUECTEL_CMD_MAXZ				80
 
-#define DRIVER_GNSS_QUECTEL_CMD_RESTART				0
+#define DRIVER_GNSS_QUECTEL_CMD_RESTART				0xFFFD
+#define DRIVER_GNSS_QUECTEL_CMD_PQTXT				0xFFFE
+#define DRIVER_GNSS_QUECTEL_CMD_NOACK				0xFFFF
 #define DRIVER_GNSS_QUECTEL_CMD_SET_NMEA_OUTPUT		314
 #define DRIVER_GNSS_QUECTEL_CMD_SET_GNSS_SEARCH		353
 #define DRIVER_GNSS_QUECTEL_CMD_SET_PERIODIC_MODE	225
 #define DRIVER_GNSS_QUECTEL_CMD_STANDBY_MODE		161
 #define DRIVER_GNSS_QUECTEL_CMD_HOT_START			101
+#define DRIVER_GNSS_QUECTEL_CMD_TEST				000
 
 
 #endif /* INC_DRIVERS_GNSS_QUECTEL_QUECTEL_H_ */

@@ -70,8 +70,10 @@ void serial1_init() {
 void serial1_flush() {
   #if ( ITSDK_WITH_UART & __UART_LPUART1 ) > 0
      while(__HAL_UART_GET_FLAG(&hlpuart1, USART_ISR_BUSY) == SET);
+     while(__HAL_UART_GET_FLAG(&hlpuart1, USART_ISR_TC) == RESET);
   #elif ( ITSDK_WITH_UART & __UART_USART1 ) > 0
-   while(__HAL_UART_GET_FLAG(&huart1, USART_ISR_BUSY) == SET);
+	   while(__HAL_UART_GET_FLAG(&huart1, USART_ISR_BUSY) == SET);
+	   while(__HAL_UART_GET_FLAG(&huart1, USART_ISR_TC) == RESET);
   #endif
 }
 
@@ -80,6 +82,14 @@ void serial1_print(char * msg) {
 	HAL_UART_Transmit(&hlpuart1, (uint8_t*)msg, strlen(msg),0xFFFF);
   #elif ( ITSDK_WITH_UART & __UART_USART1 ) > 0
 	HAL_UART_Transmit(&huart1, (uint8_t*)msg, strlen(msg),0xFFFF);
+  #endif
+}
+
+void serial1_write(uint8_t * bytes,uint16_t len) {
+  #if ( ITSDK_WITH_UART & __UART_LPUART1 ) > 0
+	HAL_UART_Transmit(&hlpuart1, bytes, len,0xFFFF);
+  #elif ( ITSDK_WITH_UART & __UART_USART1 ) > 0
+	HAL_UART_Transmit(&huart1, bytes, len,0xFFFF);
   #endif
 }
 
@@ -157,7 +167,35 @@ serial_read_response_e serial1_read(char * ch) {
 #endif
 }
 
-
+/**
+ * Change the Uart setting baudrate
+ * Return BOOL_TRUE on success
+ */
+itsdk_bool_e serial1_changeBaudRate(serial_baudrate_e bd) {
+	UART_HandleTypeDef * lhuart;
+	#if ( ITSDK_WITH_UART & __UART_LPUART1 ) > 0
+		lhuart = &hlpuart1;
+	#elif ( ITSDK_WITH_UART & __UART_USART1 ) > 0
+		lhuart = &huart1;
+	#else
+		return BOOL_FALSE;
+	#endif
+	switch( bd ) {
+		case SERIAL_SPEED_4800 : lhuart->Init.BaudRate = 4800; break;
+		default:
+		case SERIAL_SPEED_9600 : lhuart->Init.BaudRate = 9600; break;
+		case SERIAL_SPEED_19200 : lhuart->Init.BaudRate = 19200; break;
+		case SERIAL_SPEED_38400 : lhuart->Init.BaudRate = 38400; break;
+		case SERIAL_SPEED_57600 : lhuart->Init.BaudRate = 57600; break;
+		case SERIAL_SPEED_115200 : lhuart->Init.BaudRate = 115200; break;
+	}
+	serial1_flush();
+	if (HAL_UART_Init(lhuart) != HAL_OK) {
+	  return BOOL_FALSE;
+	}
+	serial1_init();
+	return BOOL_TRUE;
+}
 
 // ---------------------------------------------------------------------------
 // serial 2 - is mapped to USART2
@@ -176,7 +214,8 @@ void serial2_init() {
 
 void serial2_flush() {
   #if ( ITSDK_WITH_UART & __UART_USART2 ) > 0
-     while(__HAL_UART_GET_FLAG(&huart2, USART_ISR_BUSY) == SET);
+     while((__HAL_UART_GET_FLAG(&huart2, USART_ISR_BUSY)) == SET);
+	 while((__HAL_UART_GET_FLAG(&huart2, USART_ISR_TC)) == RESET);
   #endif
 }
 
@@ -184,6 +223,12 @@ void serial2_print(char * msg) {
   #if ( ITSDK_WITH_UART & __UART_USART2 ) > 0
 	HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg),0xFFFF);
   #endif
+}
+
+void serial2_write(uint8_t * bytes,uint16_t len) {
+#if ( ITSDK_WITH_UART & __UART_USART2 ) > 0
+	HAL_UART_Transmit(&huart2, bytes, len,0xFFFF);
+#endif
 }
 
 void serial2_println(char * msg) {
@@ -235,6 +280,34 @@ serial_read_response_e serial2_read(char * ch) {
 	return SERIAL_READ_FAILED;
   #endif
 #endif
+}
+
+/**
+ * Change the Uart setting baudrate
+ * Return BOOL_TRUE on success
+ */
+itsdk_bool_e serial2_changeBaudRate(serial_baudrate_e bd) {
+	UART_HandleTypeDef * lhuart;
+	#if  ( ITSDK_WITH_UART_RXIRQ & __UART_USART2 )
+	   lhuart = &huart2;
+	#else
+		return BOOL_FALSE;
+	#endif
+	switch( bd ) {
+		case SERIAL_SPEED_4800 : lhuart->Init.BaudRate = 4800; break;
+		default:
+		case SERIAL_SPEED_9600 : lhuart->Init.BaudRate = 9600; break;
+		case SERIAL_SPEED_19200 : lhuart->Init.BaudRate = 19200; break;
+		case SERIAL_SPEED_38400 : lhuart->Init.BaudRate = 38400; break;
+		case SERIAL_SPEED_57600 : lhuart->Init.BaudRate = 57600; break;
+		case SERIAL_SPEED_115200 : lhuart->Init.BaudRate = 115200; break;
+	}
+	serial2_flush();
+	if (HAL_UART_Init(lhuart) != HAL_OK) {
+	  return BOOL_FALSE;
+	}
+	serial2_init();
+	return BOOL_TRUE;
 }
 
 

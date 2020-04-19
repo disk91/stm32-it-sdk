@@ -33,19 +33,21 @@
 
 // ================================================
 // Serial wrappers
-void serial1_flush();
-void serial2_flush();
-void debug_flush();
-
 void serial1_init();
+void serial1_flush();
 void serial1_print(char * msg);
-void serial2_print(char * msg);
+void serial1_println(char * msg);
+void serial1_write(uint8_t * bytes,uint16_t len);
 void debug_print(char * msg);
 void logfile_print(char * msg);
 
 void serial2_init();
-void serial1_println(char * msg);
+void serial2_flush();
+void serial2_print(char * msg);
 void serial2_println(char * msg);
+void serial2_write(uint8_t * bytes,uint16_t len);
+
+void debug_flush();
 void debug_println(char * msg);
 void logfile_println(char * msg);
 
@@ -57,6 +59,20 @@ typedef enum {
 } serial_read_response_e;
 serial_read_response_e serial1_read(char * c);
 serial_read_response_e serial2_read(char * c);
+
+typedef enum {
+	SERIAL_SPEED_4800 = 0,
+	SERIAL_SPEED_9600,
+	SERIAL_SPEED_19200,
+	SERIAL_SPEED_38400,
+	SERIAL_SPEED_57600,
+	SERIAL_SPEED_115200
+} serial_baudrate_e;
+
+itsdk_bool_e serial1_changeBaudRate(serial_baudrate_e bd);
+itsdk_bool_e serial2_changeBaudRate(serial_baudrate_e bd);
+
+
 
 // ================================================
 // watchdog

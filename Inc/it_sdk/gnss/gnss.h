@@ -47,27 +47,37 @@ typedef enum {
 	GNSS_NOTFOUND			=9,
 	GNSS_TOOSMALL			=10,
 	GNSS_TIMEOUT			=11,
+	GNSS_ALLREADYRUNNNING	=12,
 
 	GNSS_FAILED				=0x80
 } gnss_ret_e;
 
-gnss_ret_e gnss_setup();
-void gnss_process_loop(itsdk_bool_e force);		// Loop process automatically included in the itsdk_loop
+// GNSS Trigers
+typedef enum {
+	GNSS_TRIGGER_ON_NONE			= 0x0000000,
+	GNSS_TRIGGER_ON_TIMEUPDATE		= 0x0000001,
+	GNSS_TRIGGER_ON_DATEUPDATE		= 0x0000002,
+	GNSS_TRIGGER_ON_POS2D			= 0x0000004,
+	GNSS_TRIGGER_ON_POS3D			= 0x0000008,
+	GNSS_TRIGGER_ON_HDOP_150		= 0x0000010,
+	GNSS_TRIGGER_ON_HDOP_200		= 0x0000020,
+	GNSS_TRIGGER_ON_HDOP_400		= 0x0000040,
+	GNSS_TRIGGER_ON_HDOP_800		= 0x0000080,
+	GNSS_TRIGGER_ON_OUTDOOR			= 0x0000100,
+	GNSS_TRIGGER_ON_INDOOR			= 0x0000200,
+	GNSS_TRIGGER_ON_SPEED_5			= 0x0001000,
+	GNSS_TRIGGER_ON_SPEED_10		= 0x0002000,
+	GNSS_TRIGGER_ON_SPEED_20		= 0x0004000,
+	GNSS_TRIGGER_ON_SPEED_40		= 0x0008000,
+	GNSS_TRIGGER_ON_SPEED_70		= 0x0010000,
+	GNSS_TRIGGER_ON_SPEED_90		= 0x0020000,
+	GNSS_TRIGGER_ON_SPEED_110		= 0x0040000,
+	GNSS_TRIGGER_ON_SPEED_150		= 0x0080000,
 
+	GNSS_TRIGGER_ON_TIMEOUT			= 0x8000000
+} gnss_triggers_e;
 
-
-void gnss_customSerial_print(char * msg);
-serial_read_response_e gnss_customSerial_read(char * ch);
-
-void gnss_printState(void);
-
-#if ITSDK_DRIVERS_GNSS_WITHGALSAT == __ENABLE
-#error "GALILEO is not yet supported"
-#endif
-
-// =============================================================================
-// Internal stuff
-// =============================================================================
+// Data structure to report GNSS informations up to the application layer
 typedef struct {
 	uint32_t	updateTime;		// last seen time
 	uint8_t		signal;			// last signal level -00 -99 dBm
@@ -159,7 +169,55 @@ typedef struct {
 } gnss_data_t;
 
 
-typedef struct {
+typedef struct gnss_eventHandler_s {
+	gnss_triggers_e					triggerMask;			// responding mask
+	void(* callback)(gnss_triggers_e t,					    // List of trigger you want to match
+					 gnss_data_t * data,					// Data structure from the gnss
+					 uint32_t duration						// Duration since Position scan started
+					);										// end-user function to call
+	struct gnss_eventHandler_s	*	next;					// next in list
+} gnss_eventHandler_t;
+
+gnss_ret_e gnss_delTriggerCallBack(
+		gnss_eventHandler_t * handler
+);
+gnss_ret_e gnss_addTriggerCallBack(
+		gnss_eventHandler_t * handler
+);
+
+gnss_ret_e gnss_setup();
+void gnss_process_loop(itsdk_bool_e force);		// Loop process automatically included in the itsdk_loop
+
+
+
+void gnss_customSerial_print(char * msg);
+serial_read_response_e gnss_customSerial_read(char * ch);
+
+void gnss_printState(void);
+
+#if ITSDK_DRIVERS_GNSS_WITHGALSAT == __ENABLE
+#error "GALILEO is not yet supported"
+#endif
+
+// =============================================================================
+// Internal stuff
+// =============================================================================
+
+
+
+typedef enum {
+	NMEA_NONE = 0,
+	NMEA_RMC = 0x0001,		// list of message type a device is supporting
+	NMEA_GGA = 0x0002,
+	NMEA_GSA = 0x0004,
+	NMEA_GSV = 0x0008,
+	NMEA_GLL = 0x0010,
+	NMEA_VTG = 0x0020,
+	NMEA_ZDA = 0x0040,
+	MTK_CHN  = 0x8000
+} nmea_supported_e;
+
+typedef struct gnss_nmea_driver_s {
 	uint8_t	expectedRMC:1;		// List of NEMA message the GPS must provide to respond
 	uint8_t	expectedGGA:1;		//  user data expected according to the configuration
 	uint8_t expectedGSA:1;
@@ -167,7 +225,14 @@ typedef struct {
 	uint8_t expectedGLL:1;
 	uint8_t expectedVTG:1;
 	uint8_t expectedZDA:1;
-	gnss_ret_e (*nmeaParser)(gnss_data_t * data, uint8_t * line, uint16_t sz);	// nmea parsing function for the activ driver
+	uint8_t expectedCHN:1;
+	nmea_supported_e firstMessage;		// first message sent by the GNSS (static - to determine the last one)
+	nmea_supported_e currentMessage;	// current message sent by GNSS (dynamic - to determine the last one)
+	nmea_supported_e triggeringMessage;	// after processing this message we have all the informations updated
+	gnss_ret_e (*nmeaParser)(gnss_data_t * data, uint8_t * line, uint16_t sz, struct gnss_nmea_driver_s * driver);
+									    // nmea parsing function for the activ driver
+    gnss_ret_e (*onDataRefreshed)();	// call by underlaying driver when gnss_config_t structure has been refreshed
+
 } gnss_nmea_driver_t;
 
 typedef enum {
@@ -182,18 +247,19 @@ typedef enum {
 
 
 typedef struct {
-	uint8_t 		setupDone:1;									// flag 1 => setup has been done
-	uint8_t			withNmeaDecodeur:1;								// flag 1 => data parse with NMEA parser
-	uint8_t			lineBuffer[ITSDK_DRIVERS_GNSS_LINEBUFFER];		// Buffer to store char waiting for processing
-	uint16_t		pBuffer;										// Index in the line buffer
-	gnss_data_t		data;											// Data obtained from the GNSS
+	uint8_t 				setupDone:1;									// flag 1 => setup has been done
+	uint8_t					withNmeaDecodeur:1;								// flag 1 => data parse with NMEA parser
+	uint8_t					lineBuffer[ITSDK_DRIVERS_GNSS_LINEBUFFER];		// Buffer to store char waiting for processing
+	uint16_t				pBuffer;										// Index in the line buffer
+	gnss_eventHandler_t * 	callbackList;
+	gnss_data_t				data;											// Data obtained from the GNSS
 	union {
-		gnss_nmea_driver_t	nmea;									// setting for driver type Nmea
+		gnss_nmea_driver_t	nmea;											// Setting for driver type Nmea
 	} driver;
 
-    gnss_ret_e (*setRunMode)(gnss_run_mode_e mode);					// change de GPS running mode see modes
-
-
+    gnss_ret_e 				(*setRunMode)(gnss_run_mode_e mode);			// Switch GPS running mode (see modes)
+    uint32_t				startupTimeS;									// System time in S at position search
+    uint16_t				maxDurationS;									// Max search duration before stop in Second
 } gnss_config_t;
 
 
@@ -211,7 +277,7 @@ typedef struct {
 
 // --- Internal function
 void __gnss_printf(char *format, ...);
-
+gnss_ret_e __gnss_changeBaudRate(serial_baudrate_e br);
 
 
 #endif /* INC_IT_SDK_GNSS_GNSS_H_ */

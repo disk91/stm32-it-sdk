@@ -34,7 +34,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <sys/types.h>
-
+#include <string.h>
 
 #include <it_sdk/logger/logger.h>
 #include <it_sdk/time/time.h>
@@ -44,17 +44,21 @@
 static gnss_config_t __gnss_config = {0};
 static void __gnss_processChar(char c);
 static void __gnss_process_serialLine(void);
+static gnss_ret_e __gnss_onDataRefreshed(void);
+
 
 // ---------------------------------------------------------
 // Main public interfaces
 gnss_ret_e gnss_setup() {
 	gnss_ret_e ret = GNSS_SUCCESS;
 	__gnss_config.pBuffer = 0;
+	__gnss_config.callbackList = NULL;
 
 	// Reset the data structure
 	__gnss_config.data.gpsTime.status = GNSS_TIME_NOTSET;
 	__gnss_config.data.lastRefreshS = 0;
 	__gnss_config.data.satInView = 0;
+
 
 	#if ITSDK_DRIVERS_GNSS_WITHGPSSAT == __ENABLE
 	for (int i = 0 ; i < ITSDK_GNSS_GPSSAT_NB ; i++) {
@@ -83,6 +87,9 @@ gnss_ret_e gnss_setup() {
 	  ret |= quectel_lxx_initLowPower(&__gnss_config);
 	#endif
 
+	if ( __gnss_config.withNmeaDecodeur == 1 ) {
+	   __gnss_config.driver.nmea.onDataRefreshed = &__gnss_onDataRefreshed;
+	}
 	__gnss_config.setupDone = 1;
 
 
@@ -113,8 +120,143 @@ void gnss_process_loop(itsdk_bool_e force) {
 
 void gnss_start() {
 	if ( !__gnss_config.setupDone ) return;
-	__gnss_config.setRunMode(GNSS_RUN_HOT);
+	__gnss_config.setRunMode(GNSS_RUN_COLD);
+	__gnss_config.maxDurationS = 200;
 
+}
+
+void gnss_stop() {
+	if ( !__gnss_config.setupDone ) return;
+	__gnss_config.setRunMode(GNSS_STOP_MODE);
+
+}
+
+// =================================================================================================
+// Processing refreshed Data
+// =================================================================================================
+
+/** *********************************************************************
+ *  Manage the application callback list
+ */
+
+/**
+ * Add a callback for certain trigger in the callback list
+ */
+gnss_ret_e gnss_addTriggerCallBack(
+		gnss_eventHandler_t * handler
+) {
+	handler->next = NULL;
+	if ( __gnss_config.callbackList == NULL ) {
+		__gnss_config.callbackList = handler;
+	} else {
+		gnss_eventHandler_t * c = __gnss_config.callbackList;
+		while ( c->next != NULL ) c = c->next;
+		c->next = handler;
+	}
+	return GNSS_SUCCESS;
+}
+
+/**
+ * Remove one of the callback
+ */
+gnss_ret_e gnss_delTriggerCallBack(
+		gnss_eventHandler_t * handler
+) {
+
+	gnss_eventHandler_t * c = __gnss_config.callbackList;
+	if ( c == handler ) {
+		// head
+		__gnss_config.callbackList = c->next;
+	} else {
+		while ( c != NULL && c->next != handler ) c = c->next;
+		if ( c!= NULL ) {
+		   c->next = (c->next)->next;
+		} else return GNSS_NOTFOUND;
+	}
+	return GNSS_SUCCESS;
+
+}
+
+
+
+/**
+ * This function will be automatically called by the underlaying driver once the data will
+ * have been updated. This function will manage the upper layer callbacks on the different
+ * events.
+ */
+static gnss_ret_e __gnss_onDataRefreshed(void) {
+	gnss_triggers_e triggers = GNSS_TRIGGER_ON_NONE;
+
+	// Update duration
+	uint64_t _duration = (itsdk_time_get_ms()/1000);
+	_duration -= __gnss_config.startupTimeS;
+	if ( _duration > __gnss_config.maxDurationS ) {
+		triggers |= GNSS_TRIGGER_ON_TIMEOUT;
+		// Stop the GNSS subsystem
+		__gnss_config.setRunMode(GNSS_STOP_MODE);
+	}
+
+	// generate triggers
+	if ( __gnss_config.data.lastRefreshS > 0 ) {
+		gnss_fix_info_t * f = &__gnss_config.data.fixInfo;
+		if ( f->fixType >= GNSS_FIX_TIME ) {
+			if ( __gnss_config.data.gpsTime.status >= GNSS_TIME_TIME ) {
+				triggers |= GNSS_TRIGGER_ON_TIMEUPDATE;
+			}
+			if ( __gnss_config.data.gpsTime.status >= GNSS_TIME_DATE ) {
+				triggers |= GNSS_TRIGGER_ON_DATEUPDATE;
+			}
+		}
+		if ( f->fixType >= GNSS_FIX_2D ) {
+			triggers |= GNSS_TRIGGER_ON_POS2D;
+			if ( f->hdop > 0 ) {
+				if ( f->hdop < 150 ) triggers |= GNSS_TRIGGER_ON_HDOP_150;
+				if ( f->hdop < 200 ) triggers |= GNSS_TRIGGER_ON_HDOP_200;
+				if ( f->hdop < 400 ) triggers |= GNSS_TRIGGER_ON_HDOP_400;
+				if ( f->hdop < 800 ) triggers |= GNSS_TRIGGER_ON_HDOP_800;
+			}
+			if ( f->speed_kmh > 0 ) {
+				if ( f->speed_kmh >= 5   ) triggers |= GNSS_TRIGGER_ON_SPEED_5;
+				if ( f->speed_kmh >= 10  ) triggers |= GNSS_TRIGGER_ON_SPEED_10;
+				if ( f->speed_kmh >= 20  ) triggers |= GNSS_TRIGGER_ON_SPEED_20;
+				if ( f->speed_kmh >= 40  ) triggers |= GNSS_TRIGGER_ON_SPEED_40;
+				if ( f->speed_kmh >= 70  ) triggers |= GNSS_TRIGGER_ON_SPEED_70;
+				if ( f->speed_kmh >= 90  ) triggers |= GNSS_TRIGGER_ON_SPEED_90;
+				if ( f->speed_kmh >= 110 ) triggers |= GNSS_TRIGGER_ON_SPEED_110;
+				if ( f->speed_kmh >= 150 ) triggers |= GNSS_TRIGGER_ON_SPEED_150;
+			}
+		}
+		if ( f->fixType >= GNSS_FIX_3D ) {
+			triggers |= GNSS_TRIGGER_ON_POS3D;
+		}
+	}
+
+	// Manage the callbacks
+	gnss_eventHandler_t * c = __gnss_config.callbackList;
+	while ( c != NULL ) {
+		if ( (triggers & c->triggerMask) > 0 ) {
+			if ( c->callback != NULL ) c->callback(triggers & c->triggerMask, &__gnss_config.data, _duration);
+		}
+		c = c->next;
+	}
+
+	log_info("o");
+
+
+	/*
+				GNSS_TRIGGER_ON_OUTDOOR			= 0x0000100,
+				GNSS_TRIGGER_ON_INDOOR			= 0x0000200,
+				*/
+
+
+
+	// Reset the structure for next run
+	__gnss_config.data.gpsTime.status = GNSS_TIME_NOTSET;
+	__gnss_config.data.lastRefreshS = 0;
+	__gnss_config.data.satInView = 0;
+	bzero(&__gnss_config.data.fixInfo, sizeof(gnss_fix_info_t));
+
+	return GNSS_SUCCESS;
 }
 
 
@@ -139,6 +281,22 @@ void __gnss_printf(char *format, ...) {
 #endif
 }
 
+gnss_ret_e __gnss_changeBaudRate(serial_baudrate_e br) {
+	itsdk_bool_e ret = BOOL_FALSE;
+	#if ( ITSDK_DRIVERS_GNSS_SERIAL & ( __UART_LPUART1 | __UART_USART1 ) ) > 0
+		ret = serial1_changeBaudRate(br);
+	#endif
+	#if ( ITSDK_DRIVERS_GNSS_SERIAL & __UART_USART2 ) > 0
+		ret = serial2_changeBaudRate(br);
+	#endif
+
+	if ( ret == BOOL_TRUE ) {
+		// reset the pending buffers
+		__gnss_config.pBuffer = 0;
+		return GNSS_SUCCESS;
+	}
+	return GNSS_FAILED;
+}
 
 // =================================================================================================
 // Processing input
@@ -206,14 +364,16 @@ static void __gnss_processChar(char c) {
 		if ( __gnss_config.pBuffer > 0 ) {
 			__gnss_config.lineBuffer[__gnss_config.pBuffer] = '\0';
 			if ( __gnss_config.withNmeaDecodeur && __gnss_config.driver.nmea.nmeaParser != NULL ) {
-				__gnss_config.driver.nmea.nmeaParser(&__gnss_config.data,__gnss_config.lineBuffer,__gnss_config.pBuffer);
+				__gnss_config.driver.nmea.nmeaParser(&__gnss_config.data,__gnss_config.lineBuffer,__gnss_config.pBuffer, &__gnss_config.driver.nmea);
 			}
 		   __gnss_config.pBuffer = 0;
 		}
 	} else {
 		if ( __gnss_config.pBuffer < ITSDK_DRIVERS_GNSS_LINEBUFFER ) {
-			__gnss_config.lineBuffer[__gnss_config.pBuffer] = c;
-			__gnss_config.pBuffer++;
+			if (c >= ' ' && c <= '~' ) {
+				__gnss_config.lineBuffer[__gnss_config.pBuffer] = c;
+				__gnss_config.pBuffer++;
+			}
 		}
 	}
 
