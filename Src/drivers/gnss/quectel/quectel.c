@@ -276,18 +276,26 @@ static gnss_ret_e __quectelSwitchBackfromStopMode() {
 		#if ITSDK_DRIVERS_GNSS_QUECTEL_MODEL == DRIVER_GNSS_QUECTEL_MODEL_L80
   		  gpio_set(ITSDK_DRIVERS_GNSS_QUECTEL_L80_POWERON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L80_POWERON_PIN);
 		#endif
-  	    __quectel_status.isInBackupMode = 0;
-  	    __quectel_status.isRunning = 0;
   	    if ( __quectelWaitForAck(DRIVER_GNSS_QUECTEL_CMD_RESTART) == GNSS_TIMEOUT) {
   	    	// We failed to wake up - reset !
+#warning clean this
+MX_USART1_UART_Init();
+gpio_configure(ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_PIN,GPIO_OUTPUT_PP);
+gpio_set(ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_PIN);
+
   			gpio_configure(ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN,GPIO_OUTPUT_PP);
   			gpio_reset(ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN);
   			itsdk_delayMs(200); // 10 ms min according to doc
   			gpio_set(ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN);
   			log_error("Force Reset\r\n");
+  			// Retrying
+  			if ( __quectelWaitForAck(DRIVER_GNSS_QUECTEL_CMD_RESTART) == GNSS_TIMEOUT) {
+  				log_error("Failed again\r\n");
+  				return GNSS_FAILED;
+  			}
   	    }
-
-  	    return GNSS_SUCCESS;// __quectelSwitchToStandbyWithMemoryRetention();
+  	    __quectel_status.isInBackupMode = 0;
+  	    return GNSS_SUCCESS;
 	}
 	return GNSS_SUCCESS;
 }
@@ -300,12 +308,15 @@ static gnss_ret_e __quectelSwitchBackfromStopMode() {
 static gnss_ret_e __quectelSwitchToStandbyWithMemoryRetention() {
 	char cmd[DRIVER_GNSS_QUECTEL_CMD_MAXZ];
 
-	__quectelSwitchBackfromStopMode();
-	// Switch to Perpetual Backup mode
-	// Consumption 1mA
-	__quectel_status.isRunning = 0;
-	sprintf(cmd,"$PMTK161,0*");
-	return __quectedSendCommand(cmd,DRIVER_GNSS_QUECTEL_CMD_MAXZ,DRIVER_GNSS_QUECTEL_CMD_STANDBY_MODE);
+	if ( __quectelSwitchBackfromStopMode() == GNSS_SUCCESS ) {
+		// Switch to Perpetual Backup mode
+		// Consumption 1mA
+		sprintf(cmd,"$PMTK161,0*");
+		if ( __quectedSendCommand(cmd,DRIVER_GNSS_QUECTEL_CMD_MAXZ,DRIVER_GNSS_QUECTEL_CMD_STANDBY_MODE) == GNSS_SUCCESS ) {
+			__quectel_status.isRunning = 0;
+			return GNSS_SUCCESS;
+		} else return GNSS_FAILED;
+	} else return GNSS_FAILEDRESTARTING;
 }
 
 
@@ -315,10 +326,13 @@ static gnss_ret_e __quectelSwitchToStandbyWithMemoryRetention() {
 static gnss_ret_e __quectelSwitchToHotStart() {
 	char cmd[DRIVER_GNSS_QUECTEL_CMD_MAXZ];
 	if ( __quectel_status.isRunning == 1 ) return GNSS_ALLREADYRUNNNING;
-	__quectelSwitchBackfromStopMode();
-	__quectel_status.isRunning = 1;
-	sprintf(cmd,"$PMTK101*");
-	return __quectedSendCommand(cmd,DRIVER_GNSS_QUECTEL_CMD_MAXZ,DRIVER_GNSS_QUECTEL_CMD_NOACK);
+	if ( __quectelSwitchBackfromStopMode() == GNSS_SUCCESS ) {
+		sprintf(cmd,"$PMTK101*");
+		if ( __quectedSendCommand(cmd,DRIVER_GNSS_QUECTEL_CMD_MAXZ,DRIVER_GNSS_QUECTEL_CMD_NOACK) == GNSS_SUCCESS ) {
+			__quectel_status.isRunning = 1;
+			return GNSS_SUCCESS;
+		} else return GNSS_FAILED;
+	} else return GNSS_FAILEDRESTARTING;
 }
 
 /**
@@ -328,10 +342,13 @@ static gnss_ret_e __quectelSwitchToHotStart() {
 static gnss_ret_e __quectelSwitchToWarmStart() {
 	char cmd[DRIVER_GNSS_QUECTEL_CMD_MAXZ];
 	if ( __quectel_status.isRunning == 1 ) return GNSS_ALLREADYRUNNNING;
-	__quectelSwitchBackfromStopMode();
-	__quectel_status.isRunning = 1;
-	sprintf(cmd,"$PMTK102*");
-	return __quectedSendCommand(cmd,DRIVER_GNSS_QUECTEL_CMD_MAXZ,DRIVER_GNSS_QUECTEL_CMD_NOACK);
+	if ( __quectelSwitchBackfromStopMode() == GNSS_SUCCESS ) {
+		sprintf(cmd,"$PMTK102*");
+		if ( __quectedSendCommand(cmd,DRIVER_GNSS_QUECTEL_CMD_MAXZ,DRIVER_GNSS_QUECTEL_CMD_NOACK) == GNSS_SUCCESS ) {
+			__quectel_status.isRunning = 1;
+			return GNSS_SUCCESS;
+		} else return GNSS_FAILED;
+	} else return GNSS_FAILEDRESTARTING;
 }
 
 /**
@@ -340,10 +357,13 @@ static gnss_ret_e __quectelSwitchToWarmStart() {
 static gnss_ret_e __quectelSwitchToColdStart() {
 	char cmd[DRIVER_GNSS_QUECTEL_CMD_MAXZ];
 	if ( __quectel_status.isRunning == 1 ) return GNSS_ALLREADYRUNNNING;
-	__quectelSwitchBackfromStopMode();
-	__quectel_status.isRunning = 1;
-	sprintf(cmd,"$PMTK103*");
-	return __quectedSendCommand(cmd,DRIVER_GNSS_QUECTEL_CMD_MAXZ,DRIVER_GNSS_QUECTEL_CMD_NOACK);
+	if ( __quectelSwitchBackfromStopMode() == GNSS_SUCCESS ) {
+		sprintf(cmd,"$PMTK103*");
+		if ( __quectedSendCommand(cmd,DRIVER_GNSS_QUECTEL_CMD_MAXZ,DRIVER_GNSS_QUECTEL_CMD_NOACK) == GNSS_SUCCESS ) {
+			__quectel_status.isRunning = 1;
+			return GNSS_SUCCESS;
+		} else return GNSS_FAILED;
+	} else return GNSS_FAILEDRESTARTING;
 }
 
 /**
@@ -353,10 +373,13 @@ static gnss_ret_e __quectelSwitchToColdStart() {
 static gnss_ret_e __quectelSwitchToFullColdStart() {
 	char cmd[DRIVER_GNSS_QUECTEL_CMD_MAXZ];
 	if ( __quectel_status.isRunning == 1 ) return GNSS_ALLREADYRUNNNING;
-	__quectelSwitchBackfromStopMode();
-	__quectel_status.isRunning = 1;
-	sprintf(cmd,"$PMTK104*");
-	return __quectedSendCommand(cmd,DRIVER_GNSS_QUECTEL_CMD_MAXZ,DRIVER_GNSS_QUECTEL_CMD_NOACK);
+	if ( __quectelSwitchBackfromStopMode() == GNSS_SUCCESS ) {
+		sprintf(cmd,"$PMTK104*");
+		if ( __quectedSendCommand(cmd,DRIVER_GNSS_QUECTEL_CMD_MAXZ,DRIVER_GNSS_QUECTEL_CMD_NOACK) == GNSS_SUCCESS ) {
+			__quectel_status.isRunning = 1;
+			return GNSS_SUCCESS;
+		} else return GNSS_FAILED;
+	} else return GNSS_FAILEDRESTARTING;
 }
 
 /**

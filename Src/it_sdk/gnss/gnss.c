@@ -118,10 +118,11 @@ void gnss_process_loop(itsdk_bool_e force) {
 // Management GPS Fix
 // =================================================================================================
 
-void gnss_start() {
+void gnss_start(uint32_t timeoutS) {
 	if ( !__gnss_config.setupDone ) return;
+	__gnss_config.startupTimeS = (itsdk_time_get_ms()/1000);
+	__gnss_config.maxDurationS = timeoutS;
 	__gnss_config.setRunMode(GNSS_RUN_COLD);
-	__gnss_config.maxDurationS = 200;
 
 }
 
@@ -240,7 +241,7 @@ static gnss_ret_e __gnss_onDataRefreshed(void) {
 		c = c->next;
 	}
 
-	log_info("o");
+	log_info("[%d]", __gnss_config.data.fixInfo.fixType);
 
 
 	/*

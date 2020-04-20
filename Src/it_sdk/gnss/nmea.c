@@ -138,13 +138,20 @@ gnss_ret_e nmea_processNMEA(gnss_data_t * data, uint8_t * line, uint16_t sz, gns
 	// check for start delimiter
 	gnss_ret_e ret = GNSS_SUCCESS;
 	if ( (ret = nmea_verifyChecksum(line,sz)) == GNSS_SUCCESS ) {
+		driver->currentMessage = NMEA_NONE;
 		if ( line[1] == 'G' && (line[2] == 'P' || line[2] == 'N' || line[2] == 'L' ) ) {
+			switch(line[2]) {
+				case 'P': driver->currentMessage |= NMEA_GP; break;
+				case 'N': driver->currentMessage |= NMEA_GN; break;
+				case 'L': driver->currentMessage |= NMEA_GL; break;
+				default: break;
+			}
 			// talker Global Positioning System or Global Navigation System
 			if ( sz > 6 && line[3]=='R' && line[4] == 'M' && line[5] == 'C' ) {
 				uint8_t * pt = &line[5];
 				// --RMC
 				// Format $--RMC,UTC Time (hhmmss.ssss),Data Valid, Latitude (ddmm.mmmm),N/S, Longitude (dddmm.mmmm), E/W, speed knot, Course over ground in degree, date (ddmmyy), magnetic variation, E/W, Position (N -Nofix / A Autonomous / D differential)
-				driver->currentMessage = NMEA_RMC;
+				driver->currentMessage |= NMEA_RMC;
 				if ( nmea_goNextField(&pt) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
 				uint8_t * time = pt;
 				if ( nmea_goNextField(&pt) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
@@ -234,7 +241,7 @@ gnss_ret_e nmea_processNMEA(gnss_data_t * data, uint8_t * line, uint16_t sz, gns
 				//     DGPS age, Dgps station ID
 				// ex - before fix - $GPGGA,161423.000,,,,,0,0,,,M,,M,,*4B
 				//      when fix -- $GPGGA,161438.000,4533.4708,N,00215.7051,E,1,5,2.63,382.7,M,48.7,M,,*5E
-				driver->currentMessage = NMEA_GGA;
+				driver->currentMessage |= NMEA_GGA;
 				uint8_t * pt = &line[5];
 				// Time
 				if ( nmea_goNextField(&pt) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
@@ -313,7 +320,7 @@ gnss_ret_e nmea_processNMEA(gnss_data_t * data, uint8_t * line, uint16_t sz, gns
 				//     UTC Time hhmmss.sss
 				//     Data Valid 'V' when invalid, A when valid
 				//	   Position Mode like for RMC
-				driver->currentMessage = NMEA_GLL;
+				driver->currentMessage |= NMEA_GLL;
 				uint8_t * pt = &line[5];
 
 
@@ -375,7 +382,7 @@ gnss_ret_e nmea_processNMEA(gnss_data_t * data, uint8_t * line, uint16_t sz, gns
 				//   Mode A/M Automatic switch 2D/3D or Manual, TypeOf Fix 1:N/A 2=2D 3=3D
 				//	 List of sat Ids x12
 				// PDOP X.XX, HDOP X.XX, VDOP X.XX
-				driver->currentMessage = NMEA_GSA;
+				driver->currentMessage |= NMEA_GSA;
 				uint8_t * pt = &line[5];
 				if ( nmea_goNextField(&pt) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
 				if ( nmea_goNextField(&pt) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
@@ -428,7 +435,6 @@ gnss_ret_e nmea_processNMEA(gnss_data_t * data, uint8_t * line, uint16_t sz, gns
 				  // Repetition of these 2 last line 4 times for different satellites.
 				// ex :  $GPGSV,1,1,00,0*65
 				// ex :  $GPGSV,2,1,07,24,60,119,33,37,34,155,,19,22,043,35,02,16,108,32,0*6E
-				driver->currentMessage = NMEA_GSV;
 				uint8_t * pt = &line[5];
 				uint16_t totSentences;
 				uint16_t curSentence;
@@ -437,6 +443,12 @@ gnss_ret_e nmea_processNMEA(gnss_data_t * data, uint8_t * line, uint16_t sz, gns
 				if ( nmea_getDecimalField(pt,&totSentences) == GNSS_INVALIDFORMAT ) return GNSS_INVALIDFORMAT;
 				if ( nmea_goNextField(&pt) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
 				if ( nmea_getDecimalField(pt,&curSentence) == GNSS_INVALIDFORMAT ) return GNSS_INVALIDFORMAT;
+				if ( curSentence == totSentences ) {
+					driver->currentMessage |= NMEA_GSVL;
+				} else {
+					driver->currentMessage |= NMEA_GSV;
+				}
+
 				if ( nmea_goNextField(&pt) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
 				if ( nmea_getDecimalField(pt,&totSatInView) == GNSS_INVALIDFORMAT ) return GNSS_INVALIDFORMAT;
 				if ( totSatInView > 0 ) {

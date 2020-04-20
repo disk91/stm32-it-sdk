@@ -48,6 +48,7 @@ typedef enum {
 	GNSS_TOOSMALL			=10,
 	GNSS_TIMEOUT			=11,
 	GNSS_ALLREADYRUNNNING	=12,
+	GNSS_FAILEDRESTARTING	=13,
 
 	GNSS_FAILED				=0x80
 } gnss_ret_e;
@@ -207,15 +208,21 @@ void gnss_printState(void);
 
 typedef enum {
 	NMEA_NONE = 0,
-	NMEA_RMC = 0x0001,		// list of message type a device is supporting
-	NMEA_GGA = 0x0002,
-	NMEA_GSA = 0x0004,
-	NMEA_GSV = 0x0008,
-	NMEA_GLL = 0x0010,
-	NMEA_VTG = 0x0020,
-	NMEA_ZDA = 0x0040,
-	MTK_CHN  = 0x8000
+	NMEA_RMC  = 0x0000001,		// list of message type a device is supporting
+	NMEA_GGA  = 0x0000002,
+	NMEA_GSA  = 0x0000004,
+	NMEA_GSV  = 0x0000008,
+	NMEA_GLL  = 0x0000010,
+	NMEA_VTG  = 0x0000020,
+	NMEA_ZDA  = 0x0000040,
+
+	NMEA_GSVL = 0x00004008,		// Last of the GSV messages
+	MTK_CHN   = 0x00008000,		// proprietary format
+	NMEA_GL   = 0x01000000,
+	NMEA_GP   = 0x02000000,
+	NMEA_GN   = 0x04000000
 } nmea_supported_e;
+
 
 typedef struct gnss_nmea_driver_s {
 	uint8_t	expectedRMC:1;		// List of NEMA message the GPS must provide to respond
