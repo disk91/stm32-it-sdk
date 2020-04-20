@@ -210,7 +210,6 @@ gnss_ret_e quectel_lxx_initLowPower(gnss_config_t * config) {
 
 	// Switch to low power
 	__quectelSwitchToStopWithMemoryRetention();
-
 	return GNSS_SUCCESS;
 }
 
@@ -251,6 +250,7 @@ static gnss_ret_e __quectelSwitchToStopWithMemoryRetention() {
 		#endif
 		sprintf(cmd,"$PMTK225,4*");
 		if ( __quectedSendCommand(cmd,DRIVER_GNSS_QUECTEL_CMD_MAXZ,DRIVER_GNSS_QUECTEL_CMD_NOACK) == GNSS_SUCCESS ) {
+			__gnss_initSerial();
 			__quectel_status.isInBackupMode = 1;
 			__quectel_status.isRunning = 0;
 			return GNSS_SUCCESS;
@@ -276,17 +276,19 @@ static gnss_ret_e __quectelSwitchBackfromStopMode() {
 		#if ITSDK_DRIVERS_GNSS_QUECTEL_MODEL == DRIVER_GNSS_QUECTEL_MODEL_L80
   		  gpio_set(ITSDK_DRIVERS_GNSS_QUECTEL_L80_POWERON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L80_POWERON_PIN);
 		#endif
+
+  		// A reset should not be needed but it seems it is not working w/o it.
+		gpio_reset(ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN);
+		itsdk_delayMs(20); // 10 ms min according to doc
+		gpio_set(ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN);
+  		 __gnss_initSerial();
+
   	    if ( __quectelWaitForAck(DRIVER_GNSS_QUECTEL_CMD_RESTART) == GNSS_TIMEOUT) {
   	    	// We failed to wake up - reset !
-#warning clean this
-MX_USART1_UART_Init();
-gpio_configure(ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_PIN,GPIO_OUTPUT_PP);
-gpio_set(ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_PIN);
-
-  			gpio_configure(ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN,GPIO_OUTPUT_PP);
   			gpio_reset(ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN);
-  			itsdk_delayMs(200); // 10 ms min according to doc
+  			itsdk_delayMs(20); // 10 ms min according to doc
   			gpio_set(ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN);
+  	  		 __gnss_initSerial();
   			log_error("Force Reset\r\n");
   			// Retrying
   			if ( __quectelWaitForAck(DRIVER_GNSS_QUECTEL_CMD_RESTART) == GNSS_TIMEOUT) {
@@ -552,12 +554,9 @@ log_info(".");
 					// this could be an improvement for later ...
 					// forgetit now.
 					ret = GNSS_SUCCESS;
-
 				}
-
 			  }
-			  log_info("[PROP] %s \r\n",line);
-
+			  log_info("[P] %s \r\n",line);
 			}
 			break;
 		case GNSS_SUCCESS:
@@ -575,9 +574,9 @@ log_info(".");
 			break;
 
 		default:
-			log_error("## error from nmea decoder %d\r\n",ret);
-			log_error("ON : %s\r\n",line);
-			log_error("ON : %s\r\n",&line[70]);
+			//log_error("## error from nmea decoder %d\r\n",ret);
+			//log_error("ON : %s\r\n",line);
+			log_error("#");
 			break;
 	}
 	return ret;

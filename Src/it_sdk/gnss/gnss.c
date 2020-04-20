@@ -299,6 +299,21 @@ gnss_ret_e __gnss_changeBaudRate(serial_baudrate_e br) {
 	return GNSS_FAILED;
 }
 
+gnss_ret_e __gnss_initSerial() {
+	__gnss_config.pBuffer = 0;
+
+#if ( ITSDK_DRIVERS_GNSS_SERIAL & ( __UART_LPUART1 | __UART_USART1 ) ) > 0
+	serial1_init();
+#endif
+#if ( ITSDK_DRIVERS_GNSS_SERIAL & __UART_USART2 ) > 0
+	serial2_init();
+#endif
+#if ( ITSDK_DRIVERS_GNSS_SERIAL & __UART_CUSTOM ) > 0
+	gnss_customSerialInit();
+#endif
+	return GNSS_SUCCESS;
+}
+
 // =================================================================================================
 // Processing input
 // =================================================================================================
@@ -331,7 +346,7 @@ void __gnss_process_serialLine(void) {
   #endif
   #if ( ITSDK_DRIVERS_GNSS_SERIAL & __UART_CUSTOM ) > 0
 	do {
-		 r = itsdk_console_customSerial_read(&c);
+		 r = gnss_customSerial_read(&c);
 		 if ( r == SERIAL_READ_SUCCESS || r == SERIAL_READ_PENDING_CHAR) {
 			 __gnss_processChar(c);
 		 }
@@ -350,6 +365,9 @@ __weak void gnss_customSerial_print(char * msg) {
 }
 __weak serial_read_response_e gnss_customSerial_read(char * ch) {
 	return SERIAL_READ_NOCHAR;
+}
+__weak void gnss_customSerialInit() {
+	return;
 }
 #endif
 

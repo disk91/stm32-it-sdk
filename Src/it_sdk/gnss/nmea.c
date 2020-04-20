@@ -545,6 +545,7 @@ log_info("!");
  */
 gnss_ret_e nmea_addChecksum(uint8_t * line, uint16_t sz) {
 	if ( line[0] != '$' ) return GNSS_INVALIDFORMAT;
+
 	// search for "*"xx for checksum
 	int chksumpos = 1;
 	uint8_t chksum = 0;

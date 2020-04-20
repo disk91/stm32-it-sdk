@@ -54,14 +54,22 @@ volatile uint8_t __serial2_bufferWr;
  */
 void serial1_init() {
 #if ( ITSDK_WITH_UART_RXIRQ & __UART_LPUART1 ) > 0
-    HAL_UART_Receive_IT(&hlpuart1, __serial1_buffer, 1);
-    __serial1_bufferRd = 0;
-    __serial1_bufferWr = 0;
+	UART_HandleTypeDef * _uart = &hlpuart1;
 #elif  ( ITSDK_WITH_UART_RXIRQ & __UART_USART1 ) > 0
-    HAL_UART_Receive_IT(&huart1, __serial1_buffer, 1);
+	UART_HandleTypeDef * _uart = &huart1;
+#endif
+    __HAL_UART_ENABLE_IT(_uart,UART_IT_ERR);
+    __HAL_UART_ENABLE_IT(_uart,UART_IT_RXNE);
+    __HAL_UART_DISABLE_IT(_uart,UART_IT_TC);
+    __HAL_UART_DISABLE_IT(_uart,UART_IT_TXE);
+    // Clear pending interrupt & co
+    HAL_UART_Receive_IT(_uart, __serial1_buffer, 1);
+    _uart->Instance->RDR;
+    _uart->Instance->ISR;
+    _uart->Instance->ICR;
+    // Reset circular buffer
     __serial1_bufferRd = 0;
     __serial1_bufferWr = 0;
-#endif
 }
 
 /**
@@ -206,7 +214,14 @@ itsdk_bool_e serial1_changeBaudRate(serial_baudrate_e bd) {
  */
 void serial2_init() {
 #if  ( ITSDK_WITH_UART_RXIRQ & __UART_USART2 ) > 0
+    __HAL_UART_ENABLE_IT(&huart2,UART_IT_ERR);
+    __HAL_UART_ENABLE_IT(&huart2,UART_IT_RXNE);
+    __HAL_UART_DISABLE_IT(&huart2,UART_IT_TC);
+    __HAL_UART_DISABLE_IT(&huart2,UART_IT_TXE);
     HAL_UART_Receive_IT(&huart2, __serial2_buffer, 1);
+    huart2.Instance->RDR;
+    huart2.Instance->ISR;
+    huart2.Instance->ICR;
     __serial2_bufferRd = 0;
     __serial2_bufferWr = 0;
 #endif
@@ -214,8 +229,8 @@ void serial2_init() {
 
 void serial2_flush() {
   #if ( ITSDK_WITH_UART & __UART_USART2 ) > 0
-     while((__HAL_UART_GET_FLAG(&huart2, USART_ISR_BUSY)) == SET);
-	 while((__HAL_UART_GET_FLAG(&huart2, USART_ISR_TC)) == RESET);
+  while((__HAL_UART_GET_FLAG(&huart2, USART_ISR_BUSY)) == SET);
+  while((__HAL_UART_GET_FLAG(&huart2, USART_ISR_TC)) == RESET);
   #endif
 }
 
@@ -318,42 +333,55 @@ itsdk_bool_e serial2_changeBaudRate(serial_baudrate_e bd) {
 
 #if defined ITSDK_WITH_UART_RXIRQ && ITSDK_WITH_UART_RXIRQ != __UART_NONE
 
+void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart) {
+	// Clear the error flags
+	__HAL_UART_CLEAR_FLAG(huart, UART_FLAG_ORE);
+	__HAL_UART_CLEAR_FLAG(huart, UART_FLAG_NE);
+	__HAL_UART_CLEAR_FLAG(huart, UART_FLAG_FE);
+}
+
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 
-	if (__HAL_UART_GET_FLAG(huart, UART_FLAG_ORE)) {
+	if (   __HAL_UART_GET_FLAG(huart, UART_FLAG_ORE)
+		|| __HAL_UART_GET_FLAG(huart, UART_FLAG_NE)
+		|| __HAL_UART_GET_FLAG(huart, UART_FLAG_FE)
+	) {
 		__HAL_UART_CLEAR_FLAG(huart, UART_FLAG_ORE);
-		log_info("overflow!");
+		__HAL_UART_CLEAR_FLAG(huart, UART_FLAG_NE);
+		__HAL_UART_CLEAR_FLAG(huart, UART_FLAG_FE);
 	}
 
-	if ( false
-		#if ( ITSDK_WITH_UART & __UART_LPUART1 ) > 0
-			|| huart->Instance == LPUART1
-		#endif
-		#if ( ITSDK_WITH_UART & __UART_USART1 ) > 0
-			|| huart->Instance == USART1
-		#endif
-	) {
-		#if ( ITSDK_WITH_UART_RXIRQ & __UART_LPUART1 ) > 0 || ( ITSDK_WITH_UART_RXIRQ & __UART_USART1 ) > 0
-		// at this point the data is in __serial1_buffer[__serial1_bufferWr]
-		// only increment the pointer when we have an availbale space in the circular buffer
-		if ( ((__serial1_bufferWr+1) & (ITSDK_WITH_UART_RXIRQ_BUFSZ-1)) != __serial1_bufferRd  ) {
-			__serial1_bufferWr = ((__serial1_bufferWr+1) & (ITSDK_WITH_UART_RXIRQ_BUFSZ-1));
-		}
-		HAL_UART_Receive_IT(huart, &__serial1_buffer[__serial1_bufferWr], 1);
-		#endif
-	} else {
-		#if ( ITSDK_WITH_UART & __UART_USART2 ) > 0
-		if ( huart->Instance == USART2 ) {
-			#if ( ITSDK_WITH_UART_RXIRQ & __UART_USART2 ) > 0
-			// at this point the data is in __serial2_buffer[__serial2_bufferWr]
-			if ( ((__serial2_bufferWr+1) & (ITSDK_WITH_UART_RXIRQ_BUFSZ-1)) != __serial2_bufferRd  ) {
-				__serial2_bufferWr = ((__serial2_bufferWr+1) & (ITSDK_WITH_UART_RXIRQ_BUFSZ-1));
+    do {
+		if ( false
+			#if ( ITSDK_WITH_UART & __UART_LPUART1 ) > 0
+				|| huart->Instance == LPUART1
+			#endif
+			#if ( ITSDK_WITH_UART & __UART_USART1 ) > 0
+				|| huart->Instance == USART1
+			#endif
+		) {
+			#if ( ITSDK_WITH_UART_RXIRQ & __UART_LPUART1 ) > 0 || ( ITSDK_WITH_UART_RXIRQ & __UART_USART1 ) > 0
+			// at this point the data is in __serial1_buffer[__serial1_bufferWr]
+			// only increment the pointer when we have an available space in the circular buffer
+			if ( ((__serial1_bufferWr+1) & (ITSDK_WITH_UART_RXIRQ_BUFSZ-1)) != __serial1_bufferRd  ) {
+				__serial1_bufferWr = ((__serial1_bufferWr+1) & (ITSDK_WITH_UART_RXIRQ_BUFSZ-1));
 			}
-			HAL_UART_Receive_IT(huart, &__serial2_buffer[__serial2_bufferWr], 1);
+			HAL_UART_Receive_IT(huart, &__serial1_buffer[__serial1_bufferWr], 1);
+			#endif
+		} else {
+			#if ( ITSDK_WITH_UART & __UART_USART2 ) > 0
+			if ( huart->Instance == USART2 ) {
+				#if ( ITSDK_WITH_UART_RXIRQ & __UART_USART2 ) > 0
+				// at this point the data is in __serial2_buffer[__serial2_bufferWr]
+				if ( ((__serial2_bufferWr+1) & (ITSDK_WITH_UART_RXIRQ_BUFSZ-1)) != __serial2_bufferRd  ) {
+					__serial2_bufferWr = ((__serial2_bufferWr+1) & (ITSDK_WITH_UART_RXIRQ_BUFSZ-1));
+				}
+				HAL_UART_Receive_IT(huart, &__serial2_buffer[__serial2_bufferWr], 1);
+				#endif
+			}
 			#endif
 		}
-		#endif
-	}
+	} while ( __HAL_UART_GET_FLAG(huart, UART_FLAG_RXNE) );
 
 }
 
