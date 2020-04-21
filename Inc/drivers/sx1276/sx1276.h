@@ -270,6 +270,15 @@ typedef struct sBoardCallback
  * Public functions prototypes
  * ============================================================================
  */
+
+/*!
+ * \brief Init the low power in a low power mode / this can be used in place of the standard full init in SX1276Init
+ */
+void SX1276InitLowPower( void );
+
+/*!
+ * \brief Structure init
+ */
 void SX1276BoardInit( LoRaBoardCallback_t *callbacks );
 
 /*!

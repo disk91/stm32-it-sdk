@@ -23,4 +23,10 @@
   * Set GPIO as Very High Speed
 * DIO4 must be declared as Interrupt to have the interrupt handler set for this pin  
 
-
+### Hardware Init Only
+* If you do not need the radio stack configured at startup but you want to start powering the device low, you have a dedicated function for this purpose:
+```C
+#include <drivers/sx1276/sx1276.h>
+SX1276InitLowPower();
+``` 
+This function does not make the radio software stack init but init the different pins, stops the TXCO and switch the semtech chip to low power.

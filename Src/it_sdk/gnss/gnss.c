@@ -328,30 +328,30 @@ void __gnss_process_serialLine(void) {
 	char c;
 	serial_read_response_e r;
 
-  #if ( ITSDK_DRIVERS_GNSS_SERIAL & ( __UART_LPUART1 | __UART_USART1 ) ) > 0
-	do {
-		 r = serial1_read(&c);
-		 if ( r == SERIAL_READ_SUCCESS || r == SERIAL_READ_PENDING_CHAR) {
-			 __gnss_processChar(c);
-		 }
-	} while ( r == SERIAL_READ_PENDING_CHAR );
-  #endif
-  #if ( ITSDK_DRIVERS_GNSS_SERIAL & __UART_USART2 ) > 0
-	do {
-		 r = serial2_read(&c);
-		 if ( r == SERIAL_READ_SUCCESS || r == SERIAL_READ_PENDING_CHAR) {
-			 __gnss_processChar(c);
-		 }
-	} while ( r == SERIAL_READ_PENDING_CHAR );
-  #endif
-  #if ( ITSDK_DRIVERS_GNSS_SERIAL & __UART_CUSTOM ) > 0
-	do {
-		 r = gnss_customSerial_read(&c);
-		 if ( r == SERIAL_READ_SUCCESS || r == SERIAL_READ_PENDING_CHAR) {
-			 __gnss_processChar(c);
-		 }
-	} while ( r == SERIAL_READ_PENDING_CHAR );
-  #endif
+	// We want to limit the deep-sleep between char transmission
+	// at 9600bps we have about 1ms betwwen each transmitted char
+	// so we are going to take a look to the buffer state after 2ms
+	// and quit if that one is still empty
+	itsdk_bool_e empty;
+	do  {
+		empty = BOOL_TRUE;
+		do {
+			// read all the pending characters
+			#if ( ITSDK_DRIVERS_GNSS_SERIAL & ( __UART_LPUART1 | __UART_USART1 ) ) > 0
+			 r = serial1_read(&c);
+			#elif ( ITSDK_DRIVERS_GNSS_SERIAL & __UART_USART2 ) > 0
+			 r = serial2_read(&c);
+			#elif ( ITSDK_DRIVERS_GNSS_SERIAL & __UART_CUSTOM ) > 0
+			 r = gnss_customSerial_read(&c);
+			#endif
+			 if ( r == SERIAL_READ_SUCCESS || r == SERIAL_READ_PENDING_CHAR) {
+				 __gnss_processChar(c);
+				empty = BOOL_FALSE;
+			 }
+
+		} while ( r == SERIAL_READ_PENDING_CHAR );
+		if( empty == BOOL_FALSE) itsdk_delayMs(2);
+	} while (empty == BOOL_FALSE);
 
 }
 

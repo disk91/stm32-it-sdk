@@ -61,6 +61,7 @@
 #define __LOWPWR_MODE_WAKE_RTC		0x0004
 #define __LOWPWR_MODE_WAKE_UART2	0x0008
 #define __LOWPWR_MODE_WAKE_UART1	0x0010
+#define __LOWPWR_MODE_WAKE_ALLUART  0x0019
 
 /**
  * Module to keep activated during sleep

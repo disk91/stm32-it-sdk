@@ -98,6 +98,24 @@ const struct Radio_s Radio =
     SX1276GetWakeupTime
 };
 
+
+
+/**
+ * Init the SX1276 device and switch it to low power.
+ * This allows to have a basic init before executing the full radio init
+ */
+void SX1276InitLowPower( void ) {
+
+	SX1276IoDeInit();
+    gpio_configure(ITSDK_SX1276_TCXO_VCC_BANK, ITSDK_SX1276_TCXO_VCC_PIN, GPIO_OUTPUT_PP );
+	SX1276Reset();
+	SX1276Write( REG_OPMODE, ( SX1276Read( REG_OPMODE ) & RF_OPMODE_MASK ) | RF_OPMODE_SLEEP );
+	SX1276SetAntSwLowPower(true);
+	TCXO_OFF();
+
+}
+
+
 uint32_t SX1276GetWakeTime( void )
 {
   LOG_INFO_SX1276((">> SX1276GetWakeTime\r\n"));
@@ -123,7 +141,6 @@ void SX1276IoInit( void )
   LOG_INFO_SX1276((">> SX1276IoInit\r\n"));
 
   SX1276BoardInit( &BoardCallbacks );
-  
 #warning the LoRaStack was GPIO_INTERRUPT_RISING_PULLDWN
   if ( ITSDK_SX1276_DIO_0_PIN != __LP_GPIO_NONE ) {
      gpio_configure(ITSDK_SX1276_DIO_0_BANK, ITSDK_SX1276_DIO_0_PIN, GPIO_INTERRUPT_RISING_PULLUP );
@@ -147,8 +164,9 @@ void SX1276IoInit( void )
   if ( ITSDK_SX1276_DIO_5_PIN != __LP_GPIO_NONE ) {
      gpio_configure(ITSDK_SX1276_DIO_5_BANK, ITSDK_SX1276_DIO_5_PIN, GPIO_INTERRUPT_RISING_PULLUP );
   }
-#endif
+#endif;
   gpio_configure(ITSDK_SX1276_TCXO_VCC_BANK, ITSDK_SX1276_TCXO_VCC_PIN, GPIO_OUTPUT_PP );
+
 }
 
 gpio_irq_chain_t __sx1276_gpio_irq[6] = { 0 };
@@ -297,7 +315,9 @@ uint8_t SX1276GetPaSelect( uint8_t power )
     }
 }
 
-
+/**
+ * Switch PA Low power (true) or Full power (false)
+ */
 void SX1276SetAntSwLowPower( bool status )
 {
 	LOG_INFO_SX1276((">> SX1276SetAntSwLowPower (%s)\r\n",((status)?"LP":"FP")));

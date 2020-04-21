@@ -527,7 +527,6 @@ gnss_ret_e nmea_verifyChecksum(uint8_t * line, uint16_t sz) {
 		chksumpos++;
 	}
 	if ( chksumpos >= sz-2 ) {
-log_info("## %d %d\r\n",chksumpos,sz);
 		return GNSS_INVALIDFORMAT;
 	}
 	if ( itdt_convertHexChar2Int((char*)&line[chksumpos+1]) != chksum ) {
