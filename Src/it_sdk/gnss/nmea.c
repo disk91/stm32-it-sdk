@@ -139,11 +139,12 @@ gnss_ret_e nmea_processNMEA(gnss_data_t * data, uint8_t * line, uint16_t sz, gns
 	gnss_ret_e ret = GNSS_SUCCESS;
 	if ( (ret = nmea_verifyChecksum(line,sz)) == GNSS_SUCCESS ) {
 		driver->currentMessage = NMEA_NONE;
-		if ( line[1] == 'G' && (line[2] == 'P' || line[2] == 'N' || line[2] == 'L' ) ) {
+		if ( line[1] == 'G' && (line[2] == 'P' || line[2] == 'N' || line[2] == 'L' || line[2] == 'A' ) ) {
 			switch(line[2]) {
-				case 'P': driver->currentMessage |= NMEA_GP; break;
-				case 'N': driver->currentMessage |= NMEA_GN; break;
-				case 'L': driver->currentMessage |= NMEA_GL; break;
+				case 'P': driver->currentMessage |= NMEA_GP; break;	// GPS
+				case 'N': driver->currentMessage |= NMEA_GN; break; // Multiple GPS + GLONASS
+				case 'L': driver->currentMessage |= NMEA_GL; break; // Glonas
+				case 'A': driver->currentMessage |= NMEA_GA; break; // Galileo
 				default: break;
 			}
 			// talker Global Positioning System or Global Navigation System
@@ -151,7 +152,10 @@ gnss_ret_e nmea_processNMEA(gnss_data_t * data, uint8_t * line, uint16_t sz, gns
 				uint8_t * pt = &line[5];
 				// --RMC
 				// Format $--RMC,UTC Time (hhmmss.ssss),Data Valid, Latitude (ddmm.mmmm),N/S, Longitude (dddmm.mmmm), E/W, speed knot, Course over ground in degree, date (ddmmyy), magnetic variation, E/W, Position (N -Nofix / A Autonomous / D differential)
-				driver->currentMessage |= NMEA_RMC;
+				driver->currentMessage = NMEA_GN | NMEA_RMC;
+					// I force GN for RMC as this message can switch from GP to GN as soon as a fix is performed
+					// and we do not have multiple message of that type on the current MediaTek chip used...
+					// see later if this evolving
 				if ( nmea_goNextField(&pt) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
 				uint8_t * time = pt;
 				if ( nmea_goNextField(&pt) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
@@ -272,7 +276,6 @@ gnss_ret_e nmea_processNMEA(gnss_data_t * data, uint8_t * line, uint16_t sz, gns
 					if ( nmea_goNextField(&pt) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
 					uint16_t nSatUsed;
 					if ( nmea_getDecimalField(pt,&nSatUsed) == GNSS_INVALIDFORMAT ) return GNSS_INVALIDFORMAT;
-
 					if ( nmea_goNextField(&pt) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
 					uint16_t hdop;
 					if ( nmea_getRationalField(pt,&hdop) == GNSS_INVALIDFORMAT ) return GNSS_INVALIDFORMAT;
@@ -292,7 +295,6 @@ gnss_ret_e nmea_processNMEA(gnss_data_t * data, uint8_t * line, uint16_t sz, gns
 
 					// skip the end
 					if ( nSatUsed > 0 ) {
-						data->fixInfo.nbSatUsed = nSatUsed;
 						int32_t ilat=0;
 						if ( nmea_getLatLngField(lat, &ilat, ns) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
 						int32_t ilon=0;
@@ -307,11 +309,27 @@ gnss_ret_e nmea_processNMEA(gnss_data_t * data, uint8_t * line, uint16_t sz, gns
 						} else {
 						   data->fixInfo.fixType = GNSS_FIX_2D;
 						}
+						#if ITSDK_DRIVERS_GNSS_WITHGPSSAT == __ENABLE
+							if ( line[2] == 'P' || line[2] == 'N' ) {
+								data->fixInfo.gps.nbSatUsed = nSatUsed;
+								data->fixInfo.gps.hdop = hdop;
+							}
+						#endif
+						#if ITSDK_DRIVERS_GNSS_WITHGLOSAT == __ENABLE
+							if ( line[2] == 'L' || line[2] == 'N' ) {
+								data->fixInfo.glonass.nbSatUsed = nSatUsed;
+								data->fixInfo.glonass.hdop = hdop;
+							}
+						#endif
+						#if ITSDK_DRIVERS_GNSS_WITHGALSAT == __ENABLE
+							if ( line[2] == 'A' || line[2] == 'N' ) {
+								data->fixInfo.galileo.nbSatUsed = nSatUsed;
+								data->fixInfo.galileo.hdop = hdop;
+							}
+						#endif
 
-						data->fixInfo.hdop = hdop;
 						itsdk_time_is_UTC_s(&data->fixInfo.fixTime);
 					}
-
 				}
 
 			} else if ( sz > 6 && line[3]=='G' && line[4]=='L' && line[5]=='L' ) {
@@ -382,31 +400,13 @@ gnss_ret_e nmea_processNMEA(gnss_data_t * data, uint8_t * line, uint16_t sz, gns
 				//   Mode A/M Automatic switch 2D/3D or Manual, TypeOf Fix 1:N/A 2=2D 3=3D
 				//	 List of sat Ids x12
 				// PDOP X.XX, HDOP X.XX, VDOP X.XX
+				// => new field indicating the GNSS System
+				//      1 - GPS / 2 - GLONASS / 3- Galileo / 4 - Beidou
 				driver->currentMessage |= NMEA_GSA;
 				uint8_t * pt = &line[5];
 				if ( nmea_goNextField(&pt) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
 				if ( nmea_goNextField(&pt) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
-				switch (*pt) {
-					case '1':
-						data->fixInfo.fixType = GNSS_FIX_NONE;
-						data->fixInfo.fixTime = 0;
-						data->fixInfo.hdop = 0;
-						data->fixInfo.vdop = 0;
-						data->fixInfo.pdop = 0;
-						break;
-					case '2':
-						data->fixInfo.fixType = GNSS_FIX_2D;
-						itsdk_time_is_UTC_s(&data->fixInfo.fixTime);
-						itsdk_time_is_UTC_s(&data->lastRefreshS);
-						break;
-					case '3':
-						data->fixInfo.fixType = GNSS_FIX_3D;
-						itsdk_time_is_UTC_s(&data->fixInfo.fixTime);
-						itsdk_time_is_UTC_s(&data->lastRefreshS);
-						break;
-					default:
-						return GNSS_INVALIDFORMAT;
-				}
+				uint8_t * fixstatus = pt;
 				if ( nmea_goNextField(&pt) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
 				uint8_t usedSat = 0;
 				uint16_t satNum;
@@ -416,18 +416,78 @@ gnss_ret_e nmea_processNMEA(gnss_data_t * data, uint8_t * line, uint16_t sz, gns
 					}
 					nmea_goNextField(&pt);
 				}
-				data->fixInfo.nbSatUsed = usedSat;
-				uint16_t dop;
-				if ( nmea_getRationalField(pt,&dop) == GNSS_INVALIDFORMAT ) return GNSS_INVALIDFORMAT;
-				data->fixInfo.pdop = dop;
+				uint16_t pdop;
+				if ( nmea_getRationalField(pt,&pdop) == GNSS_INVALIDFORMAT ) return GNSS_INVALIDFORMAT;
+				uint16_t hdop;
 				if ( nmea_goNextField(&pt) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
-				if ( nmea_getRationalField(pt,&dop) == GNSS_INVALIDFORMAT ) return GNSS_INVALIDFORMAT;
-				data->fixInfo.hdop = dop;
+				if ( nmea_getRationalField(pt,&hdop) == GNSS_INVALIDFORMAT ) return GNSS_INVALIDFORMAT;
+				uint16_t vdop;
 				if ( nmea_goNextField(&pt) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
-				if ( nmea_getRationalField(pt,&dop) == GNSS_INVALIDFORMAT ) return GNSS_INVALIDFORMAT;
-				data->fixInfo.vdop = dop;
+				if ( nmea_getRationalField(pt,&vdop) == GNSS_INVALIDFORMAT ) return GNSS_INVALIDFORMAT;
+
+				#if ITSDK_DRIVERS_GNSS_WITHGPSSAT == __ENABLE
+				   gnss_fix_qality_t * q = &data->fixInfo.gps;
+				#elif ITSDK_DRIVERS_GNSS_WITHGLOSAT == __ENABLE
+				   gnss_fix_qality_t * q = &data->fixInfo.glonass;
+				#elif ITSDK_DRIVERS_GNSS_WITHGALSAT == __ENABLE
+				   gnss_fix_qality_t * q = &data->fixInfo.galileo;
+				#else
+					#error "At least one of the gnss shall be enabled"
+				#endif
+				if ( nmea_goNextField(&pt) == GNSS_SUCCESS ) {
+
+					switch (*pt) {
+					#if ITSDK_DRIVERS_GNSS_WITHGLOSAT == __ENABLE
+						case '2': // GLONASS
+							q = &data->fixInfo.glonass;
+							break;
+					#endif
+					#if ITSDK_DRIVERS_GNSS_WITHGALSAT == __ENABLE
+						case '3':
+							q = &data->fixInfo.galileo;
+							break;
+					#endif
+					#if ITSDK_DRIVERS_GNSS_WITHGPSSAT == __ENABLE
+						case '1': // GPS
+							q = &data->fixInfo.gps;
+							break;
+					#endif
+						default:
+							break;
+					}
+
+				}
+				switch (*fixstatus) {
+					case '1':
+						q->fixType = GNSS_FIX_NONE;
+						q->hdop = 0;
+						q->vdop = 0;
+						q->pdop = 0;
+						break;
+					case '2':
+						q->fixType = GNSS_FIX_2D;
+						itsdk_time_is_UTC_s(&data->fixInfo.fixTime);
+						itsdk_time_is_UTC_s(&data->lastRefreshS);
+						break;
+					case '3':
+						q->fixType = GNSS_FIX_3D;
+						itsdk_time_is_UTC_s(&data->fixInfo.fixTime);
+						itsdk_time_is_UTC_s(&data->lastRefreshS);
+						break;
+					default:
+						return GNSS_INVALIDFORMAT;
+				}
+				if ( q->fixType > data->fixInfo.fixType ) {
+					data->fixInfo.fixType = q->fixType;
+				}
+				q->nbSatUsed = usedSat;
+				q->pdop = pdop;
+				q->hdop = hdop;
+				q->vdop = vdop;
 
 			} else if ( sz > 6 && line[3]=='G' && line[4]=='S' && line[5]=='V' ) {
+				// @TODO - The first 2 bytes determine the GNSS constellation
+				//   -- need to check this
 				// --GSV - Satellites in View
 				// Format $--GSV,Total Sentences 1-9, Sentence number 1-9, Total Sat in View XX, (when 0, nothing more than an extra 0 field)
 				  // ... Sat ID Number (GPS 1 à 32) / 33-64 ( WAAS) / 65-88 Glonass,
@@ -435,6 +495,7 @@ gnss_ret_e nmea_processNMEA(gnss_data_t * data, uint8_t * line, uint16_t sz, gns
 				  // Repetition of these 2 last line 4 times for different satellites.
 				// ex :  $GPGSV,1,1,00,0*65
 				// ex :  $GPGSV,2,1,07,24,60,119,33,37,34,155,,19,22,043,35,02,16,108,32,0*6E
+				// Rq extra field at the end, SignalID 0=all channe, 1 G1 C/A ?
 				uint8_t * pt = &line[5];
 				uint16_t totSentences;
 				uint16_t curSentence;
@@ -452,10 +513,12 @@ gnss_ret_e nmea_processNMEA(gnss_data_t * data, uint8_t * line, uint16_t sz, gns
 				if ( nmea_goNextField(&pt) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
 				if ( nmea_getDecimalField(pt,&totSatInView) == GNSS_INVALIDFORMAT ) return GNSS_INVALIDFORMAT;
 				if ( totSatInView > 0 ) {
+					data->satDetailsUpdated = 1;
 					data->satInView = totSatInView;
 					itsdk_time_is_UTC_s(&data->lastRefreshS);
 					// get details on sats we have <= 4 sat data per line
 					uint8_t pendingSat = (totSatInView - ((curSentence-1) * 4)) & 3;
+					uint64_t now = itsdk_time_get_ms()/1000;
 					for ( int i = 0 ; i < pendingSat ; i++ ) {
 						uint16_t satId;
 						uint16_t elevation;
@@ -469,27 +532,29 @@ gnss_ret_e nmea_processNMEA(gnss_data_t * data, uint8_t * line, uint16_t sz, gns
 						if ( nmea_getDecimalField(pt,&azimuth) == GNSS_INVALIDFORMAT ) return GNSS_INVALIDFORMAT;
 						if ( nmea_goNextField(&pt) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
 						if ( nmea_getDecimalField(pt,&snr) == GNSS_INVALIDFORMAT ) return GNSS_INVALIDFORMAT;
-						if (snr == 0) snr=0xFF;	// not tracked
 
 						#if ITSDK_DRIVERS_GNSS_WITHGPSSAT == __ENABLE
 						if ( satId >= 0 && satId <= 32 ) {
 							// GPS Sat
-							itsdk_time_is_UTC_s(&data->sat_gps[satId-1].updateTime);
+							data->sat_gps[satId-1].updateTime = (uint32_t)now;
 							data->sat_gps[satId-1].elevation = elevation;
 							data->sat_gps[satId-1].azimuth = azimuth;
 							data->sat_gps[satId-1].signal = snr;
-							if ( snr < data->sat_gps[satId-1].maxSignal ) data->sat_gps[satId-1].maxSignal = snr;
+							if ( snr > data->sat_gps[satId-1].maxSignal ) data->sat_gps[satId-1].maxSignal = snr;
 						}
 						#endif
 						#if ITSDK_DRIVERS_GNSS_WITHGLOSAT == __ENABLE
 						if ( satId >= 65 && satId <= 88 ) {
 							// GLONASS Sat
-							itsdk_time_is_UTC_s(&data->sat_glonas[satId-65].updateTime);
+							data->sat_glonas[satId-65].updateTime= (uint32_t)now;
 							data->sat_glonas[satId-65].elevation = elevation;
 							data->sat_glonas[satId-65].azimuth = azimuth;
 							data->sat_glonas[satId-65].signal = snr;
-							if ( snr < data->sat_glonas[satId-65].maxSignal ) data->sat_glonas[satId-65].maxSignal = snr;
+							if ( snr > data->sat_glonas[satId-65].maxSignal ) data->sat_glonas[satId-65].maxSignal = snr;
 						}
+						#endif
+						#if ITSDK_DRIVERS_GNSS_WITHGALSAT == __ENABLE
+							#warning "GALILEO Support not yet implemented"
 						#endif
 					}
 				}

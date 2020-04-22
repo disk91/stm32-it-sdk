@@ -35,6 +35,14 @@
  * Fix up to 10Hz
  * see - https://labs.mediatek.com/en/chipset/MT3333
  * datasheet - https://s3-ap-southeast-1.amazonaws.com/mediatek-labs-imgs/downloads/d54c0d5ffdffbc55f6c592c6a804d4f2.pdf?response-content-disposition=inline%3B%20filename%3DMT3333_Datasheet.pdf&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Security-Token=IQoJb3JpZ2luX2VjENT%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaDmFwLXNvdXRoZWFzdC0xIkgwRgIhAKnPPzqSkQDDPVQTzY6thnSWkCemwXivUkEXSnBTeonoAiEAgJRpLElPW67W1W0OZkPO8pp5KcPNjnco029WerZ2SQcqxwMI7f%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FARABGgw0NDk2OTY5OTIwNjYiDDKVjBhZVgYaTh4I9CqbA7xGd%2B4e5jgqID%2FgMWp2Z5G2Hb9EE3bGy36xZa%2BkRxcsiL7mWpn1bWWxMNvlKFe6VTAYe5Su10beeyDFsM14qzNacSb07GTEFt1sigofFnSUoxTKHg7NFusk6549jcfklCMMg2E6LvMqZXYBrldfaq%2F4Cn%2BuUJDqvD%2FEXkB0cU5sHQfOsnTtJW471vvG8Mc%2Bkl3rBP%2FCXcrb3piWoENqZLZS17uxeC23Inl3Jleiad7COSMX79J%2BTrH20ttwxzHrDNLNGsiJCW5WP%2B44l2JU9SVabA298hfwPEAXCeWUZ0d44QuE5FuHLDYk0QwzKy33wd9YUM53ODh6ARcJ4QAcMkqH5J6BWcoxOBx1IjJimra%2FWMZnePTSx42%2FIrU%2F20%2Bb%2BxpdEgyZKPJ0TJzy49ptjM2ZvcEPzUmHlNzBEGRQ80R%2BIgiv3DuGMq0NqmFdbcNxc5dW003N%2FYv%2FmqE%2Fkufu9zizuIgM33O9GiBJRcu6iGlsEBkT8S5XLD%2BPlv4WYaeDhx%2BRFui7h%2BvBZzZ8fCkjEOJ4xuEVCEDle4EmMzD7%2F%2FD0BTrqAXr4%2BwU8ik2kz2bTW%2FoKrlje%2BlFSdBGhs8kGJ%2FJjqsIbRnEkce%2BuZfpRmiPaMm%2F05H%2FbEU8hLnjn2YJo20ay5SPSzEvHIjyFe3ncuoYGGUCmcj4AI%2F5xzI8FT%2FwHIrysAfFAIc5iFutQ1S3IiipRbKObNTnl9%2FF%2FkdX1ldqoHCij0KehsKBpjMjv4ZOYQ2eZkU%2BJhEzeFXT3bNuStoOsjQyK7s%2Fgv37YLAaKTGf8NPbxtNIrzQ38vw7ZzqbMYK6FA19y0dcsXw1KYsLRlSwS%2FOhNCNfemj0fqWcqBQ6iyAs79eJa9%2Be91eUgSw%3D%3D&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAWRNAHRNBG5Z7SB7R%2F20200419%2Fap-southeast-1%2Fs3%2Faws4_request&X-Amz-Date=20200419T122122Z&X-Amz-SignedHeaders=host&X-Amz-Expires=600&X-Amz-Signature=dc4a5af290a9a85a491b1dfd1801eb33958cda1e2d5158fcf0baecb187a74f95
+ * -----------------------------------------------------------
+ * Measured power consumption
+ * - standby mode - 1.15mA on Ivcc+Ibackup @ 3.3V
+ * - stop mode - 840uA (see hardware design V1.2 - previous version are wrong it is recommanded to shut the power down externally
+ * -----------------------------------------------------------
+ * L86 version use for the tests
+ * $PQVERNO,R,L86NR02A02S,2018/05/15,21:13*6E
+ * $PMTK705,AXN_5.1.6_3333_18050800,0002,Quectel-L86,1.0*13
  */
 
 /**
@@ -130,9 +138,9 @@ gnss_ret_e quectel_lxx_initLowPower(gnss_config_t * config) {
 
 
 	#if ITSDK_DRIVERS_GNSS_QUECTEL_MODEL == DRIVER_GNSS_QUECTEL_MODEL_L80
-	if ( ITSDK_DRIVERS_GNSS_QUECTEL_L80_POWERON_PIN != __LP_GPIO_NONE ) {
-		gpio_configure(ITSDK_DRIVERS_GNSS_QUECTEL_L80_POWERON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L80_POWERON_PIN,GPIO_OUTPUT_PP);
-		gpio_set(ITSDK_DRIVERS_GNSS_QUECTEL_L80_POWERON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L80_POWERON_PIN);
+	if ( ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_PIN != __LP_GPIO_NONE ) {
+		gpio_configure(ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_PIN,GPIO_OUTPUT_PP);
+		gpio_set(ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_PIN);
 		__quectel_status.hasBackupMode = 1;
 	} else {
 		__quectel_status.hasBackupMode = 0;
@@ -142,9 +150,17 @@ gnss_ret_e quectel_lxx_initLowPower(gnss_config_t * config) {
 
 	// Ensure all the conditions are ok for powering
 	#if ITSDK_DRIVERS_GNSS_QUECTEL_MODEL == DRIVER_GNSS_QUECTEL_MODEL_L86
-	if ( ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_PIN != __LP_GPIO_NONE ) {
-		gpio_configure(ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_PIN,GPIO_OUTPUT_PP);
-		gpio_set(ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_PIN);
+	if (   ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_PIN != __LP_GPIO_NONE
+		|| ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_PIN != __LP_GPIO_NONE
+	) {
+		if ( ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_PIN != __LP_GPIO_NONE  ) {
+			gpio_configure(ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_PIN,GPIO_OUTPUT_PP);
+			gpio_set(ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_PIN);
+		}
+		if ( ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_PIN != __LP_GPIO_NONE ) {
+			gpio_configure(ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_PIN,GPIO_OUTPUT_PP);
+			gpio_set(ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_PIN);
+		}
 		__quectel_status.hasBackupMode = 1;
 	} else {
 		__quectel_status.hasBackupMode = 0;
@@ -174,19 +190,26 @@ gnss_ret_e quectel_lxx_initLowPower(gnss_config_t * config) {
 	}
 
 
-	// Get the firmware version
+	// Get the firmware version (Quectel)
+	//sprintf(cmd,"$PQVERNO,R*");
+	//__quectedSendCommand(cmd,DRIVER_GNSS_QUECTEL_CMD_MAXZ,DRIVER_GNSS_QUECTEL_CMD_NOACK);
+
+	// Get the firmware version (Mediatek)
 	//sprintf(cmd,"$PMTK605*");
 	//__quectedSendCommand(cmd,DRIVER_GNSS_QUECTEL_CMD_MAXZ,DRIVER_GNSS_QUECTEL_CMD_NOACK);
 
 
 	// Setup the desired GNSS constellation
 	// This makes the device to restart
-	sprintf(cmd,"$PMTK353,%d,%d,%d*",
-			((ITSDK_DRIVERS_GNSS_WITHGPSSAT == __ENABLE)?1:0),
-			((ITSDK_DRIVERS_GNSS_WITHGLOSAT == __ENABLE)?1:0),
-			((ITSDK_DRIVERS_GNSS_WITHGALSAT == __ENABLE)?1:0)
-	);
+    #if ITSDK_DRIVERS_GNSS_QUECTEL_MODEL == DRIVER_GNSS_QUECTEL_MODEL_L86
+		sprintf(cmd,"$PMTK353,%d,%d,%d,%d,0*",
+				((ITSDK_DRIVERS_GNSS_WITHGPSSAT == __ENABLE)?1:0),
+				((ITSDK_DRIVERS_GNSS_WITHGLOSAT == __ENABLE)?1:0),
+				((ITSDK_DRIVERS_GNSS_WITHGALSAT == __ENABLE)?1:0),	// Galileo Enable
+				0													// Galileo FULL_Enable ?
+		);
 	__quectedSendCommand(cmd,DRIVER_GNSS_QUECTEL_CMD_MAXZ,DRIVER_GNSS_QUECTEL_CMD_SET_GNSS_SEARCH);
+	#endif
 
 	// Setup NMEA output
     // @TODO test le dernier qui est GPS channel status msg MCHN -> PMTKCHN
@@ -240,19 +263,29 @@ static gnss_ret_e __quectelSetRunMode(gnss_run_mode_e mode) {
  */
 static gnss_ret_e __quectelSwitchToStopWithMemoryRetention() {
 	char cmd[DRIVER_GNSS_QUECTEL_CMD_MAXZ];
+	// Switch to Perpetual Backup mode
+	// Consumption 840uA - sounds like we do not have a ack on this command every time
 
 	if ( __quectel_status.hasBackupMode == 1 ) {
 
-		// Switch to Perpetual Backup mode
-		// Consumption 7uA - sounds like we do not have a ack on this command
 		#if ITSDK_DRIVERS_GNSS_QUECTEL_MODEL == DRIVER_GNSS_QUECTEL_MODEL_L86
-		  gpio_reset(ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_PIN);
+		  if ( ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_PIN != __LP_GPIO_NONE ) {
+		     gpio_reset(ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_PIN);
+		  }
 		#endif
+		itsdk_delayMs(100);
 		sprintf(cmd,"$PMTK225,4*");
+		//DRIVER_GNSS_QUECTEL_CMD_NOACK
 		if ( __quectedSendCommand(cmd,DRIVER_GNSS_QUECTEL_CMD_MAXZ,DRIVER_GNSS_QUECTEL_CMD_NOACK) == GNSS_SUCCESS ) {
 			__gnss_initSerial();
 			__quectel_status.isInBackupMode = 1;
 			__quectel_status.isRunning = 0;
+			#if ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_PIN != __LP_GPIO_NONE
+			   itsdk_delayMs(40); // as we are not waiting for the command response because it is mostly
+				  			      // lost due to UART noise, it's better to wait the usual response time (25ms) or more
+			 	 	 	 	      // before shutting the power down.
+				gpio_reset(ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_PIN);
+			#endif
 			return GNSS_SUCCESS;
 		}
 		return GNSS_FAILED;
@@ -269,13 +302,16 @@ static gnss_ret_e __quectelSwitchToStopWithMemoryRetention() {
 static gnss_ret_e __quectelSwitchBackfromStopMode() {
 	if (__quectel_status.isInBackupMode == 1) {
 		// wake up if needed
-		#if ITSDK_DRIVERS_GNSS_QUECTEL_MODEL == DRIVER_GNSS_QUECTEL_MODEL_L86
-		  gpio_set(ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_PIN);
-		#endif
 
-		#if ITSDK_DRIVERS_GNSS_QUECTEL_MODEL == DRIVER_GNSS_QUECTEL_MODEL_L80
-  		  gpio_set(ITSDK_DRIVERS_GNSS_QUECTEL_L80_POWERON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L80_POWERON_PIN);
+   	    #if ITSDK_DRIVERS_GNSS_QUECTEL_MODEL == DRIVER_GNSS_QUECTEL_MODEL_L86
+		 if ( ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_PIN != __LP_GPIO_NONE ) {
+		     gpio_set(ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_PIN);
+		 }
 		#endif
+		if ( ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_PIN != __LP_GPIO_NONE ) {
+		   // Power VCC on from external circuitery
+		   gpio_set(ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_PIN);
+		}
 
   		// A reset should not be needed but it seems it is not working w/o it.
 		gpio_reset(ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN);
@@ -569,6 +605,7 @@ log_info(".");
 				driver->triggeringMessage = previous;
 			} else if ( driver->currentMessage == driver->triggeringMessage ) {
 				// end of the NMEA message flow we can place the callback
+				// @TODO - if RMC is the last message it can change from GP to GN when the fix has been performed...
 				driver->onDataRefreshed();
 			}
 			break;

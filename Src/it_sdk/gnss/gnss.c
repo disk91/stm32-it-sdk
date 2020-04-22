@@ -45,7 +45,8 @@ static gnss_config_t __gnss_config = {0};
 static void __gnss_processChar(char c);
 static void __gnss_process_serialLine(void);
 static gnss_ret_e __gnss_onDataRefreshed(void);
-
+static void __gnss_resetStructForNextCycle(void);
+static void __gnss_resetStructForNewFix(void);
 
 // ---------------------------------------------------------
 // Main public interfaces
@@ -55,33 +56,7 @@ gnss_ret_e gnss_setup() {
 	__gnss_config.callbackList = NULL;
 
 	// Reset the data structure
-	__gnss_config.data.gpsTime.status = GNSS_TIME_NOTSET;
-	__gnss_config.data.lastRefreshS = 0;
-	__gnss_config.data.satInView = 0;
-
-
-	#if ITSDK_DRIVERS_GNSS_WITHGPSSAT == __ENABLE
-	for (int i = 0 ; i < ITSDK_GNSS_GPSSAT_NB ; i++) {
-		__gnss_config.data.sat_gps[i].updateTime=0;
-		__gnss_config.data.sat_gps[i].signal=0xFF;
-		__gnss_config.data.sat_gps[i].maxSignal=0xFF;
-	}
-	#endif
-	#if ITSDK_DRIVERS_GNSS_WITHGLOSAT == __ENABLE
-	for (int i = 0 ; i < ITSDK_GNSS_GLOSAT_NB ; i++) {
-		__gnss_config.data.sat_glonas[i].updateTime=0;
-		__gnss_config.data.sat_glonas[i].signal=0xFF;
-		__gnss_config.data.sat_glonas[i].maxSignal=0xFF;
-	}
-	#endif
-	#if ITSDK_DRIVERS_GNSS_WITHGALSAT == __ENABLE
-	for (int i = 0 ; i < ITSDK_GNSS_GALSAT_NB ; i++) {
-		__gnss_config.data.sat_galileo[i].updateTime=0;
-		__gnss_config.data.sat_galileo[i].signal=0xFF;
-		__gnss_config.data.sat_galileo[i].maxSignal=0xFF;
-	}
-	#endif
-
+	__gnss_resetStructForNewFix();
 
 	#if ITSDK_DRIVERS_GNSS_QUECTEL == __ENABLE
 	  ret |= quectel_lxx_initLowPower(&__gnss_config);
@@ -120,6 +95,7 @@ void gnss_process_loop(itsdk_bool_e force) {
 
 void gnss_start(uint32_t timeoutS) {
 	if ( !__gnss_config.setupDone ) return;
+	__gnss_resetStructForNewFix();
 	__gnss_config.startupTimeS = (itsdk_time_get_ms()/1000);
 	__gnss_config.maxDurationS = timeoutS;
 	__gnss_config.setRunMode(GNSS_RUN_COLD);
@@ -189,16 +165,18 @@ static gnss_ret_e __gnss_onDataRefreshed(void) {
 	gnss_triggers_e triggers = GNSS_TRIGGER_ON_NONE;
 
 	// Update duration
-	uint64_t _duration = (itsdk_time_get_ms()/1000);
-	_duration -= __gnss_config.startupTimeS;
+	uint64_t _now = (itsdk_time_get_ms()/1000);
+	uint64_t _duration = _now - __gnss_config.startupTimeS;
 	if ( _duration > __gnss_config.maxDurationS ) {
 		triggers |= GNSS_TRIGGER_ON_TIMEOUT;
 		// Stop the GNSS subsystem
 		__gnss_config.setRunMode(GNSS_STOP_MODE);
 	}
 
-	// generate triggers
+	//generate triggers
 	if ( __gnss_config.data.lastRefreshS > 0 ) {
+		triggers |= GNSS_TRIGGER_ON_UPDATE;
+
 		gnss_fix_info_t * f = &__gnss_config.data.fixInfo;
 		if ( f->fixType >= GNSS_FIX_TIME ) {
 			if ( __gnss_config.data.gpsTime.status >= GNSS_TIME_TIME ) {
@@ -210,12 +188,25 @@ static gnss_ret_e __gnss_onDataRefreshed(void) {
 		}
 		if ( f->fixType >= GNSS_FIX_2D ) {
 			triggers |= GNSS_TRIGGER_ON_POS2D;
-			if ( f->hdop > 0 ) {
-				if ( f->hdop < 150 ) triggers |= GNSS_TRIGGER_ON_HDOP_150;
-				if ( f->hdop < 200 ) triggers |= GNSS_TRIGGER_ON_HDOP_200;
-				if ( f->hdop < 400 ) triggers |= GNSS_TRIGGER_ON_HDOP_400;
-				if ( f->hdop < 800 ) triggers |= GNSS_TRIGGER_ON_HDOP_800;
+			f->fixHdop = 0xFFFF;
+			#if ITSDK_DRIVERS_GNSS_WITHGPSSAT == __ENABLE
+			  if (f->gps.hdop > 0 && f->gps.hdop < f->fixHdop ) f->fixHdop = f->gps.hdop;
+			#endif
+			#if ITSDK_DRIVERS_GNSS_WITHGLOSAT == __ENABLE
+			  if (f->glonass.hdop > 0 && f->glonass.hdop < f->fixHdop ) f->fixHdop = f->glonass.hdop;
+			#endif
+			#if ITSDK_DRIVERS_GNSS_WITHGALSAT == __ENABLE
+			  if (f->galileo.hdop > 0 && f->galileo.hdop < f->fixHdop ) f->fixHdop = f->galileo.hdop;
+			#endif
+			if (f->fixHdop == 0xFFFF) f->fixHdop = 0;
+
+			if ( f->fixHdop > 0 ) {
+				if ( f->fixHdop < 150 )
+				if ( f->fixHdop < 200 ) triggers |= GNSS_TRIGGER_ON_HDOP_200;
+				if ( f->fixHdop < 400 ) triggers |= GNSS_TRIGGER_ON_HDOP_400;
+				if ( f->fixHdop < 800 ) triggers |= GNSS_TRIGGER_ON_HDOP_800;
 			}
+
 			if ( f->speed_kmh > 0 ) {
 				if ( f->speed_kmh >= 5   ) triggers |= GNSS_TRIGGER_ON_SPEED_5;
 				if ( f->speed_kmh >= 10  ) triggers |= GNSS_TRIGGER_ON_SPEED_10;
@@ -230,6 +221,41 @@ static gnss_ret_e __gnss_onDataRefreshed(void) {
 		if ( f->fixType >= GNSS_FIX_3D ) {
 			triggers |= GNSS_TRIGGER_ON_POS3D;
 		}
+		// Manage the Indoor / Outdoor situation with the number of visible sat & signal
+		#if (ITSDK_DRIVERS_GNSS_POSINFO & ( __GNSS_WITH_PDOP_VDOP | __GNSS_WITH_SAT_DETAILS ))  > 0
+			gnss_data_t * d = &__gnss_config.data;
+			if ( d->satDetailsUpdated == 1 ) {
+				if ( _duration > 10 && d->satInView < 3 ) {
+					triggers |= GNSS_TRIGGER_ON_INDOOR;
+				}
+				#if (ITSDK_DRIVERS_GNSS_POSINFO & ( __GNSS_WITH_SAT_DETAILS ))  > 0
+				else {
+					// search for sat with SNR > 15 updated in the last 10 seconds .. condition for a cold fix
+					int goodSats = 0;
+					#if ITSDK_DRIVERS_GNSS_WITHGPSSAT == __ENABLE
+					for (int i = 0 ; i < ITSDK_GNSS_GPSSAT_NB ; i++) {
+						if ( (_now - d->sat_gps[i].updateTime) < 10 && d->sat_gps[i].signal >= 28 ) goodSats++;
+					}
+					#endif
+					#if ITSDK_DRIVERS_GNSS_WITHGLOSAT == __ENABLE
+					for (int i = 0 ; i < ITSDK_GNSS_GLOSAT_NB ; i++) {
+						if ( (_now - d->sat_glonas[i].updateTime) < 10 && d->sat_glonas[i].signal >= 28 ) goodSats++;
+					}
+					#endif
+					#if ITSDK_DRIVERS_GNSS_WITHGALSAT == __ENABLE
+					for (int i = 0 ; i < ITSDK_GNSS_GALSAT_NB ; i++) {
+						if ( (_now - d->sat_galileo[i].updateTime) < 10 && d->sat_galileo[i].signal >= 28 ) goodSats++;
+					}
+					#endif
+					if ( goodSats > 4 ) triggers |= GNSS_TRIGGER_ON_OUTDOOR;
+				}
+				#else
+					else if ( d->satInView >= 3 ) {
+						triggers |= GNSS_TRIGGER_ON_OUTDOOR;
+					}
+				#endif
+			}
+		#endif
 	}
 
 	// Manage the callbacks
@@ -241,23 +267,41 @@ static gnss_ret_e __gnss_onDataRefreshed(void) {
 		c = c->next;
 	}
 
-	log_info("[%d]", __gnss_config.data.fixInfo.fixType);
-
-
-	/*
-				GNSS_TRIGGER_ON_OUTDOOR			= 0x0000100,
-				GNSS_TRIGGER_ON_INDOOR			= 0x0000200,
-				*/
-
-
-
 	// Reset the structure for next run
+	__gnss_resetStructForNextCycle();
+
+	return GNSS_SUCCESS;
+}
+
+// =================================================================================================
+// Reset data structure
+// =================================================================================================
+
+/**
+ * Clean the structure between a GPS fix cycle
+ */
+static void __gnss_resetStructForNextCycle(void) {
 	__gnss_config.data.gpsTime.status = GNSS_TIME_NOTSET;
 	__gnss_config.data.lastRefreshS = 0;
 	__gnss_config.data.satInView = 0;
+	__gnss_config.data.satDetailsUpdated = 0;
 	bzero(&__gnss_config.data.fixInfo, sizeof(gnss_fix_info_t));
+}
 
-	return GNSS_SUCCESS;
+/**
+ * Clean the structure before restarting a new fix
+ */
+static void __gnss_resetStructForNewFix(void) {
+	__gnss_resetStructForNextCycle();
+	#if ITSDK_DRIVERS_GNSS_WITHGPSSAT == __ENABLE
+	bzero(__gnss_config.data.sat_gps,ITSDK_GNSS_GPSSAT_NB*sizeof(gnss_sat_details_t));
+	#endif
+	#if ITSDK_DRIVERS_GNSS_WITHGLOSAT == __ENABLE
+	bzero(__gnss_config.data.sat_glonas,ITSDK_GNSS_GLOSAT_NB*sizeof(gnss_sat_details_t));
+	#endif
+	#if ITSDK_DRIVERS_GNSS_WITHGALSAT == __ENABLE
+	bzero(__gnss_config.data.sat_galileo,ITSDK_GNSS_GALSAT_NB*sizeof(gnss_sat_details_t));
+	#endif
 }
 
 
@@ -437,10 +481,28 @@ void gnss_printState(void) {
 		log_debug("  Alt             : %d\r\n",__gnss_config.data.fixInfo.altitude);
 		log_debug("  Speed knots     : %d\r\n",__gnss_config.data.fixInfo.speed_knot);
 		log_debug("  Speed kmh       : %d\r\n",__gnss_config.data.fixInfo.speed_kmh);
-		log_debug("  Sat use in Fix  : %d\r\n",__gnss_config.data.fixInfo.nbSatUsed);
-		log_debug("  PDOP            : %d\r\n",__gnss_config.data.fixInfo.pdop);
-		log_debug("  VDOP            : %d\r\n",__gnss_config.data.fixInfo.vdop);
-		log_debug("  HDOP            : %d\r\n",__gnss_config.data.fixInfo.hdop);
+
+
+		#if ITSDK_DRIVERS_GNSS_WITHGPSSAT == __ENABLE
+		log_debug("P Sat use in Fix  : %d\r\n",__gnss_config.data.fixInfo.gps.nbSatUsed);
+		log_debug("P PDOP            : %d\r\n",__gnss_config.data.fixInfo.gps.pdop);
+		log_debug("P VDOP            : %d\r\n",__gnss_config.data.fixInfo.gps.vdop);
+		log_debug("P HDOP            : %d\r\n",__gnss_config.data.fixInfo.gps.hdop);
+		#endif
+		#if ITSDK_DRIVERS_GNSS_WITHGLOSAT == __ENABLE
+		log_debug("L Sat use in Fix  : %d\r\n",__gnss_config.data.fixInfo.glonass.nbSatUsed);
+		log_debug("L PDOP            : %d\r\n",__gnss_config.data.fixInfo.glonass.pdop);
+		log_debug("L VDOP            : %d\r\n",__gnss_config.data.fixInfo.glonass.vdop);
+		log_debug("L HDOP            : %d\r\n",__gnss_config.data.fixInfo.glonass.hdop);
+		#endif
+		#if ITSDK_DRIVERS_GNSS_WITHGALSAT == __ENABLE
+		log_debug("A Sat use in Fix  : %d\r\n",__gnss_config.data.fixInfo.galileo .nbSatUsed);
+		log_debug("A PDOP            : %d\r\n",__gnss_config.data.fixInfo.galileo.pdop);
+		log_debug("A VDOP            : %d\r\n",__gnss_config.data.fixInfo.galileo.vdop);
+		log_debug("A HDOP            : %d\r\n",__gnss_config.data.fixInfo.galileo.hdop);
+		#endif
+
+
 	}
 
 	log_debug("Sat in view  : %d\r\n",__gnss_config.data.satInView);

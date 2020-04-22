@@ -75,13 +75,14 @@ typedef enum {
 	GNSS_TRIGGER_ON_SPEED_110		= 0x0040000,
 	GNSS_TRIGGER_ON_SPEED_150		= 0x0080000,
 
+	GNSS_TRIGGER_ON_UPDATE			= 0x4000000,		// simple 1Hz update
 	GNSS_TRIGGER_ON_TIMEOUT			= 0x8000000
 } gnss_triggers_e;
 
 // Data structure to report GNSS informations up to the application layer
 typedef struct {
 	uint32_t	updateTime;		// last seen time
-	uint8_t		signal;			// last signal level -00 -99 dBm
+	uint8_t		signal;			// last signal level 00 99 dBm
 	uint8_t		maxSignal;		// best signal level
 	uint8_t		elevation;		// elevation in degree 0-90
 	uint16_t	azimuth;		// azimuth in degree 0-360
@@ -107,12 +108,25 @@ typedef enum {
 
 typedef struct {
 	gnss_fix_type_e		fixType;
-	uint32_t			fixTime;
 	uint8_t				nbSatUsed;
 	uint16_t			pdop;			// 100x pdop
 	uint16_t			hdop;			// 100x hdop
 	uint16_t			vdop;			// 100x vdop
+} gnss_fix_qality_t;
 
+typedef struct {
+	gnss_fix_type_e		fixType;
+	uint32_t			fixTime;
+	uint16_t			fixHdop;		// calculated outside to simplify - select the best of the possible
+#if ITSDK_DRIVERS_GNSS_WITHGPSSAT == __ENABLE
+	gnss_fix_qality_t	gps;
+#endif
+#if ITSDK_DRIVERS_GNSS_WITHGLOSAT == __ENABLE
+	gnss_fix_qality_t	glonass;
+#endif
+#if ITSDK_DRIVERS_GNSS_WITHGALSAT == __ENABLE
+	gnss_fix_qality_t	galileo;
+#endif
 	int32_t				latitude;		// lat in 1/100_000 degrees South is negative, North positive
 	int32_t				longitude;		// lon in 1/100_000 degrees West is negative, East positive
 	int16_t				altitude;		// meter above sea level
@@ -122,6 +136,9 @@ typedef struct {
 
 	gnss_fix_mode_e		positionMode;	// Status and source of the position
 } gnss_fix_info_t;
+
+
+
 
 typedef enum {
 	GNSS_TIME_NOTSET	= 0,	// bit field
@@ -155,6 +172,7 @@ typedef struct {
 	uint32_t				lastRefreshS;					// Last UTC time in S data has been refreshed
 	gnss_fix_info_t			fixInfo;						// Information about current Fix
 	gnss_date_t				gpsTime;						// GPS Date & Time information
+	uint8_t					satDetailsUpdated:1;			// =1 if sat details structure has been updated
 
 	#if ITSDK_DRIVERS_GNSS_WITHGPSSAT == __ENABLE
 	gnss_sat_details_t		sat_gps[ITSDK_GNSS_GPSSAT_NB];			// Detailed GPS sat informations
@@ -220,7 +238,8 @@ typedef enum {
 	MTK_CHN   = 0x00008000,		// proprietary format
 	NMEA_GL   = 0x01000000,
 	NMEA_GP   = 0x02000000,
-	NMEA_GN   = 0x04000000
+	NMEA_GN   = 0x04000000,
+	NMEA_GA	  = 0x08000000
 } nmea_supported_e;
 
 
