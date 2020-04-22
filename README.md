@@ -35,6 +35,7 @@ Most is done to preserve code size, the SDK can target small flash MCU from 16KB
   * End 2 End Sigfox & LoRaWan encryption
   * Configuration over serial for ID commissionning during manufacturing process
   * Accelerometer abstraction layer
+  * Gnss abstraction layer
   
 * Communication protocols interface
   * Sigfox ( clear-text, AES128-CTR, SPECK32, Sigfox-EAS128-CTR-Encryption )
@@ -66,6 +67,9 @@ Most is done to preserve code size, the SDK can target small flash MCU from 16KB
      * sl353
   * Accelerometer
      * STM - LIS2DH12
+  * Gnss
+     * Quectel L80 / L86
+     * MediaTek 3333
        
 * Supported stacks
   * lorawan
