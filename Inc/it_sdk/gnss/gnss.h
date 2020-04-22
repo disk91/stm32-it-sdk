@@ -49,34 +49,47 @@ typedef enum {
 	GNSS_TIMEOUT			=11,
 	GNSS_ALLREADYRUNNNING	=12,
 	GNSS_FAILEDRESTARTING	=13,
+	GNSS_NOTREADY			=14,
 
 	GNSS_FAILED				=0x80
 } gnss_ret_e;
 
+
+typedef enum {
+	GNSS_STOP_MODE		= 0,	// Stop - nothing kept
+	GNSS_BACKUP_MODE  	= 1,	// Backup - memory preserved all rest off
+	GNSS_SLEEP_MODE		= 2,	// Sleep - low power mcu stay on and memory kept
+	GNSS_RUN_COLD		= 3,	// Run - assuming memory content obsolete
+	GNSS_RUN_WARM		= 4,	// Run - assuming memory is to be refreshed
+	GNSS_RUN_HOT		= 5		// Run - assuming data still valid
+
+} gnss_run_mode_e;
+
+
 // GNSS Trigers
 typedef enum {
 	GNSS_TRIGGER_ON_NONE			= 0x0000000,
-	GNSS_TRIGGER_ON_TIMEUPDATE		= 0x0000001,
-	GNSS_TRIGGER_ON_DATEUPDATE		= 0x0000002,
-	GNSS_TRIGGER_ON_POS2D			= 0x0000004,
-	GNSS_TRIGGER_ON_POS3D			= 0x0000008,
-	GNSS_TRIGGER_ON_HDOP_150		= 0x0000010,
-	GNSS_TRIGGER_ON_HDOP_200		= 0x0000020,
-	GNSS_TRIGGER_ON_HDOP_400		= 0x0000040,
-	GNSS_TRIGGER_ON_HDOP_800		= 0x0000080,
-	GNSS_TRIGGER_ON_OUTDOOR			= 0x0000100,
-	GNSS_TRIGGER_ON_INDOOR			= 0x0000200,
-	GNSS_TRIGGER_ON_SPEED_5			= 0x0001000,
-	GNSS_TRIGGER_ON_SPEED_10		= 0x0002000,
-	GNSS_TRIGGER_ON_SPEED_20		= 0x0004000,
-	GNSS_TRIGGER_ON_SPEED_40		= 0x0008000,
-	GNSS_TRIGGER_ON_SPEED_70		= 0x0010000,
-	GNSS_TRIGGER_ON_SPEED_90		= 0x0020000,
-	GNSS_TRIGGER_ON_SPEED_110		= 0x0040000,
-	GNSS_TRIGGER_ON_SPEED_150		= 0x0080000,
+	GNSS_TRIGGER_ON_TIMEUPDATE		= 0x0000001,		// Time has been updated with UTC (system time UTC function are accessible also)
+	GNSS_TRIGGER_ON_DATEUPDATE		= 0x0000002,		// Date has been updated with UTC date
+	GNSS_TRIGGER_ON_POS2D			= 0x0000004,		// Fix position at least 2D is valid
+	GNSS_TRIGGER_ON_POS3D			= 0x0000008,		// Fix position with altitude is valid
+	GNSS_TRIGGER_ON_HDOP_150		= 0x0000010,		// Hdop quality is higher than 1.5
+	GNSS_TRIGGER_ON_HDOP_200		= 0x0000020,		// Hdop quality is higher than 2.0
+	GNSS_TRIGGER_ON_HDOP_400		= 0x0000040,		// Hdop quality is higher than 4.0
+	GNSS_TRIGGER_ON_HDOP_800		= 0x0000080,		// Hdop quality is higher than 8.0
+	GNSS_TRIGGER_ON_OUTDOOR			= 0x0000100,		// Outdoor condition has been detected (high quality signal)
+	GNSS_TRIGGER_ON_INDOOR			= 0x0000200,		// Indoor condition has been detected (poor quality signal)
+	GNSS_TRIGGER_ON_SPEED_5			= 0x0001000,		// Speed is over 5km/h
+	GNSS_TRIGGER_ON_SPEED_10		= 0x0002000,		// Speed is over 10km/h
+	GNSS_TRIGGER_ON_SPEED_20		= 0x0004000,		// Speed is over 20km/h
+	GNSS_TRIGGER_ON_SPEED_40		= 0x0008000,		// speed is over 40km/h
+	GNSS_TRIGGER_ON_SPEED_70		= 0x0010000,		// speed is over 70km/h
+	GNSS_TRIGGER_ON_SPEED_90		= 0x0020000,		// speed is over 90km/h
+	GNSS_TRIGGER_ON_SPEED_110		= 0x0040000,		// speed is over 110km/h
+	GNSS_TRIGGER_ON_SPEED_150		= 0x0080000,		// speed is over 159km/h
 
-	GNSS_TRIGGER_ON_UPDATE			= 0x4000000,		// simple 1Hz update
-	GNSS_TRIGGER_ON_TIMEOUT			= 0x8000000
+	GNSS_TRIGGER_ON_UPDATE			= 0x4000000,		// simple Fix rate update
+	GNSS_TRIGGER_ON_TIMEOUT			= 0x8000000			// Fix timeout expired, search has stopped
 } gnss_triggers_e;
 
 // Data structure to report GNSS informations up to the application layer
@@ -118,15 +131,15 @@ typedef struct {
 	gnss_fix_type_e		fixType;
 	uint32_t			fixTime;
 	uint16_t			fixHdop;		// calculated outside to simplify - select the best of the possible
-#if ITSDK_DRIVERS_GNSS_WITHGPSSAT == __ENABLE
-	gnss_fix_qality_t	gps;
-#endif
-#if ITSDK_DRIVERS_GNSS_WITHGLOSAT == __ENABLE
-	gnss_fix_qality_t	glonass;
-#endif
-#if ITSDK_DRIVERS_GNSS_WITHGALSAT == __ENABLE
-	gnss_fix_qality_t	galileo;
-#endif
+	#if ITSDK_DRIVERS_GNSS_WITHGPSSAT == __ENABLE
+	  gnss_fix_qality_t	gps;
+	#endif
+	#if ITSDK_DRIVERS_GNSS_WITHGLOSAT == __ENABLE
+	  gnss_fix_qality_t	glonass;
+	#endif
+	#if ITSDK_DRIVERS_GNSS_WITHGALSAT == __ENABLE
+	  gnss_fix_qality_t	galileo;
+	#endif
 	int32_t				latitude;		// lat in 1/100_000 degrees South is negative, North positive
 	int32_t				longitude;		// lon in 1/100_000 degrees West is negative, East positive
 	int16_t				altitude;		// meter above sea level
@@ -174,16 +187,17 @@ typedef struct {
 	gnss_date_t				gpsTime;						// GPS Date & Time information
 	uint8_t					satDetailsUpdated:1;			// =1 if sat details structure has been updated
 
-	#if ITSDK_DRIVERS_GNSS_WITHGPSSAT == __ENABLE
-	gnss_sat_details_t		sat_gps[ITSDK_GNSS_GPSSAT_NB];			// Detailed GPS sat informations
+	#if (ITSDK_DRIVERS_GNSS_POSINFO & __GNSS_WITH_SAT_DETAILS) > 0
+		#if ITSDK_DRIVERS_GNSS_WITHGPSSAT == __ENABLE
+		gnss_sat_details_t		sat_gps[ITSDK_GNSS_GPSSAT_NB];			// Detailed GPS sat informations
+		#endif
+		#if ITSDK_DRIVERS_GNSS_WITHGLOSAT == __ENABLE
+		gnss_sat_details_t		sat_glonas[ITSDK_GNSS_GLOSAT_NB];		// Detailed GLONASS sat informations
+		#endif
+		#if ITSDK_DRIVERS_GNSS_WITHGALSAT == __ENABLE
+		gnss_sat_details_t		sat_galileo[ITSDK_GNSS_GALSAT_NB];		// no yet supported
+		#endif
 	#endif
-	#if ITSDK_DRIVERS_GNSS_WITHGLOSAT == __ENABLE
-	gnss_sat_details_t		sat_glonas[ITSDK_GNSS_GLOSAT_NB];		// Detailed GLONASS sat informations
-	#endif
-	#if ITSDK_DRIVERS_GNSS_WITHGALSAT == __ENABLE
-	gnss_sat_details_t		sat_galileo[ITSDK_GNSS_GALSAT_NB];		// no yet supported
-	#endif
-
 
 } gnss_data_t;
 
@@ -207,6 +221,8 @@ gnss_ret_e gnss_addTriggerCallBack(
 gnss_ret_e gnss_setup();
 void gnss_process_loop(itsdk_bool_e force);		// Loop process automatically included in the itsdk_loop
 
+gnss_ret_e gnss_start(gnss_run_mode_e mode, uint16_t fixFreq,  uint32_t timeoutS);
+gnss_ret_e gnss_stop(gnss_run_mode_e mode);
 
 
 void gnss_customSerial_print(char * msg);
@@ -261,15 +277,6 @@ typedef struct gnss_nmea_driver_s {
 
 } gnss_nmea_driver_t;
 
-typedef enum {
-	GNSS_STOP_MODE		= 0,	// Stop - nothing kept
-	GNSS_BACKUP_MDOE  	= 1,	// Backup - memory preserved all rest off
-	GNSS_SLEEP_MODE		= 2,	// Sleep - low power mcu stay on and memory kept
-	GNSS_RUN_COLD		= 3,	// Run - assuming memory content obsolete
-	GNSS_RUN_WARM		= 4,	// Run - assuming memory is to be refreshed
-	GNSS_RUN_HOT		= 5		// Run - assuming data still valid
-
-} gnss_run_mode_e;
 
 
 typedef struct {
@@ -288,17 +295,6 @@ typedef struct {
     uint16_t				maxDurationS;									// Max search duration before stop in Second
 } gnss_config_t;
 
-
-// List of user expected option to filter the unneeded NMEA messages
-#define __GNSS_WITH_2DPOS 		0x0001
-#define __GNSS_WITH_3DPOS		0x0002
-#define __GNSS_WITH_TIME		0x0004
-#define __GNSS_WITH_DATE		0x0008
-#define __GNSS_WITH_HDOP		0x0010
-#define __GNSS_WITH_PDOP_VDOP	0x0020
-#define __GNSS_WITH_SAT_DETAILS	0x0040
-#define __GNSS_WITH_SPEED		0x0080
-#define __GNSS_WITH_COG			0x0100		// Direction
 
 
 // --- Internal function

@@ -364,4 +364,20 @@
 #define __LPWAN_REGION_AP920		0x00002000		// Asia Pacific : Australia, Hong Kong, Malaysia, New Zealand, Singapore, Taiwan, Thailand (RCZ4)
 #define __LPWAN_REGION_JP923		0x00004000		// Japan (RCZ3a)
 
+
+
+/**
+ * List of user expected option to filter the unneeded NMEA messages
+ */
+#define __GNSS_WITH_2DPOS 		0x0001
+#define __GNSS_WITH_3DPOS		0x0002
+#define __GNSS_WITH_TIME		0x0004
+#define __GNSS_WITH_DATE		0x0008
+#define __GNSS_WITH_HDOP		0x0010
+#define __GNSS_WITH_PDOP_VDOP	0x0020
+#define __GNSS_WITH_SAT_DETAILS	0x0040
+#define __GNSS_WITH_SPEED		0x0080
+#define __GNSS_WITH_COG			0x0100		// Direction
+
+
 #endif /* IT_SDK_CONFIG_DEFINES_H_ */

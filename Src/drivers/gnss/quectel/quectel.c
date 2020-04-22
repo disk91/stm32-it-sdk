@@ -232,6 +232,7 @@ gnss_ret_e quectel_lxx_initLowPower(gnss_config_t * config) {
 	__quectedSendCommand(cmd,DRIVER_GNSS_QUECTEL_CMD_MAXZ,DRIVER_GNSS_QUECTEL_CMD_PQTXT);
 
 	// Switch to low power
+	__quectel_status.isInStopMode = 1;				// force clean COLD start on reset
 	__quectelSwitchToStopWithMemoryRetention();
 	return GNSS_SUCCESS;
 }
@@ -243,16 +244,35 @@ static gnss_ret_e __quectelSetRunMode(gnss_run_mode_e mode) {
 	switch (mode) {
 		default:
 		case GNSS_STOP_MODE:
-		case GNSS_BACKUP_MDOE:
+			__quectel_status.isInStopMode = 1;
+			return __quectelSwitchToStopWithMemoryRetention();
+		case GNSS_BACKUP_MODE:
+			__quectel_status.isInStopMode = 0;
 			return __quectelSwitchToStopWithMemoryRetention();
 		case GNSS_SLEEP_MODE:
+			__quectel_status.isInStopMode = 0;
 			return __quectelSwitchToStandbyWithMemoryRetention();
 		case GNSS_RUN_COLD:
-			return __quectelSwitchToColdStart();
+			if ( __quectel_status.isInStopMode == 1 ) {
+				__quectel_status.isInStopMode = 0;
+				return __quectelSwitchToFullColdStart();
+			} else {
+				return __quectelSwitchToColdStart();
+			}
 		case GNSS_RUN_WARM:
-			return __quectelSwitchToWarmStart();
+			if ( __quectel_status.isInStopMode == 1 ) {
+				__quectel_status.isInStopMode = 0;
+				return __quectelSwitchToFullColdStart();
+			} else {
+				return __quectelSwitchToWarmStart();
+			}
 		case GNSS_RUN_HOT:
-			return __quectelSwitchToHotStart();
+			if ( __quectel_status.isInStopMode == 1 ) {
+				__quectel_status.isInStopMode = 0;
+				return __quectelSwitchToFullColdStart();
+			} else {
+				return __quectelSwitchToHotStart();
+			}
 	}
 }
 

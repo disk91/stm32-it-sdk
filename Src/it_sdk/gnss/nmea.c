@@ -533,7 +533,7 @@ gnss_ret_e nmea_processNMEA(gnss_data_t * data, uint8_t * line, uint16_t sz, gns
 						if ( nmea_goNextField(&pt) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
 						if ( nmea_getDecimalField(pt,&snr) == GNSS_INVALIDFORMAT ) return GNSS_INVALIDFORMAT;
 
-						#if ITSDK_DRIVERS_GNSS_WITHGPSSAT == __ENABLE
+						#if ITSDK_DRIVERS_GNSS_WITHGPSSAT == __ENABLE && (ITSDK_DRIVERS_GNSS_POSINFO & __GNSS_WITH_SAT_DETAILS) > 0
 						if ( satId >= 0 && satId <= 32 ) {
 							// GPS Sat
 							data->sat_gps[satId-1].updateTime = (uint32_t)now;
@@ -543,7 +543,7 @@ gnss_ret_e nmea_processNMEA(gnss_data_t * data, uint8_t * line, uint16_t sz, gns
 							if ( snr > data->sat_gps[satId-1].maxSignal ) data->sat_gps[satId-1].maxSignal = snr;
 						}
 						#endif
-						#if ITSDK_DRIVERS_GNSS_WITHGLOSAT == __ENABLE
+						#if ITSDK_DRIVERS_GNSS_WITHGLOSAT == __ENABLE && (ITSDK_DRIVERS_GNSS_POSINFO & __GNSS_WITH_SAT_DETAILS) > 0
 						if ( satId >= 65 && satId <= 88 ) {
 							// GLONASS Sat
 							data->sat_glonas[satId-65].updateTime= (uint32_t)now;
@@ -553,7 +553,7 @@ gnss_ret_e nmea_processNMEA(gnss_data_t * data, uint8_t * line, uint16_t sz, gns
 							if ( snr > data->sat_glonas[satId-65].maxSignal ) data->sat_glonas[satId-65].maxSignal = snr;
 						}
 						#endif
-						#if ITSDK_DRIVERS_GNSS_WITHGALSAT == __ENABLE
+						#if ITSDK_DRIVERS_GNSS_WITHGALSAT == __ENABLE && (ITSDK_DRIVERS_GNSS_POSINFO & __GNSS_WITH_SAT_DETAILS) > 0
 							#warning "GALILEO Support not yet implemented"
 						#endif
 					}

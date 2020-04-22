@@ -37,6 +37,7 @@ typedef struct {
 	volatile uint8_t				hasboot:1; 			// flag indicating the device has reboot (and is responding)
 			 uint8_t				hasBackupMode:1;	// The ultra low power backup mode is supported
 			 uint8_t				isInBackupMode:1;	// The device is currently in backup Mode
+			 uint8_t				isInStopMode:1;		// Stop mode request (not existing, ultra cold restart will be performed instead)
 			 uint8_t				isRunning:1;		// Position search in progress
 	volatile uint8_t				hasAckedSuccess:1;	// previous command acked success
 	volatile uint8_t				hasAckedFailed:1;	// previous command acked with a failure

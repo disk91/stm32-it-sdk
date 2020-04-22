@@ -93,19 +93,61 @@ void gnss_process_loop(itsdk_bool_e force) {
 // Management GPS Fix
 // =================================================================================================
 
-void gnss_start(uint32_t timeoutS) {
-	if ( !__gnss_config.setupDone ) return;
-	__gnss_resetStructForNewFix();
-	__gnss_config.startupTimeS = (itsdk_time_get_ms()/1000);
-	__gnss_config.maxDurationS = timeoutS;
-	__gnss_config.setRunMode(GNSS_RUN_COLD);
-
+/**
+ * Starts a GPS fix-try for a maximum of timeoutS seconds
+ * The supported mode are
+ * - GNSS_RUN_COLD -> alamnach/ephemeris invalidated
+ * - GNSS_RUN_WARM -> based on prety old but usable almanach/ephemeris
+ * - GNSS_RUN_HOT  -> based on fresh alamanach/ephemeris
+ * Fix frequency is working the following one (not yet supported - always 1Hz)
+ * - 0   -> driver default usually 1Hz
+ * - 100 -> 1Hz fix
+ * - 500 -> 5Hz fix
+ * - 001 -> 1Hz fix
+ * - 002 -> 0.5Hz fix
+ * - 010 -> 0.1Hz fix
+ * - ...
+ * Returns
+ * - GNSS_SUCCESS          : fix is starting
+ * - GNSS_FAILED           : for any reason the start has been impossible at underlaying driver level
+ * - GNSS_NOTREADY         : setup has not been made previous calling this function
+ * - GNSS_NOTSUPPORTED     : the requested mode in not valid
+ * - GNSS_ALLREADYRUNNNING : you try to start something already running, you must stop it before
+ * - GNSS_FAILEDRESTARTING : The underlaying driver was not able to wake up the gnss module to restart
+ */
+gnss_ret_e gnss_start(gnss_run_mode_e mode, uint16_t fixFreq,  uint32_t timeoutS) {
+	if ( !__gnss_config.setupDone ) return GNSS_NOTREADY;
+	if ( fixFreq != 0 || fixFreq != 1 || fixFreq != 100 ) return GNSS_NOTSUPPORTED;
+	if ( mode == GNSS_RUN_COLD || mode == GNSS_RUN_WARM || mode == GNSS_RUN_HOT ) {
+		__gnss_resetStructForNewFix();
+		__gnss_config.startupTimeS = (itsdk_time_get_ms()/1000);
+		__gnss_config.maxDurationS = timeoutS;
+		return __gnss_config.setRunMode(mode);
+	} else {
+		return GNSS_NOTSUPPORTED;
+	}
 }
 
-void gnss_stop() {
-	if ( !__gnss_config.setupDone ) return;
-	__gnss_config.setRunMode(GNSS_STOP_MODE);
-
+/**
+ * Manually stops a GPS fix-try in progress
+ * Possible mode are
+ * - GNSS_STOP_MODE   -> Everything is stops including RTC storing the ephemerys
+ * - GNSS_BACKUP_MODE -> Stop the GNSS MCU but keep the internal memeory for short TTF on restart
+ * - GNSS_SLEEP_MODE  -> GNSS MCU stays active but not searching for sats. low power.
+ * Returns
+ * - GNSS_SUCCESS          : Fix stopped
+ * - GNSS_FAILED           : for any reason the stop has been impossible at underlaying driver level
+ * - GNSS_NOTREADY         : setup has not been made previous calling this function
+ * - GNSS_NOTSUPPORTED     : the requested mode is not supported / valid
+ * - GNSS_FAILEDRESTARTING : The underlaying driver was not able to wake up the gnss module to stop it (stop - to sleep)
+ */
+gnss_ret_e gnss_stop(gnss_run_mode_e mode) {
+	if ( !__gnss_config.setupDone ) return GNSS_NOTREADY;
+	if ( mode == GNSS_STOP_MODE || mode == GNSS_BACKUP_MODE || mode == GNSS_SLEEP_MODE ) {
+		return __gnss_config.setRunMode(mode);
+	} else {
+		return GNSS_NOTSUPPORTED;
+	}
 }
 
 // =================================================================================================
@@ -293,13 +335,13 @@ static void __gnss_resetStructForNextCycle(void) {
  */
 static void __gnss_resetStructForNewFix(void) {
 	__gnss_resetStructForNextCycle();
-	#if ITSDK_DRIVERS_GNSS_WITHGPSSAT == __ENABLE
+	#if ITSDK_DRIVERS_GNSS_WITHGPSSAT == __ENABLE && (ITSDK_DRIVERS_GNSS_POSINFO & __GNSS_WITH_SAT_DETAILS) > 0
 	bzero(__gnss_config.data.sat_gps,ITSDK_GNSS_GPSSAT_NB*sizeof(gnss_sat_details_t));
 	#endif
-	#if ITSDK_DRIVERS_GNSS_WITHGLOSAT == __ENABLE
+	#if ITSDK_DRIVERS_GNSS_WITHGLOSAT == __ENABLE && (ITSDK_DRIVERS_GNSS_POSINFO & __GNSS_WITH_SAT_DETAILS) > 0
 	bzero(__gnss_config.data.sat_glonas,ITSDK_GNSS_GLOSAT_NB*sizeof(gnss_sat_details_t));
 	#endif
-	#if ITSDK_DRIVERS_GNSS_WITHGALSAT == __ENABLE
+	#if ITSDK_DRIVERS_GNSS_WITHGALSAT == __ENABLE && (ITSDK_DRIVERS_GNSS_POSINFO & __GNSS_WITH_SAT_DETAILS) > 0
 	bzero(__gnss_config.data.sat_galileo,ITSDK_GNSS_GALSAT_NB*sizeof(gnss_sat_details_t));
 	#endif
 }
@@ -506,7 +548,7 @@ void gnss_printState(void) {
 	}
 
 	log_debug("Sat in view  : %d\r\n",__gnss_config.data.satInView);
-	#if ITSDK_DRIVERS_GNSS_WITHGPSSAT == __ENABLE
+	#if ITSDK_DRIVERS_GNSS_WITHGPSSAT == __ENABLE && (ITSDK_DRIVERS_GNSS_POSINFO & __GNSS_WITH_SAT_DETAILS) > 0
 	log_debug("GPS Sats \r\n");
 	for (int i = 0 ; i < ITSDK_GNSS_GPSSAT_NB ; i++) {
 		log_debug("  [%02d] El: %02d Az: %03d Snr: -%02d  MaxSnr: -%02d LastSeen: %08d\r\n",i,
@@ -518,7 +560,7 @@ void gnss_printState(void) {
 		);
 	}
 	#endif
-	#if ITSDK_DRIVERS_GNSS_WITHGLOSAT == __ENABLE
+	#if ITSDK_DRIVERS_GNSS_WITHGLOSAT == __ENABLE && (ITSDK_DRIVERS_GNSS_POSINFO & __GNSS_WITH_SAT_DETAILS) > 0
 	log_debug("GLONAS Sats \r\n");
 	for (int i = 0 ; i < ITSDK_GNSS_GLOSAT_NB ; i++) {
 		log_debug("  [%02d] El: %02d Az: %03d Snr: -%02d  MaxSnr: -%02d LastSeen: %08d\r\n",i,
@@ -530,7 +572,7 @@ void gnss_printState(void) {
 		);
 	}
 	#endif
-	#if ITSDK_DRIVERS_GNSS_WITHGALSAT == __ENABLE
+	#if ITSDK_DRIVERS_GNSS_WITHGALSAT == __ENABLE && (ITSDK_DRIVERS_GNSS_POSINFO & __GNSS_WITH_SAT_DETAILS) > 0
 	log_debug("GALILEO Sats \r\n");
 	for (int i = 0 ; i < ITSDK_GNSS_GALSAT_NB ; i++) {
 		log_debug("  [%02d] El: %02d Az: %03d Snr: -%02d  MaxSnr: -%02d LastSeen: %08d\r\n",i,
