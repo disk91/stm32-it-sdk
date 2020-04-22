@@ -8,34 +8,33 @@ The GNSS abstraction library allows to manage a GPS/GLONASS/GALILEO chip transpa
 ### GNSS abstraction library
 The driver is configured from the _configDrivers.h_ file.
 ```C
-#define ITSDK_DRIVERS_WITH_GNSS_DRIVER				__ENABLE
+#define ITSDK_DRIVERS_WITH_GNSS_DRIVER              __ENABLE
 #if ITSDK_DRIVERS_WITH_GNSS_DRIVER == __ENABLE
 
-#define ITSDK_DRIVERS_GNSS_SERIAL 					__UART_USART1				// Select the Serial port used for the communication
-#define ITSDK_DRIVERS_GNSS_LINEBUFFER				256							// Buffer to store the serial chars until we get a full line																				//  select __UART_NONE if none
+#define ITSDK_DRIVERS_GNSS_SERIAL                   __UART_USART1.       // Select the Serial port used for the communication
+#define ITSDK_DRIVERS_GNSS_LINEBUFFER               256                  // Buffer to store the serial chars until we get a full line
+                                                                         //  select __UART_NONE if none
 
-#define ITSDK_DRIVERS_GNSS_WITHGPSSAT				__ENABLE					// Store details of the GPS Sat in memory
-#define ITSDK_DRIVERS_GNSS_WITHGLOSAT				__ENABLE					// Store details of the GLONASS Sat in memory
-#define ITSDK_DRIVERS_GNSS_WITHGALSAT				__DISABLE					// Store details of the GALILEO Sat in memory
+#define ITSDK_DRIVERS_GNSS_WITHGPSSAT               __ENABLE             // Store details of the GPS Sat in memory
+#define ITSDK_DRIVERS_GNSS_WITHGLOSAT               __ENABLE             // Store details of the GLONASS Sat in memory
+#define ITSDK_DRIVERS_GNSS_WITHGALSAT               __DISABLE            // Store details of the GALILEO Sat in memory
 
-#define ITSDK_DRIVERS_GNSS_WITH_UTCDATE_FULL		__ENABLE					// Convert the Date+Time into UTC timestamp
-																				//  this feature coset up to 6KB of flash footprint.
-																				//  when _DISABLE, only HH:MM:SS is taken into consideration
-#include <it_sdk/gnss/gnss.h>
+#define ITSDK_DRIVERS_GNSS_WITH_UTCDATE_FULL        __ENABLE             // Convert the Date+Time into UTC timestamp
+                                                                         //  this feature coset up to 6KB of flash footprint.
+                                                                         //  when _DISABLE, only HH:MM:SS is taken into consideration
 
-																				// What GPS information is needed, this helps to filter the
-																				// unused GPS NEMA messages and saves processing / energy
-#define ITSDK_DRIVERS_GNSS_POSINFO		(   __GNSS_WITH_2DPOS 					/* Lat / Lng */ \
-										  | __GNSS_WITH_3DPOS					/* Altitude */ \
-										  | __GNSS_WITH_TIME					/* UTC time of the day */\
-										  | __GNSS_WITH_DATE					/* UTC Date */\
-										  | __GNSS_WITH_HDOP					/* Hdop */\
-										  | __GNSS_WITH_PDOP_VDOP				/* VDOP + PDOP */\
-										  | __GNSS_WITH_SAT_DETAILS				/* Sat in view and signal level*/\
-										  | __GNSS_WITH_SPEED					/* Speed */\
-										  | __GNSS_WITH_COG						/* Course over ground - direction*/\
-										)
-
+                                                                         // What GPS information is needed, this helps to filter the
+                                                                         // unused GPS NEMA messages and saves processing / energy
+#define ITSDK_DRIVERS_GNSS_POSINFO.     (   __GNSS_WITH_2DPOS        /* Lat / Lng */ \
+                                          | __GNSS_WITH_3DPOS        /* Altitude */ \
+                                          | __GNSS_WITH_TIME         /* UTC time of the day */\
+                                          | __GNSS_WITH_DATE         /* UTC Date */\
+                                          | __GNSS_WITH_HDOP         /* Hdop */\
+                                          | __GNSS_WITH_PDOP_VDOP    /* VDOP + PDOP */\
+                                          | __GNSS_WITH_SAT_DETAILS  /* Sat in view and signal level*/\
+                                          | __GNSS_WITH_SPEED        /* Speed */\
+                                          | __GNSS_WITH_COG          /* Course over ground - direction*/\
+                                        )
 ```
 - These settings allows to define the UART used for the GNSS module, it will be __UART_NONE for SPI/I2C modules.
 - An internal line buffer is needed to store a NMEA line before processing it. This is the LINEBUFFER
