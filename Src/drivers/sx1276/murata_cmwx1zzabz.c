@@ -106,11 +106,16 @@ const struct Radio_s Radio =
  */
 void SX1276InitLowPower( void ) {
 
+	gpio_configure(ITSDK_SX1276_TCXO_VCC_BANK, ITSDK_SX1276_TCXO_VCC_PIN, GPIO_OUTPUT_PP );
+    TCXO_ON();
+    itsdk_delayMs(ITSDK_MURATA_WAKEUP_TIME);
 	SX1276IoDeInit();
-    gpio_configure(ITSDK_SX1276_TCXO_VCC_BANK, ITSDK_SX1276_TCXO_VCC_PIN, GPIO_OUTPUT_PP );
+	gpio_configure(ITSDK_SX1276_NSS_BANK, ITSDK_SX1276_NSS_PIN, GPIO_OUTPUT_PP );
+	gpio_reset(ITSDK_SX1276_NSS_BANK, ITSDK_SX1276_NSS_PIN);
 	SX1276Reset();
-	SX1276Write( REG_OPMODE, ( SX1276Read( REG_OPMODE ) & RF_OPMODE_MASK ) | RF_OPMODE_SLEEP );
+	SX1276Write( REG_OPMODE, ( SX1276Read( REG_OPMODE ) & RF_OPMODE_MASK ) | RF_OPMODE_SLEEP  );	// SLEEP mode is 1uA when Standby Mode is 1,6mA
 	SX1276SetAntSwLowPower(true);
+	itsdk_delayMs(10);
 	TCXO_OFF();
 
 }
