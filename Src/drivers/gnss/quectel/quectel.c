@@ -120,13 +120,17 @@ gnss_ret_e quectel_lxx_initLowPower(gnss_config_t * config) {
 
 	// configure the NEMA MESSAGE OUTPUT
 	if ( nmea_selectNMEAMessages(config, (NMEA_RMC|NMEA_GGA|NMEA_GSA|NMEA_GSV|NMEA_GLL|NMEA_VTG|NMEA_ZDA/*|MTK_CHN*/) ) != GNSS_SUCCESS ) {
-		log_error("Quectel driver is not supporting the expected GNSS informations\r\n");
+		#if (ITSDK_LOGGER_MODULE & __LOG_MOD_GNSS) > 0
+ 		  log_error("QUECTEL_L8X - Unsupported requested GNSS information\r\n");
+		#endif
 		return GNSS_NOTSUPPORTED;
 	}
 
 	__quectel_status.hasboot = 0;
 	__quectel_status.isInBackupMode = 0;
 	__quectel_status.isRunning = 0;
+	__quectel_status.nmeaProcessed = 0;
+	__quectel_status.nmeaErrors = 0;
 
 	// Setup the gnss configuration
 	config->withNmeaDecodeur = 1;
@@ -179,7 +183,9 @@ gnss_ret_e quectel_lxx_initLowPower(gnss_config_t * config) {
 
 	// check Quectel presence and wait for boot
 	if( __quectelWaitForAck(DRIVER_GNSS_QUECTEL_CMD_RESTART) != GNSS_SUCCESS ) {
-		log_error("restart failed\r\n");
+		#if (ITSDK_LOGGER_MODULE & __LOG_MOD_GNSS) > 0
+			log_error("QUECTEL_L8X - Failed to detect\r\n");
+		#endif
 		return GNSS_NOTFOUND;
 	}
 
@@ -345,10 +351,10 @@ static gnss_ret_e __quectelSwitchBackfromStopMode() {
   			itsdk_delayMs(20); // 10 ms min according to doc
   			gpio_set(ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN);
   	  		 __gnss_initSerial();
-  			log_error("Force Reset\r\n");
+  	  		ITSDK_ERROR_REPORT(ITSDK_ERROR_DRV_QUECTEL8X_FORCERST,0);
   			// Retrying
   			if ( __quectelWaitForAck(DRIVER_GNSS_QUECTEL_CMD_RESTART) == GNSS_TIMEOUT) {
-  				log_error("Failed again\r\n");
+  	  	  		ITSDK_ERROR_REPORT(ITSDK_ERROR_DRV_QUECTEL8X_RSTFAILD,0);
   				return GNSS_FAILED;
   			}
   	    }
@@ -454,7 +460,7 @@ static gnss_ret_e __quectedSendCommand(char * cmd, uint8_t sz, uint16_t icmd) {
 	nmea_addChecksum((uint8_t*)cmd, sz);
 	__gnss_printf("%s",cmd);
 	if( icmd != DRIVER_GNSS_QUECTEL_CMD_NOACK && __quectelWaitForAck(icmd) != GNSS_SUCCESS ) {
-		log_error("Failed to get command confirmation on %d\r\n",icmd);
+		ITSDK_ERROR_REPORT(ITSDK_ERROR_DRV_QUECTEL8X_RSPFAILD,icmd);
 		return GNSS_FAILED;
 	}
 	return GNSS_SUCCESS;
@@ -490,7 +496,6 @@ static gnss_ret_e __quectelWaitForAck(uint16_t commandCode) {
 						}
 						response = BOOL_TRUE;
 					} else {
-						log_debug("Received another command ack : %d\r\n",__quectel_status.lastAckedCode);
 						__quectel_status.lastAckedCode = 0;
 					}
 				}
@@ -504,7 +509,6 @@ static gnss_ret_e __quectelWaitForAck(uint16_t commandCode) {
 		time += 5;
 	} while (response == BOOL_FALSE && time < timeout);
 	if ( response == BOOL_FALSE ) {
-		log_error("Failing getting a response from command %d\r\n",commandCode);
 		return GNSS_TIMEOUT;
 	}
 	return ret;
@@ -514,11 +518,16 @@ static gnss_ret_e __quectelWaitForAck(uint16_t commandCode) {
 /**
  * Quectel NMEA driver
  */
-uint8_t zz = 0;
+
 static gnss_ret_e __quectelNMEA(gnss_data_t * data, uint8_t * line, uint16_t sz, gnss_nmea_driver_t * driver) {
 
-log_info(".");
-
+	#if (ITSDK_LOGGER_MODULE & __LOG_MOD_GNSS) > 0
+		log_info(".");
+	#endif
+	__quectel_status.nmeaProcessed++;
+	if ( __quectel_status.nmeaProcessed == 0 ) {
+		__quectel_status.nmeaErrors = 0;
+	}
 	nmea_supported_e previous = driver->currentMessage;
 	gnss_ret_e ret = nmea_processNMEA(data, line, sz,driver);
 	switch (ret) {
@@ -612,7 +621,6 @@ log_info(".");
 					ret = GNSS_SUCCESS;
 				}
 			  }
-			  log_info("[P] %s \r\n",line);
 			}
 			break;
 		case GNSS_SUCCESS:
@@ -631,9 +639,19 @@ log_info(".");
 			break;
 
 		default:
+			#if (ITSDK_LOGGER_MODULE & __LOG_MOD_GNSS) > 0
 			//log_error("## error from nmea decoder %d\r\n",ret);
 			//log_error("ON : %s\r\n",line);
-			log_error("#");
+			#endif
+			// Accepting an error rate of 20%, reporting an error otherwise
+			__quectel_status.nmeaErrors++;
+			if ( __quectel_status.nmeaProcessed > 20  && ((100*(uint16_t)__quectel_status.nmeaErrors) / __quectel_status.nmeaProcessed) > 20 ) {
+				ITSDK_ERROR_REPORT(ITSDK_ERROR_DRV_QUECTEL8X_COMERROR,icmd);
+				// avoid to spam the log with this message too fast
+				__quectel_status.nmeaProcessed = 0;
+				__quectel_status.nmeaErrors = 0;
+				log_error("G#");
+			}
 			break;
 	}
 	return ret;

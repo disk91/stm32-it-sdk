@@ -92,6 +92,8 @@
 								/*	| __LOG_MOD_STIMER     */ \
 								/*	| __LOG_MOD_LOWLORADBG */ \
 								/*	| __LOG_MOD_LOWLORAINF */ \
+								/*  | __LOG_MOD_GNSS       */ \
+								/*	| __LOG_MOD_ACCEL	   */ \
 									)										// list the module to be activated in log see config_defines.h
 #define ITSDK_WITH_ERROR_RPT		__ENABLE								// Enable the Error reporting code. The allow to store error code in the EEPROM
 #define ITSDK_ERROR_USE_EPROM		__ENABLE								//  Error reports are stored in the EEPROM

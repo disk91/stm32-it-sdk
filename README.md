@@ -2,7 +2,7 @@
 
 This project is a low level SDK with a harwdare abstraction layer designed to make IoT project. The purpose is to quickly be able to create communicating IoT device over LPWAN (LoRaWAn, Sigfox...) for fast prototyping but also being able to bring that firmware to production will all the necessary components avaoilable out-of-the-box. This SDK try to be fully configurable with header files. The objectif is to propose an abstraction layer between the software implementation and the MCU execution allowing to port the firmware on different plateform. 
 
-![itsdk_architcture](Doc/It-sdk-architecture.png) "IT-SDK Architecture"
+![itsdk_architecture](Doc/It-sdk-architecture.png) "IT-SDK Architecture"
 
 The SDK is currently implementing STM32L architecture. The abstraction layer allows to quickly add new platforms. 
 
@@ -79,6 +79,8 @@ Most is done to preserve code size, the SDK can target small flash MCU from 16KB
 
 The second objective is to be able to port this SDK to different patform
 to make it a portable SDK. The SDK have a it-sdk directory where everything needs to be portable. stm32l-sdk contains all the subfunctions specific to this platform.
+
+_The devel branch is usually behind with interesting new coming features. This branch should normally always compile (check the readme to see the new defines added) but is not validated and may have some work in progress. The devel readme file is updated as soon as a new feature is usable. Have a look !_
 
 # Start your project by configuring a skeleton with Cube Mx 
 

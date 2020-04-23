@@ -39,6 +39,8 @@ typedef struct {
 			 uint8_t				isInBackupMode:1;	// The device is currently in backup Mode
 			 uint8_t				isInStopMode:1;		// Stop mode request (not existing, ultra cold restart will be performed instead)
 			 uint8_t				isRunning:1;		// Position search in progress
+			 uint8_t				nmeaProcessed;		// Number of nmea messages processed (%256) to determine error rate
+			 uint8_t				nmeaErrors;			// Number of error on serial line since the nmeaProcessed has been 0
 	volatile uint8_t				hasAckedSuccess:1;	// previous command acked success
 	volatile uint8_t				hasAckedFailed:1;	// previous command acked with a failure
 	volatile uint16_t				lastAckedCode;		// Last command code acked

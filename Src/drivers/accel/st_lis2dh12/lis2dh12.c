@@ -106,11 +106,20 @@ static void __lis2dh12_interrupt(uint16_t GPIO_Pin) {
 
 
 		if ( __lis2dh_conf._tiltModeEnable == BOOL_FALSE && __lis2dh_conf._captureModeEnable == BOOL_FALSE ) {
+		   #if (ITSDK_LOGGER_MODULE & __LOG_MOD_ACCEL) > 0
+			log_error("!LIS!");
 			// we have an interrupt fired but no running activites.
-			// let deactivate the interrupts
-			// @TODO
-			log_error("Why do we have an interrupt ?\r\n");
-
+			// lets ignore it execpting it comes from another pin otherwize we could block the system let a trace to
+			// monitor this a couple of time
+			if ( gpio_read(ITSDK_DRIVERS_LIS2DH12_INT2_BANK,ITSDK_DRIVERS_LIS2DH12_INT2_PIN) > 0 ) {
+				log_debug("LIS2DH unexpected interrupt!\r\n");
+			} else {
+				log_error("Non LIS2DH interrupt coming from ");
+				if ( gpio_read(__BANK_A,ITSDK_DRIVERS_LIS2DH12_INT2_PIN) > 0 ) log_debug("BankA\r\n");
+				if ( gpio_read(__BANK_B,ITSDK_DRIVERS_LIS2DH12_INT2_PIN) > 0 ) log_debug("BankB\r\n");
+				if ( gpio_read(__BANK_C,ITSDK_DRIVERS_LIS2DH12_INT2_PIN) > 0 ) log_debug("BankC\r\n");
+			}
+		  #endif
 		}
 	} while (
 			( (ITSDK_DRIVERS_LIS2DH12_INT2_PIN != __LP_GPIO_NONE )
@@ -254,7 +263,7 @@ drivers_lis2dh12_ret_e lis2dh_reinit() {
       __lis2dh_readSetting();
     }else {
       ITSDK_ERROR_REPORT(ITSDK_ERROR_DRV_LIS2DH_NOTFOUND,0);
-      LIS2DH_LOG_ERROR(("LIS2DH FRe-Init failed : not found\r\n"));
+      LIS2DH_LOG_ERROR(("LIS2DH Re-Init failed : not found\r\n"));
     }
     return ret;
 }
@@ -375,7 +384,8 @@ drivers_lis2dh12_ret_e lis2dh_setupDataAquisition(
    	  __lis2dh_readRegister(LIS2DH_FIFO_SRC_REG);
 	  ret |= lis2dh_enableInterruptPin1(LIS2DH_I1_WTM);
    } else {
- 	  log_error("Lis2dh - data capture config failed\r\n");
+      ITSDK_ERROR_REPORT(ITSDK_ERROR_DRV_LIS2DH_CAPCONFFAIL,0);
+      LIS2DH_LOG_ERROR(("LIS2DH  data capture config failed\r\n"));
    }
 
   return ret;
@@ -561,7 +571,8 @@ drivers_lis2dh12_ret_e lis2dh_setupBackgroundTiltDetection(
 		  __lis2dh_readRegister(LIS2DH_CLICK_SRC);
       }
   } else {
-	  log_error("Lis2dh - tilt config failed\r\n");
+      ITSDK_ERROR_REPORT(ITSDK_ERROR_DRV_LIS2DH_TRICONFFAIL,0);
+      LIS2DH_LOG_ERROR(("LIS2DH triggers capture config failed\r\n"));
   }
 
   return ret;
@@ -1979,56 +1990,7 @@ uint8_t __lis2dh_readRegister(const uint8_t register_addr) {
  * of X,Y,Z triple
  * Return the number of triple read from Fifo
  */
-/*
-uint8_t __lis2dh_readFifo(int16_t * _buffer,const uint8_t maxSz) {
-	//uint8_t fifoReg = 0x80 | LIS2DH_OUT_X_L; // Force most significant bit to 1 to indicate a multiple read (according to doc)
-    int16_t (*buffer16)[3] = (int16_t (*)[3]) _buffer;
-    int sz = (__lis2dh_conf._fifoMode == LIS2DH_FM_BYPASS)?1:lis2dh_getFiFoSize();
-    if ( sz > maxSz ) sz = maxSz;
-    if ( sz > 0 ) {
-      int toRead = sz*6;                      // 6 byte to read for each of the X,Y,Z
-      int k = 0;
-      while ( toRead > 0 ) {
-        int transferSize = (toRead >= 30)?30:toRead;
-        int8_t __buff[30];
-        i2c_memRead(
-         		&ITSDK_DRIVERS_ACCEL_LIS2DH_I2C,			// i2c handler
- 				__lis2dh_conf._address,						// Device Address => 7 bits non shifted
-         		(0x80 | LIS2DH_OUT_X_L),					// Memory address to access
-         		8,											// 8 for 8b, 16 for 16 bits ...
-         		(uint8_t *)__buff,							// Where to store data to be read
-				transferSize								// Size of the data to be read
-        );
-        for ( int i = 0 ; i < transferSize/6 ; i++ ) {
-          if ( __lis2dh_conf._resolution == LIS2DH_RESOLUTION_MODE_8B ) {
-            buffer16[k][0] = __buff[(i*6)+1];
-            buffer16[k][1] = __buff[(i*6)+3];
-            buffer16[k][2] = __buff[(i*6)+5];
-          } else {
-             int shift = ( __lis2dh_conf._resolution == LIS2DH_RESOLUTION_MODE_10B)?6:4;
-             buffer16[k][0] = __buff[(i*6)+0];
-             buffer16[k][0] += ((int16_t)__buff[(i*6)+1]) << 8;
-             buffer16[k][0] >>= shift;
-
-             buffer16[k][1] = __buff[(i*6)+2];
-             buffer16[k][1] += ((int16_t)__buff[(i*6)+3]) << 8;
-             buffer16[k][1] >>= shift;
-
-             buffer16[k][2] = __buff[(i*6)+4];
-             buffer16[k][2] += ((int16_t)__buff[(i*6)+5]) << 8;
-             buffer16[k][2] >>= shift;
-          }
-          k++;
-        }
-        toRead -= transferSize;
-      }
-    }
-    return sz;
-}
-*/
-
 uint8_t __lis2dh_readFifo(itsdk_accel_data_t * _buffer,const uint8_t maxSz) {
-	//uint8_t fifoReg = 0x80 | LIS2DH_OUT_X_L; // Force most significant bit to 1 to indicate a multiple read (according to doc)
     int sz = (__lis2dh_conf._fifoMode == LIS2DH_FM_BYPASS)?1:lis2dh_getFiFoSize();
     if ( sz > maxSz ) sz = maxSz;
     if ( sz > 0 ) {
@@ -2041,6 +2003,7 @@ uint8_t __lis2dh_readFifo(itsdk_accel_data_t * _buffer,const uint8_t maxSz) {
          		&ITSDK_DRIVERS_ACCEL_LIS2DH_I2C,			// i2c handler
  				__lis2dh_conf._address,						// Device Address => 7 bits non shifted
          		(0x80 | LIS2DH_OUT_X_L),					// Memory address to access
+															// Force most significant bit to 1 to indicate a multiple read (according to doc)
          		8,											// 8 for 8b, 16 for 16 bits ...
          		(uint8_t *)__buff,							// Where to store data to be read
 				transferSize								// Size of the data to be read

@@ -85,6 +85,60 @@
 #define __MAX44009_A0_LOW						0x0
 #define ITSDK_DRIVERS_MAX44009_ADDRESS			(DRIVER_MAX44009_DEVICE_ADR | __MAX44009_A0_LOW)	// Device address, based on the schematics
 
+// ******************************************* GNSS *********************************************************************
+
+// -------------------------------------------------------------------------
+// Gnss : COMMON
+
+#define ITSDK_DRIVERS_WITH_GNSS_DRIVER				__DISABLE
+#if ITSDK_DRIVERS_WITH_GNSS_DRIVER == __ENABLE
+
+#define ITSDK_DRIVERS_GNSS_SERIAL 					__UART_USART1				// Select the Serial port used for the communication
+#define ITSDK_DRIVERS_GNSS_LINEBUFFER				256							// Buffer to store the serial chars until we get a full line																															//  select __UART_NONE if none
+
+#define ITSDK_DRIVERS_GNSS_WITHGPSSAT				__ENABLE					// Store details of the GPS Sat in memory
+#define ITSDK_DRIVERS_GNSS_WITHGLOSAT				__ENABLE					// Store details of the GLONASS Sat in memory
+#define ITSDK_DRIVERS_GNSS_WITHGALSAT				__DISABLE					// Store details of the GALILEO Sat in memory
+
+#define ITSDK_DRIVERS_GNSS_WITH_UTCDATE_FULL		__DISABLE					// Convert the Date+Time into UTC timestamp
+																				//  this feature coset up to 6KB of flash footprint.
+																				//  when _DISABLE, only HH:MM:SS is taken into consideration
+
+																				// What GPS information is needed, this helps to filter the
+																				// unused GPS NEMA messages and saves processing / energy
+#define ITSDK_DRIVERS_GNSS_POSINFO		(   __GNSS_WITH_2DPOS 					/* Lat / Lng */ \
+										  | __GNSS_WITH_3DPOS					/* Altitude */ \
+										  | __GNSS_WITH_TIME					/* UTC time of the day */\
+										  | __GNSS_WITH_DATE					/* UTC Date */\
+										  | __GNSS_WITH_HDOP					/* Hdop */\
+										  | __GNSS_WITH_PDOP_VDOP				/* VDOP + PDOP */\
+										  | __GNSS_WITH_SAT_DETAILS				/* Sat in view and signal level*/\
+										  | __GNSS_WITH_SPEED					/* Speed */\
+										  | __GNSS_WITH_COG						/* Course over ground - direction*/\
+										)
+#include <it_sdk/gnss/gnss.h>
+
+
+// -------------------------------------------------------------------------
+// GNSS : L80 & L86
+
+#define ITSDK_DRIVERS_GNSS_QUECTEL			__DISABLE
+#if ITSDK_DRIVERS_GNSS_QUECTEL == __ENABLE
+	#include <drivers/gnss/quectel/quectel.h>
+    #define ITSDK_DRIVERS_GNSS_QUECTEL_MODEL	DRIVER_GNSS_QUECTEL_MODEL_L86
+	#if ITSDK_WITH_UART_RXIRQ == __UART_NONE ||  ITSDK_WITH_UART_RXIRQ_BUFSZ < 64
+	  #warning "For GNSS, UART under interrupt is recommended and buffer size higher than 64 is also recommended"
+	#endif
+#endif
+#define ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_BANK		__BANK_B					// Pin to control the quectel GNSS Reset signal
+#define ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN		__LP_GPIO_6					//    __LP_GPIO_NONE if not used
+#define ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_BANK	__BANK_B					// Pin to control the L86 Force On signal. When __LP_GPIO_NONE the backup mode is disabled
+#define ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_PIN	__LP_GPIO_15
+#define ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_BANK	__BANK_B					// Pin to control the L80/L86 VCC_ENABLE on
+#define ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_PIN	__LP_GPIO_NONE				//  an external power switch. When __LP_GPIO_NONE the backup mode is disabled
+										  	  	  	  	  	  	  	  	  	  	// L86 backup mode not working correctly, you need to use it also for this module.
+#endif // ITSDK_DRIVERS_WITH_GNSS_DRIVER
+
 // *************************************** ACCELEROMETERS *****************************************************************
 
 // -------------------------------------------------------------------------
@@ -100,7 +154,7 @@
 // Accelerometers : LIS2DH12
 
 #define ITSDK_DRIVERS_ACCEL_LIS2DH12			__DISABLE
-#define ITSDK_DRIVERS_ACCEL_LIS2DH_LOG_LEVEL 	__LOG_LEVEL_VERBOSE_DEBUG
+#define ITSDK_DRIVERS_ACCEL_LIS2DH_LOG_LEVEL 	__LOG_LEVEL_VERBOSE_DEBUG	// Driver log level, you also need to activate ITSDK_LOGGER_MODULE with __LOG_MOD_ACCEL
 #if ITSDK_DRIVERS_ACCEL_LIS2DH12 == __ENABLE
 	#ifndef __I2C_INCLUDED
 	  #define __I2C_INCLUDED

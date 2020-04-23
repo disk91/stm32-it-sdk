@@ -158,6 +158,7 @@ void myCallback(gnss_triggers_e triggers,gnss_data_t * data,uint32_t duration) {
 	}
 }
 ```
+It is really important to have short processing inside the callback as it have to finished before the next GPS NMEA storm to reduce the risk of loosing NMEA frames. If you need a long processing (over 600ms) it is recommanded to reduce the positionning rate or stop the gnss.
 
 There are multiple triggers, as you can see, it is possible to register to a set of triggers up to all. Here is the list of the available triggers:
 
@@ -277,5 +278,5 @@ typedef struct {
 } gnss_sat_details_t;
 ```
 
-
+You can activate traces on the GNSS module with the __ITSDK_LOGGER_MODULE__ define adding the **__LOG_MOD_GNSS** traces. The underlaying drivers logs the main errors into the standard error report in Flash. I recommend you to take a look to them in the design phase as the NMEA error rate, as an exemple is reported in it.
 

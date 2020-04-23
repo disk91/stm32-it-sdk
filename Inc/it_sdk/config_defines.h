@@ -202,6 +202,8 @@
 #define __LOG_MOD_STKLORA		0x00000020			// Lora low level - itsdk level
 #define __LOG_MOD_STATEMINF		0x00000040			// State Machine info
 #define __LOG_MOD_STATEMDBG		0x00000080			// State Machine debug
+#define __LOG_MOD_GNSS			0x00000100			// Gnss & underlaying drivers
+#define __LOG_MOD_ACCEL			0x00000200			// Accelerometer & underlaying drivers
 
 #define __LOG_MOD_CUSTOM1		0x00010000			// User level logging
 #define __LOG_MOD_CUSTOM2		0x00020000			// User level logging

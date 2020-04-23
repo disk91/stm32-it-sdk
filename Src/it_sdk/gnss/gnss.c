@@ -490,6 +490,7 @@ static void __gnss_processChar(char c) {
 // =================================================================================================
 
 void gnss_printState(void) {
+#if (ITSDK_LOGGER_MODULE & __LOG_MOD_GNSS) > 0
 
 	log_debug("Last Refresh : %d\r\n",__gnss_config.data.lastRefreshS);
 	if ( (__gnss_config.data.gpsTime.status & GNSS_TIME_TMDATE) == GNSS_TIME_TMDATE ) {
@@ -584,7 +585,7 @@ void gnss_printState(void) {
 		);
 	}
 	#endif
-
+#endif
 }
 
 
