@@ -51,7 +51,7 @@ bool eeprom_write(void * data, uint16_t len, uint8_t version) {
 	t.magic = ITDT_EEPROM_MAGIC;
 	t.size = len;
 	t.version = version;
-	t.crc32 = calculateCRC32((uint8_t*)data, len);
+	t.crc32 = itsdk_computeCRC32((uint8_t*)data, len);
 
 	uint32_t offset = 0;
 	eeprom_getConfigOffset(&offset);
@@ -100,7 +100,7 @@ bool eeprom_read(void * data, uint16_t len, uint8_t version, uint8_t * versionR)
 
 	// Read the data
 	_eeprom_read(ITDT_EEPROM_BANK0, offset+sizeof(t), (void *) data, len);
-	uint32_t _crc = calculateCRC32((uint8_t*)data, len);
+	uint32_t _crc = itsdk_computeCRC32((uint8_t*)data, len);
 
 	if ( t.crc32 != _crc ) {
 		_LOG_EEPROM(("[NVM][I] Read invalid crc\r\n"));

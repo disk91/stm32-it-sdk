@@ -316,6 +316,7 @@ void itsdk_disableIrq();
 void itsdk_enableIrq();
 
 uint32_t itsdk_getRandomSeed();								// get a random seed value - can be the same for one given object
+uint8_t itsdk_randomBit();									// get a pseudo or random bit value
 void itsdk_getUniqId(uint8_t * id, int8_t size);			// fill id table with an object ID having the given size
 
 

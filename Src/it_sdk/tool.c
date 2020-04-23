@@ -25,7 +25,26 @@
  * ==========================================================
  */
 #include <it_sdk/itsdk.h>
+#include <it_sdk/wrappers.h>
+#include <it_sdk/time/time.h>
 #include <stdbool.h>
+
+// =======================================================================================
+// Random stuff
+// =======================================================================================
+
+uint8_t itsdk_randomByte(void) {
+	// Von Neumann algorithm
+	uint8_t v = 0;
+	for ( int i = 0 ; i < 8 ; i++ ) {
+		uint8_t a;
+		do {
+			a = itsdk_randomBit() | (itsdk_randomBit() << 1);
+		} while ( a == 0 || a==3 );
+		v = (v << 1) + (a >> 1);
+	}
+	return v;
+}
 
 
 // =======================================================================================
@@ -36,7 +55,7 @@
 /**
  * Return CRC32 value for data.
  */
-uint32_t calculateCRC32(const uint8_t *data, uint16_t length) {
+uint32_t itsdk_computeCRC32(const uint8_t *data, uint16_t length) {
   uint32_t crc = 0xffffffff;
   while (length--) {
     uint8_t c = *data++;

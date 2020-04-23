@@ -149,5 +149,23 @@ void itsdk_getUniqId(uint8_t * id, int8_t size){
 
 }
 
-
+/**
+ * generate a single random bit.
+ */
+#if ( ITSDK_WITH_ADC & __ADC_ENABLED ) > 0
+uint32_t __getAdcValue(uint32_t channel,uint8_t oversampling);
+uint8_t itsdk_randomBit(){
+	uint32_t t = __getAdcValue(ADC_CHANNEL_TEMPSENSOR,1);
+	uint32_t v = __getAdcValue(ADC_CHANNEL_VREFINT,1);
+	return (t ^ v) & 1 ;
+}
+#else
+static uint32_t __r = 0;
+uint8_t itsdk_randomBit(){
+	__r+=itsdk_getRandomSeed();
+	__r+=281624173;
+	__r*=415727;
+	return  (( __r & 0x00010000 )>0)?1:0;
+}
+#endif
 #endif

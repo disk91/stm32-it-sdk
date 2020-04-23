@@ -56,7 +56,8 @@ void itsdk_restart();
 
 // ------------------------------------------------------------------------
 // Tool.c
-uint32_t calculateCRC32(const uint8_t *data, uint16_t length);
+uint8_t itsdk_randomByte(void);
+uint32_t itsdk_computeCRC32(const uint8_t *data, uint16_t length);
 void itsdk_inlineCRC32_init();
 uint32_t itsdk_inlineCRC32_next(uint32_t c, uint8_t size);
 uint32_t itsdk_isqtr(uint32_t n);

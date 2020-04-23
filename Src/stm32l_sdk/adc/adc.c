@@ -69,7 +69,7 @@ ADC_HandleTypeDef hadc;
 /**
  * Read adc
  */
-uint32_t __getAdcValue(uint32_t channel) {
+uint32_t __getAdcValue(uint32_t channel, uint8_t oversampling) {
 
   uint32_t data;
   uint32_t i;
@@ -134,13 +134,13 @@ uint32_t __getAdcValue(uint32_t channel) {
 
   // DO MUTIPLE READ & AVERAGE
   data = 0;
-  for( i = 0; i < ITSDK_ADC_OVERSAMPLING ; i++ )
+  for( i = 0; i < oversampling ; i++ )
   {
     ADC1->CR |= ADC_CR_ADSTART; 				// start the ADC conversion
     while ((ADC1->ISR & ADC_ISR_EOC) == 0); 	// wait end of conversion
     data += ADC1->DR;							// get ADC result and clear the ISR_EOC flag
   }
-  data = data / ITSDK_ADC_OVERSAMPLING;
+  data = data / oversampling;
 
   // DISABLE ADC
   // at this point the end of sampling and end of sequence bits are also set in ISR registr
@@ -162,7 +162,7 @@ uint32_t __getAdcValue(uint32_t channel) {
 
 #else
 
-uint32_t __getAdcValue(uint32_t channel) {
+uint32_t __getAdcValue(uint32_t channel, uint8_t oversampling) {
 	  __HAL_RCC_ADC1_CLK_ENABLE();
 
 	  __HAL_RCC_ADC1_FORCE_RESET();			// without reset the values were not correct
@@ -206,7 +206,7 @@ uint32_t __getAdcValue(uint32_t channel) {
 	  }
 
 	  uint32_t v = 0;
-	  for( int i = 0; i < ITSDK_ADC_OVERSAMPLING ; i++ ) {
+	  for( int i = 0; i < oversampling ; i++ ) {
 		  HAL_ADC_Start(&hadc);
 		  if (HAL_ADC_PollForConversion(&hadc, 100) != HAL_OK) {
 		  		  HAL_ADC_Stop(&hadc);
@@ -215,7 +215,7 @@ uint32_t __getAdcValue(uint32_t channel) {
 		  }
 		  v += HAL_ADC_GetValue(&hadc);
 	  }
-	  v = v / ITSDK_ADC_OVERSAMPLING;
+	  v = v / oversampling;
 
 	  HAL_ADC_Stop(&hadc);
 	  __HAL_RCC_ADC1_CLK_DISABLE();
@@ -233,7 +233,7 @@ uint32_t __getAdcValue(uint32_t channel) {
 int16_t adc_getTemperature() {
 
 	uint16_t vdd = adc_getVdd();
-	uint32_t v = __getAdcValue(ADC_CHANNEL_TEMPSENSOR);
+	uint32_t v = __getAdcValue(ADC_CHANNEL_TEMPSENSOR,ITSDK_ADC_OVERSAMPLING);
 
 	// adapt the calibration values to the current VDD reference
 	uint16_t cal1_vdd = (*CAL1_VALUE * VDD_CALIB) / vdd;
@@ -407,7 +407,7 @@ uint16_t adc_getValue(uint32_t pin) {
 		HAL_GPIO_Init(GPIO_TypeDefStruct, &GPIO_InitStruct);
 	}
 
-	uint32_t v = __getAdcValue(channel);
+	uint32_t v = __getAdcValue(channel,ITSDK_ADC_OVERSAMPLING);
 	if (pin == 0) {
 		if ( v == 0 ) return 0; // securing
    	    int32_t vdd = ((int32_t)(*VREFINT_CAL) * VDD_CALIB) / v;
