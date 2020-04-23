@@ -117,7 +117,7 @@ void gnss_process_loop(itsdk_bool_e force) {
  */
 gnss_ret_e gnss_start(gnss_run_mode_e mode, uint16_t fixFreq,  uint32_t timeoutS) {
 	if ( !__gnss_config.setupDone ) return GNSS_NOTREADY;
-	if ( fixFreq != 0 || fixFreq != 1 || fixFreq != 100 ) return GNSS_NOTSUPPORTED;
+	if ( fixFreq != 0 && fixFreq != 1 && fixFreq != 100 ) return GNSS_NOTSUPPORTED;
 	if ( mode == GNSS_RUN_COLD || mode == GNSS_RUN_WARM || mode == GNSS_RUN_HOT ) {
 		__gnss_resetStructForNewFix();
 		__gnss_config.startupTimeS = (itsdk_time_get_ms()/1000);

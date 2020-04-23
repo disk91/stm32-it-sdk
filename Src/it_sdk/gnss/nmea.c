@@ -560,12 +560,12 @@ gnss_ret_e nmea_processNMEA(gnss_data_t * data, uint8_t * line, uint16_t sz, gns
 				}
 			} else {
 				// Unsupported NMEA message
-				log_info("[UNKNONWN] %s \r\n",line);
+				//log_info("[UNKNONWN] %s \r\n",line);
 			}
 		} else if ( line[1] == 'P') {
 			return GNSS_PROPRIETARY;
 		} else {
-			log_info("[UNKNONWN] %s \r\n",line);
+			//log_info("[UNKNONWN] %s \r\n",line);
 		}
 
 	} else {
@@ -595,8 +595,7 @@ gnss_ret_e nmea_verifyChecksum(uint8_t * line, uint16_t sz) {
 		return GNSS_INVALIDFORMAT;
 	}
 	if ( itdt_convertHexChar2Int((char*)&line[chksumpos+1]) != chksum ) {
-//log_error("Chk error %02X %02X\r\n",(int)itdt_convertHexChar2Int((char*)&line[chksumpos+1]),chksum);
-log_info("!");
+		//log_error("Chk error %02X %02X\r\n",(int)itdt_convertHexChar2Int((char*)&line[chksumpos+1]),chksum);
 		return GNSS_CHECKSUMERROR;
 	}
 	return GNSS_SUCCESS;
