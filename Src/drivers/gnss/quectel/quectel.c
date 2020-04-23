@@ -92,6 +92,7 @@
 
 #include <it_sdk/wrappers.h>
 #include <it_sdk/logger/logger.h>
+#include <it_sdk/logger/error.h>
 #include <it_sdk/gnss/nmea.h>
 
 // --------------------------------------------------------------------------------
@@ -646,7 +647,7 @@ static gnss_ret_e __quectelNMEA(gnss_data_t * data, uint8_t * line, uint16_t sz,
 			// Accepting an error rate of 20%, reporting an error otherwise
 			__quectel_status.nmeaErrors++;
 			if ( __quectel_status.nmeaProcessed > 20  && ((100*(uint16_t)__quectel_status.nmeaErrors) / __quectel_status.nmeaProcessed) > 20 ) {
-				ITSDK_ERROR_REPORT(ITSDK_ERROR_DRV_QUECTEL8X_COMERROR,icmd);
+				ITSDK_ERROR_REPORT(ITSDK_ERROR_DRV_QUECTEL8X_COMERROR,__quectel_status.nmeaErrors);
 				// avoid to spam the log with this message too fast
 				__quectel_status.nmeaProcessed = 0;
 				__quectel_status.nmeaErrors = 0;
