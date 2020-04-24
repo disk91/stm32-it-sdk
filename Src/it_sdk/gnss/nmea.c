@@ -769,7 +769,7 @@ gnss_ret_e nmea_getUTCTimeDateField(gnss_date_t *pTime, uint8_t * timePt, uint8_
 
 
 /**
- * Convert a Lat or Lng field format [d]ddmm.mmmmm into degree * 100_000
+ * Convert a Lat or Lng field format [d]ddmm.mmmmm into degree * 10_000_000
  * Value is negative when the direction is South or West
  */
 gnss_ret_e nmea_getLatLngField(uint8_t * l, int32_t * degrees, uint8_t orientation) {
@@ -781,16 +781,16 @@ gnss_ret_e nmea_getLatLngField(uint8_t * l, int32_t * degrees, uint8_t orientati
 		shift = 0;
 	} else if ( l[5] == '.' ) {
 		shift = 1;
-		degree+=10000000*__NMEA_CONVERT_CHAR(l[0]);
+		degree+=1000000000*__NMEA_CONVERT_CHAR(l[0]);
 	} else return GNSS_INVALIDFORMAT;
-	degree+=1000000*__NMEA_CONVERT_CHAR(l[0+shift])
-	       + 100000*__NMEA_CONVERT_CHAR(l[1+shift]);
-	minute = 1000000*__NMEA_CONVERT_CHAR(l[2+shift])
-		   +  100000*__NMEA_CONVERT_CHAR(l[3+shift])
-		   +   10000*__NMEA_CONVERT_CHAR(l[5+shift])
-	       +    1000*__NMEA_CONVERT_CHAR(l[6+shift])
-	       +     100*__NMEA_CONVERT_CHAR(l[7+shift])
-		   +      10*__NMEA_CONVERT_CHAR(l[8+shift]);
+	degree+=100000000*__NMEA_CONVERT_CHAR(l[0+shift])
+	       + 10000000*__NMEA_CONVERT_CHAR(l[1+shift]);
+	minute =100000000*__NMEA_CONVERT_CHAR(l[2+shift])
+		   + 10000000*__NMEA_CONVERT_CHAR(l[3+shift])
+		   +  1000000*__NMEA_CONVERT_CHAR(l[5+shift])
+	       +   100000*__NMEA_CONVERT_CHAR(l[6+shift])
+	       +    10000*__NMEA_CONVERT_CHAR(l[7+shift])
+		   +     1000*__NMEA_CONVERT_CHAR(l[8+shift]);
 	degree+= minute/60;
 
 	if ( orientation == 'S' || orientation == 'W' ) {

@@ -165,7 +165,7 @@ gnss_ret_e gnss_addTriggerCallBack(
 		gnss_eventHandler_t * handler
 ) {
 
-	if ( gnss_isTriggerCallBack() == BOOL_TRUE ) return GNSS_ALLREADYREGISTER;
+	if ( gnss_isTriggerCallBack(handler) == BOOL_TRUE ) return GNSS_ALLREADYREGISTER;
 
 	handler->next = NULL;
 	if ( __gnss_config.callbackList == NULL ) {
@@ -206,7 +206,7 @@ itsdk_bool_e gnss_isTriggerCallBack(
 	gnss_eventHandler_t * handler
 ) {
 	gnss_eventHandler_t * c = __gnss_config.callbackList;
-	while ( c != null ) {
+	while ( c != NULL ) {
 		if ( c == handler ) return BOOL_TRUE;
 		c = c->next;
 	}
@@ -602,6 +602,70 @@ void gnss_printState(void) {
 	}
 	#endif
 #endif
+}
+
+// ================================================================================
+// Computations
+// ================================================================================
+
+/**
+ * Compact encoding of the current position
+ * The result is stored in the **output** uint64_t variable
+ * the result is stored in 0x0000_FFFF_FFFF_FFFF
+ * See https://www.disk91.com/2015/technology/sigfox/telecom-design-sdk-decode-gps-frame/
+ *  for encoding detail
+ * Basically
+ * 444444443333333333222222222211111111110000000000
+ * 765432109876543210987654321098765432109876543210
+ * X                                                - lng Sign 1=-
+ *  X                                               - lat Sign 1=-
+ *   XXXXXXXXXXXXXXXXXXXXXXX                        - 23b Latitude
+ *                          XXXXXXXXXXXXXXXXXXXXXXX - 23b Longitude
+ *
+ *  division by 215 for longitude is to get 180*10M to fit in 2^23b
+ *  substraction of 107 is 0.5 * 215 to round the value and not always be floored.
+ */
+gnss_ret_e gnss_encodePosition48b(gnss_data_t * data, uint64_t * output) {
+
+	uint64_t t = 0;
+	uint64_t l = 0;
+	if ( data->fixInfo.longitude < 0 ) {
+		t |= 0x800000000000L;
+		l = -data->fixInfo.longitude;
+	} else {
+		l = data->fixInfo.longitude;
+	}
+	if ( l/10000000 >= 180  ) {
+		l = 8372093;
+	} else {
+		if ( l < 107 ) {
+			l = 0;
+		} else {
+			l = (l - 107) / 215;
+		}
+	}
+	t |= (l & 0x7FFFFF );
+
+	if ( data->fixInfo.latitude < 0 ) {
+		t |= 0x400000000000L;
+		l = -data->fixInfo.latitude;
+	} else {
+		l = data->fixInfo.latitude;
+	}
+	if ( l/100000 >= 90  ) {
+		l = 8333333;
+	} else {
+		if ( l < 53 ) {
+			l = 0;
+		} else {
+			l = (l - 53) / 108;
+		}
+	}
+	t |= (l << 23) & 0x3FFFFF800000;
+
+	*output = t;
+	return GNSS_SUCCESS;
+
 }
 
 

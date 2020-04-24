@@ -141,8 +141,8 @@ typedef struct {
 	#if ITSDK_DRIVERS_GNSS_WITHGALSAT == __ENABLE
 	  gnss_fix_qality_t	galileo;
 	#endif
-	int32_t				latitude;		// lat in 1/100_000 degrees South is negative, North positive
-	int32_t				longitude;		// lon in 1/100_000 degrees West is negative, East positive
+	int32_t				latitude;		// lat in 1/10_000_000 degrees South is negative, North positive
+	int32_t				longitude;		// lon in 1/10_000_000 degrees West is negative, East positive
 	int16_t				altitude;		// meter above sea level
 	uint16_t			speed_knot;		// speed in knots
 	uint16_t			speed_kmh;		// speed in kmh
@@ -226,7 +226,7 @@ void gnss_process_loop(itsdk_bool_e force);		// Loop process automatically inclu
 
 gnss_ret_e gnss_start(gnss_run_mode_e mode, uint16_t fixFreq,  uint32_t timeoutS);
 gnss_ret_e gnss_stop(gnss_run_mode_e mode);
-
+gnss_ret_e gnss_encodePosition48b(gnss_data_t * data, uint64_t * output);
 
 void gnss_customSerial_print(char * msg);
 serial_read_response_e gnss_customSerial_read(char * ch);
