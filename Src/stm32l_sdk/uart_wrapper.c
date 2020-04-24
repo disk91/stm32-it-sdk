@@ -53,6 +53,7 @@ volatile uint8_t __serial2_bufferWr;
  * Init the Serial 1 extra configurations
  */
 void serial1_init() {
+#if ( ITSDK_WITH_UART_RXIRQ & __UART_USART1 ) > 0 || ( ITSDK_WITH_UART_RXIRQ & __UART_LPUART1 ) > 0
 #if ( ITSDK_WITH_UART_RXIRQ & __UART_LPUART1 ) > 0
 	UART_HandleTypeDef * _uart = &hlpuart1;
 #elif  ( ITSDK_WITH_UART_RXIRQ & __UART_USART1 ) > 0
@@ -70,6 +71,7 @@ void serial1_init() {
     // Reset circular buffer
     __serial1_bufferRd = 0;
     __serial1_bufferWr = 0;
+#endif
 }
 
 /**
