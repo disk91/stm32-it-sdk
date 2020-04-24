@@ -24,9 +24,11 @@
  *
  * ==========================================================
  */
+#include <stdint.h>
+#include <it_sdk/itsdk.h>
+
 #ifndef IT_SDK_TIME_TIME_H_
 #define IT_SDK_TIME_TIME_H_
-#include <stdint.h>
 
 // System Time - the reference is startup
 void itsdk_time_add_us(uint32_t us);

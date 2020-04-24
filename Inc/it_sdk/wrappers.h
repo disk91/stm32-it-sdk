@@ -26,6 +26,7 @@
  */
 
 #include <stdbool.h>
+#include <it_sdk/itsdk.h>
 #include <it_sdk/config.h>
 
 #ifndef STM32L_SDK_WRAPPERS_H_
