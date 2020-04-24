@@ -55,10 +55,11 @@ typedef enum {
 } drivers_max17205_cell_select_e;
 
 typedef struct {
-	drivers_max17205_mode_e 		mode;		// Setup mode
-	drivers_max17205_type_e			devType;	// 172X1 or 172X5
+	drivers_max17205_mode_e 		mode;				// Setup mode
+	drivers_max17205_type_e			devType;			// 172X1 or 172X5
 	uint8_t							initialized:3;
-
+	uint16_t						lastCapa;			// last read capacity mAh
+	uint32_t						totalCapa;			// since the beginning what is the capa mAh
 } drivers_max17205_conf_t;
 
 typedef enum {
@@ -74,7 +75,8 @@ drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode);
 drivers_max17205_ret_e drivers_max17205_getTemperature(int32_t * mTemp);
 drivers_max17205_ret_e drivers_max17205_getVoltage(drivers_max17205_cell_select_e cell, uint16_t * mVolt);
 drivers_max17205_ret_e drivers_max17205_getCurrent(int32_t * uAmp);
-drivers_max17205_ret_e drivers_max17205_getCoulomb(uint16_t * coulomb);
+drivers_max17205_ret_e drivers_max17205_getCapacity(uint16_t * mah);
+drivers_max17205_ret_e drivers_max17205_getCoulomb(uint32_t * coulomb);
 drivers_max17205_ret_e drivers_max17205_isReady();
 
 drivers_max17205_ret_e drivers_max17205_getRemainingNVMUpdates(uint16_t * upd);
@@ -175,5 +177,7 @@ typedef enum {												//  Temp Source    RegisterToRead
 #define ITSDK_DRIVERS_MAX17205_TIME_FOR_NVRECALL			 8	// Time to recall the NV memory content (5ms according to doc + margin)
 #define ITSDK_DRIVERS_MAX17205_TIME_FOR_NVSAVE_100MS_LOOP   75	// Time to write the NV memory content (up to 7360ms according to doc)
 #define ITSDK_DRIVERS_MAX17205_NVSAVE_MAX_TRY				 1	// Max try to save the NV MEMORY (1 == no retry)
+
+#define ITSDK_DRIVERS_MAX17205_GAUGE_LSB_FACT				 5	// 10x Constant for value in uVh for capacity to coulomb conversion
 
 #endif /* DRIVERS_GAUGE_MAX17205_MAX17205_H_ */

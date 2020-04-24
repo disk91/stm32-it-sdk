@@ -104,6 +104,8 @@ drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode) {
 
 	__max17205_config.mode = mode;
 	__max17205_config.initialized = MAX17205_FAILED;
+	__max17205_config.lastCapa = 0;
+	__max17205_config.previousCoulomb = 0;
 
 	uint16_t v;
 
@@ -380,11 +382,12 @@ drivers_max17205_ret_e drivers_max17205_getCurrent(int32_t * uAmp) {
 
 
 /**
- * Return Current in Coulomb
+ * Return Current in mAh
+ * In Fact this coulomb counter is not coulomb but Capacity in mAh
  * The counter decrease when the battery is consumed and increased when the battery is charging
  * A a consequence the first returned value is 0xFFFF then 0xFFFE ...
  */
-drivers_max17205_ret_e drivers_max17205_getCoulomb(uint16_t * coulomb) {
+drivers_max17205_ret_e drivers_max17205_getCapacity(uint16_t * mah) {
 
 	uint16_t v;
 	if ( __readRegister(ITSDK_DRIVERS_MAX17205_REG_QH_ADR,&v) != I2C_OK ) {
@@ -393,6 +396,24 @@ drivers_max17205_ret_e drivers_max17205_getCoulomb(uint16_t * coulomb) {
 	*coulomb = v;
 	return MAX17205_SUCCESS;
 }
+
+/**
+ * Return curent Coulomb
+ * In Fact this coulomb counter is not coulomb but Capacity in mAh
+ * The counter decrease when the battery is consumed and increased when the battery is charging
+ * The coulomb return will increment over time
+ */
+drivers_max17205_ret_e drivers_max17205_getCoulomb(uint32_t * coulomb) {
+	uint16_t capa;
+	drivers_max17205_getCapacity(&capa);
+
+	uint16_t delta = (capa < __max17205_config.lastCapa )? __max17205_config.lastCapa - capa : (__max17205_config.lastCapa + (0xFFFF - capa));
+	__max17205_config.totalCapa += delta;
+
+	*coulomb = (ITSDK_DRIVERS_MAX17205_GAUGE_LSB_FACT * __max17205_config.totalCapa) / (10 * ITSDK_DRIVERS_MAX17205_RSENSE_MOHM);
+	return MAX17205_SUCCESS;
+}
+
 
 /**
  * Return success when the max17205 is ready for being used
