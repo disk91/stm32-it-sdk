@@ -157,6 +157,9 @@ drivers_max17205_ret_e drivers_max17205_getRemainingNVMUpdates(uint16_t * upd);
 #define ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_FGT_DISABLE		0x0000
 #define ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_FGT_ENABLE		0x8000
 
+#define ITSDK_DRIVERS_MAX17205_REG_NHIBCFG					0x1B4
+#define ITSDK_DRIVERS_MAX17205_REG_NHIBCFG_ENHIB_MSK		0x8000	// Enable Hibernate mode switch (1) or disable it (0)
+
 
 typedef enum {												//  Temp Source    RegisterToRead
 	MAX17205_REG_NPACKCFG_TEMP_INTERNAL_DIETEMP = 0x0800,	//   Internal        DieTemp (135h)

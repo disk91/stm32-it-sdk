@@ -105,7 +105,7 @@ drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode) {
 	__max17205_config.mode = mode;
 	__max17205_config.initialized = MAX17205_FAILED;
 	__max17205_config.lastCapa = 0;
-	__max17205_config.previousCoulomb = 0;
+	__max17205_config.totalCapa = 0;
 
 	uint16_t v;
 
@@ -166,7 +166,11 @@ drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode) {
 		// yet. As a consequence we lost awrite possibility and the value is unchanged. But
 		// sometime it worked. More tests are needed to understand this.
 		#warning "This part of the code has not yet been tested use carefully"
+		__readRegister(ITSDK_DRIVERS_MAX17205_REG_NHIBCFG,&v);
+		v &= ~(ITSDK_DRIVERS_MAX17205_REG_NHIBCFG_ENHIB_MSK);
+		__writeRegister(ITSDK_DRIVERS_MAX17205_REG_NHIBCFG,v);
 		if ( drivers_max17205_getRemainingNVMUpdates(&v) == MAX17205_SUCCESS ) {
+
 			if ( v > 5 ) {
 			    int _try = 0;
 				do {
@@ -215,6 +219,10 @@ drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode) {
 			itsdk_delayMs(1000);
 			log_error("Max17205 is another time not found\r\n");
 		}
+		__readRegister(ITSDK_DRIVERS_MAX17205_REG_NHIBCFG,&v);
+		v |= ITSDK_DRIVERS_MAX17205_REG_NHIBCFG_ENHIB_MSK;
+		__writeRegister(ITSDK_DRIVERS_MAX17205_REG_NHIBCFG,v);
+
 #endif
 	}
 
@@ -393,7 +401,7 @@ drivers_max17205_ret_e drivers_max17205_getCapacity(uint16_t * mah) {
 	if ( __readRegister(ITSDK_DRIVERS_MAX17205_REG_QH_ADR,&v) != I2C_OK ) {
 		return MAX17205_FAILED;
 	}
-	*coulomb = v;
+	*mah = v;
 	return MAX17205_SUCCESS;
 }
 
