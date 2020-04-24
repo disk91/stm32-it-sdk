@@ -483,6 +483,7 @@ void __accel_asyncMovementCaptureProcess(void) {
 itsdk_accel_ret_e accel_addTriggerCallBack(
 		itsdk_accel_eventHandler_t * handler
 ) {
+    if ( accel_isTriggerCallBack(handler) == BOOL_TRUE ) return ACCEL_ALREADY_REGISTER;
 
 	handler->next = NULL;
 	if ( __accel_eventQueue == NULL ) {
@@ -511,6 +512,21 @@ itsdk_accel_ret_e accel_delTriggerCallBack(
 	}
 	return ACCEL_SUCCESS;
 
+}
+
+/**
+ * Return BOOL_TRUE when the same callback has already been register
+ * (same callback func and same trigger mask
+ */
+itsdk_bool_e accel_isTriggerCallBack(
+		itsdk_accel_eventHandler_t * handler
+){
+	itsdk_accel_eventHandler_t * c = __accel_eventQueue;
+	while ( c != NULL ) {
+		if ( c->callback == handler->callback && c->triggerMask == handler->triggerMask ) return BOOL_TRUE;
+		c = c->next;
+	}
+	return BOOL_FALSE;
 }
 
 

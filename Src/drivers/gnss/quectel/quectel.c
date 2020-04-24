@@ -213,7 +213,8 @@ gnss_ret_e quectel_lxx_initLowPower(gnss_config_t * config) {
 				((ITSDK_DRIVERS_GNSS_WITHGPSSAT == __ENABLE)?1:0),
 				((ITSDK_DRIVERS_GNSS_WITHGLOSAT == __ENABLE)?1:0),
 				((ITSDK_DRIVERS_GNSS_WITHGALSAT == __ENABLE)?1:0),	// Galileo Enable
-				0													// Galileo FULL_Enable ?
+				0													// Galileo FULL_Enable - This mode is not anymore supported and must not be using
+																	//   https://forums.quectel.com/t/l86-what-is-the-difference-between-galileo-enable-and-galileo-full-enable/4231/3
 		);
 	__quectedSendCommand(cmd,DRIVER_GNSS_QUECTEL_CMD_MAXZ,DRIVER_GNSS_QUECTEL_CMD_SET_GNSS_SEARCH);
 	#endif

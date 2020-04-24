@@ -63,13 +63,19 @@ void itsdk_config_app_printConfig();
 
 You can extend the console operation to add configuration like any console extension. See *console.md* file.
 
-## Configuration change
+## Configuration change from console
 
 The console allows to change the configuration dynamically. When a setting has been changed it is not changed directly in the *itsdk_config* structure but in a **itsdk_config_shadow** structure. This is ensuring we have a stable configuration before to commit it.
 
 Once the configuration has been completed, the commit to the **itsdk_config** structure is made by calling the following function:
 
 ```C
+typedef enum {
+	CONFIG_COMMIT_ONLY = 0,			// copy shadow to config, not more
+	CONFIG_COMMIT_SAVE,				// copy shadow to config, save the config
+	CONFIG_COMMIT_SAVE_REBOOT		// copy, save, reboot device
+} itsdk_config_commit_mode_e;
+
 itsdk_config_commitConfiguration(itsdk_config_commit_mode_e mode);
 ```
 
@@ -80,3 +86,17 @@ This function calls a function you can overide in your application as Pre proces
 itsdk_config_ret_e itsdk_config_app_commitConfiguration();
 ```
 This function will return SUCCESS to accept the new configuration in shadow structure or FAILED. If Failed the configuration will not be applied.
+
+## Configuration change from application code
+
+You can follow the same principle described for the config:
+- making the configuration change in the shadow config
+- commit the configuration
+
+You can also modify the configuration directly and flush the configuration:
+- making the configuration change in the config
+- flush the configuration with __itsdk_config_ret_e itsdk_config_flushConfig()__
+
+This second method is less safe as the __itsdk_config_app_commitConfiguration()__ will be bypassed and this will clear all the pending modifications in the shadow configuration.
+
+

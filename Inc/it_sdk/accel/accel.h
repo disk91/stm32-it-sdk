@@ -31,9 +31,10 @@
 
 // Error have to be a bit field.
 typedef enum {
-	ACCEL_SUCCESS=0,
+	ACCEL_SUCCESS			= 0,
+	ACCEL_ALREADY_REGISTER	= 1,
 
-	ACCEL_FAILED=0x80
+	ACCEL_FAILED			= 0x80
 } itsdk_accel_ret_e;
 
 
@@ -166,6 +167,9 @@ itsdk_accel_ret_e accel_addTriggerCallBack(
 		itsdk_accel_eventHandler_t * handler
 );
 itsdk_accel_ret_e accel_delTriggerCallBack(
+		itsdk_accel_eventHandler_t * handler
+);
+itsdk_bool_e accel_isTriggerCallBack(
 		itsdk_accel_eventHandler_t * handler
 );
 itsdk_accel_ret_e accel_stopMovementDetection(itsdk_bool_e removeHandler);

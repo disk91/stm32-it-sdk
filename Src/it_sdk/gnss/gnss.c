@@ -164,6 +164,9 @@ gnss_ret_e gnss_stop(gnss_run_mode_e mode) {
 gnss_ret_e gnss_addTriggerCallBack(
 		gnss_eventHandler_t * handler
 ) {
+
+	if ( gnss_isTriggerCallBack() == BOOL_TRUE ) return GNSS_ALLREADYREGISTER;
+
 	handler->next = NULL;
 	if ( __gnss_config.callbackList == NULL ) {
 		__gnss_config.callbackList = handler;
@@ -196,6 +199,19 @@ gnss_ret_e gnss_delTriggerCallBack(
 
 }
 
+/**
+ * Return true if this trigger is already registered
+ */
+itsdk_bool_e gnss_isTriggerCallBack(
+	gnss_eventHandler_t * handler
+) {
+	gnss_eventHandler_t * c = __gnss_config.callbackList;
+	while ( c != null ) {
+		if ( c == handler ) return BOOL_TRUE;
+		c = c->next;
+	}
+	return BOOL_FALSE;
+}
 
 
 /**

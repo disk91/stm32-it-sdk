@@ -50,6 +50,7 @@ typedef enum {
 	GNSS_ALLREADYRUNNNING	=12,
 	GNSS_FAILEDRESTARTING	=13,
 	GNSS_NOTREADY			=14,
+	GNSS_ALLREADYREGISTER	=15,
 
 	GNSS_FAILED				=0x80
 } gnss_ret_e;
@@ -217,7 +218,9 @@ gnss_ret_e gnss_delTriggerCallBack(
 gnss_ret_e gnss_addTriggerCallBack(
 		gnss_eventHandler_t * handler
 );
-
+itsdk_bool_e gnss_isTriggerCallBack(
+	gnss_eventHandler_t * handler
+);
 gnss_ret_e gnss_setup();
 void gnss_process_loop(itsdk_bool_e force);		// Loop process automatically included in the itsdk_loop
 

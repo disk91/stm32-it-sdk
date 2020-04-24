@@ -160,7 +160,7 @@ drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode) {
 		// We can assume this is the first run and the chip configuration is invalid
 		// we are going to fix it
 
-		// The current status of theis patch is the following. Sometime we have seen it
+		// The current status of this patch is the following. Sometime we have seen it
 		// working but the condition to get the NV Memory written is still not clear.
 		// most of the time the NVErr flag is position after writing for unidentified reason
 		// yet. As a consequence we lost awrite possibility and the value is unchanged. But

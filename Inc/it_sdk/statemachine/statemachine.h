@@ -24,11 +24,11 @@
  *
  * ==========================================================
  */
+#include <it_sdk/config.h>
 
 #ifndef IT_SDK_STATEMACHINE_STATEMACHINE_H_
 #define IT_SDK_STATEMACHINE_STATEMACHINE_H_
 
-#include <it_sdk/config.h>
 
 #define STATE_UNKNOWN		255
 #define STATE_LAST			254
