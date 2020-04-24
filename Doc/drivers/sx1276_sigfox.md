@@ -1,6 +1,12 @@
 # SX1276 / MURATA used as Sigfox
 
 ## Pre-requisites
+You need to get the library file from ST devkit and add them in the following order
+- SgfxSTModemSx1276V123_CM0_GCC
+- SgfxCoreV231_CM0_GCC
+- SgfxCmacV100_CM0_GCC
+- SgfxAddonV020_CM0_GCC
+
 
 ### Hardware configuration (routing): 
 * TCXO powered is controled by a GPIO => This allows to keept it activ as we want
