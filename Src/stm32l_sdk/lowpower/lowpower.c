@@ -254,18 +254,20 @@ stm32l_lowPowerReturn_e stm32l_lowPowerResume(stm32_lowPowerMode_e mode) {
 		}
 	}
 	//  useful line of code to identify the wakeup cause when needed...
-	//if (__lowPower_wakeup_reason != LOWPWR_WAKEUP_UNDEF ) {
-	//	if ( __lowPower_wakeup_reason == LOWPWR_WAKEUP_GPIO )
-    //     #if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_GPIO ) > 0
-	//		log_info("-%d-(%d)-",__lowPower_wakeup_reason,__lowPower_wakeup_pin);
-    //     #else
-	//	    log_info("!");
-    //     #endif
-	//	else
-	//		log_info("-%d-",__lowPower_wakeup_reason);
-	//} else {
-	//	log_info("|");
-	//}
+	#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_LOWPOWER ) > 0
+	if (__lowPower_wakeup_reason != LOWPWR_WAKEUP_UNDEF ) {
+		if ( __lowPower_wakeup_reason == LOWPWR_WAKEUP_GPIO )
+         #if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_GPIO ) > 0
+			log_info("-%d-(%d)-",__lowPower_wakeup_reason,__lowPower_wakeup_pin);
+         #else
+		    log_info("!");
+         #endif
+		else
+			log_info("-%d-",__lowPower_wakeup_reason);
+	} else {
+		log_info("|");
+	}
+	#endif
 
 	HAL_ResumeTick();
 	return STM32L_LOWPOWER_SUCCESS;

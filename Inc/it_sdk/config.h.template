@@ -84,6 +84,7 @@
                                                                             // File | Serial1 | Serial2 | Debug
 #define ITSDK_LOGGER_MODULE			( \
 									  __LOG_MOD_NONE		  \
+								/*	| __LOG_MOD_LOWPOWER   */ \
 								/*	| __LOG_MOD_STATEMINF  */ \
 								/*	| __LOG_MOD_STATEMDBG  */ \
 								/*	| __LOG_MOD_LOWSIGFOX  */ \
