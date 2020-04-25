@@ -41,6 +41,7 @@
 #include <it_sdk/time/time.h>
 #include <it_sdk/lowpower/lowpower.h>
 #include <it_sdk/eeprom/sdk_state.h>
+#include <it_sdk/eeprom/eeprom.h>
 #if ITSDK_WITH_SECURESTORE == __ENABLE
 #include <it_sdk/eeprom/securestore.h>
 #endif
@@ -63,6 +64,7 @@ static itsdk_console_return_e _itsdk_console_private(char * buffer, uint8_t sz) 
 			// help
 			_itsdk_console_printf("X          : exit console\r\n");
 			_itsdk_console_printf("R          : reset device\r\n");
+			_itsdk_console_printf("R!         : clear the whole eeprom\r\n");
 			_itsdk_console_printf("l / L      : switch LowPower ON / OFF\r\n");
 			_itsdk_console_printf("s          : print device state\r\n");
 			_itsdk_console_printf("t          : print current time in S\r\n");
@@ -135,6 +137,15 @@ static itsdk_console_return_e _itsdk_console_private(char * buffer, uint8_t sz) 
 			// switch LowPower Off
 			lowPower_disable();
 			_itsdk_console_printf("OK\r\n");
+			return ITSDK_CONSOLE_SUCCES;
+		}
+	} else if (sz==2) {
+		if ( buffer[0] == 'R' && buffer[1] == '!' ) {
+			// Clear all the eeprom content the reset - hard factory default
+			_itsdk_console_printf("OK\r\n");
+			eeprom_clearAllEprom();
+			itsdk_delayMs(100);
+			itsdk_reset();
 			return ITSDK_CONSOLE_SUCCES;
 		}
 	}

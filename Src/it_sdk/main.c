@@ -61,6 +61,12 @@
 #include <it_sdk/logger/logger.h>
 #include <it_sdk/eeprom/sdk_config.h>
 #include <it_sdk/eeprom/sdk_state.h>
+#if ITSDK_WITH_LORAWAN_LIB == __ENABLE
+  #include <it_sdk/lorawan/lorawan.h>
+#endif
+#if ITSDK_WITH_SIGFOX_LIB == __ENABLE
+  #include <it_sdk/sigfox/sigfox.h>
+#endif
 
 #if ITSDK_WITH_SECURESTORE == __ENABLE
 #include <it_sdk/eeprom/securestore.h>
@@ -112,8 +118,16 @@ void itsdk_setup() {
 	  // Init the secure store if not yet initialized
 	  if ( itsdk_secstore_isInit() != SS_SUCCESS ) {
 		  itsdk_secstore_init();
+		  itsdk_encrypt_resetFactoryDefaults(true);
+		  #if ITSDK_WITH_LORAWAN_LIB == __ENABLE
+		    itsdk_lorawan_resetFactoryDefaults(true);
+		  #endif
+		  #if ITSDK_WITH_SIGFOX_LIB == __ENABLE
+ 		    itsdk_sigfox_resetFactoryDefaults(true);
+		  #endif
+	  } else {
+	     itsdk_encrypt_resetFactoryDefaults(false);	// on first boot init the ss communication credentials
 	  }
-	  itsdk_encrypt_resetFactoryDefaults(false);	// on first boot init the ss communication credentials
 	  itsdk_secStore_RegisterConsole();
 	#endif
 	// load the configuration according to setting

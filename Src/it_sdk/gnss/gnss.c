@@ -416,6 +416,32 @@ gnss_ret_e __gnss_initSerial() {
 	return GNSS_SUCCESS;
 }
 
+gnss_ret_e __gnss_disconnectSerial() {
+#if ( ITSDK_DRIVERS_GNSS_SERIAL & ( __UART_LPUART1 | __UART_USART1 ) ) > 0
+	serial1_disconnect();
+#endif
+#if ( ITSDK_DRIVERS_GNSS_SERIAL & __UART_USART2 ) > 0
+	serial2_disconnect();
+#endif
+#if ( ITSDK_DRIVERS_GNSS_SERIAL & __UART_CUSTOM ) > 0
+	gnss_customSerialDisconnect();
+#endif
+	return GNSS_SUCCESS;
+}
+
+gnss_ret_e __gnss_connectSerial() {
+#if ( ITSDK_DRIVERS_GNSS_SERIAL & ( __UART_LPUART1 | __UART_USART1 ) ) > 0
+	serial1_connect();
+#endif
+#if ( ITSDK_DRIVERS_GNSS_SERIAL & __UART_USART2 ) > 0
+	serial2_connect();
+#endif
+#if ( ITSDK_DRIVERS_GNSS_SERIAL & __UART_CUSTOM ) > 0
+	gnss_customSerialConnect();
+#endif
+	return GNSS_SUCCESS;
+}
+
 // =================================================================================================
 // Processing input
 // =================================================================================================
@@ -469,6 +495,12 @@ __weak serial_read_response_e gnss_customSerial_read(char * ch) {
 	return SERIAL_READ_NOCHAR;
 }
 __weak void gnss_customSerialInit() {
+	return;
+}
+__weak void gnss_customSerialDisconnect() {
+	return;
+}
+__weak void gnss_customSerialConnect() {
 	return;
 }
 #endif

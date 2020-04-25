@@ -87,7 +87,7 @@ typedef enum
 #define SIGFOX_KEY_PRIVATE	0
 #define SIGFOX_KEY_PUBLIC	1
 
-#define SIGFOX_DEFAULT_POWER	0xFF			// Use these values as config for setting the default value for state
+#define SIGFOX_DEFAULT_POWER	-127			// Use these values as config for setting the default value for state
 #define SIGFOX_DEFAULT_SPEED	0xFFFF
 
 typedef uint32_t itsdk_sigfox_device_is_t;

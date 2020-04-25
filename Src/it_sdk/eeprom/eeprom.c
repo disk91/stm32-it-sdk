@@ -163,3 +163,14 @@ bool eeprom_getPostConfigOffset(uint32_t * _offset) {
 	*_offset = offset +size;
 	return true;
 }
+
+/**
+ * Clear (write 0) into the whole BANK0
+ */
+void eeprom_clearAllEprom() {
+	uint32_t v  = 0;
+	for ( int i = 0 ; i < ITSDK_EPROM_SIZE ; i+=sizeof(v) ) {
+		_eeprom_write(ITDT_EEPROM_BANK0, i, (void *) &v, sizeof(v));
+	}
+}
+

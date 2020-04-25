@@ -304,6 +304,8 @@ typedef struct {
 void __gnss_printf(char *format, ...);
 gnss_ret_e __gnss_changeBaudRate(serial_baudrate_e br);
 gnss_ret_e __gnss_initSerial();
+gnss_ret_e __gnss_disconnectSerial();
+gnss_ret_e __gnss_connectSerial();
 
 #endif /* INC_IT_SDK_GNSS_GNSS_H_ */
 #endif // ITSDK_WITH_DRIVERS

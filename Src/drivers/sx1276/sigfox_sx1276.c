@@ -170,10 +170,14 @@ sx1276_sigfox_ret_t sx1276_sigfox_getRssi(int16_t * rssi) {
  * It executes the needed background tasks during this period.
  * Returns SX1276_SIGFOX_ERR_BREAK when we want to force breaking the loop
  */
-//static uint32_t __xx = 0;
+#if (ITSDK_LOGGER_MODULE & __LOG_MOD_LOWSIGFOX) > 0
+static uint32_t __xx = 0;
+#endif
 sx1276_sigfox_ret_t sx1276_sigfox_idle( void ) {
-	//__xx++;
-	//if ( (__xx & 0x000FFFF) == 0 ) LOG_INFO_SFXSX1276((".\r\n"));
+#if (ITSDK_LOGGER_MODULE & __LOG_MOD_LOWSIGFOX) > 0
+	if ( (__xx & 0x000FFFF) == 0 ) LOG_INFO_SFXSX1276(("I\r\n"));
+	__xx++;
+#endif
 	itsdk_stimer_run();
 	return sx1276_sigfox_idle_used();
 }

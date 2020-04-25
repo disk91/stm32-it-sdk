@@ -35,7 +35,7 @@
  * Reset the device
  */
 void itsdk_reset() {
-	NVIC_SystemReset();
+	while(1) NVIC_SystemReset();
 }
 
 /**

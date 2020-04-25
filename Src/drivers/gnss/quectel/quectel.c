@@ -314,6 +314,7 @@ static gnss_ret_e __quectelSwitchToStopWithMemoryRetention() {
 			 	 	 	 	      // before shutting the power down.
 				gpio_reset(ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_PIN);
 			#endif
+			__gnss_disconnectSerial();
 			return GNSS_SUCCESS;
 		}
 		return GNSS_FAILED;
@@ -345,7 +346,8 @@ static gnss_ret_e __quectelSwitchBackfromStopMode() {
 		gpio_reset(ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN);
 		itsdk_delayMs(20); // 10 ms min according to doc
 		gpio_set(ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN);
-  		 __gnss_initSerial();
+		__gnss_connectSerial();
+  		__gnss_initSerial();
 
   	    if ( __quectelWaitForAck(DRIVER_GNSS_QUECTEL_CMD_RESTART) == GNSS_TIMEOUT) {
   	    	// We failed to wake up - reset !

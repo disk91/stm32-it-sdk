@@ -54,11 +54,11 @@ volatile uint8_t __serial2_bufferWr;
  */
 void serial1_init() {
 #if ( ITSDK_WITH_UART_RXIRQ & __UART_USART1 ) > 0 || ( ITSDK_WITH_UART_RXIRQ & __UART_LPUART1 ) > 0
-#if ( ITSDK_WITH_UART_RXIRQ & __UART_LPUART1 ) > 0
-	UART_HandleTypeDef * _uart = &hlpuart1;
-#elif  ( ITSDK_WITH_UART_RXIRQ & __UART_USART1 ) > 0
-	UART_HandleTypeDef * _uart = &huart1;
-#endif
+	#if ( ITSDK_WITH_UART_RXIRQ & __UART_LPUART1 ) > 0
+		UART_HandleTypeDef * _uart = &hlpuart1;
+	#elif  ( ITSDK_WITH_UART_RXIRQ & __UART_USART1 ) > 0
+		UART_HandleTypeDef * _uart = &huart1;
+	#endif
     __HAL_UART_ENABLE_IT(_uart,UART_IT_ERR);
     __HAL_UART_ENABLE_IT(_uart,UART_IT_RXNE);
     __HAL_UART_DISABLE_IT(_uart,UART_IT_TC);
@@ -71,6 +71,34 @@ void serial1_init() {
     // Reset circular buffer
     __serial1_bufferRd = 0;
     __serial1_bufferWr = 0;
+#endif
+}
+
+/**
+ * Connect & configure the serial1
+ */
+void serial1_connect() {
+#if ( ITSDK_WITH_UART & __UART_LPUART1 ) > 0 || ( ITSDK_WITH_UART & __UART_USART1) > 0
+	#if (ITSDK_WITH_UART & __UART_LPUART1 ) > 0
+		UART_HandleTypeDef * _uart = &hlpuart1;
+	#elif  ( ITSDK_WITH_UART & __UART_USART1) > 0
+		UART_HandleTypeDef * _uart = &huart1;
+	#endif
+		HAL_UART_MspInit(_uart);
+#endif
+}
+
+/**
+ * Disconnect the serail1 from the pads
+ */
+void serial1_disconnect() {
+#if ( ITSDK_WITH_UART & __UART_LPUART1 ) > 0 || ( ITSDK_WITH_UART & __UART_USART1) > 0
+	#if (ITSDK_WITH_UART & __UART_LPUART1 ) > 0
+		UART_HandleTypeDef * _uart = &hlpuart1;
+	#elif  ( ITSDK_WITH_UART & __UART_USART1) > 0
+		UART_HandleTypeDef * _uart = &huart1;
+	#endif
+		HAL_UART_MspDeInit(_uart);
 #endif
 }
 
@@ -229,6 +257,24 @@ void serial2_init() {
 #endif
 }
 
+/**
+ * Connect & configure the serial1
+ */
+void serial2_connect() {
+#if ( ITSDK_WITH_UART & __UART_USART2 ) > 0
+	HAL_UART_MspInit(&huart2);
+#endif
+}
+
+/**
+ * Disconnect the serail1 from the pads
+ */
+void serial2_disconnect() {
+#if ( ITSDK_WITH_UART & __UART_USART2 ) > 0
+	HAL_UART_MspDeInit(&huart2);
+#endif
+}
+
 void serial2_flush() {
   #if ( ITSDK_WITH_UART & __UART_USART2 ) > 0
   while((__HAL_UART_GET_FLAG(&huart2, USART_ISR_BUSY)) == SET);
@@ -334,7 +380,6 @@ itsdk_bool_e serial2_changeBaudRate(serial_baudrate_e bd) {
 
 
 #if defined ITSDK_WITH_UART_RXIRQ && ITSDK_WITH_UART_RXIRQ != __UART_NONE
-
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart) {
 	// Clear the error flags
 	__HAL_UART_CLEAR_FLAG(huart, UART_FLAG_ORE);

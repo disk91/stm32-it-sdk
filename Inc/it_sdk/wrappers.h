@@ -34,15 +34,17 @@
 
 // ================================================
 // Serial wrappers
-void serial1_init();
-void serial1_flush();
-void serial1_print(char * msg);
+void serial1_init();									// Init serial regarding the global configuration - later will be more dynamic
+void serial1_connect();									// Makes the serial UART configuration
+void serial1_disconnect();								// Makes the serial UART de-configuration - pins back to analog
+void serial1_flush();									// Terminate pending communication over serial line
+void serial1_print(char * msg);							// Print over the serial communication
 void serial1_println(char * msg);
-void serial1_write(uint8_t * bytes,uint16_t len);
-void debug_print(char * msg);
-void logfile_print(char * msg);
+void serial1_write(uint8_t * bytes,uint16_t len);		// Write binary over the serial communication
 
 void serial2_init();
+void serial2_connect();
+void serial2_disconnect();
 void serial2_flush();
 void serial2_print(char * msg);
 void serial2_println(char * msg);
@@ -50,6 +52,8 @@ void serial2_write(uint8_t * bytes,uint16_t len);
 
 void debug_flush();
 void debug_println(char * msg);
+void debug_print(char * msg);
+void logfile_print(char * msg);
 void logfile_println(char * msg);
 
 typedef enum {

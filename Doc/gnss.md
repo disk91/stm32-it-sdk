@@ -78,6 +78,9 @@ The configuration takes place in __configDrivers.h__
 - You can use the non-working backup mode with a L86 to reach 840uA and waking up with the FORCEON pin.
 - You also need to setup the reset pin. I highly recommand to set it up has the device seems not to really well waking up without getting a reset.
 
+- ** Note : L86 in backup mode will drive the TX pin to low, this is creating a lot of issues like interrupt storm on UART and when you are going to reset, this will be concidered by the STM32 boot sequence as a boot from serial. As a consequence the device can't be
+reseted properly. **
+
 ## Usage
 
 You start the gnss with the following function:
