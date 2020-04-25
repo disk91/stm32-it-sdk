@@ -419,7 +419,7 @@ drivers_max17205_ret_e drivers_max17205_getCoulomb(uint32_t * coulomb) {
 	__max17205_config.totalCapa += delta;
 	__max17205_config.lastCapa = capa;
 
-	*coulomb = (ITSDK_DRIVERS_MAX17205_GAUGE_LSB_FACT * __max17205_config.totalCapa) / (10 * ITSDK_DRIVERS_MAX17205_RSENSE_MOHM);
+	*coulomb = (ITSDK_DRIVERS_MAX17205_GAUGE_LSB_FACT * __max17205_config.totalCapa) / (ITSDK_DRIVERS_MAX17205_RSENSE_MOHM);
 	return MAX17205_SUCCESS;
 }
 
