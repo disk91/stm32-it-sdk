@@ -113,7 +113,9 @@ void lorawan_driver_loop() {
 __weak void lorawan_driver_waitUntilEndOfExecution() {
 
 	lorawan_driver_loop();
-    wdg_refresh();
+	#if ITSDK_WITH_WDG != __WDG_NONE && ITSDK_WDG_MS > 0
+	   wdg_refresh();
+	#endif
     itsdk_stimer_run();
 
 }

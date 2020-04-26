@@ -122,7 +122,29 @@ When generating the Project
 # Modify the Cube Mx skeleton
 Things to not forget once a cubeMx project has been created
 * Gpio.c
-   => remove the line with the default setting for GPIOs
+   - During deep-sleep, all the gpios not listed in _ITSDK_LOWPOWER_GPIO_X_KEEP_ will be switched analog. The gpio attached to devices (I2C,SPI...) will be reconfigured when these device will be reactivated but the standard gpio will need to be reconfigured.
+   - By default the wake up procedure call *void MX_GPIO_Init(void)* function created by CubeMX. If the default setting is good for you you can keep it but you will have to remove the gpio SET & RESET functions.
+   - Another solution (better) is to create a function named *void stm32l_lowPowerRestoreGpioConfig()*:
+    ```C
+    void stm32l_lowPowerRestoreGpioConfig() {
+
+
+        /* GPIO Ports Clock Enable */
+        __HAL_RCC_GPIOA_CLK_ENABLE();
+        __HAL_RCC_GPIOB_CLK_ENABLE();
+        __HAL_RCC_GPIOC_CLK_ENABLE();
+        __HAL_RCC_GPIOH_CLK_ENABLE();
+
+        // reconfigure the gpio deep-sleep have switched analog
+        ...
+
+        // reactivate the Interrupt line you need
+        HAL_NVIC_SetPriority(EXTI0_1_IRQn, 0, 0);
+        HAL_NVIC_EnableIRQ(EXTI0_1_IRQn);
+        ...
+        HAL_NVIC_SetPriority(EXTI4_15_IRQn, 0, 0);
+        HAL_NVIC_EnableIRQ(EXTI4_15_IRQn);
+   ```
   
 * Main.c
    => includes

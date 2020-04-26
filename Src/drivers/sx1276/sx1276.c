@@ -242,12 +242,11 @@ void SX1276BoardInit( LoRaBoardCallback_t *callbacks )
     LoRaBoardCallbacks =callbacks;
 }
 
-uint32_t SX1276Init( RadioEvents_t *events )
+uint32_t SX1276Init( RadioEvents_t * events )
 {
 	LOG_INFO_SX1276((">> SX1276Init\r\n"));
 
     uint8_t i;
-
     RadioEvents = events;
 
     // Initialize driver timeout timers
@@ -255,10 +254,10 @@ uint32_t SX1276Init( RadioEvents_t *events )
     TimerInit( &RxTimeoutTimer, SX1276OnTimeoutIrq );
     TimerInit( &RxTimeoutSyncWord, SX1276OnTimeoutIrq );
 
+
     LoRaBoardCallbacks->SX1276BoardSetXO( SET );
 
     SX1276Reset( );
-
     RxChainCalibration( );
 
     SX1276SetOpMode( RF_OPMODE_SLEEP );
@@ -272,7 +271,6 @@ uint32_t SX1276Init( RadioEvents_t *events )
     }
 
     SX1276SetModem( MODEM_FSK );
-
     SX1276.Settings.State = RF_IDLE;
 
     return ( uint32_t )LoRaBoardCallbacks->SX1276BoardGetWakeTime( ) + ITSDK_MURATA_WAKEUP_TIME;// BOARD_WAKEUP_TIME;
@@ -829,7 +827,7 @@ uint32_t SX1276GetTimeOnAir( RadioModems_t modem, uint8_t pktLen )
 
 void SX1276Send( uint8_t *buffer, uint8_t size )
 {
-	LOG_INFO_SX1276((">> SX1276Send\r\n"));
+	LOG_INFO_SX1276((">> SX1276Send %d bytes\r\n",size));
 
     uint32_t txTimeout = 0;
 
@@ -1249,14 +1247,27 @@ void SX1276Reset( void )
 
 	gpio_configure(ITSDK_SX1276_RESET_BANK,ITSDK_SX1276_RESET_PIN,GPIO_OUTPUT_PP);
 	gpio_reset(ITSDK_SX1276_RESET_BANK, ITSDK_SX1276_RESET_PIN);
-	itsdk_delayMs(1);
+	itsdk_delayMs(2);
 	gpio_configure(ITSDK_SX1276_RESET_BANK,ITSDK_SX1276_RESET_PIN,GPIO_INPUT);
-	itsdk_delayMs(6);
+	itsdk_delayMs(10);
 }
 
 void SX1276SetOpMode( uint8_t opMode )
 {
-	LOG_INFO_SX1276((">> SX1276SetOpMode\r\n"));
+#if (ITSDK_LOGGER_MODULE & __LOG_MOD_LOWLORADBG) > 0
+	LOG_INFO_SX1276((">> SX1276SetOpMode ("));
+	switch ( opMode ) {
+	case RF_OPMODE_SLEEP:
+		LOG_INFO_SX1276(("Sleep)\r\n"));
+		break;
+	case RF_OPMODE_TRANSMITTER:
+		LOG_INFO_SX1276(("Tx)\r\n"));
+		break;
+	default:
+		LOG_INFO_SX1276(("Others)\r\n"));
+		break;
+	}
+#endif
 
     if( opMode == RF_OPMODE_SLEEP )
     {
@@ -1432,7 +1443,7 @@ uint32_t SX1276GetWakeupTime( void )
 {
 	LOG_INFO_SX1276((">> SX1276GetWakeupTime\r\n"));
 
-    return ( uint32_t )LoRaBoardCallbacks->SX1276BoardGetWakeTime( ) + ITSDK_MURATA_WAKEUP_TIME;// BOARD_WAKEUP_TIME;
+    return ( uint32_t )LoRaBoardCallbacks->SX1276BoardGetWakeTime( ) + ITSDK_MURATA_WAKEUP_TIME;
 }
 
 void SX1276OnTimeoutIrq( void* context )
