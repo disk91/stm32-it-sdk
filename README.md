@@ -28,7 +28,7 @@ Most is done to preserve code size, the SDK can target small flash MCU from 16KB
 * Supported Advanced features
   * Task Scheduler
   * State Machine 
-  * Multiple Serial console logger
+  * Multiple Serial console logger including Segger RTT
   * Error logger with NVM storage
   * Secured debug & configuration Console
   * Secured Storage in EEPROM for keys
@@ -108,7 +108,8 @@ When generating the Project
 3. Add in project properties >> C/C++ General >> Path&Symbol >> Source location >> the repository ItSdk Src directory.
 4. Add in project properties >> C/C++ Build >> Settings >> Tool Settings >> MCU GCC Compiler >> Includes the ItSdk >> Inc directory.
 5. In C/C++ Build / Settings / Build Step / pre-build steps you can add the command _touch "${workspace_loc:/${ProjName}/stm32-it-sdk/Src/it_sdk/console/console.c}"_ this will update the compile date on every build
-6. Copy *ItSdk/Src/project_main.c.template* file into Core/Src/project_main.c and make the modification you want to get started. 
+6. You can get detail on size of code generated on build by adding a post-build step _"arm-none-eabi-size"  --format=sysV ${BuildArtifactFileName}_
+7. Copy *ItSdk/Src/project_main.c.template* file into Core/Src/project_main.c and make the modification you want to get started. 
 
 # Configure the SDK
 

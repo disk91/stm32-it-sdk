@@ -50,6 +50,7 @@
 #include <it_sdk/logger/logger.h>
 #include <it_sdk/time/time.h>
 
+
 __t_log __log;
 
 /**
@@ -141,7 +142,7 @@ void log_error(char *format, ...) {
     }
 
     if ( __log.onDebug  ) {
-      debug_print(fmtBuffer);
+      debug_print(DEBUG_PRINT_ERROR,fmtBuffer);
     }
 
     if ( __log.onFile ) {
@@ -175,7 +176,7 @@ void log_warn(char *format, ...) {
     }
 
     if ( __log.onDebug ) {
-    	debug_print(fmtBuffer);
+    	debug_print(DEBUG_PRINT_WARNING,fmtBuffer);
     }
 
     if ( __log.onFile ) {
@@ -209,7 +210,7 @@ void log_info(char *format, ...) {
     }
 
     if ( __log.onDebug ) {
-    	debug_print(fmtBuffer);
+    	debug_print(DEBUG_PRINT_INFO, fmtBuffer);
     }
 
     if ( __log.onFile ) {
@@ -242,7 +243,7 @@ void log_debug(char *format, ...) {
     }
 
     if ( __log.onDebug ) {
-    	debug_print(fmtBuffer);
+    	debug_print(DEBUG_PRINT_DEBUG,fmtBuffer);
     }
 
     if ( __log.onFile ) {
@@ -275,7 +276,7 @@ void log_any(char *format, ...) {
   }
 
   if ( __log.onDebug ) {
-	  debug_print(fmtBuffer);
+	  debug_print(DEBUG_PRINT_ANY,fmtBuffer);
   }
 
   if ( __log.onFile ) {

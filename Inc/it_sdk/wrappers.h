@@ -50,9 +50,16 @@ void serial2_print(char * msg);
 void serial2_println(char * msg);
 void serial2_write(uint8_t * bytes,uint16_t len);
 
+
+typedef enum {
+	DEBUG_PRINT_DEBUG = 0,
+	DEBUG_PRINT_INFO,
+	DEBUG_PRINT_WARNING,
+	DEBUG_PRINT_ERROR,
+	DEBUG_PRINT_ANY
+} debug_print_type_e;
 void debug_flush();
-void debug_println(char * msg);
-void debug_print(char * msg);
+void debug_print(debug_print_type_e lvl, char * msg);
 void logfile_print(char * msg);
 void logfile_println(char * msg);
 

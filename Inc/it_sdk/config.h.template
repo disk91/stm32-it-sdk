@@ -82,6 +82,7 @@
 
 #define ITSDK_LOGGER_CONF			0x0070									// error->info level on serial1 => USART2 (see logger.c)
                                                                             // File | Serial1 | Serial2 | Debug
+#define ITSDK_LOGGER_WITH_SEG_RTT	__DISABLE								// enable SEGGER RTT trace driver for DEBUG interface
 #define ITSDK_LOGGER_MODULE			( \
 									  __LOG_MOD_NONE		  \
 								/*	| __LOG_MOD_LOWPOWER   */ \

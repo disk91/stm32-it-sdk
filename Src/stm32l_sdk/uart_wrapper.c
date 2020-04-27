@@ -34,6 +34,10 @@
 #include "stm32l0xx_hal.h"
 #include "usart.h"
 
+#if ITSDK_LOGGER_WITH_SEG_RTT == __ENABLE
+#include <drivers/SeggerRTT/SEGGER_RTT.h>
+#endif
+
 // ---------------------------------------------------------------------------
 // serial 1 - is mapped to LPUART1
 // ---------------------------------------------------------------------------
@@ -441,7 +445,52 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 void debug_flush() {
 }
 
-void debug_print(char * msg) {
+void debug_print(debug_print_type_e lvl, char * msg) {
+#if ITSDK_LOGGER_WITH_SEG_RTT == __ENABLE
+	static uint8_t wasEndLine = 1;
+	if ( wasEndLine == 1 ) {
+		switch (lvl) {
+		case DEBUG_PRINT_DEBUG:
+			SEGGER_RTT_WriteString(0,RTT_CTRL_BG_BRIGHT_CYAN);
+			SEGGER_RTT_WriteString(0,"DEBUG    ");
+			break;
+		case DEBUG_PRINT_WARNING:
+			SEGGER_RTT_WriteString(0,RTT_CTRL_BG_BRIGHT_MAGENTA);
+			SEGGER_RTT_WriteString(0,"WARNING  ");
+			break;
+		case DEBUG_PRINT_ERROR:
+			SEGGER_RTT_WriteString(0,RTT_CTRL_BG_BRIGHT_RED);
+			SEGGER_RTT_WriteString(0,RTT_CTRL_TEXT_BRIGHT_BLACK);
+			SEGGER_RTT_WriteString(0,"ERROR    ");
+			break;
+		default:
+		case DEBUG_PRINT_INFO:
+		case DEBUG_PRINT_ANY:
+			SEGGER_RTT_WriteString(0,RTT_CTRL_BG_BRIGHT_WHITE);
+			SEGGER_RTT_WriteString(0,RTT_CTRL_TEXT_BRIGHT_BLACK);
+			SEGGER_RTT_WriteString(0,"INFO     ");
+			break;
+		}
+	}
+	SEGGER_RTT_WriteString(0,RTT_CTRL_RESET);
+	switch (lvl) {
+	case DEBUG_PRINT_DEBUG:
+		SEGGER_RTT_WriteString(0,RTT_CTRL_TEXT_BRIGHT_CYAN);
+		break;
+	case DEBUG_PRINT_WARNING:
+		SEGGER_RTT_WriteString(0,RTT_CTRL_TEXT_BRIGHT_MAGENTA);
+		break;
+	case DEBUG_PRINT_ERROR:
+		SEGGER_RTT_WriteString(0,RTT_CTRL_TEXT_BRIGHT_RED);
+		break;
+	default:
+		break;
+	}
+	SEGGER_RTT_WriteString(0, msg);
+	SEGGER_RTT_WriteString(0,RTT_CTRL_RESET);
+	int v = strlen(msg);
+	wasEndLine = ( msg[v-1] == '\r' || msg[v-1] == '\n' )?1:0;
+#endif
 }
 
 
