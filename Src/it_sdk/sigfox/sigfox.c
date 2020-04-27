@@ -383,7 +383,7 @@ itsdk_sigfox_init_t itsdk_sigfox_getCurrentRcz(uint8_t * rcz) {
  * Change the transmission power to the given value
  */
 itsdk_sigfox_init_t itsdk_sigfox_setTxPower_ext(uint8_t power, bool force) {
-	LOG_INFO_SIGFOXSTK(("itsdk_sigfox_setTxPower\r\n"));
+	LOG_INFO_SIGFOXSTK(("itsdk_sigfox_setTxPower_ext\r\n"));
 
 	if ( !force && power == itsdk_state.sigfox.current_power ) return SIGFOX_INIT_NOCHANGE;
 
@@ -394,10 +394,12 @@ itsdk_sigfox_init_t itsdk_sigfox_setTxPower_ext(uint8_t power, bool force) {
 		sx1276_sigfox_setPower( power );
 	#endif
 	itsdk_state.sigfox.current_power = power;
+
 	return SIGFOX_INIT_SUCESS;
 }
 
 itsdk_sigfox_init_t itsdk_sigfox_setTxPower(uint8_t power) {
+	LOG_DEBUG_SIGFOXSTK(("itsdk_sigfox_setTxPower\r\n"));
 	return itsdk_sigfox_setTxPower_ext(power,false);
 }
 
@@ -442,7 +444,6 @@ itsdk_sigfox_init_t itsdk_sigfox_getDeviceId(itsdk_sigfox_device_is_t * devId) {
 		#error UNSUPPORTED ITSDK_SIGFOX_NVM_SOURCE VALUE
       #endif
 	#endif
-
 	return SIGFOX_INIT_SUCESS;
 }
 

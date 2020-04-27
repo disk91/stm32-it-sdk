@@ -38,16 +38,15 @@
 
 sx1276_sigfox_state_t	sx1276_sigfox_state;
 
-
 /**
  * Configure the sigfox stack for sx1276
  */
 sx1276_sigfox_ret_t sx1276_sigfox_init( void ) {
+	static sfx_rc_t  prcz;
+	static sfx_u32   pconfig_words[3];
 	LOG_INFO_SFXSX1276((">> sx1276_sigfox_init\r\n"));
 
 	sfx_error_t error = SX1276_SIGFOX_ERR_NONE;
-	static sfx_rc_t  prcz;
-	static sfx_u32   pconfig_words[3];
 
 	// Hardware Init
 	SX1276IoInit();
@@ -94,7 +93,6 @@ sx1276_sigfox_ret_t sx1276_sigfox_init( void ) {
 		}
 		break;
 	}
-
 	LOG_INFO_SFXSX1276((">> SIGFOX_API_open\r\n"));
 	sfx_error_t serror = SIGFOX_API_open(&prcz);
 
@@ -102,6 +100,7 @@ sx1276_sigfox_ret_t sx1276_sigfox_init( void ) {
 		LOG_ERROR_SFXSX1276(("[ERROR] Sigfox Open(%08X)\r\n",serror));
 		return SX1276_SIGFOX_ERR_LIBINIT;
 	}
+
 	switch (itsdk_state.sigfox.rcz) {
 	case SIGFOX_RCZ2:
 		error = SIGFOX_API_set_std_config(pconfig_words, RC2_SET_STD_TIMER_ENABLE);
