@@ -52,6 +52,7 @@ uint8_t							__accel_dataBufferRd;
 uint8_t							__accel_dataBufferWr;
 uint8_t							__accel_dataBufferSz;
 itsdk_bool_e					__accel_dataOverrun;
+itsdk_bool_e					__accel_running;
 uint16_t						__accel_dataBlockSz;
 uint16_t						__accel_dataBlockSzTransfered;
 uint16_t						__accel_dataBlockNb;
@@ -96,6 +97,7 @@ itsdk_accel_ret_e accel_initPowerDown() {
 	__accel_dataBlockSzTransfered = 0;
 	__accel_dataBlockNb = 0;
     __accel_dataCallback = NULL;
+    __accel_running = BOOL_FALSE;
 	return ret;
 }
 
@@ -105,6 +107,7 @@ itsdk_accel_ret_e accel_initPowerDown() {
  */
 void accel_process_loop(void) {
 	if ( __accel_setupDone == BOOL_FALSE ) return;
+	if ( __accel_running == BOOL_FALSE ) return;
 	#if ITSDK_DRIVERS_ACCEL_LIS2DH12 == __ENABLE
 	  lis2dh12_process();
 	#endif
@@ -228,6 +231,7 @@ itsdk_accel_ret_e accel_configMovementDetection(
 	}
 	__accel_noMovementReported = BOOL_FALSE;
 
+	__accel_running = BOOL_TRUE;
 	return ACCEL_SUCCESS;
 }
 
@@ -249,6 +253,7 @@ itsdk_accel_ret_e accel_stopMovementDetection(itsdk_bool_e removeHandler) {
 	__triggerQueueRd = 0;
 	__triggerQueueWr = 0;
 
+	__accel_running = BOOL_FALSE;
 	return ACCEL_SUCCESS;
 }
 
@@ -328,7 +333,7 @@ itsdk_accel_ret_e accel_startMovementCapture(
   __accel_dataDestBuffer = targetBuffer;
   __accel_dataCallback = callback;
 
-
+  __accel_running = BOOL_TRUE;
   return ACCEL_SUCCESS;
 }
 
@@ -337,6 +342,7 @@ itsdk_accel_ret_e accel_stopMovementCapture(void) {
     ACCEL_LOG_INFO(("ACCEL - Stop Lis2dh - Data Aq\r\n"));
 	if ( lis2dh_cancelDataAquisition() == LIS2DH_FAILED ) return ACCEL_FAILED;
    #endif
+	__accel_running = BOOL_FALSE;
    return ACCEL_SUCCESS;
 }
 

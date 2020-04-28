@@ -213,14 +213,12 @@ drivers_lis2dh12_ret_e lis2dh_setup(
       ret |= lis2dh_disableAllInterrupt();
   	  lis2dh_setInterruptPolarity(LIS2DH_INTERRUPT_POLARITY_HIGH);
 
-  	  // install the interrupt handler
+  	  // no need to install the interrupt until we have activated the accelerometer
   	  if (ITSDK_DRIVERS_LIS2DH12_INT2_PIN != __LP_GPIO_NONE ) {
-		gpio_configure(ITSDK_DRIVERS_LIS2DH12_INT2_BANK,ITSDK_DRIVERS_LIS2DH12_INT2_PIN,GPIO_INTERRUPT_RISING);
-		gpio_registerIrqAction(&__lis2dh12_gpio_irq2);
+		gpio_configure(ITSDK_DRIVERS_LIS2DH12_INT2_BANK,ITSDK_DRIVERS_LIS2DH12_INT2_PIN,GPIO_ANALOG);
 	  }
   	  if (ITSDK_DRIVERS_LIS2DH12_INT1_PIN != __LP_GPIO_NONE ) {
-		gpio_configure(ITSDK_DRIVERS_LIS2DH12_INT1_BANK,ITSDK_DRIVERS_LIS2DH12_INT1_PIN,GPIO_INTERRUPT_RISING);
-		gpio_registerIrqAction(&__lis2dh12_gpio_irq1);
+		gpio_configure(ITSDK_DRIVERS_LIS2DH12_INT1_BANK,ITSDK_DRIVERS_LIS2DH12_INT1_PIN,GPIO_ANALOG);
 	  }
 
       // disable temperature
@@ -376,6 +374,8 @@ drivers_lis2dh12_ret_e lis2dh_setupDataAquisition(
       __lis2dh_conf._captureCB = callback;
    	  if (ITSDK_DRIVERS_LIS2DH12_INT1_PIN != __LP_GPIO_NONE ) {
  		  gpio_interruptClear(ITSDK_DRIVERS_LIS2DH12_INT1_BANK, ITSDK_DRIVERS_LIS2DH12_INT1_PIN);
+ 		  gpio_configure(ITSDK_DRIVERS_LIS2DH12_INT1_BANK,ITSDK_DRIVERS_LIS2DH12_INT1_PIN,GPIO_INTERRUPT_RISING);
+ 		  gpio_registerIrqAction(&__lis2dh12_gpio_irq1);
  		  gpio_interruptEnable(ITSDK_DRIVERS_LIS2DH12_INT1_BANK, ITSDK_DRIVERS_LIS2DH12_INT1_PIN);
       }
 	  // clear pending interrupt - can lock the communication if INT is already active
@@ -383,6 +383,7 @@ drivers_lis2dh12_ret_e lis2dh_setupDataAquisition(
   	  __lis2dh_readRegister(LIS2DH_INT1_SOURCE);
    	  __lis2dh_readRegister(LIS2DH_FIFO_SRC_REG);
 	  ret |= lis2dh_enableInterruptPin1(LIS2DH_I1_WTM);
+
    } else {
       ITSDK_ERROR_REPORT(ITSDK_ERROR_DRV_LIS2DH_CAPCONFFAIL,0);
       LIS2DH_LOG_ERROR(("LIS2DH  data capture config failed\r\n"));
@@ -400,6 +401,10 @@ drivers_lis2dh12_ret_e lis2dh_cancelDataAquisition(void) {
 		ret |= lis2dh_disableAllInterrupt();
     	if (ITSDK_DRIVERS_LIS2DH12_INT1_PIN != __LP_GPIO_NONE ) {
     		gpio_interruptDisable(ITSDK_DRIVERS_LIS2DH12_INT1_BANK, ITSDK_DRIVERS_LIS2DH12_INT1_PIN);
+    	  	if (ITSDK_DRIVERS_LIS2DH12_INT1_PIN != __LP_GPIO_NONE ) {
+    			gpio_configure(ITSDK_DRIVERS_LIS2DH12_INT1_BANK,ITSDK_DRIVERS_LIS2DH12_INT1_PIN,GPIO_ANALOG);
+    			gpio_removeIrqAction(&__lis2dh12_gpio_irq1);
+    		}
     	}
 		__lis2dh_conf._captureCB = NULL;
 
@@ -562,6 +567,8 @@ drivers_lis2dh12_ret_e lis2dh_setupBackgroundTiltDetection(
       __lis2dh_conf._tiltCB = cb;
   	  if (ITSDK_DRIVERS_LIS2DH12_INT2_PIN != __LP_GPIO_NONE ) {
 		  gpio_interruptClear(ITSDK_DRIVERS_LIS2DH12_INT2_BANK, ITSDK_DRIVERS_LIS2DH12_INT2_PIN);
+ 		  gpio_configure(ITSDK_DRIVERS_LIS2DH12_INT2_BANK,ITSDK_DRIVERS_LIS2DH12_INT2_PIN,GPIO_INTERRUPT_RISING);
+ 		  gpio_registerIrqAction(&__lis2dh12_gpio_irq2);
 		  gpio_interruptEnable(ITSDK_DRIVERS_LIS2DH12_INT2_BANK, ITSDK_DRIVERS_LIS2DH12_INT2_PIN);
 		  ret |= lis2dh_enableInterruptPin2(LIS2DH_I2_IA2);
 
@@ -587,6 +594,8 @@ drivers_lis2dh12_ret_e lis2dh_cancelBackgroundTiltDetection(void) {
 		ret |= lis2dh_disableAllInterrupt();
     	if (ITSDK_DRIVERS_LIS2DH12_INT2_PIN != __LP_GPIO_NONE ) {
     		gpio_interruptDisable(ITSDK_DRIVERS_LIS2DH12_INT2_BANK, ITSDK_DRIVERS_LIS2DH12_INT2_PIN);
+			gpio_configure(ITSDK_DRIVERS_LIS2DH12_INT2_BANK,ITSDK_DRIVERS_LIS2DH12_INT2_PIN,GPIO_ANALOG);
+			gpio_removeIrqAction(&__lis2dh12_gpio_irq2);
     	}
 		__lis2dh_conf._tiltCB = NULL;
 

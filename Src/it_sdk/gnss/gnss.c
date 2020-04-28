@@ -66,6 +66,7 @@ gnss_ret_e gnss_setup() {
 	   __gnss_config.driver.nmea.onDataRefreshed = &__gnss_onDataRefreshed;
 	}
 	__gnss_config.setupDone = 1;
+	__gnss_config.isRunning = 0;
 
 
 	return ret;
@@ -117,13 +118,16 @@ void gnss_process_loop(itsdk_bool_e force) {
  */
 gnss_ret_e gnss_start(gnss_run_mode_e mode, uint16_t fixFreq,  uint32_t timeoutS) {
 	if ( !__gnss_config.setupDone ) return GNSS_NOTREADY;
+	if (  __gnss_config.isRunning ) return GNSS_ALLREADYRUNNNING;
 	if ( fixFreq != 0 && fixFreq != 1 && fixFreq != 100 ) return GNSS_NOTSUPPORTED;
 	if ( mode == GNSS_RUN_COLD || mode == GNSS_RUN_WARM || mode == GNSS_RUN_HOT ) {
 		__gnss_resetStructForNewFix();
 		__gnss_config.startupTimeS = (itsdk_time_get_ms()/1000);
 		__gnss_config.maxDurationS = timeoutS;
 		GNSS_LOG_INFO(("Gnss - Start for %dS\r\n",__gnss_config.maxDurationS));
-		return __gnss_config.setRunMode(mode);
+		gnss_ret_e ret = __gnss_config.setRunMode(mode);
+		if ( ret == GNSS_SUCCESS ) __gnss_config.isRunning = 1;
+		return ret;
 	} else {
 		return GNSS_NOTSUPPORTED;
 	}
@@ -145,8 +149,10 @@ gnss_ret_e gnss_start(gnss_run_mode_e mode, uint16_t fixFreq,  uint32_t timeoutS
 gnss_ret_e gnss_stop(gnss_run_mode_e mode) {
 	if ( !__gnss_config.setupDone ) return GNSS_NOTREADY;
 	if ( mode == GNSS_STOP_MODE || mode == GNSS_BACKUP_MODE || mode == GNSS_SLEEP_MODE ) {
+		 __gnss_config.isRunning = 0;
+		gnss_ret_e ret = __gnss_config.setRunMode(mode);
 		GNSS_LOG_INFO(("Gnss - Stopped \r\n"));
-		return __gnss_config.setRunMode(mode);
+		return ret;
 	} else {
 		return GNSS_NOTSUPPORTED;
 	}
@@ -222,7 +228,18 @@ itsdk_bool_e gnss_isTriggerCallBack(
  * events.
  */
 static gnss_ret_e __gnss_onDataRefreshed(void) {
+
+	static volatile uint8_t __insideProcedure = 0;
 	gnss_triggers_e triggers = GNSS_TRIGGER_ON_NONE;
+
+	itsdk_enterCriticalSection();
+	if ( __insideProcedure == 1 || __gnss_config.isRunning == 0 ) {
+		itsdk_leaveCriticalSection();
+		GNSS_LOG_DEBUG(("Gq!\r\n"));		// It means we had a reentering processing due to too long callback
+		return GNSS_SKIP;					//  let skip that one
+	}
+	__insideProcedure = 1;
+	itsdk_leaveCriticalSection();
 
 	// Update duration
 	uint64_t _now = (itsdk_time_get_ms()/1000);
@@ -330,7 +347,9 @@ static gnss_ret_e __gnss_onDataRefreshed(void) {
 
 	// Reset the structure for next run
 	__gnss_resetStructForNextCycle();
-
+	itsdk_enterCriticalSection();
+	__insideProcedure = 0;
+	itsdk_leaveCriticalSection();
 	return GNSS_SUCCESS;
 }
 

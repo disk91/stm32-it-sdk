@@ -51,6 +51,7 @@ typedef enum {
 	GNSS_FAILEDRESTARTING	=13,
 	GNSS_NOTREADY			=14,
 	GNSS_ALLREADYREGISTER	=15,
+	GNSS_SKIP				=16,
 
 	GNSS_FAILED				=0x80
 } gnss_ret_e;
@@ -285,6 +286,7 @@ typedef struct gnss_nmea_driver_s {
 typedef struct {
 	uint8_t 				setupDone:1;									// flag 1 => setup has been done
 	uint8_t					withNmeaDecodeur:1;								// flag 1 => data parse with NMEA parser
+	uint8_t					isRunning:1;									// flag 1 => the gps is currently running
 	uint8_t					lineBuffer[ITSDK_DRIVERS_GNSS_LINEBUFFER];		// Buffer to store char waiting for processing
 	uint16_t				pBuffer;										// Index in the line buffer
 	gnss_eventHandler_t * 	callbackList;
@@ -292,10 +294,9 @@ typedef struct {
 	union {
 		gnss_nmea_driver_t	nmea;											// Setting for driver type Nmea
 	} driver;
-
-    gnss_ret_e 				(*setRunMode)(gnss_run_mode_e mode);			// Switch GPS running mode (see modes)
     uint32_t				startupTimeS;									// System time in S at position search
     uint16_t				maxDurationS;									// Max search duration before stop in Second
+    gnss_ret_e 				(*setRunMode)(gnss_run_mode_e mode);			// Switch GPS running mode (see modes)
 } gnss_config_t;
 
 

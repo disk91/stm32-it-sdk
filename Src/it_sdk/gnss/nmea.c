@@ -202,8 +202,10 @@ gnss_ret_e nmea_processNMEA(gnss_data_t * data, uint8_t * line, uint16_t sz, gns
 					default: data->fixInfo.positionMode = GNSS_POSMODE_UNKNOWN; break;
 				}
 				// process dateTime
-				nmea_getUTCTimeDateField(&data->gpsTime, time, date);
-				itsdk_time_sync_UTC_s(data->gpsTime.hours*3600+data->gpsTime.minutes*60+data->gpsTime.seconds);
+				if ( nmea_getUTCTimeDateField(&data->gpsTime, time, date) == GNSS_SUCCESS ) {
+					itsdk_time_sync_UTC_s(data->gpsTime.hours*3600+data->gpsTime.minutes*60+data->gpsTime.seconds);
+					itsdk_time_is_UTC_s(&data->lastRefreshS);
+				}
 				#if ITSDK_DRIVERS_GNSS_WITH_UTCDATE_FULL == __ENABLE
 				  itsdk_time_sync_EPOC_s(data->gpsTime.epoc);
 				#endif
@@ -233,7 +235,7 @@ gnss_ret_e nmea_processNMEA(gnss_data_t * data, uint8_t * line, uint16_t sz, gns
 
 			} else if ( sz > 6 && line[3]=='G' && line[4]=='G' && line[5]=='A' ) {
 				// -- GGA - Global positionning fix data with 3D information
-				//     UTC Time hhmmss.sss
+				//     UTC Time hhmmss.sss, the time is reported also when not valid
 				//	   Latitude ddmm.mmmm, N/S, Longitude dddmm.mmmm, E/W
 				//	   Fix Status 0 - invalid, 1 - Gnss fix, 2 - DGPS fix, 6 - estimated , 3 -  PPS, 4 Real Time Kinematic, 5 float RTK, 7 manual input, 8 simulator
 				//     Number of stats used
@@ -251,14 +253,6 @@ gnss_ret_e nmea_processNMEA(gnss_data_t * data, uint8_t * line, uint16_t sz, gns
 				if ( nmea_goNextField(&pt) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
 				uint8_t * time = pt;
 
-			    data->fixInfo.fixType = GNSS_FIX_TIME;
-				// Update time
-				if ( nmea_getUTCTimeDateField(&data->gpsTime, time, NULL) == GNSS_SUCCESS ) {
-					itsdk_time_sync_UTC_s(data->gpsTime.hours*3600+data->gpsTime.minutes*60+data->gpsTime.seconds);
-				}
-				itsdk_time_is_UTC_s(&data->lastRefreshS);
-
-				// Position
 				if ( nmea_goNextField(&pt) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
 				if ( *pt != ',' ) {
 					// in this case it means we got a fix
@@ -295,6 +289,13 @@ gnss_ret_e nmea_processNMEA(gnss_data_t * data, uint8_t * line, uint16_t sz, gns
 
 					// skip the end
 					if ( nSatUsed > 0 ) {
+						// Update time
+						if ( nmea_getUTCTimeDateField(&data->gpsTime, time, NULL) == GNSS_SUCCESS ) {
+						    data->fixInfo.fixType = GNSS_FIX_TIME;
+							itsdk_time_sync_UTC_s(data->gpsTime.hours*3600+data->gpsTime.minutes*60+data->gpsTime.seconds);
+						}
+						itsdk_time_is_UTC_s(&data->lastRefreshS);
+
 						int32_t ilat=0;
 						if ( nmea_getLatLngField(lat, &ilat, ns) != GNSS_SUCCESS ) return GNSS_INVALIDFORMAT;
 						int32_t ilon=0;
@@ -371,8 +372,8 @@ gnss_ret_e nmea_processNMEA(gnss_data_t * data, uint8_t * line, uint16_t sz, gns
 					// Update time
 					if ( nmea_getUTCTimeDateField(&data->gpsTime, time, NULL) == GNSS_SUCCESS ) {
 						itsdk_time_sync_UTC_s(data->gpsTime.hours*3600+data->gpsTime.minutes*60+data->gpsTime.seconds);
+						if ( data->fixInfo.fixType < GNSS_FIX_TIME ) data->fixInfo.fixType = GNSS_FIX_TIME;
 					}
-					if ( data->fixInfo.fixType < GNSS_FIX_TIME ) data->fixInfo.fixType = GNSS_FIX_TIME;
 					itsdk_time_is_UTC_s(&data->lastRefreshS);
 
 					int32_t ilat=0;
