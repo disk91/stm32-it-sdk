@@ -5,6 +5,24 @@ The library offer two main features
 - Data capture
 The driver deals with the underlaying accelerometer configuration. By-the-way a good understanding of the underlaying driver is important to have a correct behavior of the accelerometer as each of the sensors may have some particular behavior.
 
+## Enable th accelerometer in configDrivers.h
+Tune the settings according to your needs to preserve memory footprint
+```C
+// *************************************** ACCELEROMETERS *****************************************************************
+
+// -------------------------------------------------------------------------
+// Accelerometers : COMMON
+
+#define ITSDK_DRIVERS_WITH_ACCEL_DRIVER				__ENABLE				// Enable ACCELEROMETER code
+#define ITSDK_DRIVERS_ACCEL_DATABLOCK_BUFFER_SZ		64						// Buffer size to store the pending accelerometer data
+																			//  x6 Bytes / Must be a power of 2
+#define ITSDK_DRIVERS_ACCEL_DATABLOCK_BUFFER_WTM	32						// Software Watermark to process the DATABLOCK Transfert to
+																			//  the application layer
+#define ITSDK_DRIVERS_ACCEL_WITH_ANGLE				__DISABLE				// Movement angle determination code activated / deactivated (save space)
+
+
+```
+
 ## Make the Accelerometer working
 At first you need to call _itsdk_accel_ret_e accel_initPowerDown()_ from your **project_setup** function.
 Then you need to call the _void accel_process_loop(void)_ in your **project_loop** function. This last function is already added in the _itsdk_loop()_ so you don't need to add it in the application layer. 

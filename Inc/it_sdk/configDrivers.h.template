@@ -149,6 +149,7 @@
 																			//  x6 Bytes / Must be a power of 2
 #define ITSDK_DRIVERS_ACCEL_DATABLOCK_BUFFER_WTM	32						// Software Watermark to process the DATABLOCK Transfert to
 																			//  the application layer
+#define ITSDK_DRIVERS_ACCEL_WITH_ANGLE				__DISABLE				// Movement angle determination code activated / deactivated  (save space 1.1K text 2K bss)
 
 // -------------------------------------------------------------------------
 // Accelerometers : LIS2DH12

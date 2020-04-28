@@ -72,6 +72,7 @@ itsdk_accel_ret_e accel_initPowerDown() {
 	itsdk_accel_ret_e ret = ACCEL_SUCCESS;
 
    #if ITSDK_DRIVERS_ACCEL_LIS2DH12 == __ENABLE
+    ACCEL_LOG_INFO(("ACCEL - Init Lis2dh\r\n"));
 	if ( lis2dh_setup(
 			LIS2DH_RESOLUTION_MODE_8B,
 			LIS2DH_FREQUENCY_POWERDOWN,
@@ -90,6 +91,11 @@ itsdk_accel_ret_e accel_initPowerDown() {
 	__accel_dataBufferSz = 0;
 	__accel_dataOverrun = BOOL_FALSE;
 	__accel_setupDone = BOOL_TRUE;
+
+	__accel_dataBlockSz = 0;
+	__accel_dataBlockSzTransfered = 0;
+	__accel_dataBlockNb = 0;
+    __accel_dataCallback = NULL;
 	return ret;
 }
 
@@ -201,6 +207,7 @@ itsdk_accel_ret_e accel_configMovementDetection(
 
 
 	#if ITSDK_DRIVERS_ACCEL_LIS2DH12 == __ENABLE
+    ACCEL_LOG_INFO(("ACCEL - Start Lis2dh - Mvt det\r\n"));
 	if ( lis2dh_setupBackgroundTiltDetection(
 			mg,
 			lis2dh12_convertScale(scale),
@@ -231,6 +238,7 @@ itsdk_accel_ret_e accel_configMovementDetection(
 itsdk_accel_ret_e accel_stopMovementDetection(itsdk_bool_e removeHandler) {
 
 	#if ITSDK_DRIVERS_ACCEL_LIS2DH12 == __ENABLE
+      ACCEL_LOG_INFO(("ACCEL - Stop Lis2dh - Mvt det\r\n"));
 	  if ( lis2dh_cancelBackgroundTiltDetection() == LIS2DH_FAILED ) return ACCEL_FAILED;
 	#endif
 
@@ -298,7 +306,7 @@ itsdk_accel_ret_e accel_startMovementCapture(
 
   #if ITSDK_DRIVERS_ACCEL_LIS2DH12 == __ENABLE
 	//uint8_t	driverWatermark = (dataBlock > DRIVER_LIS2DH_DEFAULT_WATERMARK)?
-
+    ACCEL_LOG_INFO(("ACCEL - Start Lis2dh - Data Aq\r\n"));
 	if ( lis2dh_setupDataAquisition(
 			lis2dh12_convertScale(scale),					// scale 2G/4G...
 			lis2dh_converFrequency(frequency,precision), 	// capture frequency 1/10/25/50Hz..
@@ -326,6 +334,7 @@ itsdk_accel_ret_e accel_startMovementCapture(
 
 itsdk_accel_ret_e accel_stopMovementCapture(void) {
    #if ITSDK_DRIVERS_ACCEL_LIS2DH12 == __ENABLE
+    ACCEL_LOG_INFO(("ACCEL - Stop Lis2dh - Data Aq\r\n"));
 	if ( lis2dh_cancelDataAquisition() == LIS2DH_FAILED ) return ACCEL_FAILED;
    #endif
    return ACCEL_SUCCESS;
@@ -407,6 +416,7 @@ void __accel_asyncMovementCaptureProcess(void) {
 
 		// Is Block completed
 		if ( __accel_dataBlockSzTransfered == __accel_dataBlockSz ) {
+		    ACCEL_LOG_INFO(("ACCEL - Data - Blk Rdy\r\n"));
 			// convert the data
 			switch (__accel_dataFormat) {
 
@@ -423,6 +433,7 @@ void __accel_asyncMovementCaptureProcess(void) {
 					}
 				}
 				break;
+		#if ITSDK_DRIVERS_ACCEL_WITH_ANGLE == __ENABLE
 			case ACCEL_DATAFORMAT_ANGLES_RAD: {
 					for ( int i = 0 ; i < __accel_dataBlockSz ; i++ ) {
 						accel_convertDataPointRaw2Angle(&__accel_dataDestBuffer[i],BOOL_FALSE);
@@ -435,6 +446,7 @@ void __accel_asyncMovementCaptureProcess(void) {
 					}
 			    }
 				break;
+		#endif
 			case ACCEL_DATAFORMAT_AVG_RAW: {
 				    int32_t x=0 ,y=0 ,z=0;
 					for ( int i = 0 ; i < __accel_dataBlockSz ; i++ ) {
@@ -583,6 +595,7 @@ void __accel_asyncTriggerProcess(void) {
 		// No pending trigger, update the NO_MOVEMENT_TRIGGER
 		if ( __accel_noMovementReported == BOOL_FALSE
 			 &&	itsdk_time_get_ms() > (__accel_lastTriggerReportMs + __accel_noMovementDuration) ) {
+		    ACCEL_LOG_DEBUG(("ACCEL - Mvt - No Trigger\r\n"));
 
 			triggers = ACCEL_TRIGGER_ON_NOMOVEMENT;
 			__accel_noMovementReported = BOOL_TRUE;
@@ -594,6 +607,7 @@ void __accel_asyncTriggerProcess(void) {
 	}
 
 	while ( triggers != ACCEL_TRIGGER_ON_NONE ) {
+	    ACCEL_LOG_INFO(("ACCEL - Mvt - Trigger\r\n"));
 
 		itsdk_accel_eventHandler_t * c = __accel_eventQueue;
 		while ( c != NULL ) {
@@ -645,7 +659,7 @@ itsdk_accel_ret_e accel_convertDataPointMg2Force(itsdk_accel_data_t * data) {
  * Value in milli-radian or degrees when toDegrees is true
  */
 itsdk_accel_ret_e accel_convertDataPointRaw2Angle(itsdk_accel_data_t * data, itsdk_bool_e toDegrees) {
-
+#if ITSDK_DRIVERS_ACCEL_WITH_ANGLE == __ENABLE
 	double x = (double)data->x;
 	double y = (double)data->y;
 	double z = (double)data->z;
@@ -657,6 +671,7 @@ itsdk_accel_ret_e accel_convertDataPointRaw2Angle(itsdk_accel_data_t * data, its
 		data->x = (180*data->x)/3141;
 		data->y = (180*data->y)/3141;
 	}
+#endif
 	return ACCEL_SUCCESS;
 }
 

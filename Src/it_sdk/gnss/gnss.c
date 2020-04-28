@@ -122,6 +122,7 @@ gnss_ret_e gnss_start(gnss_run_mode_e mode, uint16_t fixFreq,  uint32_t timeoutS
 		__gnss_resetStructForNewFix();
 		__gnss_config.startupTimeS = (itsdk_time_get_ms()/1000);
 		__gnss_config.maxDurationS = timeoutS;
+		GNSS_LOG_INFO(("Gnss - Start for %dS\r\n",__gnss_config.maxDurationS));
 		return __gnss_config.setRunMode(mode);
 	} else {
 		return GNSS_NOTSUPPORTED;
@@ -144,6 +145,7 @@ gnss_ret_e gnss_start(gnss_run_mode_e mode, uint16_t fixFreq,  uint32_t timeoutS
 gnss_ret_e gnss_stop(gnss_run_mode_e mode) {
 	if ( !__gnss_config.setupDone ) return GNSS_NOTREADY;
 	if ( mode == GNSS_STOP_MODE || mode == GNSS_BACKUP_MODE || mode == GNSS_SLEEP_MODE ) {
+		GNSS_LOG_INFO(("Gnss - Stopped \r\n"));
 		return __gnss_config.setRunMode(mode);
 	} else {
 		return GNSS_NOTSUPPORTED;
@@ -233,6 +235,7 @@ static gnss_ret_e __gnss_onDataRefreshed(void) {
 
 	//generate triggers
 	if ( __gnss_config.data.lastRefreshS > 0 ) {
+		GNSS_LOG_DEBUG(("Gnss - #\r\n"));
 		triggers |= GNSS_TRIGGER_ON_UPDATE;
 
 		gnss_fix_info_t * f = &__gnss_config.data.fixInfo;

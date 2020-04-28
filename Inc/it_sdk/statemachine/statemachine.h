@@ -73,8 +73,7 @@ typedef struct st_machine {
 } machine_t;
 
 
-void statem(machine_t *);			// Run the state machine
-
+void statem(machine_t *);					// Run the state machine
 
 
 #endif /* IT_SDK_STATEMACHINE_STATEMACHINE_H_ */

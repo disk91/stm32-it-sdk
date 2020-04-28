@@ -215,4 +215,19 @@ uint8_t __accel_getAccelMaxFifoWTM(void);
 // avec contenu de la FiFo */
 
 
+
+#if (ITSDK_LOGGER_MODULE & __LOG_MOD_ACCEL) > 0
+#define ACCEL_LOG_DEBUG(x) log_debug x
+#define ACCEL_LOG_INFO(x) 	log_info x
+#define ACCEL_LOG_WARN(x) 	log_warn x
+#define ACCEL_LOG_ERROR(x) log_error x
+#define ACCEL_LOG_ANY(x) 	log_info x
+#else
+#define ACCEL_LOG_DEBUG(x)
+#define ACCEL_LOG_INFO(x)
+#define ACCEL_LOG_WARN(x)
+#define ACCEL_LOG_ERROR(x)
+#define ACCEL_LOG_ANY(x)
+#endif
+
 #endif /* INC_IT_SDK_ACCEL_ACCEL_H_ */

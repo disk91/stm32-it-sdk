@@ -307,5 +307,21 @@ gnss_ret_e __gnss_initSerial();
 gnss_ret_e __gnss_disconnectSerial();
 gnss_ret_e __gnss_connectSerial();
 
+
+
+#if (ITSDK_LOGGER_MODULE & __LOG_MOD_GNSS) > 0
+#define GNSS_LOG_DEBUG(x) log_debug x
+#define GNSS_LOG_INFO(x)  log_info x
+#define GNSS_LOG_WARN(x)  log_warn x
+#define GNSS_LOG_ERROR(x) log_error x
+#define GNSS_LOG_ANY(x)   log_info x
+#else
+#define GNSS_LOG_DEBUG(x)
+#define GNSS_LOG_INFO(x)
+#define GNSS_LOG_WARN(x)
+#define GNSS_LOG_ERROR(x)
+#define GNSS_LOG_ANY(x)
+#endif
+
 #endif /* INC_IT_SDK_GNSS_GNSS_H_ */
 #endif // ITSDK_WITH_DRIVERS
