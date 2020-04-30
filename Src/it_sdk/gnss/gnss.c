@@ -235,6 +235,10 @@ static gnss_ret_e __gnss_onDataRefreshed(void) {
 	itsdk_enterCriticalSection();
 	if ( __insideProcedure == 1 || __gnss_config.isRunning == 0 ) {
 		itsdk_leaveCriticalSection();
+		if ( __gnss_config.isRunning == 0 && __gnss_config.setRunMode != NULL) {
+			// this is an abnormal case
+			__gnss_config.setRunMode(GNSS_STOP_FORCE);
+		}
 		GNSS_LOG_DEBUG(("Gq!\r\n"));		// It means we had a reentering processing due to too long callback
 		return GNSS_SKIP;					//  let skip that one
 	}
@@ -706,7 +710,7 @@ gnss_ret_e gnss_encodePosition48b(gnss_data_t * data, uint64_t * output) {
 	} else {
 		l = data->fixInfo.latitude;
 	}
-	if ( l/100000 >= 90  ) {
+	if ( l/10000000 >= 90  ) {
 		l = 8333333;
 	} else {
 		if ( l < 53 ) {

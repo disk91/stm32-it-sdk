@@ -398,11 +398,22 @@ itsdk_sigfox_init_t itsdk_sigfox_setTxPower_ext(uint8_t power, bool force) {
 	return SIGFOX_INIT_SUCESS;
 }
 
+/**
+ * Change the current sigfox network speed
+ */
 itsdk_sigfox_init_t itsdk_sigfox_setTxPower(uint8_t power) {
 	LOG_DEBUG_SIGFOXSTK(("itsdk_sigfox_setTxPower\r\n"));
 	return itsdk_sigfox_setTxPower_ext(power,false);
 }
 
+/**
+ * Get the current sigfox trasnmision power
+ */
+itsdk_sigfox_init_t itsdk_sigfox_getTxPower(uint8_t * power) {
+	LOG_DEBUG_SIGFOXSTK(("itsdk_sigfox_getTxPower\r\n"));
+	*power = itsdk_state.sigfox.current_power;
+	return SIGFOX_INIT_SUCESS;
+}
 
 
 /**
@@ -422,6 +433,15 @@ itsdk_sigfox_init_t itsdk_sigfox_setTxSpeed(itdsk_sigfox_speed_t speed) {
 	#endif
 
 	itsdk_state.sigfox.current_speed = speed;
+	return SIGFOX_INIT_SUCESS;
+}
+
+/**
+ * Get the current sigfox network speed
+ */
+itsdk_sigfox_init_t itsdk_sigfox_getTxSpeed(itdsk_sigfox_speed_t * speed) {
+	LOG_DEBUG_SIGFOXSTK(("itsdk_sigfox_getTxSpeed\r\n"));
+	*speed = (itdsk_sigfox_speed_t)itsdk_state.sigfox.current_speed;
 	return SIGFOX_INIT_SUCESS;
 }
 

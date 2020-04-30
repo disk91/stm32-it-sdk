@@ -63,7 +63,8 @@ typedef enum {
 	GNSS_SLEEP_MODE		= 2,	// Sleep - low power mcu stay on and memory kept
 	GNSS_RUN_COLD		= 3,	// Run - assuming memory content obsolete
 	GNSS_RUN_WARM		= 4,	// Run - assuming memory is to be refreshed
-	GNSS_RUN_HOT		= 5		// Run - assuming data still valid
+	GNSS_RUN_HOT		= 5,	// Run - assuming data still valid
+	GNSS_STOP_FORCE  	= 6		// Internal - Force stop when the drivers detects the GNSS underlaying driver did not stopped
 
 } gnss_run_mode_e;
 

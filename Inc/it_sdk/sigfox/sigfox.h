@@ -113,9 +113,11 @@ typedef struct {
 itsdk_sigfox_init_t itsdk_sigfox_setup();
 itsdk_sigfox_init_t itsdk_sigfox_deinit();
 itsdk_sigfox_init_t itsdk_sigfox_getCurrentRcz(uint8_t * rcz);
+itsdk_sigfox_init_t itsdk_sigfox_getTxPower(uint8_t * power);
 itsdk_sigfox_init_t itsdk_sigfox_setTxPower(uint8_t power);
 itsdk_sigfox_init_t itsdk_sigfox_setTxPower_ext(uint8_t power, bool force);
 itsdk_sigfox_init_t itsdk_sigfox_setTxSpeed(itdsk_sigfox_speed_t speed);
+itsdk_sigfox_init_t itsdk_sigfox_getTxSpeed(itdsk_sigfox_speed_t * speed);
 itsdk_sigfox_init_t itsdk_sigfox_getDeviceId(itsdk_sigfox_device_is_t * devId);
 itsdk_sigfox_init_t itsdk_sigfox_getInitialPac(uint8_t * pac);
 itsdk_sigfox_init_t itsdk_sigfox_getLastRssi(int16_t * rssi);

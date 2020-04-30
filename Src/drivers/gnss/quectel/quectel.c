@@ -254,6 +254,17 @@ static gnss_ret_e __quectelSetRunMode(gnss_run_mode_e mode) {
 		case GNSS_STOP_MODE:
 			__quectel_status.isInStopMode = 1;
 			return __quectelSwitchToStopWithMemoryRetention();
+		case GNSS_STOP_FORCE:
+			// Sometime the stop command is not correctly proceeeded when we do not have an external circuit to power it on/off
+			// So in a such case, reseting the device will allow to be back is a known mode to stop it properly.
+			__quectel_status.isInStopMode = 1;
+			gpio_reset(ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN);
+			itsdk_delayMs(20);
+			gpio_set(ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN);
+			__gnss_connectSerial();
+	  		__gnss_initSerial();
+	  	    __quectelWaitForAck(DRIVER_GNSS_QUECTEL_CMD_RESTART);
+			return __quectelSwitchToStopWithMemoryRetention();
 		case GNSS_BACKUP_MODE:
 			__quectel_status.isInStopMode = 0;
 			return __quectelSwitchToStopWithMemoryRetention();
