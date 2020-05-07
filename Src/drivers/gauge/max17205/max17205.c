@@ -109,13 +109,6 @@ drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode) {
 
 	uint16_t v;
 
-#if ITSDK_WITH_EXPERIMENTAL == __ENABLE
-	// remove after test made - used to see if the value has been previously written into NVMem
-	__readRegister(ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_ADR, &v);
-	log_info("NPACKCFC value : 0x%04X\r\n",v);
-	__readRegister(ITSDK_DRIVERS_MAX17205_REG_BNPACKCFG_ADR, &v);
-	log_info("BNPACKCFC value : 0x%04X\r\n",v);
-#endif
 
 	if (   __readRegister(ITSDK_DRIVERS_MAX17205_REG_DEVNAME_ADR,&v) == I2C_OK
 	    && (( v & ITSDK_DRIVERS_MAX17205_REG_DEVNAME_MSK ) != MAX17205_TYPE_SINGLE_CELL )
@@ -151,7 +144,7 @@ drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode) {
 				break;
 
 		}
-#if ITSDK_WITH_EXPERIMENTAL == __ENABLE
+
 		// We can assume this is the first run and the chip configuration is invalid
 		// we are going to fix it by storing the right value in the NV Memory. But this
 		// memory can we updated only 7 times... so we are going to try to update it not too
@@ -165,7 +158,6 @@ drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode) {
 		// most of the time the NVErr flag is position after writing for unidentified reason
 		// yet. As a consequence we lost awrite possibility and the value is unchanged. But
 		// sometime it worked. More tests are needed to understand this.
-		#warning "This part of the code has not yet been tested use carefully"
 		__readRegister(ITSDK_DRIVERS_MAX17205_REG_NHIBCFG,&v);
 		v &= ~(ITSDK_DRIVERS_MAX17205_REG_NHIBCFG_ENHIB_MSK);
 		__writeRegister(ITSDK_DRIVERS_MAX17205_REG_NHIBCFG,v);
@@ -223,7 +215,6 @@ drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode) {
 		v |= ITSDK_DRIVERS_MAX17205_REG_NHIBCFG_ENHIB_MSK;
 		__writeRegister(ITSDK_DRIVERS_MAX17205_REG_NHIBCFG,v);
 
-#endif
 	}
 
 
