@@ -25,6 +25,7 @@
  * ==========================================================
  */
 #include <it_sdk/config.h>
+#include <it_sdk/wrappers.h>
 #include <it_sdk/eeprom/sdk_config.h>
 #include <it_sdk/eeprom/sdk_state.h>
 #if ITSDK_WITH_CONSOLE == __ENABLE
@@ -34,6 +35,7 @@ itsdk_state_t itsdk_state;
 
 void itsdk_state_init() {
 	itsdk_state.lastWakeUpTimeUs = 0;
+	itsdk_state.lastResetCause = itsdk_getResetCause();
 
 #if ITSDK_CONFIGURATION_MODE != __CONFIG_STATIC
    #if ITSDK_WITH_SIGFOX_LIB == __ENABLE || ITSDK_WITH_LORAWAN_LIB == __ENABLE
@@ -71,6 +73,7 @@ void itsdk_state_init() {
 #if ITSDK_WITH_CONSOLE == __ENABLE
 void itsdk_print_state() {
 	_itsdk_console_printf("state.lastWakeUpTimeUs %d ms\r\n",(uint32_t)(itsdk_state.lastWakeUpTimeUs/1000));
+	_itsdk_console_printf("state.lastResetCause 0x%X \r\n",(uint32_t)(itsdk_state.lastResetCause));
 #if ITSDK_CONFIGURATION_MODE != __CONFIG_STATIC
    #if ITSDK_WITH_SIGFOX_LIB == __ENABLE || ITSDK_WITH_LORAWAN_LIB == __ENABLE
 	_itsdk_console_printf("state.activeNetwork : %d\r\n",itsdk_state.activeNetwork);

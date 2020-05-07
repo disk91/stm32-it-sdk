@@ -109,7 +109,7 @@ static itsdk_console_return_e _itsdk_console_private(char * buffer, uint8_t sz) 
 		case 'r':
 			// Last Reset cause
 			_itsdk_console_printf("Reset: ");
-			switch(itsdk_getResetCause()) {
+			switch(itsdk_state.lastResetCause) {
 			case RESET_CAUSE_BOR: _itsdk_console_printf("BOR\r\n"); break;
 			case RESET_CAUSE_RESET_PIN: _itsdk_console_printf("RESET PIN\r\n"); break;
 			case RESET_CAUSE_POWER_ON: _itsdk_console_printf("POWER ON\r\n"); break;
