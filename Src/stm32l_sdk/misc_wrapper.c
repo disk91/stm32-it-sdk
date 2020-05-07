@@ -82,7 +82,8 @@ void itsdk_setIrqMask(uint32_t mask) {
 static uint32_t __interrupt_mask;
 void itsdk_enterCriticalSection() {
 	__interrupt_mask = itsdk_getIrqMask();
-	__disable_irq();
+	//__disable_irq();
+	__set_PRIMASK(1);	// allows to capture but not execute the interruption appearing during the critical section execution
 }
 
 /**
