@@ -57,6 +57,7 @@ Most is done to preserve code size, the SDK can target small flash MCU from 16KB
     * murata cmwx1zzabz (sx1276)
   * T / H / P
      * bosh bme280
+     * omron 2smpb-02B
   * Light
      * Maxim Max44009
   * Current / Battery Pack
@@ -208,6 +209,7 @@ configuration file. Please find the different settings added version after versi
  - ITSDK_DRIVERS_WITH_GNSS_DRIVER
  - ITSDK_DRIVERS_GNSS_QUECTEL
  - ITSDK_DRIVERS_MAX17205_CSN_TO_BAT
+ - ITSDK_DRIVERS_O2SMPB
 
 ## from version 1.5.0
 ### config.h

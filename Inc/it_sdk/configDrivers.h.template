@@ -54,7 +54,7 @@
 
 
 // ------------------------------------------------------------------------
-// Temp / Humidity / Pressure : M95640
+// Temp / Humidity / Pressure : BME280
 
 #define ITSDK_DRIVERS_BME280					__DISABLE					// BOSH BME 280 Temp / Hygro / Pressure
 #if ITSDK_DRIVERS_BME280 == __ENABLE
@@ -68,6 +68,23 @@
 #define __BME280_SDO_HIGH						0x1
 #define __BME280_SDO_LOW						0x0
 #define ITSDK_DRIVERS_BME280_ADDRESS			(DRIVER_BME280_DEVICE_ADR | __BME280_SDO_LOW)	//   Device address base on electrical conf
+
+// ------------------------------------------------------------------------
+// Temp / Pressure : Omron 2SMPB-02B
+
+#define ITSDK_DRIVERS_O2SMPB					__DISABLE					// OMRON 2SMPB Temp / Pressure - pin2pin compatible with BME280
+#if ITSDK_DRIVERS_O2SMPB == __ENABLE
+	#ifndef __I2C_INCLUDED
+	  #define __I2C_INCLUDED
+	  #include "i2c.h"
+	#endif
+	#include <drivers/temphygropressure/omron_2smpb-02b/o_2smpb.h>
+#endif
+#define ITSDK_DRIVERS_02SMPB_I2C				hi2c1						// I2C port to be used for communications
+#define __O2SMPB_SDO_HIGH						0x56
+#define __O2SMPB_SDO_LOW						0x70
+#define ITSDK_DRIVERS_O2SMPB_ADDRESS			__O2SMPB_SDO_LOW			//   Device address base on electrical conf
+#define ITSDK_DRIVERS_O2SMPB_VERSION			0x2B						//   Sub type, the data decoding is different depending on version
 
 // ------------------------------------------------------------------------
 // Light sensor : MAX44009
@@ -199,7 +216,7 @@
 #define ITSDK_DRIVERS_MAX17205_RSENSE_MOHM		1000						// RSense in mOhm
 #define ITSDK_DRIVERS_MAX17205_CSN_TO_BAT		__DISABLE					// For primary battery, CSN can be connected to bat to get a better precision of downside
 																			// circuit consumption (Ap Note AN6414) - this change the coulomb counter direction
-																			
+
 // *************************************** COMMUNICATION **************************************************************
 
 // ------------------------------------------------------------------------
