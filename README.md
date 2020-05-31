@@ -207,6 +207,7 @@ configuration file. Please find the different settings added version after versi
  - ITSDK_DRIVERS_ACCEL_LIS2DH12 
  - ITSDK_DRIVERS_WITH_GNSS_DRIVER
  - ITSDK_DRIVERS_GNSS_QUECTEL
+ - ITSDK_DRIVERS_MAX17205_CSN_TO_BAT
 
 ## from version 1.5.0
 ### config.h

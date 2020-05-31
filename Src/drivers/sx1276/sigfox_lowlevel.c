@@ -106,6 +106,7 @@ void STLL_Radio_IoInit( void )
   SX1276IoInit();
 
   gpio_interruptClear(ITSDK_SX1276_DIO_0_BANK, ITSDK_SX1276_DIO_0_PIN);
+  gpio_configure(ITSDK_SX1276_DIO_0_BANK, ITSDK_SX1276_DIO_0_PIN, GPIO_INTERRUPT_RISING );
   gpio_interruptPriority(ITSDK_SX1276_DIO_0_BANK,ITSDK_SX1276_DIO_0_PIN,0,0);
   __sx1276_gpio_irq[0].irq_func = __irqHandlers_dio0;
   __sx1276_gpio_irq[0].pinMask = ITSDK_SX1276_DIO_0_PIN;
@@ -113,6 +114,7 @@ void STLL_Radio_IoInit( void )
   gpio_interruptEnable(ITSDK_SX1276_DIO_0_BANK, ITSDK_SX1276_DIO_0_PIN);
 
   gpio_interruptClear(ITSDK_SX1276_DIO_4_BANK, ITSDK_SX1276_DIO_4_PIN);
+  gpio_configure(ITSDK_SX1276_DIO_4_BANK, ITSDK_SX1276_DIO_4_PIN, GPIO_INTERRUPT_RISING );
   gpio_interruptPriority(ITSDK_SX1276_DIO_4_BANK,ITSDK_SX1276_DIO_4_PIN,0,0);
   __sx1276_gpio_irq[4].irq_func = __irqHandlers_dio4;
   __sx1276_gpio_irq[4].pinMask = ITSDK_SX1276_DIO_4_PIN;
@@ -447,7 +449,7 @@ uint32_t STLL_TIM2_GetPeriod( void ) {
  */
 void STLL_LowPower(STLL_State State)
 {
-  LOG_DEBUG_SFXSX1276((">> STLL_LowPower(%d)\r\n",State));
+  LOG_DEBUG_SFXSX1276((">> STLL_LowPower(%s)\r\n",((State==STLL_ENABLE)?"Allowed":"Prohibited")));
   if ( State == STLL_ENABLE) {
 	  sx1276_sigfox_state.lowPowerAuthorised = SIGFOX_LPMODE_AUTHORIZED;
   } else {
@@ -464,14 +466,18 @@ void STLL_LowPower(STLL_State State)
 
 void STLL_SetClockSource( stll_clockType_e clocktype)
 {
-  LOG_DEBUG_SFXSX1276((">> STLL_SetClockSource\r\n"));
-
+  LOG_DEBUG_SFXSX1276((">> STLL_SetClockSource: "));
   if ( clocktype == HSI_SOURCE ) {
- 	 LOG_DEBUG_SFXSX1276(("   DEFAULT Selected\r\n"));
+	  LOG_DEBUG_SFXSX1276((" DEFAULT Selected\r\n"));
+  } else {
+	  LOG_DEBUG_SFXSX1276((" HSE Selected\r\n"));
+  }
+
+  itsdk_enterCriticalSection();
+  if ( clocktype == HSI_SOURCE ) {
  	 SystemClock_Config();
  	 __HAL_RCC_HSE_CONFIG(RCC_HSE_OFF);
   } else {
-	 LOG_DEBUG_SFXSX1276(("   HSE Selected\r\n"));
 	 __HAL_RCC_HSE_CONFIG(RCC_HSE_ON);
      // Wait till HSE is ready
      while( __HAL_RCC_GET_FLAG(RCC_FLAG_HSERDY) == RESET ) {}
@@ -479,9 +485,9 @@ void STLL_SetClockSource( stll_clockType_e clocktype)
 	 __HAL_RCC_SYSCLK_CONFIG ( RCC_SYSCLKSOURCE_HSE );
      // Wait till HSE is used as system clock source
 	 while( __HAL_RCC_GET_SYSCLK_SOURCE( ) != RCC_SYSCLKSOURCE_STATUS_HSE ) {}
-
-
   }
+  itsdk_leaveCriticalSection();
+
 }
 
 

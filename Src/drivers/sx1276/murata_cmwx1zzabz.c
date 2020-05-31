@@ -105,6 +105,8 @@ const struct Radio_s Radio =
  */
 void SX1276InitLowPower( void ) {
 
+    LOG_INFO_SX1276((">> mSX1276InitLowPower\r\n"));
+
 	gpio_configure(ITSDK_SX1276_TCXO_VCC_BANK, ITSDK_SX1276_TCXO_VCC_PIN, GPIO_OUTPUT_PP );
     TCXO_ON();
     itsdk_delayMs(ITSDK_MURATA_WAKEUP_TIME);
@@ -144,13 +146,13 @@ void SX1276InitLowPower( void ) {
 
 uint32_t SX1276GetWakeTime( void )
 {
-  LOG_INFO_SX1276((">> SX1276GetWakeTime\r\n"));
+  LOG_INFO_SX1276((">> mSX1276GetWakeTime\r\n"));
   return  0;
 }
 
 void SX1276SetXO( uint8_t state )
 {
-  LOG_INFO_SX1276((">> SX1276SetXO (%s)\r\n",((state==SET)?"ON":"OFF")));
+  LOG_INFO_SX1276((">> mSX1276SetXO (%s)\r\n",((state==SET)?"ON":"OFF")));
 
   if (state == SET )
   {
@@ -167,10 +169,13 @@ void SX1276SetXO( uint8_t state )
  * Initial init of the IoS, makes non sense to configure Interrupt mode before initializing the interrupt handlers
  * this is why I set it up ANALOG at this step. it reserve power consumption.
  * Was initially set as  GPIO_INTERRUPT_RISING_PULLDWN in the STM stack and GPIO_INTERRUPT_RISING_PULLUP in the 1.4 SDK version
+ * --
+ * Ensure the IRQ are configured later by calling SX1276IoIrqInit or equivalent.
+ * For sigfox STLL_Radio_IoInit does the job.
  */
 void SX1276IoInit( void )
 {
-  LOG_INFO_SX1276((">> SX1276IoInit\r\n"));
+  LOG_INFO_SX1276((">> mSX1276IoInit\r\n"));
 
   SX1276BoardInit( &BoardCallbacks );
   if ( ITSDK_SX1276_DIO_0_PIN != __LP_GPIO_NONE ) {
@@ -204,7 +209,7 @@ void SX1276IoInit( void )
 gpio_irq_chain_t __sx1276_gpio_irq[6] = { 0 };
 void SX1276IoIrqInit( DioIrqHandler **irqHandlers )
 {
-	LOG_INFO_SX1276((">> SX1276IoIrqInit\r\n"));
+	LOG_INFO_SX1276((">> mSX1276IoIrqInit\r\n"));
 
 
 	if (ITSDK_SX1276_DIO_0_PIN != __LP_GPIO_NONE ) {
@@ -266,7 +271,7 @@ void SX1276IoIrqInit( DioIrqHandler **irqHandlers )
 void SX1276IoDeInit( void )
 {
 
-  LOG_INFO_SX1276((">> SX1276IoDeInit\r\n"));
+  LOG_INFO_SX1276((">> mSX1276IoDeInit\r\n"));
 	if (ITSDK_SX1276_DIO_0_PIN != __LP_GPIO_NONE ) {
 		gpio_configure(ITSDK_SX1276_DIO_0_BANK, ITSDK_SX1276_DIO_0_PIN, GPIO_ANALOG );
 	    gpio_interruptClear(ITSDK_SX1276_DIO_0_BANK, ITSDK_SX1276_DIO_0_PIN);
@@ -302,7 +307,7 @@ void SX1276IoDeInit( void )
 
 void SX1276SetRfTxPower( int8_t power )
 {
-	LOG_INFO_SX1276((">> SX1276SetRfTxPower (%d)\r\n",power));
+	LOG_INFO_SX1276((">> mSX1276SetRfTxPower (%d)\r\n",power));
 
     uint8_t paConfig = 0;
     uint8_t paDac = 0;
@@ -366,7 +371,7 @@ void SX1276SetRfTxPower( int8_t power )
 
 uint8_t SX1276GetPaSelect( uint8_t power )
 {
-	LOG_INFO_SX1276((">> SX1276GetPaSelect\r\n"));
+	LOG_INFO_SX1276((">> mSX1276GetPaSelect\r\n"));
 
     if (power >14)
     {
@@ -383,31 +388,33 @@ uint8_t SX1276GetPaSelect( uint8_t power )
  */
 void SX1276SetAntSwLowPower( bool status )
 {
-	LOG_INFO_SX1276((">> SX1276SetAntSwLowPower (%s)\r\n",((status)?"LP":"FP")));
+	LOG_INFO_SX1276((">> mSX1276SetAntSwLowPower (%s)\r\n",((status)?"LP":"FP")));
 
     if( status == false )
     {
-    	  gpio_configure(ITSDK_MURATA_ANTSW_RX_BANK, ITSDK_MURATA_ANTSW_RX_PIN, GPIO_OUTPUT_PP );
-    	  gpio_reset(ITSDK_MURATA_ANTSW_RX_BANK,ITSDK_MURATA_ANTSW_RX_PIN);
-    	  gpio_configure(ITSDK_MURATA_ANTSW_TXBOOST_BANK, ITSDK_MURATA_ANTSW_TXBOOST_PIN, GPIO_OUTPUT_PP );
-    	  gpio_reset(ITSDK_MURATA_ANTSW_TXBOOST_BANK,ITSDK_MURATA_ANTSW_TXBOOST_PIN);
-    	  gpio_configure(ITSDK_MURATA_ANTSW_TXRFO_BANK, ITSDK_MURATA_ANTSW_TXRFO_PIN, GPIO_OUTPUT_PP );
-    	  gpio_reset(ITSDK_MURATA_ANTSW_TXRFO_BANK,ITSDK_MURATA_ANTSW_TXRFO_PIN);
+    	// FP
+    	gpio_configure(ITSDK_MURATA_ANTSW_RX_BANK, ITSDK_MURATA_ANTSW_RX_PIN, GPIO_OUTPUT_PP );
+    	gpio_reset(ITSDK_MURATA_ANTSW_RX_BANK,ITSDK_MURATA_ANTSW_RX_PIN);
+    	gpio_configure(ITSDK_MURATA_ANTSW_TXBOOST_BANK, ITSDK_MURATA_ANTSW_TXBOOST_PIN, GPIO_OUTPUT_PP );
+    	gpio_reset(ITSDK_MURATA_ANTSW_TXBOOST_BANK,ITSDK_MURATA_ANTSW_TXBOOST_PIN);
+    	gpio_configure(ITSDK_MURATA_ANTSW_TXRFO_BANK, ITSDK_MURATA_ANTSW_TXRFO_PIN, GPIO_OUTPUT_PP );
+    	gpio_reset(ITSDK_MURATA_ANTSW_TXRFO_BANK,ITSDK_MURATA_ANTSW_TXRFO_PIN);
     }
     else
     {
-    	  gpio_configure(ITSDK_MURATA_ANTSW_RX_BANK, ITSDK_MURATA_ANTSW_RX_PIN, GPIO_ANALOG );
-    	  gpio_reset(ITSDK_MURATA_ANTSW_RX_BANK,ITSDK_MURATA_ANTSW_RX_PIN);
-    	  gpio_configure(ITSDK_MURATA_ANTSW_TXBOOST_BANK, ITSDK_MURATA_ANTSW_TXBOOST_PIN, GPIO_ANALOG );
-    	  gpio_reset(ITSDK_MURATA_ANTSW_TXBOOST_BANK,ITSDK_MURATA_ANTSW_TXBOOST_PIN);
-    	  gpio_configure(ITSDK_MURATA_ANTSW_TXRFO_BANK, ITSDK_MURATA_ANTSW_TXRFO_PIN, GPIO_ANALOG );
-    	  gpio_reset(ITSDK_MURATA_ANTSW_TXRFO_BANK,ITSDK_MURATA_ANTSW_TXRFO_PIN);
+    	// LP
+    	gpio_configure(ITSDK_MURATA_ANTSW_RX_BANK, ITSDK_MURATA_ANTSW_RX_PIN, GPIO_ANALOG );
+    	gpio_reset(ITSDK_MURATA_ANTSW_RX_BANK,ITSDK_MURATA_ANTSW_RX_PIN);
+    	gpio_configure(ITSDK_MURATA_ANTSW_TXBOOST_BANK, ITSDK_MURATA_ANTSW_TXBOOST_PIN, GPIO_ANALOG );
+    	gpio_reset(ITSDK_MURATA_ANTSW_TXBOOST_BANK,ITSDK_MURATA_ANTSW_TXBOOST_PIN);
+    	gpio_configure(ITSDK_MURATA_ANTSW_TXRFO_BANK, ITSDK_MURATA_ANTSW_TXRFO_PIN, GPIO_ANALOG );
+    	gpio_reset(ITSDK_MURATA_ANTSW_TXRFO_BANK,ITSDK_MURATA_ANTSW_TXRFO_PIN);
     }
 }
 
 void SX1276SetAntSw( uint8_t opMode )
 {
-	LOG_INFO_SX1276((">> SX1276SetAntSw (%d)\r\n",opMode));
+	LOG_INFO_SX1276((">> mSX1276SetAntSw (%d)\r\n",opMode));
 
     uint8_t paConfig =  SX1276Read( REG_PACONFIG );
     switch( opMode )
@@ -426,6 +433,7 @@ void SX1276SetAntSw( uint8_t opMode )
     case RFLR_OPMODE_RECEIVER_SINGLE:
     case RFLR_OPMODE_CAD:
     default:
+     LOG_INFO_SX1276(("   Rx Mode\r\n"));
      SX1276.RxTx = 0;
      gpio_set(ITSDK_MURATA_ANTSW_RX_BANK,ITSDK_MURATA_ANTSW_RX_PIN);
      break;
@@ -434,7 +442,7 @@ void SX1276SetAntSw( uint8_t opMode )
 
 bool SX1276CheckRfFrequency( uint32_t frequency )
 {
-	LOG_INFO_SX1276((">> SX1276CheckRfFrequency\r\n"));
+	LOG_INFO_SX1276((">> mSX1276CheckRfFrequency\r\n"));
 
     // Implement check. Currently all frequencies are supported
     return true;
