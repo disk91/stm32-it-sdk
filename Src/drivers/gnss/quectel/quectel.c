@@ -164,14 +164,18 @@ gnss_ret_e quectel_lxx_initLowPower(gnss_config_t * config) {
 		}
 		if ( ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_PIN != __LP_GPIO_NONE ) {
 			gpio_configure(ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_PIN,GPIO_OUTPUT_PP);
-			gpio_set(ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_PIN);
+			#if ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_POL == __HIGH
+			  gpio_set(ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_PIN);
+			#else
+			  gpio_reset(ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_PIN);
+			#endif
+
 		}
 		__quectel_status.hasBackupMode = 1;
 	} else {
 		__quectel_status.hasBackupMode = 0;
 	}
 	#endif
-
 
 	// Configure the Reset pin and use it
 	if  ( ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN != __LP_GPIO_NONE ) {
@@ -180,7 +184,6 @@ gnss_ret_e quectel_lxx_initLowPower(gnss_config_t * config) {
 		itsdk_delayMs(20); // 10 ms min according to doc
 		gpio_set(ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN);
 	}
-
 
 	// check Quectel presence and wait for boot
 	if( __quectelWaitForAck(DRIVER_GNSS_QUECTEL_CMD_RESTART) != GNSS_SUCCESS ) {
@@ -255,7 +258,7 @@ static gnss_ret_e __quectelSetRunMode(gnss_run_mode_e mode) {
 			__quectel_status.isInStopMode = 1;
 			return __quectelSwitchToStopWithMemoryRetention();
 		case GNSS_STOP_FORCE:
-			// Sometime the stop command is not correctly proceeeded when we do not have an external circuit to power it on/off
+			// Sometime the stop command is not correctly proceeded when we do not have an external circuit to power it on/off
 			// So in a such case, reseting the device will allow to be back is a known mode to stop it properly.
 			__quectel_status.isInStopMode = 1;
 			gpio_reset(ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN);
@@ -303,7 +306,7 @@ static gnss_ret_e __quectelSetRunMode(gnss_run_mode_e mode) {
 static gnss_ret_e __quectelSwitchToStopWithMemoryRetention() {
 	char cmd[DRIVER_GNSS_QUECTEL_CMD_MAXZ];
 	// Switch to Perpetual Backup mode
-	// Consumption 840uA - sounds like we do not have a ack on this command every time
+	// L86 Consumption 840uA - sounds like we do not have a ack on this command every time
 
 	if ( __quectel_status.hasBackupMode == 1 ) {
 
@@ -319,12 +322,16 @@ static gnss_ret_e __quectelSwitchToStopWithMemoryRetention() {
 			__gnss_initSerial();
 			__quectel_status.isInBackupMode = 1;
 			__quectel_status.isRunning = 0;
-			#if ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_PIN != __LP_GPIO_NONE
+			if ( ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_PIN != __LP_GPIO_NONE ) {
 			   itsdk_delayMs(40); // as we are not waiting for the command response because it is mostly
 				  			      // lost due to UART noise, it's better to wait the usual response time (25ms) or more
 			 	 	 	 	      // before shutting the power down.
-				gpio_reset(ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_PIN);
-			#endif
+				#if ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_POL == __HIGH
+				  gpio_reset(ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_PIN);
+				#else
+				  gpio_set(ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_PIN);
+				#endif
+			}
 			__gnss_disconnectSerial();
 			return GNSS_SUCCESS;
 		}
@@ -350,7 +357,11 @@ static gnss_ret_e __quectelSwitchBackfromStopMode() {
 		#endif
 		if ( ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_PIN != __LP_GPIO_NONE ) {
 		   // Power VCC on from external circuitery
-		   gpio_set(ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_PIN);
+			#if ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_POL == __HIGH
+			  gpio_set(ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_PIN);
+			#else
+			  gpio_reset(ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_PIN);
+			#endif
 		}
 
   		// A reset should not be needed but it seems it is not working w/o it.

@@ -136,6 +136,11 @@
 #define __DISABLE					0x00
 #define __ENABLE					0x01
 
+/**
+ * Polarity
+ */
+#define __LOW						0x00
+#define __HIGH						0x01
 
 /**
  * Config mode

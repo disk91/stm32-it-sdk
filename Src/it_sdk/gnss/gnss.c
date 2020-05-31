@@ -137,7 +137,7 @@ gnss_ret_e gnss_start(gnss_run_mode_e mode, uint16_t fixFreq,  uint32_t timeoutS
  * Manually stops a GPS fix-try in progress
  * Possible mode are
  * - GNSS_STOP_MODE   -> Everything is stops including RTC storing the ephemerys
- * - GNSS_BACKUP_MODE -> Stop the GNSS MCU but keep the internal memeory for short TTF on restart
+ * - GNSS_BACKUP_MODE -> Stop the GNSS MCU but keep the internal memory for short TTF on restart
  * - GNSS_SLEEP_MODE  -> GNSS MCU stays active but not searching for sats. low power.
  * Returns
  * - GNSS_SUCCESS          : Fix stopped
