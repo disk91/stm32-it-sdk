@@ -157,7 +157,7 @@ void SX1276SetXO( uint8_t state )
   if (state == SET )
   {
     TCXO_ON(); 
-    itsdk_delayMs(ITSDK_MURATA_WAKEUP_TIME);
+    itsdk_delayMs(ITSDK_MURATA_TCXO_WARMUP);
   }
   else
   {
