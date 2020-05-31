@@ -197,7 +197,9 @@
 #define ITSDK_DRIVERS_MAX17205_ALRT1_BANK		__BANK_B					// ALERT PIN Configuration
 #define ITSDK_DRIVERS_MAX17205_ALRT1_PIN		__LP_GPIO_7					//   __LP_GPIO_NONE if not used
 #define ITSDK_DRIVERS_MAX17205_RSENSE_MOHM		1000						// RSense in mOhm
-
+#define ITSDK_DRIVERS_MAX17205_CSN_TO_BAT		__DISABLE					// For primary battery, CSN can be connected to bat to get a better precision of downside
+																			// circuit consumption (Ap Note AN6414) - this change the coulomb counter direction
+																			
 // *************************************** COMMUNICATION **************************************************************
 
 // ------------------------------------------------------------------------

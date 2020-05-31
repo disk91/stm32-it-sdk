@@ -405,8 +405,11 @@ drivers_max17205_ret_e drivers_max17205_getCapacity(uint16_t * mah) {
 drivers_max17205_ret_e drivers_max17205_getCoulomb(uint32_t * coulomb) {
 	uint16_t capa;
 	drivers_max17205_getCapacity(&capa);
-
+#if ITSDK_DRIVERS_MAX17205_CSN_TO_BAT == __ENABLE
+	uint16_t delta = (capa >= __max17205_config.lastCapa )? (capa - __max17205_config.lastCapa) : (capa + (0xFFFF - __max17205_config.lastCapa));
+#else
 	uint16_t delta = (capa < __max17205_config.lastCapa )? __max17205_config.lastCapa - capa : (__max17205_config.lastCapa + (0xFFFF - capa));
+#endif
 	__max17205_config.totalCapa += delta;
 	__max17205_config.lastCapa = capa;
 
