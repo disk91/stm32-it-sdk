@@ -111,6 +111,7 @@ typedef struct {
 // --------------------------------------------------------------------
 
 itsdk_sigfox_init_t itsdk_sigfox_setup();
+itsdk_sigfox_init_t itsdk_sigfox_loop();
 itsdk_sigfox_init_t itsdk_sigfox_deinit();
 itsdk_sigfox_init_t itsdk_sigfox_getCurrentRcz(uint8_t * rcz);
 itsdk_sigfox_init_t itsdk_sigfox_getTxPower(uint8_t * power);

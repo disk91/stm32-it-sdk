@@ -139,6 +139,25 @@ itsdk_sigfox_init_t itsdk_sigfox_setup() {
 	return ret;
 }
 
+
+/**
+ * This function need to be called in the project_loop function
+ * to manage the sigfox stack
+ */
+itsdk_sigfox_init_t itsdk_sigfox_loop() {
+	//LOG_DEBUG_LORAWANSTK(("itsdk_sigfox_loop\r\n"));
+
+	// Strange behavior: in some case, when the message frequency is too low, the device is not
+	// able to switch clock source from HSE and the CPU stops during this switch.
+	// The reason is not yet identify but having a regular switch from HSI to HSE a period of
+	// 10 minutes seems to avoid a such situation.
+	#if ITSDK_SIGFOX_LIB == __SIGFOX_SX1276
+	  sx1276_sigfox_refreshClock();
+	#endif
+
+	return SIGFOX_INIT_SUCESS;
+ }
+
 /**
  * Stop the sigfox stack and be ready for activating another stack
  */

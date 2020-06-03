@@ -473,6 +473,7 @@ void STLL_SetClockSource( stll_clockType_e clocktype)
 	  LOG_DEBUG_SFXSX1276((" HSE Selected\r\n"));
   }
 
+
   itsdk_enterCriticalSection();
   if ( clocktype == HSI_SOURCE ) {
  	 SystemClock_Config();
@@ -480,14 +481,13 @@ void STLL_SetClockSource( stll_clockType_e clocktype)
   } else {
 	 __HAL_RCC_HSE_CONFIG(RCC_HSE_ON);
      // Wait till HSE is ready
-     while( __HAL_RCC_GET_FLAG(RCC_FLAG_HSERDY) == RESET ) {}
+     while( __HAL_RCC_GET_FLAG(RCC_FLAG_HSERDY) == RESET);
      // Select HSE as system clock source
 	 __HAL_RCC_SYSCLK_CONFIG ( RCC_SYSCLKSOURCE_HSE );
-     // Wait till HSE is used as system clock source
-	 while( __HAL_RCC_GET_SYSCLK_SOURCE( ) != RCC_SYSCLKSOURCE_STATUS_HSE ) {}
+	 // Wait till HSE is used as system clock source
+	 while( __HAL_RCC_GET_SYSCLK_SOURCE( ) != RCC_SYSCLKSOURCE_STATUS_HSE);
   }
   itsdk_leaveCriticalSection();
-
 }
 
 

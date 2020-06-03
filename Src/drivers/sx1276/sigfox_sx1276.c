@@ -31,6 +31,7 @@
 #include <it_sdk/eeprom/sdk_config.h>
 #include <it_sdk/eeprom/sdk_state.h>
 #include <it_sdk/time/timer.h>
+#include <it_sdk/time/time.h>
 #include <drivers/sigfox/sigfox_api.h>
 #include <drivers/sigfox/se_nvm.h>
 #include <drivers/sx1276/sigfox_sx1276.h>
@@ -56,6 +57,7 @@ sx1276_sigfox_ret_t sx1276_sigfox_init( void ) {
 	// set DIO3 from 'buffer empty' to NA to save current
 	SX1276Write( 0x40, 0x01 );
 
+	sx1276_sigfox_state.lastHseSwitch_S = itsdk_time_get_ms()/1000;
 	sx1276_sigfox_state.meas_rssi_dbm = 0;
 	sx1276_sigfox_state.rxPacketReceived= STLL_RESET;
 	sx1276_sigfox_state.rxCarrierSenseFlag= STLL_RESET;
@@ -121,6 +123,29 @@ sx1276_sigfox_ret_t sx1276_sigfox_init( void ) {
 	}
 	return error;
 }
+
+
+/**
+ * Workaround for a strange behavior :
+ * The processos block when switching from HSI to HSE in certain condition when the
+ * last time this switch has been made is higher than 15 - 30 minutes.
+ * Root cause not yet identify but switching on regular basis seems to avoid this problem.
+ * @TODO - investigate and fix that
+ */
+#warning "to be investigated more"
+sx1276_sigfox_ret_t sx1276_sigfox_refreshClock( void ) {
+	 uint32_t now = itsdk_time_get_ms()/1000;
+	 if ( (now - sx1276_sigfox_state.lastHseSwitch_S) > (60*15) ) {
+ 		   SX1276SetXO(1);
+ 		   STLL_SetClockSource(HSE_SOURCE);
+ 		   itsdk_delayMs(100);
+ 		   STLL_SetClockSource(HSI_SOURCE);
+ 		   SX1276SetXO(0);
+		   sx1276_sigfox_state.lastHseSwitch_S = now;
+	 }
+	 return SX1276_SIGFOX_ERR_NONE;
+}
+
 
 /**
  * DeInit Sigfox Stack
