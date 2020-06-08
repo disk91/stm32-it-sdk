@@ -154,6 +154,8 @@
 #define ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_BANK	__BANK_B					// Pin to control the L80/L86 VCC_ENABLE on
 #define ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_PIN	__LP_GPIO_NONE				//  an external power switch. When __LP_GPIO_NONE the backup mode is disabled
 										  	  	  	  	  	  	  	  	  	  	// L86 backup mode not working correctly, you need to use it also for this module.
+#define ITSDK_DRIVERS_GNSS_QUECTEL_L8X_SERIAL_DISC	__DISABLE					// The way serial line works on quectel is source of trouble, you could have to disable it when the
+																				//  GNSS is on hold. Putting the Serial Line with a pull-up sound a good choice and could avoid the use of this.
 #endif // ITSDK_DRIVERS_WITH_GNSS_DRIVER
 
 // *************************************** ACCELEROMETERS *****************************************************************

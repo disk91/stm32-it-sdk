@@ -301,7 +301,7 @@ static gnss_ret_e __quectelSetRunMode(gnss_run_mode_e mode) {
 
 /**
  * Switch the GPS in backup mode. in the mode only V_Backup is still activated
- * to preserve the ephemeris. the power consumption is 7uA.
+ * to preserve the ephemeris. The power consumption is 7uA.
  */
 static gnss_ret_e __quectelSwitchToStopWithMemoryRetention() {
 	char cmd[DRIVER_GNSS_QUECTEL_CMD_MAXZ];
@@ -310,33 +310,35 @@ static gnss_ret_e __quectelSwitchToStopWithMemoryRetention() {
 
 	if ( __quectel_status.hasBackupMode == 1 ) {
 
-		#if ITSDK_DRIVERS_GNSS_QUECTEL_MODEL == DRIVER_GNSS_QUECTEL_MODEL_L86
-		  if ( ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_PIN != __LP_GPIO_NONE ) {
-		     gpio_reset(ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_PIN);
-		  }
-		#endif
-		itsdk_delayMs(100);
-		sprintf(cmd,"$PMTK225,4*");
-		//DRIVER_GNSS_QUECTEL_CMD_NOACK
-		if ( __quectedSendCommand(cmd,DRIVER_GNSS_QUECTEL_CMD_MAXZ,DRIVER_GNSS_QUECTEL_CMD_NOACK) == GNSS_SUCCESS ) {
-			__gnss_initSerial();
-			__quectel_status.isInBackupMode = 1;
-			__quectel_status.isRunning = 0;
-			if ( ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_PIN != __LP_GPIO_NONE ) {
-			   itsdk_delayMs(40); // as we are not waiting for the command response because it is mostly
-				  			      // lost due to UART noise, it's better to wait the usual response time (25ms) or more
-			 	 	 	 	      // before shutting the power down.
-				#if ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_POL == __HIGH
-				  gpio_reset(ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_PIN);
-				#else
-				  gpio_set(ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_PIN);
-				#endif
+		// Choice 1 : we have a Hard VCC disconnect pin so we just disconnect it
+		if ( ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_PIN != __LP_GPIO_NONE ) {
+			// violent stop, no care
+			#if ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_POL == __HIGH
+			  gpio_reset(ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_PIN);
+			#else
+			  gpio_set(ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_PIN);
+			#endif
+		} else {
+			// we have no VCC stop we can try the official method
+			#if ITSDK_DRIVERS_GNSS_QUECTEL_MODEL == DRIVER_GNSS_QUECTEL_MODEL_L86
+			  if ( ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_PIN != __LP_GPIO_NONE ) {
+				 gpio_reset(ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_PIN);
+			  }
+			#endif
+			itsdk_delayMs(100);
+			sprintf(cmd,"$PMTK225,4*");
+			//DRIVER_GNSS_QUECTEL_CMD_NOACK
+			if ( __quectedSendCommand(cmd,DRIVER_GNSS_QUECTEL_CMD_MAXZ,DRIVER_GNSS_QUECTEL_CMD_NOACK) != GNSS_SUCCESS ) {
+				return GNSS_FAILED;
 			}
-			__gnss_disconnectSerial();
-			return GNSS_SUCCESS;
+			__gnss_initSerial();
 		}
-		return GNSS_FAILED;
-
+		__quectel_status.isInBackupMode = 1;
+		__quectel_status.isRunning = 0;
+		#if ITSDK_DRIVERS_GNSS_QUECTEL_L8X_SERIAL_DISC == __ENABLE
+		__gnss_disconnectSerial();
+		#endif
+		return GNSS_SUCCESS;
 	} else {
 		// fallback in standby mode
 		return __quectelSwitchToStandbyWithMemoryRetention();
@@ -555,6 +557,7 @@ static gnss_ret_e __quectelNMEA(gnss_data_t * data, uint8_t * line, uint16_t sz,
 		__quectel_status.nmeaErrors = 0;
 	}
 	nmea_supported_e previous = driver->currentMessage;
+	//log_info("[%X]",previous);
 	gnss_ret_e ret = nmea_processNMEA(data, line, sz,driver);
 	switch (ret) {
 		case GNSS_PROPRIETARY: {
@@ -635,15 +638,15 @@ static gnss_ret_e __quectelNMEA(gnss_data_t * data, uint8_t * line, uint16_t sz,
 					//                            Mcore => MT 3318 chip
 					ret = GNSS_SUCCESS;
 				} else if ( line[5] == 'C' && line[6] == 'H' && line[7] == 'N' ) {
-					// PMTKCHN message => sateline status with following format
+					// PMTKCHN message => satellite status with following format
 					// PPNNT
 					//   PP - Sat Number
 					//   NN - SNR
 					//   T - state : 0-idle 1-searching 2-tracking
-					// Problem is that this message size is really long with 6chars per satelites
+					// Problem is that this message size is really long with 6chars per satellites
 					// so it requires a lot of memory to process or when need to have a char by char processing
 					// this could be an improvement for later ...
-					// forgetit now.
+					// forget it now.
 					ret = GNSS_SUCCESS;
 				}
 			  }

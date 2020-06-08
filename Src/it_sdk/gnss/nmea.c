@@ -559,14 +559,21 @@ gnss_ret_e nmea_processNMEA(gnss_data_t * data, uint8_t * line, uint16_t sz, gns
 						#endif
 					}
 				}
+			}  else if ( sz > 6 && line[3]=='V' && line[4]=='T' && line[5]=='G' ) {
+				// @TODO to be decoded
+				driver->currentMessage |= NMEA_VTG;
 			} else {
 				// Unsupported NMEA message
-				//log_info("[UNKNONWN] %s \r\n",line);
+				//log_info("[UKN] %s \r\n",line);
 			}
 		} else if ( line[1] == 'P') {
 			return GNSS_PROPRIETARY;
 		} else {
 			//log_info("[UNKNONWN] %s \r\n",line);
+			#if (ITSDK_LOGGER_MODULE & __LOG_MOD_GNSS) > 0
+				log_info("U");
+			#endif
+
 		}
 
 	} else {
