@@ -410,9 +410,9 @@ drivers_lis2dh12_ret_e lis2dh_cancelDataAquisition(void) {
 
 		// switch powerdown
 		ret |= lis2dh_resetFilteringBlock();	// clear the filtering block
-		ret |= lis2dh_setDataRate(LIS2DH_FREQUENCY_POWERDOWN);
 		ret |= lis2dh_setResolutionMode(LIS2DH_RESOLUTION_MODE_8B);
 		ret |= lis2dh_setAccelerationScale(LIS2DH_SCALE_FACTOR_2G);
+		ret |= lis2dh_setDataRate(LIS2DH_FREQUENCY_POWERDOWN);
 
 		__lis2dh_conf._captureModeEnable = BOOL_FALSE;
 		return ret;
