@@ -37,6 +37,7 @@
 #include <string.h>
 
 #include <it_sdk/logger/logger.h>
+#include <it_sdk/logger/error.h>
 #include <it_sdk/time/time.h>
 
 // ---------------------------------------------------------
@@ -86,6 +87,27 @@ void gnss_process_loop(itsdk_bool_e force) {
 	  __gnss_process_serialLine();
 	#endif
 
+	// Ensure we are not free-fall with a gps never terminating
+	// Garbage collection... We should not but as the GPS consumption
+	// is really high it's good to track this
+	if ( __gnss_config.isRunning == 1 ) {
+		uint64_t _now = (itsdk_time_get_ms()/1000);
+		uint64_t _duration = _now - __gnss_config.startupTimeS;
+		if ( _duration > __gnss_config.maxDurationS+15 ) {
+			GNSS_LOG_DEBUG(("GQ!"));
+			ITSDK_ERROR_REPORT(ITSDK_ERROR_DRV_GNSS_FAILSTOP,0);
+			gnss_stop(GNSS_STOP_MODE);
+			// Manage the callbacks
+			gnss_triggers_e triggers = GNSS_TRIGGER_ON_TIMEOUT;
+			gnss_eventHandler_t * c = __gnss_config.callbackList;
+			while ( c != NULL ) {
+				if ( (triggers & c->triggerMask) > 0 ) {
+					if ( c->callback != NULL ) c->callback(triggers & c->triggerMask, &__gnss_config.data, _duration);
+				}
+				c = c->next;
+			}
+		}
+	}
 
 }
 
@@ -248,6 +270,7 @@ static gnss_ret_e __gnss_onDataRefreshed(void) {
 	// Update duration
 	uint64_t _now = (itsdk_time_get_ms()/1000);
 	uint64_t _duration = _now - __gnss_config.startupTimeS;
+	GNSS_LOG_DEBUG(("Gd %d\r\n", (uint32_t)_duration));
 	if ( _duration > __gnss_config.maxDurationS ) {
 		triggers |= GNSS_TRIGGER_ON_TIMEOUT;
 		// Stop the GNSS subsystem
@@ -256,7 +279,7 @@ static gnss_ret_e __gnss_onDataRefreshed(void) {
 
 	//generate triggers
 	if ( __gnss_config.data.lastRefreshS > 0 ) {
-		GNSS_LOG_DEBUG(("Gnss - #\r\n"));
+		GNSS_LOG_DEBUG(("Gnss - #"));
 		triggers |= GNSS_TRIGGER_ON_UPDATE;
 
 		gnss_fix_info_t * f = &__gnss_config.data.fixInfo;
@@ -338,6 +361,8 @@ static gnss_ret_e __gnss_onDataRefreshed(void) {
 				#endif
 			}
 		#endif
+		GNSS_LOG_DEBUG(("\r\n"));
+
 	}
 
 	// Manage the callbacks

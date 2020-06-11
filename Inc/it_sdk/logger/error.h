@@ -156,6 +156,7 @@ typedef struct {
 #define ITSDK_ERROR_DRV_QUECTEL8X_RSTFAILD	0x00000341 | (ITSDK_ERROR_LEVEL_WARN  | ITSDK_ERROR_TYPE_SDK | ITSDK_ERROR_WOUT_VALUE)	// Device did not properly apply second reset
 #define ITSDK_ERROR_DRV_QUECTEL8X_RSPFAILD	0x00000342 | (ITSDK_ERROR_LEVEL_WARN  | ITSDK_ERROR_TYPE_SDK | ITSDK_ERROR_WITH_VALUE)	// Failed to get a response from a serial command given as a parameter
 #define ITSDK_ERROR_DRV_QUECTEL8X_COMERROR	0x00000343 | (ITSDK_ERROR_LEVEL_ERROR | ITSDK_ERROR_TYPE_SDK | ITSDK_ERROR_WITH_VALUE)	// Many errors during the serial transmission error rate reached > 20%
+#define ITSDK_ERROR_DRV_GNSS_FAILSTOP		0x00000350 | (ITSDK_ERROR_LEVEL_ERROR | ITSDK_ERROR_TYPE_SDK | ITSDK_ERROR_WOUT_VALUE)	// GPS did not automatically stopped at end of the duration, stopped has been forced by garbage collection
 
 
 

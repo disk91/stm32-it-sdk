@@ -238,7 +238,6 @@ gnss_ret_e quectel_lxx_initLowPower(gnss_config_t * config) {
 
 
 	// Disable $GPTXT message (version 1.2)
-	// It seams to restart the device
 	sprintf(cmd,"$PQTXT,W,0,1*");
 	__quectedSendCommand(cmd,DRIVER_GNSS_QUECTEL_CMD_MAXZ,DRIVER_GNSS_QUECTEL_CMD_PQTXT);
 
@@ -654,17 +653,47 @@ static gnss_ret_e __quectelNMEA(gnss_data_t * data, uint8_t * line, uint16_t sz,
 			break;
 		case GNSS_SUCCESS:
 			// processed by NMEA driver
+			// We are searching to identifying the last message of the message flow
+			// this message can change over time
+			// Only important point First message need to stay the first message and do not disappear
+
 			if ( driver->firstMessage == NMEA_NONE ) {
 				// we found the first of the messages
 				driver->firstMessage = driver->currentMessage;
+				driver->numOfMessages = 0;
 			} else if ( driver->firstMessage == driver->currentMessage && driver->triggeringMessage == NMEA_NONE ) {
 				// we found the last of the messages
 				driver->triggeringMessage = previous;
-			} else if ( driver->currentMessage == driver->triggeringMessage ) {
+				driver->numOfMessages = driver->numOfMessCurShot;
+			}
+
+			if ( driver->firstMessage != NMEA_NONE  && driver->currentMessage == driver->firstMessage ) {
+				// First message detected
+				if ( driver->numOfMessages > 0 && driver->numOfMessCurShot < driver->numOfMessages) {
+					// but the previous message flow was some missing messages
+					driver->triggeringMessage = NMEA_NONE;
+					driver->numOfMessages = 0;
+				}
+				driver->numOfMessCurShot=1;
+			} else {
+				driver->numOfMessCurShot++;
+			}
+
+			if (       driver->triggeringMessage != NMEA_NONE
+					&& driver->currentMessage == driver->triggeringMessage
+					&& driver->numOfMessages == driver->numOfMessCurShot
+			) {
 				// end of the NMEA message flow we can place the callback
 				// @TODO - if RMC is the last message it can change from GP to GN when the fix has been performed...
 				driver->onDataRefreshed();
-			}
+		    } else if ( (driver->numOfMessages > 0 && driver->numOfMessCurShot >= driver->numOfMessages ) ) {
+		    	// The message flow has changed, less or more messages are now sent over the line
+				// we need to find the new last message from the list
+				driver->triggeringMessage = NMEA_NONE;
+				driver->numOfMessages = 0;
+		    }
+
+
 			break;
 
 		default:

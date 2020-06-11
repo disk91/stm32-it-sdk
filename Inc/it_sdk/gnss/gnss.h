@@ -276,6 +276,8 @@ typedef struct gnss_nmea_driver_s {
 	nmea_supported_e firstMessage;		// first message sent by the GNSS (static - to determine the last one)
 	nmea_supported_e currentMessage;	// current message sent by GNSS (dynamic - to determine the last one)
 	nmea_supported_e triggeringMessage;	// after processing this message we have all the informations updated
+	uint8_t			 numOfMessages;		// number of message per shot - use for message change over time
+	uint8_t			 numOfMessCurShot;	// number of messages received since the last data report
 	gnss_ret_e (*nmeaParser)(gnss_data_t * data, uint8_t * line, uint16_t sz, struct gnss_nmea_driver_s * driver);
 									    // nmea parsing function for the activ driver
     gnss_ret_e (*onDataRefreshed)();	// call by underlaying driver when gnss_config_t structure has been refreshed
