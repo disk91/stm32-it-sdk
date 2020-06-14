@@ -49,7 +49,6 @@ Maintainer: Miguel Luis and Gregory Cristian
 #define TCXO_OFF() gpio_reset(ITSDK_SX1276_TCXO_VCC_BANK,ITSDK_SX1276_TCXO_VCC_PIN);
 
 
-
 /*!
  * \brief Controls the antena switch if necessary.
  *

@@ -47,7 +47,6 @@ sx1276_sigfox_ret_t sx1276_sigfox_idle( void );
 sx1276_sigfox_ret_t sx1276_sigfox_getRssi(int16_t * rssi);
 sx1276_sigfox_ret_t sx1276_sigfox_getSeqId( uint16_t * seqId );
 sx1276_sigfox_ret_t sx1276_sigfox_setPower( uint8_t power );
-sx1276_sigfox_ret_t sx1276_sigfox_refreshClock( void );
 
 // Function you can override
 sx1276_sigfox_ret_t sx1276_sigfox_idle_used( void );

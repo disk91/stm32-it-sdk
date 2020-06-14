@@ -126,28 +126,6 @@ sx1276_sigfox_ret_t sx1276_sigfox_init( void ) {
 
 
 /**
- * Workaround for a strange behavior :
- * The processos block when switching from HSI to HSE in certain condition when the
- * last time this switch has been made is higher than 15 - 30 minutes.
- * Root cause not yet identify but switching on regular basis seems to avoid this problem.
- * @TODO - investigate and fix that
- */
-#warning "to be investigated more"
-sx1276_sigfox_ret_t sx1276_sigfox_refreshClock( void ) {
-	 uint32_t now = itsdk_time_get_ms()/1000;
-	 if ( (now - sx1276_sigfox_state.lastHseSwitch_S) > (60*15) ) {
- 		   SX1276SetXO(1);
- 		   STLL_SetClockSource(HSE_SOURCE);
- 		   itsdk_delayMs(100);
- 		   STLL_SetClockSource(HSI_SOURCE);
- 		   SX1276SetXO(0);
-		   sx1276_sigfox_state.lastHseSwitch_S = now;
-	 }
-	 return SX1276_SIGFOX_ERR_NONE;
-}
-
-
-/**
  * DeInit Sigfox Stack
  */
 sx1276_sigfox_ret_t sx1276_sigfox_deinit( void ) {

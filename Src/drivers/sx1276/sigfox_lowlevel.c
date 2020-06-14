@@ -168,10 +168,10 @@ void STLL_RadioPowerSetBoard( int8_t power)
  * End of Tx event seems to be executed by a external interruption
  * calling the STLL_SetEndOfTxFrame function.
  * This function is called to wait for the end of the transmission
- * This function is calling the upperlayer idle() function to eventually
+ * This function is calling the upper layer idle() function to eventually
  * have some action during this wait phase. The processor can goes to idle
  * mode only is the related setting is authorizing it. Basically it should be
- * a bit complicated as during this wait the DMA is tranfering orders from the memory to the SPI.
+ * a bit complicated as during this wait the DMA is transferring orders from the memory to the SPI.
  */
 STLL_flag STLL_WaitEndOfTxFrame( void )
 {
@@ -473,11 +473,29 @@ void STLL_SetClockSource( stll_clockType_e clocktype)
 	  LOG_DEBUG_SFXSX1276((" HSE Selected\r\n"));
   }
 
+  log_info(">> STLL_SetClockSource: ");
+  if ( clocktype == HSI_SOURCE ) {
+	  log_info(" DEFAULT Selected\r\n");
+  } else {
+	  log_info(" HSE Selected\r\n");
+  }
 
   itsdk_enterCriticalSection();
   if ( clocktype == HSI_SOURCE ) {
- 	 SystemClock_Config();
- 	 __HAL_RCC_HSE_CONFIG(RCC_HSE_OFF);
+	  __HAL_RCC_HSI_ENABLE();
+	  // Wait till HSI is ready
+	  while( __HAL_RCC_GET_FLAG(RCC_FLAG_HSIRDY) == RESET );
+	  // Enable PLL
+	  __HAL_RCC_PLL_ENABLE();
+	  // Wait till PLL is ready
+	  while( __HAL_RCC_GET_FLAG( RCC_FLAG_PLLRDY ) == RESET ) {}
+	  // Select PLL as system clock source
+	  __HAL_RCC_SYSCLK_CONFIG ( RCC_SYSCLKSOURCE_PLLCLK );
+	  // Wait till PLL is used as system clock source
+	  while( __HAL_RCC_GET_SYSCLK_SOURCE( ) != RCC_SYSCLKSOURCE_STATUS_PLLCLK ) {}
+	  __HAL_RCC_HSE_CONFIG(RCC_HSE_OFF);
+ 	 //SystemClock_Config();
+ 	 //__HAL_RCC_HSE_CONFIG(RCC_HSE_OFF);
   } else {
 	 __HAL_RCC_HSE_CONFIG(RCC_HSE_ON);
      // Wait till HSE is ready

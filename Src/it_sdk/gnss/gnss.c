@@ -270,7 +270,7 @@ static gnss_ret_e __gnss_onDataRefreshed(void) {
 	// Update duration
 	uint64_t _now = (itsdk_time_get_ms()/1000);
 	uint64_t _duration = _now - __gnss_config.startupTimeS;
-	GNSS_LOG_DEBUG(("Gd %d\r\n", (uint32_t)_duration));
+	//GNSS_LOG_DEBUG(("Gd %d\r\n", (uint32_t)_duration));
 	if ( _duration > __gnss_config.maxDurationS ) {
 		triggers |= GNSS_TRIGGER_ON_TIMEOUT;
 		// Stop the GNSS subsystem
