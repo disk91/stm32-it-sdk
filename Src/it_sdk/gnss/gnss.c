@@ -277,6 +277,8 @@ static gnss_ret_e __gnss_onDataRefreshed(void) {
 		__gnss_config.setRunMode(GNSS_STOP_MODE);
 	}
 
+	triggers |= GNSS_TRIGGER_ON_EVERY_LOOP;
+
 	//generate triggers
 	if ( __gnss_config.data.lastRefreshS > 0 ) {
 		GNSS_LOG_DEBUG(("Gnss - #"));

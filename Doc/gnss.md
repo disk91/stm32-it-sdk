@@ -186,7 +186,8 @@ typedef enum {
 	GNSS_TRIGGER_ON_SPEED_110		= 0x0040000,		// speed is over 110km/h
 	GNSS_TRIGGER_ON_SPEED_150		= 0x0080000,		// speed is over 159km/h
 
-	GNSS_TRIGGER_ON_UPDATE			= 0x4000000,		// simple Fix rate update
+	GNSS_TRIGGER_ON_EVERY_LOOP		= 0x2000000,		// simple GNSS rate update (even if no data has been refreshed)
+	GNSS_TRIGGER_ON_UPDATE			= 0x4000000,		// simple Fix rate update (some data have been refreshed in the structure)
 	GNSS_TRIGGER_ON_TIMEOUT			= 0x8000000			// Fix timeout expired, search has stopped
 } gnss_triggers_e;
 ```
