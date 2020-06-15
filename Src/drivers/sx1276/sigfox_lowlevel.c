@@ -473,13 +473,6 @@ void STLL_SetClockSource( stll_clockType_e clocktype)
 	  LOG_DEBUG_SFXSX1276((" HSE Selected\r\n"));
   }
 
-  log_info(">> STLL_SetClockSource: ");
-  if ( clocktype == HSI_SOURCE ) {
-	  log_info(" DEFAULT Selected\r\n");
-  } else {
-	  log_info(" HSE Selected\r\n");
-  }
-
   itsdk_enterCriticalSection();
   if ( clocktype == HSI_SOURCE ) {
 	  __HAL_RCC_HSI_ENABLE();
