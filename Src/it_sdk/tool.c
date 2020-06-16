@@ -217,6 +217,19 @@ int16_t itdt_convertDecChar4Int(char * v) {
 }
 
 /* -----------------------------------------------------------
+ *  Convert a 3 char decimal string value into uint8_t value
+ *  Format 001
+ */
+uint16_t itdt_convertDecChar3UInt(char * v) {
+  uint8_t ret = itdt_convertHexChar2HalfInt(*v);v++;
+  ret *= 10;
+  ret += itdt_convertHexChar2HalfInt(*v);v++;
+  ret *= 10;
+  ret += itdt_convertHexChar2HalfInt(*v);v++;
+  return ret;
+}
+
+/* -----------------------------------------------------------
  * Convert a 8bytes table to Upper Hex upper/lower string
  */
 void itdt_convertIntTab2Hex(char * dest, uint8_t * tab, int len, itsdk_bool_e upper) {

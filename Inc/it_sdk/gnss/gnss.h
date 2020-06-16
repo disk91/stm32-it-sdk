@@ -98,7 +98,7 @@ typedef enum {
 
 // Data structure to report GNSS informations up to the application layer
 typedef struct {
-	uint32_t	updateTime;		// last seen time
+	uint32_t	updateTime;		// last seen time in S from last boot
 	uint8_t		signal;			// last signal level 00 99 dBm
 	uint8_t		maxSignal;		// best signal level
 	uint8_t		elevation;		// elevation in degree 0-90

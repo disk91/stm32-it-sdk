@@ -558,6 +558,13 @@ static gnss_ret_e __quectelNMEA(gnss_data_t * data, uint8_t * line, uint16_t sz,
 	nmea_supported_e previous = driver->currentMessage;
 	//log_info("[%X]",previous);
 	gnss_ret_e ret = nmea_processNMEA(data, line, sz,driver);
+
+	// To print the received messages for debug
+	//char __l[4];
+	//strncpy(__l,&line[3],3);
+	//__l[3]=0;
+	//log_info("[%s]",__l);
+
 	switch (ret) {
 		case GNSS_PROPRIETARY: {
 			ret = GNSS_NOTSUPPORTED;

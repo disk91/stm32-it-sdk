@@ -535,7 +535,7 @@ gnss_ret_e nmea_processNMEA(gnss_data_t * data, uint8_t * line, uint16_t sz, gns
 						if ( nmea_getDecimalField(pt,&snr) == GNSS_INVALIDFORMAT ) return GNSS_INVALIDFORMAT;
 
 						#if ITSDK_DRIVERS_GNSS_WITHGPSSAT == __ENABLE && (ITSDK_DRIVERS_GNSS_POSINFO & __GNSS_WITH_SAT_DETAILS) > 0
-						if ( satId >= 0 && satId <= 32 ) {
+						if ( satId >= 1 && satId <= 32 ) {
 							// GPS Sat
 							data->sat_gps[satId-1].updateTime = (uint32_t)now;
 							data->sat_gps[satId-1].elevation = elevation;
