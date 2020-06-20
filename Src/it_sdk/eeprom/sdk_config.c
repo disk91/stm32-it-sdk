@@ -378,7 +378,7 @@ static itsdk_console_return_e _itsdk_config_consolePriv(char * buffer, uint8_t s
 			// help
  			#if ITSDK_CONFIGURATION_MODE != __CONFIG_STATIC
 			  _itsdk_console_printf("S          : commit configuration\r\n");
-			  _itsdk_console_printf("F          : restore factory defaults\r\n");
+			  _itsdk_console_printf("F          : restore factory default config\r\n");
 			  _itsdk_console_printf("m          : see eeprom configuration\r\n");
 			#endif
 			#if ITSDK_WITH_SIGFOX_LIB == __ENABLE || ITSDK_WITH_LORAWAN_LIB == __ENABLE
