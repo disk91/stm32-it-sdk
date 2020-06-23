@@ -160,6 +160,7 @@ void SX1276SetXO( uint8_t state )
   }
   else
   {
+	itsdk_delayMs(10);
     TCXO_OFF(); 
   }
 }
