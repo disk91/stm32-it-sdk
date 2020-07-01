@@ -1,5 +1,7 @@
 # Disk91 IoT_SDK not only for STM32
 
+*Version 1.7 - in development. For stable version go to version-1.6 branch*
+
 This project is a low level SDK with a harwdare abstraction layer designed to make IoT project. The purpose is to quickly be able to create communicating IoT device over LPWAN (LoRaWAn, Sigfox...) for fast prototyping but also being able to bring that firmware to production will all the necessary components avaoilable out-of-the-box. This SDK try to be fully configurable with header files. The objectif is to propose an abstraction layer between the software implementation and the MCU execution allowing to port the firmware on different plateform. 
 
 ![itsdk_architecture](Doc/It-sdk-architecture.png) "IT-SDK Architecture"
