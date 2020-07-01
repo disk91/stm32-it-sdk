@@ -45,7 +45,7 @@ static lowPower_state_e __lowPowerState = LOWPRW_ENABLE;
 /**
  * Switch to low power mode selected for the expected platform
  */
-void lowPower_switch() {
+void __attribute__((optimize("O3"))) lowPower_switch() {
 
 	if (__lowPowerState==LOWPRW_ENABLE) {
 		// Ensure we will wake up at next softTimer end or Task end.

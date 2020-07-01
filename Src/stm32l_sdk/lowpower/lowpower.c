@@ -60,7 +60,7 @@
  * Setup the STM32L Low Power mode for the given amount of ms
  * 0xFFFFFFFF ms when no time limit
  */
-stm32l_lowPowerReturn_e stm32l_lowPowerSetup(uint32_t durationMs, stm32_lowPowerMode_e mode) {
+stm32l_lowPowerReturn_e __attribute__((optimize("O3"))) stm32l_lowPowerSetup(uint32_t durationMs, stm32_lowPowerMode_e mode) {
 
 	if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_STOP ) {
 		// -------------------------------------------------------------
@@ -195,12 +195,13 @@ stm32l_lowPowerReturn_e stm32l_lowPowerSetup(uint32_t durationMs, stm32_lowPower
 }
 
 
-stm32l_lowPowerReturn_e stm32l_lowPowerResume(stm32_lowPowerMode_e mode) {
+stm32l_lowPowerReturn_e __attribute__((optimize("O3"))) stm32l_lowPowerResume(stm32_lowPowerMode_e mode) {
 
 	if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_STOP ) {
 		// ------------------------------------------------------------
 		// Restore from STOP MODE
 		// ------------------------------------------------------------
+
 		SystemClock_Config();
 		HAL_SuspendTick();
 		#if  ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_RTC ) > 0
@@ -252,6 +253,7 @@ stm32l_lowPowerReturn_e stm32l_lowPowerResume(stm32_lowPowerMode_e mode) {
 			 }
 			#endif
 		}
+
 	}
 	//  useful line of code to identify the wakeup cause when needed...
 	#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_LOWPOWER ) > 0
