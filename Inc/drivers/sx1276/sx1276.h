@@ -48,7 +48,7 @@
 #include "sx1276Regs-Fsk.h"
 #include "sx1276Regs-LoRa.h"
 
-#if (ITSDK_LOGGER_MODULE & __LOG_MOD_LOWLORADBG) > 0
+#if (ITSDK_LOGGER_MODULE & __LOG_MOD_LOWLORADBG) > 0 || (ITSDK_LOGGER_MODULE & __LOG_MOD_LOWSIGFOX ) > 0
 #define LOG_INFO_SX1276(x)		log_info x
 #define LOG_WARN_SX1276(x) 		log_warn x
 #define LOG_ERROR_SX1276(x)		log_error x
@@ -269,6 +269,15 @@ typedef struct sBoardCallback
  * ============================================================================
  * Public functions prototypes
  * ============================================================================
+ */
+
+/*!
+ * \brief Init the low power in a low power mode / this can be used in place of the standard full init in SX1276Init
+ */
+void SX1276InitLowPower( void );
+
+/*!
+ * \brief Structure init
  */
 void SX1276BoardInit( LoRaBoardCallback_t *callbacks );
 

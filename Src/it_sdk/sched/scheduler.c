@@ -96,7 +96,20 @@ void itdt_sched_haltSched(uint8_t schedId) {
  */
 void itdt_sched_runSched(uint8_t schedId) {
 	__scheds[schedId].halt = 0;
+	__scheds[schedId].nextRun = itsdk_time_get_ms()+__scheds[schedId].period;
 	_LOG_SCHED(("[sched] (%d) restarted\r\n",schedId));
+}
+
+/**
+ * Clean the potential storm run we can have when a sched stopped during a certain time.
+ * The normal behavior is to have the scheduler running on time and we can have multiple
+ * execution with no pause if the scheduler is running late.
+ * This function clear the last processing date with the current processing date to avoid this
+ * behavior.
+ */
+void itdt_sched_clearNextRun(uint8_t schedId) {
+	__scheds[schedId].nextRun = itsdk_time_get_ms()+__scheds[schedId].period;
+	_LOG_SCHED(("[sched] (%d) nexRun cleared\r\n",schedId));
 }
 
 /**

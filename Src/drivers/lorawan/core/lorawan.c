@@ -113,7 +113,9 @@ void lorawan_driver_loop() {
 __weak void lorawan_driver_waitUntilEndOfExecution() {
 
 	lorawan_driver_loop();
-    wdg_refresh();
+	#if ITSDK_WITH_WDG != __WDG_NONE && ITSDK_WDG_MS > 0
+	   wdg_refresh();
+	#endif
     itsdk_stimer_run();
 
 }
@@ -770,7 +772,7 @@ itsdk_lorawan_channel_t lorawan_driver_LORA_AddChannel(
  * for US915 as an example we have 6 entries of 16b in the tab for the 72 possible channels
  */
 itsdk_lorawan_channel_t lorawan_driver_LORA_SelectChannels(uint16_t region, uint16_t * channels ){
-	LOG_INFO_LORAWAN(("lorawan_driver_LORA_SelectChannels (%d)\r\n",channelId));
+	LOG_INFO_LORAWAN(("lorawan_driver_LORA_SelectChannels (%d)\r\n",region));
 	ChanMaskSetParams_t chanMaskSet;
 	chanMaskSet.ChannelsMaskType = CHANNELS_REINIT_MASK;
 	chanMaskSet.ChannelsMaskIn = channels;

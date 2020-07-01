@@ -47,6 +47,7 @@
 #define __DEVICE_STM32L011D4		1
 #define __DEVICE_STM32L072XX		2
 #define __DEVICE_STM32L053R8		3
+#define __DEVICE_STM32L031K6		4
 
 /**
  * Supported Low Power Mode
@@ -60,6 +61,7 @@
 #define __LOWPWR_MODE_WAKE_RTC		0x0004
 #define __LOWPWR_MODE_WAKE_UART2	0x0008
 #define __LOWPWR_MODE_WAKE_UART1	0x0010
+#define __LOWPWR_MODE_WAKE_ALLUART  0x0019
 
 /**
  * Module to keep activated during sleep
@@ -97,6 +99,13 @@
 #define __CLK_BEST_SRC_CLK			0x02			// The main CLK is the most accurated source
 
 /**
+ * WDG configuration
+ */
+#define __WDG_NONE					0x00			// No WDG
+#define __WDG_IWDG					0x01			// with iWDG
+
+
+/**
  * ADC configuration
  */
 #define __ADC_NONE					0x00			// No ADC
@@ -127,6 +136,11 @@
 #define __DISABLE					0x00
 #define __ENABLE					0x01
 
+/**
+ * Polarity
+ */
+#define __LOW						0x00
+#define __HIGH						0x01
 
 /**
  * Config mode
@@ -191,6 +205,11 @@
 #define __LOG_MOD_LOWLORADBG	0x00000008			// Lora low level - hardware level
 #define __LOG_MOD_LOWLORAINF	0x00000010			// Lora low level - mac level
 #define __LOG_MOD_STKLORA		0x00000020			// Lora low level - itsdk level
+#define __LOG_MOD_STATEMINF		0x00000040			// State Machine info
+#define __LOG_MOD_STATEMDBG		0x00000080			// State Machine debug
+#define __LOG_MOD_GNSS			0x00000100			// Gnss & underlaying drivers
+#define __LOG_MOD_ACCEL			0x00000200			// Accelerometer & underlaying drivers
+#define __LOG_MOD_LOWPOWER		0x00000400			// Print the wakeup reason - see lowpower.c
 
 #define __LOG_MOD_CUSTOM1		0x00010000			// User level logging
 #define __LOG_MOD_CUSTOM2		0x00020000			// User level logging
@@ -208,6 +227,12 @@
 #define __LOG_MOD_CUSTOME		0x20000000			// User level logging
 #define __LOG_MOD_CUSTOMF		0x40000000			// User level logging
 #define __LOG_MOD_RESERVED		0x80000000			// Reserved Level
+
+#define __LOG_LEVEL_VERBOSE_DEBUG	5
+#define __LOG_LEVEL_VERBOSE_STD 	4
+#define __LOG_LEVEL_STANDARD    	3
+#define __LOG_LEVEL_QUIET			2
+#define __LOG_LEVEL_CRITIAL_ONLY 	1
 
 /**
  * Network to activate
@@ -346,5 +371,21 @@
 #define __LPWAN_REGION_SA920		0x00001000		// South America :Argentina, Chile, Colombia, Costa Rica, Ecuador, El Salvador, Guatemala, Honduras, Panama, Peru, Uruguay (RCZ4)
 #define __LPWAN_REGION_AP920		0x00002000		// Asia Pacific : Australia, Hong Kong, Malaysia, New Zealand, Singapore, Taiwan, Thailand (RCZ4)
 #define __LPWAN_REGION_JP923		0x00004000		// Japan (RCZ3a)
+
+
+
+/**
+ * List of user expected option to filter the unneeded NMEA messages
+ */
+#define __GNSS_WITH_2DPOS 		0x0001
+#define __GNSS_WITH_3DPOS		0x0002
+#define __GNSS_WITH_TIME		0x0004
+#define __GNSS_WITH_DATE		0x0008
+#define __GNSS_WITH_HDOP		0x0010
+#define __GNSS_WITH_PDOP_VDOP	0x0020
+#define __GNSS_WITH_SAT_DETAILS	0x0040
+#define __GNSS_WITH_SPEED		0x0080
+#define __GNSS_WITH_COG			0x0100		// Direction
+
 
 #endif /* IT_SDK_CONFIG_DEFINES_H_ */

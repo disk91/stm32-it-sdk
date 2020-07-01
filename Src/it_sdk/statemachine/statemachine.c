@@ -37,13 +37,17 @@ void statem(machine_t * machine) {
 	int previousState;
 	uint16_t stateRet;
 
-#if ITSDK_DEBUG_STATEM >= 1
+#if (ITSDK_LOGGER_MODULE & __LOG_MOD_STATEMDBG) > 0
 	// In debug mode we ensure never jump on a not existing state
 	// in production mode we are suppose to have a working code not doing a such thing
 	if ( machine->lastState == STATE_UNKNOWN ) {
 		int i;
 		for (i=0 ; i < STATE_MACHINE_SZ ; i++) {
-			if ( machine->stm[i].stuid ==  STATE_LAST ) break;
+			#if defined ITSDK_STATEMACHINE_STATIC && ITSDK_STATEMACHINE_STATIC == __ENABLE
+			   if ( (machine->stm+i)->stuid ==  STATE_LAST ) break;
+			#else
+			   if ( machine->stm[i].stuid ==  STATE_LAST ) break;
+			#endif
 		}
 		machine->lastState = i;
 	}
@@ -57,8 +61,12 @@ void statem(machine_t * machine) {
 	}
 #endif
 
+#if defined ITSDK_STATEMACHINE_STATIC && ITSDK_STATEMACHINE_STATIC == __ENABLE
+   state_t * st = (machine->stm+(int)machine->currentState);
+#else
 	state_t * st = &machine->stm[(int)machine->currentState];
-#if ITSDK_DEBUG_STATEM >= 3
+#endif
+#if (ITSDK_LOGGER_MODULE & __LOG_MOD_STATEMINF) > 0
 	_LOG_STATEM(("[STM][I] St(%d)[%s] param (%d) lp (%d) tlp (%d)\r\n",
 			machine->currentState,
 			st->name,
@@ -72,32 +80,37 @@ void statem(machine_t * machine) {
 	if( machine->precall != NULL ) machine->precall();
 	stateRet = st->process(st->param, machine->currentState, machine->loopCurrentStep, machine->totalLoop);
 	machine->currentState = (uint8_t)(stateRet & 0xFF);
+	#if defined ITSDK_STATEMACHINE_STATIC && ITSDK_STATEMACHINE_STATIC == __ENABLE
+	   state_t * newst = (machine->stm+(int)machine->currentState);
+	#else
+	   state_t * newst = &machine->stm[(int)machine->currentState];
+	#endif
 
 	// Do we have change state of are we on the same one ?
 	if ( previousState == machine->currentState ) {
 		machine->loopCurrentStep++;
 	} else {
-#if ITSDK_DEBUG_STATEM >= 2
+#if (ITSDK_LOGGER_MODULE & __LOG_MOD_STATEMINF) > 0
 		_LOG_STATEM(("[STM][I] St change for (%d)[%s] - tlp (%d)\r\n",
 				machine->currentState,
-				machine->stm[(int)machine->currentState].name,
+				newst->name,
 				machine->totalLoop));
 #endif
 		machine->loopCurrentStep = LOOP_INIT_VALUE;
-		if( machine->stm[(int)machine->currentState].reset != NULL ) {
-#if ITSDK_DEBUG_STATEM >= 3
+		if( newst->reset != NULL ) {
+#if (ITSDK_LOGGER_MODULE & __LOG_MOD_STATEMINF) > 0
 			_LOG_STATEM(("[STM][I] Call reset for next step (%d)\r\n",machine->currentState));
 #endif
-			machine->stm[(int)machine->currentState].reset();
+			newst->reset();
 		}
 	}
 
-#if ITSDK_DEBUG_STATEM >= 3
+#if (ITSDK_LOGGER_MODULE & __LOG_MOD_STATEMDBG) > 0
 	_LOG_STATEM(("[STM][I] Next State will (%d)[%s]\r\n",
 			machine->currentState,
-			machine->stm[(int)machine->currentState].name));
+			newst->name));
 #endif
-#ifdef ITSDK_DEBUG_STATEM
+#if (ITSDK_LOGGER_MODULE & __LOG_MOD_STATEMDBG) > 0
 	if ( machine->currentState == STATE_UNKNOWN || machine->currentState >= machine->lastState ) {
 		_LOG_STATEM(("[STM][E] Invalid next state (%d)\r\n",machine->currentState));
 	}

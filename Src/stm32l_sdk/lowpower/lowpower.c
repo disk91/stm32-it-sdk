@@ -60,7 +60,7 @@
  * Setup the STM32L Low Power mode for the given amount of ms
  * 0xFFFFFFFF ms when no time limit
  */
-stm32l_lowPowerReturn_e stm32l_lowPowerSetup(uint32_t durationMs, stm32_lowPowerMode_e mode) {
+stm32l_lowPowerReturn_e __attribute__((optimize("O3"))) stm32l_lowPowerSetup(uint32_t durationMs, stm32_lowPowerMode_e mode) {
 
 	if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_STOP ) {
 		// -------------------------------------------------------------
@@ -103,11 +103,14 @@ stm32l_lowPowerReturn_e stm32l_lowPowerSetup(uint32_t durationMs, stm32_lowPower
 				while(__HAL_UART_GET_FLAG(&huart2, USART_ISR_BUSY) == SET){};
 			#endif
 
+			#if  ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_ALLUART ) > 0
+				UART_WakeUpTypeDef wakeup;
+			#endif
+
 			#if  ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_LPUART ) > 0
 				// make sure that UART is ready to receive
 				while(__HAL_UART_GET_FLAG(&hlpuart1, USART_ISR_REACK) == RESET){}
 
-				UART_WakeUpTypeDef wakeup;
 				wakeup.WakeUpEvent=UART_WAKEUP_ON_READDATA_NONEMPTY; // UART_WAKEUP_ON_STARTBIT
 				HAL_UARTEx_StopModeWakeUpSourceConfig(&hlpuart1,wakeup);
 				__HAL_UART_ENABLE_IT(&hlpuart1, UART_IT_WUF);
@@ -118,11 +121,11 @@ stm32l_lowPowerReturn_e stm32l_lowPowerSetup(uint32_t durationMs, stm32_lowPower
 			  #endif
 			#endif
 
+
 			#if  ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_UART2 ) > 0
 				// make sure that UART is ready to receive
 				while(__HAL_UART_GET_FLAG(&huart2, USART_ISR_REACK) == RESET){}
 
-				UART_WakeUpTypeDef wakeup;
 				wakeup.WakeUpEvent=UART_WAKEUP_ON_READDATA_NONEMPTY; // UART_WAKEUP_ON_STARTBIT
 				HAL_UARTEx_StopModeWakeUpSourceConfig(&huart2,wakeup);
 				__HAL_UART_ENABLE_IT(&huart2, UART_IT_WUF);
@@ -137,7 +140,6 @@ stm32l_lowPowerReturn_e stm32l_lowPowerSetup(uint32_t durationMs, stm32_lowPower
 				// make sure that UART is ready to receive
 				while(__HAL_UART_GET_FLAG(&huart1, USART_ISR_REACK) == RESET){}
 
-				UART_WakeUpTypeDef wakeup;
 				wakeup.WakeUpEvent=UART_WAKEUP_ON_READDATA_NONEMPTY; // UART_WAKEUP_ON_STARTBIT
 				HAL_UARTEx_StopModeWakeUpSourceConfig(&huart1,wakeup);
 				__HAL_UART_ENABLE_IT(&huart1, UART_IT_WUF);
@@ -193,12 +195,13 @@ stm32l_lowPowerReturn_e stm32l_lowPowerSetup(uint32_t durationMs, stm32_lowPower
 }
 
 
-stm32l_lowPowerReturn_e stm32l_lowPowerResume(stm32_lowPowerMode_e mode) {
+stm32l_lowPowerReturn_e __attribute__((optimize("O3"))) stm32l_lowPowerResume(stm32_lowPowerMode_e mode) {
 
 	if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_STOP ) {
 		// ------------------------------------------------------------
 		// Restore from STOP MODE
 		// ------------------------------------------------------------
+
 		SystemClock_Config();
 		HAL_SuspendTick();
 		#if  ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_RTC ) > 0
@@ -250,20 +253,23 @@ stm32l_lowPowerReturn_e stm32l_lowPowerResume(stm32_lowPowerMode_e mode) {
 			 }
 			#endif
 		}
+
 	}
 	//  useful line of code to identify the wakeup cause when needed...
-	//if (__lowPower_wakeup_reason != LOWPWR_WAKEUP_UNDEF ) {
-	//	if ( __lowPower_wakeup_reason == LOWPWR_WAKEUP_GPIO )
-    //     #if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_GPIO ) > 0
-	//		log_info("-%d-(%d)-",__lowPower_wakeup_reason,__lowPower_wakeup_pin);
-    //     #else
-	//	    log_info("!");
-    //     #endif
-	//	else
-	//		log_info("-%d-",__lowPower_wakeup_reason);
-	//} else {
-	//	log_info("|");
-	//}
+	#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_LOWPOWER ) > 0
+	if (__lowPower_wakeup_reason != LOWPWR_WAKEUP_UNDEF ) {
+		if ( __lowPower_wakeup_reason == LOWPWR_WAKEUP_GPIO )
+         #if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_GPIO ) > 0
+			log_info("-%d-(%d)-",__lowPower_wakeup_reason,__lowPower_wakeup_pin);
+         #else
+		    log_info("!");
+         #endif
+		else
+			log_info("-%d-",__lowPower_wakeup_reason);
+	} else {
+		log_info("|");
+	}
+	#endif
 
 	HAL_ResumeTick();
 	return STM32L_LOWPOWER_SUCCESS;
@@ -368,7 +374,7 @@ void _stm32l_disableGpios() {
 
 /**
  * IRQ Handler
- * We store the pin, reason of the wake up becaus we are going to callback the irq handler
+ * We store the pin, reason of the wake up because we are going to callback the irq handler
  * once the mcu is reconfigured & ready
  */
 
@@ -391,49 +397,4 @@ void HAL_UARTEx_WakeupCallback(UART_HandleTypeDef *huart) {
 }
 
 #endif
-
-/**
- * Configure the STM32L0x1 for switching to low power sleep mode
- * This is an activation of the sleep mode with activation of the
- * low power mode of the regulator. Wakeup time 32uS
- * FHclk = 262 KHz
- * In this mode we have the following
- * Peripheral OFF
- *  - CPU
- *  - HSI
- *  - I2C
- *  - ADC
- * Peripheral ON
- *  - RAM
- *  - Backup Register
- *  - Power On/Down Reset
- *  - MSI
- *  - Interconnect controler
- * Peripheral OPTIONNALLY ON (x = selected)
- *  - Flash
- *  - EEprom
- *  - BOR
- *  - DMA
- *  - PVD
- *  - HSE
- *  - LSI
- *  - LSE
- *  - RTC				(x)
- *  - RTC Tamper
- *  - AutoWakeUp
- *  - USART
- *  - LPUART			(x)	1,6uA
- *  - SPI
- *  - TEMP
- *  - CMP
- *  - TIMER
- *  - IWDG
- *  - WWDG				(x) 0,48uA
- *  - Systick Timer
- *  - GPIOs	A			(x)	0,64uA
- *  - GPIOs B			(x) 0,64uA
- *  - GPIOs C			(?) 1,70uA
- *  - GPIOs H			(?) 0,12uA
- */
-
 

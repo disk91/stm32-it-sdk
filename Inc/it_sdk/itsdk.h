@@ -28,10 +28,16 @@
 #ifndef IT_SDK_ITSDK_H_
 #define IT_SDK_ITSDK_H_
 
+typedef enum {
+	BOOL_FALSE=0,
+	BOOL_TRUE,
+} itsdk_bool_e;
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <it_sdk/config.h>
 #include <it_sdk/wrappers.h>
+
 
 // ------------------------------------------------------------------------
 // Function every project needs to implement
@@ -50,17 +56,23 @@ void itsdk_restart();
 
 // ------------------------------------------------------------------------
 // Tool.c
-uint32_t calculateCRC32(const uint8_t *data, uint16_t length);
-char itdt_convertHalfInt2HexChar(uint8_t v,bool upper);
-void itdt_convertInt2HexChar(uint8_t v, char * dest, bool upper);
-void itdt_convertIntTab2Hex(char * dest, uint8_t * tab, int len, bool upper);
+uint8_t itsdk_randomByte(void);
+uint32_t itsdk_computeCRC32(const uint8_t *data, uint16_t length);
+void itsdk_inlineCRC32_init();
+uint32_t itsdk_inlineCRC32_next(uint32_t c, uint8_t size);
+uint32_t itsdk_isqtr(uint32_t n);
+uint32_t itsdk_pgcd(uint32_t a, uint32_t b);
+char itdt_convertHalfInt2HexChar(uint8_t v,itsdk_bool_e upper);
+void itdt_convertInt2HexChar(uint8_t v, char * dest, itsdk_bool_e upper);
+void itdt_convertIntTab2Hex(char * dest, uint8_t * tab, int len, itsdk_bool_e upper);
 bool itdt_isHexChar(char c, bool upper);
-bool itdt_isHexString(char * str,int n,bool upper);
+bool itdt_isHexString(char * str,int n,itsdk_bool_e upper);
 uint8_t itdt_convertHexChar2HalfInt(char c);
 uint8_t itdt_convertHexChar2Int(char * v);
 uint32_t itdt_convertHexChar8Int(char * v);
 uint16_t itdt_convertHexChar4Int(char * v);
 int16_t itdt_convertDecChar4Int(char * v);
+uint16_t itdt_convertDecChar3UInt(char * v);
 void itdt_convertHexStr2IntTab(char * hexstr,uint8_t * tab, int len);
 void itdt_macToString(char * str, uint8_t * mac);
 uint32_t itdt_align_32b(uint32_t v);

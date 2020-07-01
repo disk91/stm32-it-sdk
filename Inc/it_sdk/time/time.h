@@ -24,15 +24,31 @@
  *
  * ==========================================================
  */
+#include <stdint.h>
+#include <it_sdk/itsdk.h>
+
 #ifndef IT_SDK_TIME_TIME_H_
 #define IT_SDK_TIME_TIME_H_
-#include <stdint.h>
 
+// System Time - the reference is startup
 void itsdk_time_add_us(uint32_t us);
 void itsdk_time_set_ms(uint64_t ms);
 uint64_t itsdk_time_get_ms();
 uint64_t itsdk_time_get_us();
 void itsdk_time_reset();
 void itsdk_time_init();
+
+// UTC time (HH:MM:SS) when the reference has been set by an external driver
+void itsdk_time_sync_UTC_s( uint32_t utc_s );				// Access time with reference MIDNIGHT UTC when set (otherwise startup)
+uint32_t itsdk_time_get_UTC_s();
+itsdk_bool_e itsdk_time_is_UTC_s(uint32_t * destTime);
+uint8_t itsdk_time_get_UTC_sec();
+uint8_t itsdk_time_get_UTC_min();
+uint8_t itsdk_time_get_UTC_hour();
+
+// UTC Time from EPOC when the reference has been set by an external driver
+void itsdk_time_sync_EPOC_s( uint32_t utc_s );				// Access time with reference EPOC when set (otherwise startup)
+uint32_t itsdk_time_get_EPOC_s();
+itsdk_bool_e itsdk_time_is_EPOC_s(uint32_t * destTime);
 
 #endif /* IT_SDK_TIME_TIME_H_ */

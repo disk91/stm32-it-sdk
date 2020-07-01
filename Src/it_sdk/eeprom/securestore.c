@@ -619,11 +619,12 @@ static itsdk_console_return_e _itsdk_secStore_consolePriv(char * buffer, uint8_t
 		case '?':
 			// help
 			_itsdk_console_printf("--- SecureStore\r\n");
+			_itsdk_console_printf("ss:R       : restore all SS to factory default\r\n");
 			_itsdk_console_printf("SS:0:xxxx  : change the secure store dyn Key (12B)\r\n");
 			_itsdk_console_printf("SS:1:xxxx  : change the console password (max 15 char)\r\n");
 		 #if defined(ITSDK_WITH_SIGFOX_LIB) && ITSDK_WITH_SIGFOX_LIB == __ENABLE
 			_itsdk_console_printf("ss:S       : Sigfox key restore factory setting\r\n");
-			_itsdk_console_printf("SS:2:xxxx  : change the sigfox key (16B hex)\r\n");
+			_itsdk_console_printf("SS:2:xxxx  : change the Sigfox key (16B hex)\r\n");
 		 #endif
 		 #if ( defined(ITSDK_SIGFOX_ENCRYPTION) && ( ITSDK_SIGFOX_ENCRYPTION > 0 )) || (defined(ITSDK_LORAWAN_ENCRYPTION) && ( ITSDK_LORAWAN_ENCRYPTION > 0))
 			_itsdk_console_printf("ss:Y       : Encryption restore factory setting\r\n");
@@ -692,6 +693,29 @@ static itsdk_console_return_e _itsdk_secStore_consolePriv(char * buffer, uint8_t
 		// READ CASE
 		if ( buffer[0] == 's' && buffer[1] == 's' && buffer[2] == ':' ) {
 			switch(buffer[3]) {
+			case 'R':
+				// all config factory default
+				{
+					uint8_t ret = 0;
+					#if defined(ITSDK_WITH_SIGFOX_LIB) && ITSDK_WITH_SIGFOX_LIB == __ENABLE
+					  if ( itsdk_sigfox_resetFactoryDefaults(true) != SIGFOX_INIT_SUCESS ) ret=1;
+					#endif
+					#if ( defined(ITSDK_SIGFOX_ENCRYPTION) && ( ITSDK_SIGFOX_ENCRYPTION > 0 )) || (defined(ITSDK_LORAWAN_ENCRYPTION) && ( ITSDK_LORAWAN_ENCRYPTION > 0))
+					  if ( itsdk_encrypt_resetFactoryDefaults(true) != ENCRYPT_RETURN_SUCESS ) ret =1;
+					#endif
+					#if defined(ITSDK_WITH_LORAWAN_LIB) && ITSDK_WITH_LORAWAN_LIB == __ENABLE
+					  if ( itsdk_lorawan_resetFactoryDefaults(true) != LORAWAN_RETURN_SUCESS ) ret=1;
+					#endif
+					if ( ret == 0 ) {
+					  _itsdk_console_printf("OK\r\n");
+					  return ITSDK_CONSOLE_SUCCES;
+				    } else {
+					  _itsdk_console_printf("KO\r\n");
+					  return ITSDK_CONSOLE_FAILED;
+					}
+				}
+				break;
+
 			#if defined(ITSDK_WITH_SIGFOX_LIB) && ITSDK_WITH_SIGFOX_LIB == __ENABLE
 			case 'S':
 				if ( itsdk_sigfox_resetFactoryDefaults(true) == SIGFOX_INIT_SUCESS ) {

@@ -25,26 +25,42 @@
  * ==========================================================
  */
 
+#include <stdbool.h>
+#include <it_sdk/itsdk.h>
+#include <it_sdk/config.h>
+
 #ifndef STM32L_SDK_WRAPPERS_H_
 #define STM32L_SDK_WRAPPERS_H_
 
-#include <stdbool.h>
-#include <it_sdk/config.h>
-
 // ================================================
 // Serial wrappers
-void serial1_flush();
-void serial2_flush();
-void debug_flush();
-
-void serial1_print(char * msg);
-void serial2_print(char * msg);
-void debug_print(char * msg);
-void logfile_print(char * msg);
-
+void serial1_init();									// Init serial regarding the global configuration - later will be more dynamic
+void serial1_connect();									// Makes the serial UART configuration
+void serial1_disconnect();								// Makes the serial UART de-configuration - pins back to analog
+void serial1_flush();									// Terminate pending communication over serial line
+void serial1_print(char * msg);							// Print over the serial communication
 void serial1_println(char * msg);
+void serial1_write(uint8_t * bytes,uint16_t len);		// Write binary over the serial communication
+
+void serial2_init();
+void serial2_connect();
+void serial2_disconnect();
+void serial2_flush();
+void serial2_print(char * msg);
 void serial2_println(char * msg);
-void debug_println(char * msg);
+void serial2_write(uint8_t * bytes,uint16_t len);
+
+
+typedef enum {
+	DEBUG_PRINT_DEBUG = 0,
+	DEBUG_PRINT_INFO,
+	DEBUG_PRINT_WARNING,
+	DEBUG_PRINT_ERROR,
+	DEBUG_PRINT_ANY
+} debug_print_type_e;
+void debug_flush();
+void debug_print(debug_print_type_e lvl, char * msg);
+void logfile_print(char * msg);
 void logfile_println(char * msg);
 
 typedef enum {
@@ -55,6 +71,20 @@ typedef enum {
 } serial_read_response_e;
 serial_read_response_e serial1_read(char * c);
 serial_read_response_e serial2_read(char * c);
+
+typedef enum {
+	SERIAL_SPEED_4800 = 0,
+	SERIAL_SPEED_9600,
+	SERIAL_SPEED_19200,
+	SERIAL_SPEED_38400,
+	SERIAL_SPEED_57600,
+	SERIAL_SPEED_115200
+} serial_baudrate_e;
+
+itsdk_bool_e serial1_changeBaudRate(serial_baudrate_e bd);
+itsdk_bool_e serial2_changeBaudRate(serial_baudrate_e bd);
+
+
 
 // ================================================
 // watchdog
@@ -69,6 +99,7 @@ bool _eeprom_read(uint8_t bank, uint32_t offset, void * data, int len);
 // ================================================
 // adc
 #define ADC_TEMPERATURE_ERROR		-500
+#define ADC_CONVERSION_ERROR	0xFFFFFFFF
 int16_t adc_getTemperature();
 uint16_t adc_getVdd();
 uint16_t adc_getValue(uint32_t pin);
@@ -297,6 +328,7 @@ void itsdk_disableIrq();
 void itsdk_enableIrq();
 
 uint32_t itsdk_getRandomSeed();								// get a random seed value - can be the same for one given object
+uint8_t itsdk_randomBit();									// get a pseudo or random bit value
 void itsdk_getUniqId(uint8_t * id, int8_t size);			// fill id table with an object ID having the given size
 
 

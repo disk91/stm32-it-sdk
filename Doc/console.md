@@ -4,6 +4,10 @@ The console allow to dynamically get the device status, configuration & more. It
 
 The console needs to be activated and configured to be operational. Once activated, the console is protected by a passwd. This password is set as part of the securestore. If securestore is not configured the password is static.
 
+## Hardware configuration
+The console is usually a floatting connector usually disconnected. It sounds recommended to configure the RX line with a pull-up in a such situation to reduce the risk of noise over the serial line and unexpected interrupts including unexpected command execution.
+The console usually wakes up the sleeping MCU, a specific configuration is required. 9600 bps is a maximum, the source clock needs to be HSI16... see low power documentation for details.
+
 ## Configuration
 The define **ITSDK_WITH_CONSOLE** is activating the console code when its value is set to **__ENABLE**
 The console is set on one of the serial port. The serial port is configured with the **ITSDK_CONSOLE_SERIAL** define. 

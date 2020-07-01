@@ -40,6 +40,8 @@
 #include <it_sdk/wrappers.h>
 #include <it_sdk/time/time.h>
 #include <it_sdk/lowpower/lowpower.h>
+#include <it_sdk/eeprom/sdk_state.h>
+#include <it_sdk/eeprom/eeprom.h>
 #if ITSDK_WITH_SECURESTORE == __ENABLE
 #include <it_sdk/eeprom/securestore.h>
 #endif
@@ -62,12 +64,15 @@ static itsdk_console_return_e _itsdk_console_private(char * buffer, uint8_t sz) 
 			// help
 			_itsdk_console_printf("X          : exit console\r\n");
 			_itsdk_console_printf("R          : reset device\r\n");
+			_itsdk_console_printf("R!         : clear the whole eeprom\r\n");
 			_itsdk_console_printf("l / L      : switch LowPower ON / OFF\r\n");
 			_itsdk_console_printf("s          : print device state\r\n");
 			_itsdk_console_printf("t          : print current time in S\r\n");
-			_itsdk_console_printf("T          : print current temperature in oC\r\n");
+#if ITSDK_WITH_ADC != __ADC_NONE
+			_itsdk_console_printf("T          : print current cpu temperature in oC\r\n");
 			_itsdk_console_printf("b          : print battery level\r\n");
 			_itsdk_console_printf("B          : print VCC level\r\n");
+#endif
 			_itsdk_console_printf("r          : print last Reset Cause\r\n");
 
 			return ITSDK_CONSOLE_SUCCES;
@@ -81,6 +86,7 @@ static itsdk_console_return_e _itsdk_console_private(char * buffer, uint8_t sz) 
 			_itsdk_console_printf("Run time is %d s\r\n",(uint32_t)(itsdk_time_get_ms()/1000L));
 			_itsdk_console_printf("OK\r\n");
 			return ITSDK_CONSOLE_SUCCES;
+#if ITSDK_WITH_ADC != __ADC_NONE
 		case 'T':
 			// print temperature
 			{
@@ -99,10 +105,11 @@ static itsdk_console_return_e _itsdk_console_private(char * buffer, uint8_t sz) 
 			_itsdk_console_printf("VCC level %dmV\r\n",(uint32_t)(adc_getVdd()));
 			_itsdk_console_printf("OK\r\n");
 			return ITSDK_CONSOLE_SUCCES;
+#endif
 		case 'r':
 			// Last Reset cause
 			_itsdk_console_printf("Reset: ");
-			switch(itsdk_getResetCause()) {
+			switch(itsdk_state.lastResetCause) {
 			case RESET_CAUSE_BOR: _itsdk_console_printf("BOR\r\n"); break;
 			case RESET_CAUSE_RESET_PIN: _itsdk_console_printf("RESET PIN\r\n"); break;
 			case RESET_CAUSE_POWER_ON: _itsdk_console_printf("POWER ON\r\n"); break;
@@ -130,6 +137,15 @@ static itsdk_console_return_e _itsdk_console_private(char * buffer, uint8_t sz) 
 			// switch LowPower Off
 			lowPower_disable();
 			_itsdk_console_printf("OK\r\n");
+			return ITSDK_CONSOLE_SUCCES;
+		}
+	} else if (sz==2) {
+		if ( buffer[0] == 'R' && buffer[1] == '!' ) {
+			// Clear all the eeprom content the reset - hard factory default
+			_itsdk_console_printf("OK\r\n");
+			eeprom_clearAllEprom();
+			itsdk_delayMs(100);
+			itsdk_reset();
 			return ITSDK_CONSOLE_SUCCES;
 		}
 	}
@@ -188,8 +204,6 @@ void itsdk_console_setup() {
 	__console_head_chain.console_private = _itsdk_console_private;
 	__console_head_chain.console_public = _itsdk_console_public;
 	__console_head_chain.next = NULL;
-
-
 }
 
 

@@ -43,7 +43,7 @@
 #define _LOG_SCHED(x)
 #endif
 
-#if ITSDK_DEBUG_STATEM > 0
+#if (ITSDK_LOGGER_MODULE & __LOG_MOD_STATEMINF) > 0 || (ITSDK_LOGGER_MODULE & __LOG_MOD_STATEMDBG) > 0
 #define _LOG_STATEM(x)	log_debug x
 #else
 #define _LOG_STATEM(x)

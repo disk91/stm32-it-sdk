@@ -47,20 +47,22 @@
 // MCU API
 // =============================================================================================
 
+// The new version of the compiler was protecting memory access against static elements
+// Making a hardfault in the sigfox api init function when it tried to write into this zone.
+// Non static declaration solve this issue
+sfx_u8 __sigfox_mem[ITSDK_SIGFOX_MEM_SIZE];
 
 /**
  * Static memory allocation
  */
 sfx_u8 MCU_API_malloc(sfx_u16 size, sfx_u8 **returned_pointer)
 {
-  static sfx_u8 mem[ITSDK_SIGFOX_MEM_SIZE];
-
   LOG_DEBUG_SFXSX1276(("Sigfox lib mem req: %dB\r\n",size));
   if(size>ITSDK_SIGFOX_MEM_SIZE) {
 	  LOG_ERROR_SFXSX1276(("Requesting more memory than maximum allowable\r\n"));
 	  return MCU_ERR_API_MALLOC;
   } else {
-    (*returned_pointer)=mem;
+    (*returned_pointer)=__sigfox_mem;
   }
   return SFX_ERR_NONE;
 }
@@ -190,7 +192,7 @@ sfx_u8 MCU_API_get_nv_mem(sfx_u8 read_data[SFX_NVMEM_BLOCK_SIZE])
 
 	//log_info_array("MCU_NVM",read_data,SFX_NVMEM_BLOCK_SIZE);
 
-    return SFX_ERR_NONE;
+	return SFX_ERR_NONE;
 }
 
 /**
@@ -200,7 +202,6 @@ sfx_u8 MCU_API_set_nv_mem(sfx_u8 data_to_write[SFX_NVMEM_BLOCK_SIZE])
 {
 	LOG_DEBUG_SFXSX1276((">> MCU_API_set_nv_mem\r\n"));
 	//log_info_array("MCU_NVM",data_to_write,SFX_NVMEM_BLOCK_SIZE);
-
 
 	uint32_t offset;
 	itsdk_sigfox_getNvmOffset(&offset);
@@ -307,7 +308,9 @@ sfx_u8 MCU_API_timer_wait_for_end(void)
    while (sx1276_sigfox_state.timerEvent == SIGFOX_EVENT_CLEAR) {
 	   lowPower_delayMs(1000);
 	   if ( sx1276_sigfox_idle() == SX1276_SIGFOX_ERR_BREAK ) break;
-	   wdg_refresh();
+	   #if ITSDK_WITH_WDG != __WDG_NONE && ITSDK_WDG_MS > 0
+ 	      wdg_refresh();
+	   #endif
    }
    return SFX_ERR_NONE;
 }

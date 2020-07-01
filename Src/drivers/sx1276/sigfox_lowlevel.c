@@ -66,14 +66,19 @@ void STLL_Radio_WriteFifo(uint8_t size, uint8_t* buffer) {
 
 void STLL_Radio_Init( void ) {
   LOG_DEBUG_SFXSX1276((">> STLL_Radio_Init\r\n"));
-  RadioEvents_t events = {NULL};
-  SX1276Init( &events );
+  //RadioEvents_t events = {NULL};
+  //SX1276Init( &events );
+
+  SX1276Init( NULL );
+
 }
 
 void STLL_Radio_DeInit( void ) {
   LOG_DEBUG_SFXSX1276((">> STLL_Radio_DeInit\r\n"));
-  RadioEvents_t events = {NULL};
-  SX1276Init( &events );
+  //RadioEvents_t events = {NULL};
+  //SX1276Init( &events );
+
+  SX1276Init( NULL );
   SX1276Write(0x40 , 0x01 );	// set DIO3 from 'buffer empty' to NA to save current
 }
 
@@ -100,17 +105,21 @@ void STLL_Radio_IoInit( void )
 
   SX1276IoInit();
 
+  gpio_interruptClear(ITSDK_SX1276_DIO_0_BANK, ITSDK_SX1276_DIO_0_PIN);
+  gpio_configure(ITSDK_SX1276_DIO_0_BANK, ITSDK_SX1276_DIO_0_PIN, GPIO_INTERRUPT_RISING );
   gpio_interruptPriority(ITSDK_SX1276_DIO_0_BANK,ITSDK_SX1276_DIO_0_PIN,0,0);
-  gpio_interruptEnable(ITSDK_SX1276_DIO_0_BANK, ITSDK_SX1276_DIO_0_PIN);
   __sx1276_gpio_irq[0].irq_func = __irqHandlers_dio0;
   __sx1276_gpio_irq[0].pinMask = ITSDK_SX1276_DIO_0_PIN;
   gpio_registerIrqAction(&__sx1276_gpio_irq[0]);
+  gpio_interruptEnable(ITSDK_SX1276_DIO_0_BANK, ITSDK_SX1276_DIO_0_PIN);
 
+  gpio_interruptClear(ITSDK_SX1276_DIO_4_BANK, ITSDK_SX1276_DIO_4_PIN);
+  gpio_configure(ITSDK_SX1276_DIO_4_BANK, ITSDK_SX1276_DIO_4_PIN, GPIO_INTERRUPT_RISING );
   gpio_interruptPriority(ITSDK_SX1276_DIO_4_BANK,ITSDK_SX1276_DIO_4_PIN,0,0);
-  gpio_interruptEnable(ITSDK_SX1276_DIO_4_BANK, ITSDK_SX1276_DIO_4_PIN);
   __sx1276_gpio_irq[4].irq_func = __irqHandlers_dio4;
   __sx1276_gpio_irq[4].pinMask = ITSDK_SX1276_DIO_4_PIN;
   gpio_registerIrqAction(&__sx1276_gpio_irq[4]);
+  gpio_interruptEnable(ITSDK_SX1276_DIO_4_BANK, ITSDK_SX1276_DIO_4_PIN);
 
 }
 
@@ -118,13 +127,13 @@ void STLL_Radio_IoDeInit( void )
 {
   LOG_DEBUG_SFXSX1276((">> STLL_Radio_IoDeInit\r\n"));
 
+  SX1276IoDeInit();
   gpio_removeIrqAction(&__sx1276_gpio_irq[0]);
   gpio_removeIrqAction(&__sx1276_gpio_irq[1]);
   gpio_removeIrqAction(&__sx1276_gpio_irq[2]);
   gpio_removeIrqAction(&__sx1276_gpio_irq[3]);
   gpio_removeIrqAction(&__sx1276_gpio_irq[4]);
 
-  SX1276IoDeInit();
 }
 
 void STLL_Radio_SetOpMode(uint8_t opMode)
@@ -159,10 +168,10 @@ void STLL_RadioPowerSetBoard( int8_t power)
  * End of Tx event seems to be executed by a external interruption
  * calling the STLL_SetEndOfTxFrame function.
  * This function is called to wait for the end of the transmission
- * This function is calling the upperlayer idle() function to eventually
+ * This function is calling the upper layer idle() function to eventually
  * have some action during this wait phase. The processor can goes to idle
  * mode only is the related setting is authorizing it. Basically it should be
- * a bit complicated as during this wait the DMA is tranfering orders from the memory to the SPI.
+ * a bit complicated as during this wait the DMA is transferring orders from the memory to the SPI.
  */
 STLL_flag STLL_WaitEndOfTxFrame( void )
 {
@@ -171,7 +180,9 @@ STLL_flag STLL_WaitEndOfTxFrame( void )
   sx1276_sigfox_state.endOfTxEvent = SIGFOX_EVENT_CLEAR;
   while (   sx1276_sigfox_state.endOfTxEvent == SIGFOX_EVENT_CLEAR ) {
       if ( sx1276_sigfox_idle() == SX1276_SIGFOX_ERR_BREAK ) break;
-      wdg_refresh();
+	  #if ITSDK_WITH_WDG != __WDG_NONE && ITSDK_WDG_MS > 0
+        wdg_refresh();
+	  #endif
   }
   LOG_DEBUG_SFXSX1276(("    Wait Done\r\n"));
   
@@ -438,7 +449,7 @@ uint32_t STLL_TIM2_GetPeriod( void ) {
  */
 void STLL_LowPower(STLL_State State)
 {
-  LOG_DEBUG_SFXSX1276((">> STLL_LowPower(%d)\r\n",State));
+  LOG_DEBUG_SFXSX1276((">> STLL_LowPower(%s)\r\n",((State==STLL_ENABLE)?"Allowed":"Prohibited")));
   if ( State == STLL_ENABLE) {
 	  sx1276_sigfox_state.lowPowerAuthorised = SIGFOX_LPMODE_AUTHORIZED;
   } else {
@@ -455,29 +466,45 @@ void STLL_LowPower(STLL_State State)
 
 void STLL_SetClockSource( stll_clockType_e clocktype)
 {
-  LOG_DEBUG_SFXSX1276((">> STLL_SetClockSource\r\n"));
-
+  LOG_DEBUG_SFXSX1276((">> STLL_SetClockSource: "));
   if ( clocktype == HSI_SOURCE ) {
- 	 LOG_DEBUG_SFXSX1276(("   DEFAULT Selected\r\n"));
- 	 SystemClock_Config();
- 	 __HAL_RCC_HSE_CONFIG(RCC_HSE_OFF);
+	  LOG_DEBUG_SFXSX1276((" DEFAULT Selected\r\n"));
   } else {
-	 LOG_DEBUG_SFXSX1276(("   HSE Selected\r\n"));
+	  LOG_DEBUG_SFXSX1276((" HSE Selected\r\n"));
+  }
+
+  itsdk_enterCriticalSection();
+  if ( clocktype == HSI_SOURCE ) {
+	  __HAL_RCC_HSI_ENABLE();
+	  // Wait till HSI is ready
+	  while( __HAL_RCC_GET_FLAG(RCC_FLAG_HSIRDY) == RESET );
+	  // Enable PLL
+	  __HAL_RCC_PLL_ENABLE();
+	  // Wait till PLL is ready
+	  while( __HAL_RCC_GET_FLAG( RCC_FLAG_PLLRDY ) == RESET ) {}
+	  // Select PLL as system clock source
+	  __HAL_RCC_SYSCLK_CONFIG ( RCC_SYSCLKSOURCE_PLLCLK );
+	  // Wait till PLL is used as system clock source
+	  while( __HAL_RCC_GET_SYSCLK_SOURCE( ) != RCC_SYSCLKSOURCE_STATUS_PLLCLK ) {}
+	  __HAL_RCC_HSE_CONFIG(RCC_HSE_OFF);
+ 	 //SystemClock_Config();
+ 	 //__HAL_RCC_HSE_CONFIG(RCC_HSE_OFF);
+  } else {
 	 __HAL_RCC_HSE_CONFIG(RCC_HSE_ON);
      // Wait till HSE is ready
-     while( __HAL_RCC_GET_FLAG(RCC_FLAG_HSERDY) == RESET ) {}
+     while( __HAL_RCC_GET_FLAG(RCC_FLAG_HSERDY) == RESET);
      // Select HSE as system clock source
 	 __HAL_RCC_SYSCLK_CONFIG ( RCC_SYSCLKSOURCE_HSE );
-     // Wait till HSE is used as system clock source
-	 while( __HAL_RCC_GET_SYSCLK_SOURCE( ) != RCC_SYSCLKSOURCE_STATUS_HSE ) {}
-
-
+	 // Wait till HSE is used as system clock source
+	 while( __HAL_RCC_GET_SYSCLK_SOURCE( ) != RCC_SYSCLKSOURCE_STATUS_HSE);
   }
+  itsdk_leaveCriticalSection();
 }
 
 
 int16_t STLL_SGFX_SX1276_GetSyncRssi(void)
 {
+  LOG_DEBUG_SFXSX1276((">> STLL_SGFX_SX1276_GetSyncRssi\r\n"));
   return sx1276_sigfox_state.meas_rssi_dbm;
 }
 
@@ -494,7 +521,9 @@ STLL_flag STLL_WaitEndOfRxFrame( void )
   sx1276_sigfox_state.timerEvent = SIGFOX_EVENT_CLEAR;
   while (sx1276_sigfox_state.timerEvent == SIGFOX_EVENT_CLEAR) {
       if ( sx1276_sigfox_idle() == SX1276_SIGFOX_ERR_BREAK ) break;
-      wdg_refresh();
+	  #if ITSDK_WITH_WDG != __WDG_NONE && ITSDK_WDG_MS > 0
+         wdg_refresh();
+	  #endif
   }
   return sx1276_sigfox_state.rxPacketReceived;
 }
@@ -502,16 +531,19 @@ STLL_flag STLL_WaitEndOfRxFrame( void )
 
 int16_t STLL_RxCarrierSenseGetRssi(void)
 {
+  LOG_DEBUG_SFXSX1276((">> STLL_RxCarrierSenseGetRssi\r\n"));
   return  (-( STLL_Radio_ReadReg( REG_RSSIVALUE ) >> 1 ) -13 + itsdk_config.sdk.sigfox.rssiCal);
 }
 
 void STLL_RxCarrierSenseInitStatus( void )
 {
+  LOG_DEBUG_SFXSX1276((">> STLL_RxCarrierSenseInitStatus\r\n"));
   sx1276_sigfox_state.rxCarrierSenseFlag =STLL_RESET;
 }
 
 STLL_flag STLL_RxCarrierSenseGetStatus( void )
 {
+  LOG_DEBUG_SFXSX1276((">> STLL_RxCarrierSenseGetStatus\r\n"));
   return sx1276_sigfox_state.rxCarrierSenseFlag ;
 }
 

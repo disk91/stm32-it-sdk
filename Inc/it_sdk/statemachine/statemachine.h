@@ -24,11 +24,11 @@
  *
  * ==========================================================
  */
+#include <it_sdk/config.h>
 
 #ifndef IT_SDK_STATEMACHINE_STATEMACHINE_H_
 #define IT_SDK_STATEMACHINE_STATEMACHINE_H_
 
-#include <it_sdk/config.h>
 
 #define STATE_UNKNOWN		255
 #define STATE_LAST			254
@@ -67,14 +67,18 @@ typedef struct st_machine {
 	uint8_t   lastState;					 // Initialized with STATE_UNKNOWN, it will be calculated on first run and fill with the last of the state entry
 	uint32_t  totalLoop;					 // Total loop since start of machine (%32b)
 	void      (*precall)(void);				 // Function called before every state - for example to update timing.
-	state_t stm[STATE_MACHINE_SZ];			 // describes each state
+#if !defined ITSDK_STATEMACHINE_STATIC || ITSDK_STATEMACHINE_STATIC == __DISABLE
+	state_t   stm[STATE_MACHINE_SZ];		 // describes each state
 											 // The last STATE UID must be STATE_LAST to determine
 											 // end of states and make some extra debug control
+#else
+	const state_t * stm;
+#endif
+
 } machine_t;
 
 
-void statem(machine_t *);			// Run the state machine
-
+void statem(machine_t *);					// Run the state machine
 
 
 #endif /* IT_SDK_STATEMACHINE_STATEMACHINE_H_ */

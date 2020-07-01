@@ -67,6 +67,41 @@ itsdk_timer_return_t itsdk_hwtimer_sync_run(
 }
 
 
+/**
+ * Start a timer to measure time duration in uS
+ */
+
+itsdk_timer_return_t itsdk_hwtimer_background_start() {
+
+	#if ITSDK_PLATFORM == __PLATFORM_STM32L0
+		return stm32l_hwtimer_background_start();
+	#else
+		#error "platform not supported"
+	#endif
+
+}
+
+uint64_t itsdk_hwtimer_getRunningDurationUs() {
+
+	#if ITSDK_PLATFORM == __PLATFORM_STM32L0
+		return stm32l_hwtimer_getDurationUs(BOOL_FALSE);
+	#else
+		#error "platform not supported"
+	#endif
+
+}
+
+itsdk_timer_return_t itsdk_hwtimer_background_stop() {
+
+	#if ITSDK_PLATFORM == __PLATFORM_STM32L0
+		stm32l_hwtimer_getDurationUs(BOOL_TRUE);
+		return TIMER_INIT_SUCCESS;
+	#else
+		#error "platform not supported"
+	#endif
+
+}
+
 #endif
 
 

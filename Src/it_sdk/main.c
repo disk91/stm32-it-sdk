@@ -50,7 +50,6 @@
  * See each of the function for details.
  *
  * ----------------------------------------------------------
- * @TODO - Backlog features
  *
  * ==========================================================
  */
@@ -62,6 +61,12 @@
 #include <it_sdk/logger/logger.h>
 #include <it_sdk/eeprom/sdk_config.h>
 #include <it_sdk/eeprom/sdk_state.h>
+#if ITSDK_WITH_LORAWAN_LIB == __ENABLE
+  #include <it_sdk/lorawan/lorawan.h>
+#endif
+#if ITSDK_WITH_SIGFOX_LIB == __ENABLE
+  #include <it_sdk/sigfox/sigfox.h>
+#endif
 
 #if ITSDK_WITH_SECURESTORE == __ENABLE
 #include <it_sdk/eeprom/securestore.h>
@@ -76,6 +81,15 @@
 #include <it_sdk/logger/error.h>
 #endif
 
+#if ITSDK_WITH_DRIVERS == __ENABLE
+#include <it_sdk/configDrivers.h>
+  #if ITSDK_DRIVERS_WITH_ACCEL_DRIVER == __ENABLE
+	#include <it_sdk/accel/accel.h>
+  #endif
+  #if ITSDK_DRIVERS_WITH_GNSS_DRIVER == __ENABLE
+	#include <it_sdk/gnss/gnss.h>
+  #endif
+#endif
 
 /**
  * The setup function is called on every MCU Reset but not on wakeup from sleep
@@ -88,11 +102,13 @@ void itsdk_setup() {
 	#if ITSDK_LOGGER_CONF > 0
 	log_init(ITSDK_LOGGER_CONF);
 	#endif
-	#if ITSDK_WDG_MS > 0
+	#if ITSDK_WITH_WDG != __WDG_NONE && ITSDK_WDG_MS > 0
 	  wdg_setupWithMaxMs(ITSDK_WDG_MS);
 	#endif
+	serial1_init();
+	serial2_init();
 	#if ITSDK_WITH_CONSOLE == __ENABLE
-	  itsdk_console_setup();
+		itsdk_console_setup();
 	#endif
 	#if ITSDK_WITH_ERROR_RPT == __ENABLE
 	  itsdk_error_setup();
@@ -102,11 +118,18 @@ void itsdk_setup() {
 	  // Init the secure store if not yet initialized
 	  if ( itsdk_secstore_isInit() != SS_SUCCESS ) {
 		  itsdk_secstore_init();
+		  itsdk_encrypt_resetFactoryDefaults(true);
+		  #if ITSDK_WITH_LORAWAN_LIB == __ENABLE
+		    itsdk_lorawan_resetFactoryDefaults(true);
+		  #endif
+		  #if ITSDK_WITH_SIGFOX_LIB == __ENABLE
+ 		    itsdk_sigfox_resetFactoryDefaults(true);
+		  #endif
+	  } else {
+	     itsdk_encrypt_resetFactoryDefaults(false);	// on first boot init the ss communication credentials
 	  }
-	  itsdk_encrypt_resetFactoryDefaults(false);	// on first boot init the ss communication credentials
 	  itsdk_secStore_RegisterConsole();
 	#endif
-
 	// load the configuration according to setting
 	itsdk_config_loadConfiguration(CONFIG_NORMAL_LOAD);
 	itsdk_state_init();
@@ -137,7 +160,7 @@ void itsdk_restart() {
  */
 void itsdk_loop() {
 
-	#if ITSDK_WDG_MS > 0
+    #if ITSDK_WITH_WDG != __WDG_NONE && ITSDK_WDG_MS > 0
 	   wdg_refresh();
 	#endif
 	#if ITSDK_TIMER_SLOTS > 0
@@ -145,6 +168,12 @@ void itsdk_loop() {
 	#endif
 	#if ITSDK_SHEDULER_TASKS > 0
 	   itdt_sched_execute();
+	#endif
+	#if ITSDK_DRIVERS_WITH_ACCEL_DRIVER == __ENABLE
+	   accel_process_loop();
+    #endif
+	#if ITSDK_DRIVERS_WITH_GNSS_DRIVER == __ENABLE
+	   gnss_process_loop(BOOL_FALSE);
 	#endif
 	project_loop();
 	#if ITSDK_WITH_CONSOLE == __ENABLE

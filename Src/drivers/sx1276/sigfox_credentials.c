@@ -150,7 +150,7 @@ const char* CREDENTIALS_get_version( void )
 void CREDENTIALS_get_dev_id( uint8_t* dev_id)
 {
     LOG_DEBUG_SFXSX1276((">> CREDENTIALS_get_dev_id\r\n"));
-    uint32_t devId;
+    itsdk_sigfox_device_is_t devId;
     itsdk_sigfox_getDeviceId(&devId);
     for (int i = 0 ; i < 4 ; i++) {
     	dev_id[3-i]=(devId >> ((32-8)-8*i)) & 0xFF;

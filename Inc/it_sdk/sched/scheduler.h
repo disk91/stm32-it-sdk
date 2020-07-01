@@ -64,5 +64,7 @@ uint8_t itdt_sched_registerSched(uint32_t periodMs,uint16_t mode, void (*f)(void
 void itdt_sched_haltSched(uint8_t schedId);
 void itdt_sched_runSched(uint8_t schedId);
 uint32_t itdt_sched_nextRun();
+void itdt_sched_clearNextRun(uint8_t schedId);		// Set nextRun timestamp to now + period
+
 
 #endif 	// IT_SDK_SCHEDULER_H_

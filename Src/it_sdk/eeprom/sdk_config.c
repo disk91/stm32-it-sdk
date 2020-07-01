@@ -28,6 +28,7 @@
 #include <it_sdk/config.h>
 #include <it_sdk/eeprom/sdk_config.h>
 #include <it_sdk/logger/error.h>
+#include <it_sdk/logger/logger.h>
 #if ITSDK_CONFIGURATION_MODE == __CONFIG_EEPROM
   #include <it_sdk/eeprom/eeprom.h>
   #include <it_sdk/wrappers.h>
@@ -82,7 +83,7 @@
 		// ----------- Sigfox settings --------------------------------------------------
 		#if ITSDK_WITH_SIGFOX_LIB == __ENABLE
 		itsdk_config.sdk.sigfox.rssiCal = ITSDK_SIGFOX_RSSICAL;
-		itsdk_config.sdk.sigfox.txPower = (ITSDK_SIGFOX_TXPOWER < ITSDK_SIGFOX_MAXPOWER )?ITSDK_SIGFOX_TXPOWER:ITSDK_SIGFOX_MAXPOWER;
+		itsdk_config.sdk.sigfox.txPower = (ITSDK_SIGFOX_TXPOWER < ITSDK_SIGFOX_MAXPOWER || ITSDK_SIGFOX_TXPOWER == SIGFOX_DEFAULT_POWER)?ITSDK_SIGFOX_TXPOWER:ITSDK_SIGFOX_MAXPOWER;
 		itsdk_config.sdk.sigfox.speed = ITSDK_SIGFOX_SPEED;
 		uint8_t __rcz = 0;
 
@@ -326,10 +327,17 @@ static bool __checkAndConvert(char * str,uint8_t start,uint8_t stop,uint8_t sz,u
 				    #endif
 
 					#if ITSDK_WITH_SIGFOX_LIB == __ENABLE
-					_itsdk_console_printf("sdk.sigfox.rssiCal : %d\r\n",_c->sdk.sigfox.rssiCal);
-					_itsdk_console_printf("sdk.sigfox.txPower : %ddB\r\n",_c->sdk.sigfox.txPower);
-					_itsdk_console_printf("sdk.sigfox.speed : %dbps\r\n",_c->sdk.sigfox.speed);
 					_itsdk_console_printf("sdk.sigfox.rcz : %d\r\n",_c->sdk.sigfox.rcz);
+					if ( _c->sdk.sigfox.txPower == SIGFOX_DEFAULT_POWER ) {
+						  _itsdk_console_printf("sdk.sigfox.txPower : rcz default\r\n");
+					} else {
+					  _itsdk_console_printf("sdk.sigfox.txPower : %ddB\r\n",_c->sdk.sigfox.txPower);
+					}
+					if ( _c->sdk.sigfox.speed == SIGFOX_DEFAULT_SPEED ) {
+						_itsdk_console_printf("sdk.sigfox.speed : rcz default\r\n");
+					} else {
+						_itsdk_console_printf("sdk.sigfox.speed : %dbps\r\n",_c->sdk.sigfox.speed);
+					}
 					_itsdk_console_printf("sdk.sigfox.sgfxKey : %d\r\n",_c->sdk.sigfox.sgfxKey);
 					 #if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_LOCALEPROM
 					 _itsdk_console_printf("sdk.sigfox.initialPac : [%02X%02X%02X%02X%02X%02X%02X%02X]\r\n",
@@ -343,6 +351,7 @@ static bool __checkAndConvert(char * str,uint8_t start,uint8_t stop,uint8_t sz,u
 							_c->sdk.sigfox.initialPac[7]
 						);
 					 _itsdk_console_printf("sdk.sigfox.deviceId : %08X \r\n",_c->sdk.sigfox.deviceId);
+					 _itsdk_console_printf("sdk.sigfox.rssiCal : %d\r\n",_c->sdk.sigfox.rssiCal);
 					 #endif
 					#endif
 
@@ -369,7 +378,7 @@ static itsdk_console_return_e _itsdk_config_consolePriv(char * buffer, uint8_t s
 			// help
  			#if ITSDK_CONFIGURATION_MODE != __CONFIG_STATIC
 			  _itsdk_console_printf("S          : commit configuration\r\n");
-			  _itsdk_console_printf("F          : restore factory defaults\r\n");
+			  _itsdk_console_printf("F          : restore factory default config\r\n");
 			  _itsdk_console_printf("m          : see eeprom configuration\r\n");
 			#endif
 			#if ITSDK_WITH_SIGFOX_LIB == __ENABLE || ITSDK_WITH_LORAWAN_LIB == __ENABLE
@@ -384,12 +393,13 @@ static itsdk_console_return_e _itsdk_config_consolePriv(char * buffer, uint8_t s
 			  _itsdk_console_printf("SC:4:nn    : lora.retries 00..99\r\n");
 			#endif
 			#if ITSDK_WITH_SIGFOX_LIB == __ENABLE
-			  _itsdk_console_printf("SC:8:xx   : sigfox.txPower 00-22dB (decimal) 99 (default)\r\n");
-			  _itsdk_console_printf("SC:9:xx   : sigfox.speed 0(default)/100/600bps (decimal)\r\n");
-			  _itsdk_console_printf("SC:A:xx   : sigfox.rcz [01,02,3c,04,05]\r\n");
-			  _itsdk_console_printf("SC:B:x    : sigfox.sgfxKey 0:PRIVATE 1:PUBLIC\r\n");
-			  _itsdk_console_printf("SC:C:8hex : sigfox.initialPac 8B hex string\r\n");
-			  _itsdk_console_printf("SC:D:4hex : sigfox.deviceId 4B hex string\r\n");
+			  _itsdk_console_printf("SC:8:xx    : sigfox.txPower 00-22dB (decimal) 99 (default)\r\n");
+			  _itsdk_console_printf("SC:9:xx    : sigfox.speed 0(default)/100/600bps (decimal)\r\n");
+			  _itsdk_console_printf("SC:A:xx    : sigfox.rcz [01,02,3c,04,05]\r\n");
+			  _itsdk_console_printf("SC:B:x     : sigfox.sgfxKey 0:PRIVATE 1:PUBLIC\r\n");
+			  _itsdk_console_printf("SC:C:8hex  : sigfox.initialPac 8B hex string\r\n");
+			  _itsdk_console_printf("SC:D:4hex  : sigfox.deviceId 4B hex string\r\n");
+			  _itsdk_console_printf("sc:d       : get sigfox.deviceId\r\n");
 			#endif
 		  return ITSDK_CONSOLE_SUCCES;
 		  break;
@@ -441,6 +451,24 @@ static itsdk_console_return_e _itsdk_config_consolePriv(char * buffer, uint8_t s
 		default:
 			break;
 	  }
+	} else if ( sz == 4 ) {
+		if ( buffer[0] == 's' && buffer[1] == 'c' && buffer[2] == ':' ) {
+			switch(buffer[3]) {
+				#if ITSDK_WITH_SIGFOX_LIB == __ENABLE
+				case 'd': {
+						itsdk_sigfox_device_is_t deviceId;
+						itsdk_sigfox_getDeviceId(&deviceId);
+						_itsdk_console_printf("%08X\r\n",deviceId);
+						_itsdk_console_printf("OK\r\n");
+						return ITSDK_CONSOLE_SUCCES;
+					}
+					break;
+				#endif
+				default:
+					_itsdk_console_printf("KO\r\n");
+					return ITSDK_CONSOLE_FAILED;
+			}
+		}
 	} else if ( sz >= 6 ) {
 		if ( buffer[0] == 'S' && buffer[1] == 'C' && buffer[2] == ':' && buffer[4] == ':' ) {
 			switch(buffer[3]) {

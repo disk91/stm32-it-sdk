@@ -300,12 +300,12 @@ static uint32_t __compensateHumidity(int32_t adc){
 /**
  * Depends on mode, get the last sensor values or request a new value and get it
  * Get the sensors value.
- * Temperature is in m�C
+ * Temperature is in moC
  * Humidity is in m%RH
  * Pressure is in Pa
  */
 drivers_bme280_ret_e drivers_bme280_getSensors(
-		int32_t  * temperature,			// Temp in m�C
+		int32_t  * temperature,			// Temp in moC
 		uint32_t * pressure,			// Pressure un Pa
 		uint32_t * humidity				// Humidity in m%RH
 ) {

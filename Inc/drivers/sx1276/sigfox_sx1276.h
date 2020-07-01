@@ -92,6 +92,8 @@ typedef struct {
 	volatile uint8_t		timerEvent:1;				// Timer event
 	volatile uint8_t		endOfTxEvent:1;				// Frame sent
 
+	uint32_t				lastHseSwitch_S;				// Last Hse/Hsi switch timestamp in S
+
 } sx1276_sigfox_state_t;
 
 extern sx1276_sigfox_state_t	sx1276_sigfox_state;

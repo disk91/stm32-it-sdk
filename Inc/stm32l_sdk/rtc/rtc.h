@@ -31,6 +31,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <it_sdk/config.h>
+#if ITSDK_WITH_RTC != __RTC_NONE
 #include <rtc.h>
 
 typedef struct s_rtc_irq_chain {
@@ -65,5 +66,7 @@ uint32_t rtc_getRealRtcFrequency();
 #endif
 
 extern bool __enable_systick;
+
+#endif // ITSDK_WITH_RTC
 
 #endif /* STM32L_SDK_RTC_RTC_H_ */

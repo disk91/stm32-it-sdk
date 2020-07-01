@@ -27,6 +27,7 @@
  */
 #include <it_sdk/config.h>
 #if ITSDK_PLATFORM == __PLATFORM_STM32L0
+#if ITSDK_WITH_HW_TIMER != __TIMER_NONE
 #include <it_sdk/debug.h>
 #include <it_sdk/time/timer.h>
 #include <stm32l_sdk/timer/timer.h>
@@ -72,6 +73,27 @@ void __timer_disable_clk() {
 		__HAL_RCC_TIM7_CLK_DISABLE();
 	#endif
 }
+/*
+int __timer_get_Irq() {
+	#if ITSDK_HW_TIMER1_ID == 21
+		return TIM21_IRQn;
+	#elif ITSDK_HW_TIMER1_ID == 22
+		return TIM21_IRQn;
+	#elif ITSDK_HW_TIMER1_ID == 1
+		return TIM1_IRQn;
+	#elif  ITSDK_HW_TIMER1_ID == 2
+		return TIM2_IRQn;
+	#elif  ITSDK_HW_TIMER1_ID == 3
+		return TIM3_IRQn;
+	#elif  ITSDK_HW_TIMER1_ID == 4
+		return TIM4_IRQn;
+	#elif  ITSDK_HW_TIMER1_ID == 6
+		return TIM6_IRQn;
+	#elif  ITSDK_HW_TIMER1_ID == 7
+		return TIM7_IRQn;
+	#endif
+}
+*/
 
 /**
  * Run the timer for the given time. Sync mode, return only after timer execution
@@ -124,5 +146,49 @@ itsdk_timer_return_t stm32l_hwtimer_sync_run(
 
 
 
+volatile uint64_t __hwTimer_loop;
+/**
+ * Start a timer in background. the counter is set to 0 to be read
+ * after to measure the durations. If the timer overrun, the duration
+ * is added to a global counter.
+ */
+itsdk_timer_return_t stm32l_hwtimer_background_start() {
+	ITSDK_HW_TIMER1_HANDLE.Init.Prescaler = 0;
+	ITSDK_HW_TIMER1_HANDLE.Init.CounterMode = TIM_COUNTERMODE_UP;
+	ITSDK_HW_TIMER1_HANDLE.Init.Period = ITSDK_HW_TIMER1_MAX-1;
+	ITSDK_HW_TIMER1_HANDLE.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+	ITSDK_HW_TIMER1_HANDLE.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+	HAL_TIM_Base_Init(&ITSDK_HW_TIMER1_HANDLE);
+	HAL_TIM_Base_Start_IT(&ITSDK_HW_TIMER1_HANDLE);
+	__hwTimer_loop = 0;
+	return TIMER_INIT_SUCCESS;
 
+}
+
+/**
+ * get the duration of the period since the timer started in background.
+ * the timer is stopped if the stop flag is set to BOOL_TRUE
+ */
+uint64_t stm32l_hwtimer_getDurationUs(itsdk_bool_e stop) {
+	uint64_t tics_now = __HAL_TIM_GetCounter(&ITSDK_HW_TIMER1_HANDLE);
+	if ( stop == BOOL_TRUE ) {
+		HAL_TIM_Base_Stop_IT(&ITSDK_HW_TIMER1_HANDLE);
+	}
+	uint64_t tics_per_micro =  ( ITSDK_HW_TIMER1_FREQ / 1000000 );
+	uint64_t tics_total = (__hwTimer_loop * ITSDK_HW_TIMER1_MAX) + tics_now;
+	return tics_total / tics_per_micro;
+}
+
+
+/**
+ * Timer interrupt handler to manage overflow duration
+ */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+	if ( htim == &ITSDK_HW_TIMER1_HANDLE ) {
+		__hwTimer_loop++;
+	}
+}
+
+
+#endif
 #endif

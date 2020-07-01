@@ -2,7 +2,7 @@
  * max17205.h -  Maxim 17205 - Gauge 3 cells
  * Project : Disk91 SDK
  * ----------------------------------------------------------
- * Created on: 24 févr. 2019
+ * Created on: 24 fï¿½vr. 2019
  *     Author: Paul Pinault aka Disk91
  * ----------------------------------------------------------
  * Copyright (C) 2019 Disk91
@@ -55,10 +55,11 @@ typedef enum {
 } drivers_max17205_cell_select_e;
 
 typedef struct {
-	drivers_max17205_mode_e 		mode;		// Setup mode
-	drivers_max17205_type_e			devType;	// 172X1 or 172X5
+	drivers_max17205_mode_e 		mode;				// Setup mode
+	drivers_max17205_type_e			devType;			// 172X1 or 172X5
 	uint8_t							initialized:3;
-
+	uint16_t						lastCapa;			// last read capacity mAh
+	uint32_t						totalCapa;			// since the beginning what is the capa mAh
 } drivers_max17205_conf_t;
 
 typedef enum {
@@ -74,8 +75,11 @@ drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode);
 drivers_max17205_ret_e drivers_max17205_getTemperature(int32_t * mTemp);
 drivers_max17205_ret_e drivers_max17205_getVoltage(drivers_max17205_cell_select_e cell, uint16_t * mVolt);
 drivers_max17205_ret_e drivers_max17205_getCurrent(int32_t * uAmp);
-drivers_max17205_ret_e drivers_max17205_getCoulomb(uint16_t * coulomb);
+drivers_max17205_ret_e drivers_max17205_getCapacity(uint16_t * mah);
+drivers_max17205_ret_e drivers_max17205_getCoulomb(uint32_t * coulomb);
 drivers_max17205_ret_e drivers_max17205_isReady();
+
+drivers_max17205_ret_e drivers_max17205_getRemainingNVMUpdates(uint16_t * upd);
 
 // ====================================================================
 // Registers
@@ -104,6 +108,14 @@ drivers_max17205_ret_e drivers_max17205_isReady();
 #define ITSDK_DRIVERS_MAX17205_REG_QH_ADR				0x4D	// Coulomb
 
 #define ITSDK_DRIVERS_MAX17205_REG_COMMAND_ADR			0x60	// Command register
+#define ITSDK_DRIVERS_MAX17205_CMD_RECALL				0xE2FA	// Command to recall NV memory
+#define ITSDK_DRIVERS_MAX17205_CMD_BLOCKCPY				0xE904	// Command to copy block into NV Memory
+
+#define ITSDK_DRIVERS_MAX17205_REG_COMMSTAT_ADR			0x61	// CommStat register
+#define ITSDK_DRIVERS_MAX17205_REG_COMMSTAT_NVERR_MSK	0x0004	// Indicating an error and potentialy something processing
+#define ITSDK_DRIVERS_MAX17205_REG_COMMSTAT_NVBUSY_MSK	0x0002	// Indicating the NV Memory is busy
+
+
 #define ITSDK_DRIVERS_MAX17205_REG_CONFIG2_ADR			0xBB	// Config 2 register
 
 #define ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_ADR			0x1B5	// Config 2 register
@@ -136,7 +148,7 @@ drivers_max17205_ret_e drivers_max17205_isReady();
 #define ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_A1EN_SHIFT 		12
 #define ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_A1EN_DISABLE	0x0000
 #define ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_A1EN_ENABLE		0x1000
-#define ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_A2EN_MSK	 	0x2000	// Enable A1 Temperature
+#define ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_A2EN_MSK	 	0x2000	// Enable A2 Temperature
 #define ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_A2EN_SHIFT 		13
 #define ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_A2EN_DISABLE	0x0000
 #define ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_A2EN_ENABLE		0x2000
@@ -144,6 +156,9 @@ drivers_max17205_ret_e drivers_max17205_isReady();
 #define ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_FGT_SHIFT 		15
 #define ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_FGT_DISABLE		0x0000
 #define ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_FGT_ENABLE		0x8000
+
+#define ITSDK_DRIVERS_MAX17205_REG_NHIBCFG					0x1B4
+#define ITSDK_DRIVERS_MAX17205_REG_NHIBCFG_ENHIB_MSK		0x8000	// Enable Hibernate mode switch (1) or disable it (0)
 
 
 typedef enum {												//  Temp Source    RegisterToRead
@@ -157,9 +172,15 @@ typedef enum {												//  Temp Source    RegisterToRead
 #define ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_TEMP_MSK	 	0xB800	// Mask to clean the Temperature source selection
 
 
-#define ITSDK_DRIVERS_MAX17205_REG_NRSENSE				0x1CF	//  setup the Rsense value
+#define ITSDK_DRIVERS_MAX17205_REG_NRSENSE					0x1CF	//  setup the Rsense value
+
+#define ITSDK_DRIVERS_MAX17205_REG_REMAINUPD_ADR			0x1ED   // Remaing nv memory updates
 
 
+#define ITSDK_DRIVERS_MAX17205_TIME_FOR_NVRECALL			 8	// Time to recall the NV memory content (5ms according to doc + margin)
+#define ITSDK_DRIVERS_MAX17205_TIME_FOR_NVSAVE_100MS_LOOP   75	// Time to write the NV memory content (up to 7360ms according to doc)
+#define ITSDK_DRIVERS_MAX17205_NVSAVE_MAX_TRY				 1	// Max try to save the NV MEMORY (1 == no retry)
 
+#define ITSDK_DRIVERS_MAX17205_GAUGE_LSB_FACT				 5	// 10x Constant for value in uVh for capacity to coulomb conversion
 
 #endif /* DRIVERS_GAUGE_MAX17205_MAX17205_H_ */

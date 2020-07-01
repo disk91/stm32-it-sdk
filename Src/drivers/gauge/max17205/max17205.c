@@ -104,9 +104,121 @@ drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode) {
 
 	__max17205_config.mode = mode;
 	__max17205_config.initialized = MAX17205_FAILED;
+	__max17205_config.lastCapa = 0;
+	__max17205_config.totalCapa = 0;
 
-	// Search for the device type
 	uint16_t v;
+
+
+	if (   __readRegister(ITSDK_DRIVERS_MAX17205_REG_DEVNAME_ADR,&v) == I2C_OK
+	    && (( v & ITSDK_DRIVERS_MAX17205_REG_DEVNAME_MSK ) != MAX17205_TYPE_SINGLE_CELL )
+		&& (( v & ITSDK_DRIVERS_MAX17205_REG_DEVNAME_MSK ) != MAX17205_TYPE_MULTI_CELL  )
+	) {
+
+		// Preconfiguration related to MAX17205 bug - thank you Martin Cornu
+		// see https://github.com/disk91/stm32-it-sdk/issues/26
+		switch ( mode ) {
+			case MAX17205_MODE_3CELLS_INT_TEMP:
+				// 3 cells - 0x00 -- 03 -- Num of cells - in shadow ram
+				__writeRegister(ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_ADR,
+								  ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_VBAT_DISABLE
+								| ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_CHEN_DISABLE
+								| ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_TDEN_DISABLE
+								| ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_A1EN_DISABLE
+								| ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_FGT_DISABLE
+						        | 3 << ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_NCELL_SHIFT
+							    );
+				// Also in volatile RAM
+				__writeRegister(ITSDK_DRIVERS_MAX17205_REG_BNPACKCFG_ADR,
+								  ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_VBAT_DISABLE
+								| ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_CHEN_DISABLE
+								| ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_TDEN_DISABLE
+								| ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_A1EN_DISABLE
+								| ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_FGT_DISABLE
+						        | 3 << ITSDK_DRIVERS_MAX17205_REG_NPACKCFG_NCELL_SHIFT
+							    );
+				itsdk_delayMs(1000);
+				break;
+			default:
+			case MAX17205_MODE_DEFAULT:
+				break;
+
+		}
+
+		// We can assume this is the first run and the chip configuration is invalid
+		// we are going to fix it by storing the right value in the NV Memory. But this
+		// memory can we updated only 7 times... so we are going to try to update it not too
+		// much until the device could be locked
+
+		// We can assume this is the first run and the chip configuration is invalid
+		// we are going to fix it
+
+		// The current status of this patch is the following. Sometime we have seen it
+		// working but the condition to get the NV Memory written is still not clear.
+		// most of the time the NVErr flag is position after writing for unidentified reason
+		// yet. As a consequence we lost awrite possibility and the value is unchanged. But
+		// sometime it worked. More tests are needed to understand this.
+		__readRegister(ITSDK_DRIVERS_MAX17205_REG_NHIBCFG,&v);
+		v &= ~(ITSDK_DRIVERS_MAX17205_REG_NHIBCFG_ENHIB_MSK);
+		__writeRegister(ITSDK_DRIVERS_MAX17205_REG_NHIBCFG,v);
+		if ( drivers_max17205_getRemainingNVMUpdates(&v) == MAX17205_SUCCESS ) {
+
+			if ( v > 5 ) {
+			    int _try = 0;
+				do {
+					// Repeat until CommStat.NVError == 0
+					int _trywait = 0;
+					do {
+						__readRegister(ITSDK_DRIVERS_MAX17205_REG_COMMSTAT_ADR,&v);
+						itsdk_delayMs(10);
+						_trywait++;
+					} while ((v & ITSDK_DRIVERS_MAX17205_REG_COMMSTAT_NVBUSY_MSK) != 0 && _trywait < 10);
+
+					v &= ~ITSDK_DRIVERS_MAX17205_REG_COMMSTAT_NVERR_MSK; // force NVError = 0
+					__writeRegister(ITSDK_DRIVERS_MAX17205_REG_COMMSTAT_ADR,v);
+					__writeRegister(ITSDK_DRIVERS_MAX17205_REG_COMMAND_ADR,ITSDK_DRIVERS_MAX17205_CMD_BLOCKCPY);
+					for ( int l = 0 ; l < ITSDK_DRIVERS_MAX17205_TIME_FOR_NVSAVE_100MS_LOOP ; l++ ) {
+						#if ITSDK_WITH_WDG != __WDG_NONE && ITSDK_WDG_MS > 0
+						   wdg_refresh();
+						#endif
+						itsdk_delayMs(100);
+					}
+					__readRegister(ITSDK_DRIVERS_MAX17205_REG_COMMSTAT_ADR,&v);
+					_try++;
+				} while ( (v & ITSDK_DRIVERS_MAX17205_REG_COMMSTAT_NVERR_MSK) != 0 && _try < ITSDK_DRIVERS_MAX17205_NVSAVE_MAX_TRY );
+				if ( (v & ITSDK_DRIVERS_MAX17205_REG_COMMSTAT_NVERR_MSK) != 0 ) {
+					// Too many failed in trying to store the NV Memory
+					ITSDK_ERROR_REPORT(ITSDK_ERROR_DRV_MAX17205_NVFAILED,0);
+				} else {
+					// Sound good - reset the device
+					__writeRegister(ITSDK_DRIVERS_MAX17205_REG_COMMAND_ADR,0x000F);
+					itsdk_delayMs(15);
+					__writeRegister(ITSDK_DRIVERS_MAX17205_REG_CONFIG2_ADR,0x0001);
+					itsdk_delayMs(15);
+				}
+
+			} else {
+				// We prefer to not update the device to avoid locking it
+				ITSDK_ERROR_REPORT(ITSDK_ERROR_DRV_MAX17205_NVUPDREM,v);
+				// By the way, it seems this can help to correctly detect the chip
+				itsdk_delayMs(1000);
+			}
+
+		} else {
+			// not a success, basically the device could not be here
+			// make a try for a wait ... just because
+			// This is for the debug period @TODO remove this part of the code
+			itsdk_delayMs(1000);
+			log_error("Max17205 is another time not found\r\n");
+		}
+		__readRegister(ITSDK_DRIVERS_MAX17205_REG_NHIBCFG,&v);
+		v |= ITSDK_DRIVERS_MAX17205_REG_NHIBCFG_ENHIB_MSK;
+		__writeRegister(ITSDK_DRIVERS_MAX17205_REG_NHIBCFG,v);
+
+	}
+
+
+	// Search for the device type ( aging but this time it is supposed to be ok
 	if ( __readRegister(ITSDK_DRIVERS_MAX17205_REG_DEVNAME_ADR,&v) != I2C_OK ) {
 		ITSDK_ERROR_REPORT(ITSDK_ERROR_DRV_MAX17205_NOTFOUND,0);
 		return MAX17205_NOTFOUND;
@@ -134,7 +246,7 @@ drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode) {
 		// This can be due to undervoltage powering.
 		// When the power supply is under 5V ( level not tested but higher the spec minimal documented level )
 		//  the devId returned is just shit ; The device works but really badly
-		uint16_t vbat;
+		uint16_t vbat=0;
 		drivers_max17205_getVoltage(MAX17205_VBAT,&vbat);
 		if ( vbat < ITSDK_DRIVERS_MAX17205_UNDERVOLTAGE ) {
 			// assuming this is the undervoltage condition
@@ -269,18 +381,42 @@ drivers_max17205_ret_e drivers_max17205_getCurrent(int32_t * uAmp) {
 
 
 /**
- * Return Current in Coulomb
+ * Return Current in mAh
+ * In Fact this coulomb counter is not coulomb but Capacity in mAh
  * The counter decrease when the battery is consumed and increased when the battery is charging
+ * A a consequence the first returned value is 0xFFFF then 0xFFFE ...
  */
-drivers_max17205_ret_e drivers_max17205_getCoulomb(uint16_t * coulomb) {
+drivers_max17205_ret_e drivers_max17205_getCapacity(uint16_t * mah) {
 
 	uint16_t v;
 	if ( __readRegister(ITSDK_DRIVERS_MAX17205_REG_QH_ADR,&v) != I2C_OK ) {
 		return MAX17205_FAILED;
 	}
-	*coulomb = v;
+	*mah = v;
 	return MAX17205_SUCCESS;
 }
+
+/**
+ * Return curent Coulomb
+ * In Fact this coulomb counter is not coulomb but Capacity in mAh
+ * The counter decrease when the battery is consumed and increased when the battery is charging
+ * The coulomb return will increment over time
+ */
+drivers_max17205_ret_e drivers_max17205_getCoulomb(uint32_t * coulomb) {
+	uint16_t capa;
+	drivers_max17205_getCapacity(&capa);
+#if ITSDK_DRIVERS_MAX17205_CSN_TO_BAT == __ENABLE
+	uint16_t delta = (capa >= __max17205_config.lastCapa )? (capa - __max17205_config.lastCapa) : (capa + (0xFFFF - __max17205_config.lastCapa));
+#else
+	uint16_t delta = (capa < __max17205_config.lastCapa )? __max17205_config.lastCapa - capa : (__max17205_config.lastCapa + (0xFFFF - capa));
+#endif
+	__max17205_config.totalCapa += delta;
+	__max17205_config.lastCapa = capa;
+
+	*coulomb = (ITSDK_DRIVERS_MAX17205_GAUGE_LSB_FACT * __max17205_config.totalCapa) / (ITSDK_DRIVERS_MAX17205_RSENSE_MOHM);
+	return MAX17205_SUCCESS;
+}
+
 
 /**
  * Return success when the max17205 is ready for being used
@@ -290,6 +426,37 @@ drivers_max17205_ret_e drivers_max17205_getCoulomb(uint16_t * coulomb) {
  */
 drivers_max17205_ret_e drivers_max17205_isReady() {
 	return __max17205_config.initialized;
+}
+
+/**
+ * Return the remaining update of the NV Memory
+ * The Nv Memory can only be updated 7 times.
+ */
+drivers_max17205_ret_e drivers_max17205_getRemainingNVMUpdates(uint16_t * upd) {
+
+	uint16_t v;
+	__writeRegister(ITSDK_DRIVERS_MAX17205_REG_COMMAND_ADR,ITSDK_DRIVERS_MAX17205_CMD_RECALL);
+	itsdk_delayMs(ITSDK_DRIVERS_MAX17205_TIME_FOR_NVRECALL);
+	__readRegister(ITSDK_DRIVERS_MAX17205_REG_REMAINUPD_ADR,&v);
+	uint16_t l = v & 0xFF;
+	uint16_t h = (v >> 8) & 0xFF;
+	v = l | h;
+	switch (v) {
+		case 1: *upd = 7; break;
+		case 3: *upd = 6; break;
+		case 7: *upd = 5; break;
+		case 15: *upd = 4; break;
+		case 31: *upd = 3; break;
+		case 63: *upd = 2; break;
+		case 127: *upd = 1; break;
+		case 255: *upd = 0; break;
+		default:
+			*upd=0;
+			return MAX17205_FAILED;
+			break;
+	}
+	return MAX17205_SUCCESS;
+
 }
 
 

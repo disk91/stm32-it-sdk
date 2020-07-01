@@ -50,5 +50,6 @@ bool eeprom_read(void * data, uint16_t len, uint8_t version, uint8_t * versionR)
 bool eeprom_getPostConfigOffset(uint32_t * _offset);
 bool eeprom_getConfigOffset(uint32_t * _offset);
 bool eeprom_getConfigSize(uint32_t * _size);
+void eeprom_clearAllEprom();
 
 #endif /* IT_SDK_EEPROM_EEPROM_H_ */

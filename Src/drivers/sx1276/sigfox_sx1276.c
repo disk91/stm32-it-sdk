@@ -31,6 +31,7 @@
 #include <it_sdk/eeprom/sdk_config.h>
 #include <it_sdk/eeprom/sdk_state.h>
 #include <it_sdk/time/timer.h>
+#include <it_sdk/time/time.h>
 #include <drivers/sigfox/sigfox_api.h>
 #include <drivers/sigfox/se_nvm.h>
 #include <drivers/sx1276/sigfox_sx1276.h>
@@ -38,16 +39,15 @@
 
 sx1276_sigfox_state_t	sx1276_sigfox_state;
 
-
 /**
  * Configure the sigfox stack for sx1276
  */
 sx1276_sigfox_ret_t sx1276_sigfox_init( void ) {
+	static sfx_rc_t  prcz;
+	static sfx_u32   pconfig_words[3];
 	LOG_INFO_SFXSX1276((">> sx1276_sigfox_init\r\n"));
 
 	sfx_error_t error = SX1276_SIGFOX_ERR_NONE;
-	static sfx_rc_t  prcz;
-	static sfx_u32   pconfig_words[3];
 
 	// Hardware Init
 	SX1276IoInit();
@@ -57,6 +57,7 @@ sx1276_sigfox_ret_t sx1276_sigfox_init( void ) {
 	// set DIO3 from 'buffer empty' to NA to save current
 	SX1276Write( 0x40, 0x01 );
 
+	sx1276_sigfox_state.lastHseSwitch_S = itsdk_time_get_ms()/1000;
 	sx1276_sigfox_state.meas_rssi_dbm = 0;
 	sx1276_sigfox_state.rxPacketReceived= STLL_RESET;
 	sx1276_sigfox_state.rxCarrierSenseFlag= STLL_RESET;
@@ -94,7 +95,6 @@ sx1276_sigfox_ret_t sx1276_sigfox_init( void ) {
 		}
 		break;
 	}
-
 	LOG_INFO_SFXSX1276((">> SIGFOX_API_open\r\n"));
 	sfx_error_t serror = SIGFOX_API_open(&prcz);
 
@@ -102,6 +102,7 @@ sx1276_sigfox_ret_t sx1276_sigfox_init( void ) {
 		LOG_ERROR_SFXSX1276(("[ERROR] Sigfox Open(%08X)\r\n",serror));
 		return SX1276_SIGFOX_ERR_LIBINIT;
 	}
+
 	switch (itsdk_state.sigfox.rcz) {
 	case SIGFOX_RCZ2:
 		error = SIGFOX_API_set_std_config(pconfig_words, RC2_SET_STD_TIMER_ENABLE);
@@ -122,6 +123,7 @@ sx1276_sigfox_ret_t sx1276_sigfox_init( void ) {
 	}
 	return error;
 }
+
 
 /**
  * DeInit Sigfox Stack
@@ -170,10 +172,14 @@ sx1276_sigfox_ret_t sx1276_sigfox_getRssi(int16_t * rssi) {
  * It executes the needed background tasks during this period.
  * Returns SX1276_SIGFOX_ERR_BREAK when we want to force breaking the loop
  */
-//static uint32_t __xx = 0;
+#if (ITSDK_LOGGER_MODULE & __LOG_MOD_LOWSIGFOX) > 0
+static uint32_t __xx = 0;
+#endif
 sx1276_sigfox_ret_t sx1276_sigfox_idle( void ) {
-	//__xx++;
-	//if ( (__xx & 0x000FFFF) == 0 ) LOG_INFO_SFXSX1276((".\r\n"));
+#if (ITSDK_LOGGER_MODULE & __LOG_MOD_LOWSIGFOX) > 0
+	if ( (__xx & 0x000FFFF) == 0 ) LOG_INFO_SFXSX1276(("I\r\n"));
+	__xx++;
+#endif
 	itsdk_stimer_run();
 	return sx1276_sigfox_idle_used();
 }
