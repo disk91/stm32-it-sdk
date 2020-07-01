@@ -86,8 +86,7 @@ Previously the devel branch was the living branch and master was stable. This wa
 - devel is a bit advanced on master for not yet tested commit
 - master is the new devel branch containing tested commit but not yet verified, you **must not** go in production with master.
 - version branch for each new version + release 
- 
-_The devel branch is usually behind with interesting new coming features. This branch should normally always compile (check the readme to see the new defines added) but is not validated and may have some work in progress. The devel readme file is updated as soon as a new feature is usable. Have a look !_
+
 
 # Start your project by configuring a skeleton with Cube Mx 
 
