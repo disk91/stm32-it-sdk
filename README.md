@@ -81,6 +81,12 @@ Most is done to preserve code size, the SDK can target small flash MCU from 16KB
 The second objective is to be able to port this SDK to different patform
 to make it a portable SDK. The SDK have a it-sdk directory where everything needs to be portable. stm32l-sdk contains all the subfunctions specific to this platform.
 
+# Project organization
+Previously the devel branch was the living branch and master was stable. This way sound not optimal (at least for my github commit graph ;)/ So starting in 1.6 here is the new organization:
+- devel is a bit advanced on master for not yet tested commit
+- master is the new devel branch containing tested commit but not yet verified, you **must not** go in production with master.
+- version branch for each new version + release 
+ 
 _The devel branch is usually behind with interesting new coming features. This branch should normally always compile (check the readme to see the new defines added) but is not validated and may have some work in progress. The devel readme file is updated as soon as a new feature is usable. Have a look !_
 
 # Start your project by configuring a skeleton with Cube Mx 
@@ -203,7 +209,7 @@ configuration file. Please find the different settings added version after versi
  - ITSDK_WITH_EXPERIMENTAL / activate or deactivate some experimental code by default set it to DISABLE
  - ITSDK_LOGGER_WITH_SEG_RTT / activate or deactive the segger RTT console (see segger.md file)
  - ITSDK_STATEMACHINE_STATIC / state machine optimization with definition stored in flaash instead of RAM
- 
+
 ### configDriver.h
  - ITSDK_DRIVERS_WITH_ACCEL_DRIVER
  - ITSDK_DRIVERS_ACCEL_LIS2DH12 
