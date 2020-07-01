@@ -202,7 +202,8 @@ configuration file. Please find the different settings added version after versi
  - ITSDK_WITH_UART_RXIRQ_BUFSZ / size of the RX IRQ circular buffer for each of the serial channel (power of two)
  - ITSDK_WITH_EXPERIMENTAL / activate or deactivate some experimental code by default set it to DISABLE
  - ITSDK_LOGGER_WITH_SEG_RTT / activate or deactive the segger RTT console (see segger.md file)
-
+ - ITSDK_STATEMACHINE_STATIC / state machine optimization with definition stored in flaash instead of RAM
+ 
 ### configDriver.h
  - ITSDK_DRIVERS_WITH_ACCEL_DRIVER
  - ITSDK_DRIVERS_ACCEL_LIS2DH12 

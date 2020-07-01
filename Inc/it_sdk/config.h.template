@@ -187,6 +187,8 @@
 #define ITSDK_SHEDULER_TASKS		1										// Maximum number of Task (0 will deactivate scheduler code)
 #define ITSDK_STATEMACHINE_TASKS	0										// Maximum number of state machine task (0 will deactivate STM code)
 #define ITSDK_STATEMACHINE_NAMESZ	8										// Maximum size for task name (-1)
+#define ITSDK_STATEMACHINE_STATIC	__ENABLE								// The states are stored in flash memory
+																			// use disable or not declared for compatibility with version < 1.6
 
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // APP SPECIFIC NVM CONFIG
