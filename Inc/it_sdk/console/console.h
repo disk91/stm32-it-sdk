@@ -2,7 +2,7 @@
  * console.h - debug & config console
  * Project : Disk91 SDK
  * ----------------------------------------------------------
- * Created on: 9 févr. 2019
+ * Created on: 9 fï¿½vr. 2019
  *     Author: Paul Pinault aka Disk91
  * ----------------------------------------------------------
  * Copyright (C) 2019 Disk91
@@ -72,7 +72,8 @@ void _itsdk_console_printf(char *format, ...);
 
 #if ( ITSDK_CONSOLE_SERIAL & __UART_CUSTOM ) > 0
 void itsdk_console_customSerial_print(char * msg);
-serial_read_response_e itsdk_console_customSerial_read(char * ch);
+serial_read_response_e itsdk_console_customSerial_read(char * ch);	// for sync char reception
+void itsdk_console_customProcess_char(char c);						// for async char reception
 #endif
 
 // ==============================================================================

@@ -264,6 +264,9 @@ __weak void itsdk_console_customSerial_print(char * msg) {
 __weak serial_read_response_e itsdk_console_customSerial_read(char * ch) {
 	return SERIAL_READ_NOCHAR;
 }
+void itsdk_console_customProcess_char(char c) {
+	_itsdk_console_processChar(c);
+}
 #endif
 
 void _itsdk_console_printf(char *format, ...) {
