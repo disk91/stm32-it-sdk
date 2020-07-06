@@ -171,7 +171,7 @@ static itsdk_console_return_e _itsdk_console_public(char * buffer, uint8_t sz) {
 			break;
 		case '!':
 			// Copyright
-			_itsdk_console_printf("IT_SDK - (c) 2019 - Paul Pinault aka Disk91\r\n");
+			_itsdk_console_printf("IT_SDK - (c) 2020 - Paul Pinault aka Disk91\r\n");
 			_itsdk_console_printf(ITSKD_CONSOLE_COPYRIGHT);
 			return ITSDK_CONSOLE_SUCCES;
 			break;
