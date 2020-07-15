@@ -171,17 +171,21 @@ itsdk_error_ret_e itsdk_error_report(uint32_t error,uint16_t value) {
 	}
 	_itsdk_error_writeHeader(&h);
 
+	char t = 'S';
+	if ((error & ITSDK_ERROR_TYPE_MASK) == ITSDK_ERROR_TYPE_APP) {
+		t = 'A';
+	}
 
 	// Manage critical level
 	if ( (error & ITSDK_ERROR_LEVEL_FATAL ) == ITSDK_ERROR_LEVEL_FATAL ){
-		log_error("[CRITICAL ERROR] 0x%08X\r\n",error);
+		log_error("[CRITICAL ERROR] %c 0x%08X\r\n",t,error);
 		while(1);
 	} else if ( (error & ITSDK_ERROR_LEVEL_ERROR ) == ITSDK_ERROR_LEVEL_ERROR ){
-		log_error("[ERROR] 0x%08X\r\n",error);
+		log_error("[ERROR] %c 0x%08X\r\n",t,error);
 	} else if ( (error & ITSDK_ERROR_LEVEL_WARN ) == ITSDK_ERROR_LEVEL_WARN ){
-		log_warn("[WARN] 0x%08X\r\n",error);
+		log_warn("[WARN] %c 0x%08X\r\n",t,error);
 	} else if ( (error & ITSDK_ERROR_LEVEL_INFO ) == ITSDK_ERROR_LEVEL_INFO ){
-		log_info("[INFO] 0x%08X\r\n",error);
+		log_info("[INFO] %c 0x%08X\r\n",t,error);
 	}
 	return ITSDK_ERROR_SUCCESS;
 }

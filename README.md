@@ -60,6 +60,7 @@ Most is done to preserve code size, the SDK can target small flash MCU from 16KB
   * T / H / P
      * bosh bme280
      * omron 2smpb-02B
+     * infineon DPS422
   * Light
      * Maxim Max44009
   * Current / Battery Pack

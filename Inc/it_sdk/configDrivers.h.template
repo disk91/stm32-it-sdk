@@ -87,6 +87,23 @@
 #define ITSDK_DRIVERS_O2SMPB_VERSION			0x2B						//   Sub type, the data decoding is different depending on version
 
 // ------------------------------------------------------------------------
+// Temp / Pressure : INFINEON DPS422
+
+#define ITSDK_DRIVERS_DPS422					__DISABLE					// INFINEO DPS422 Temp / Pressure - pin2pin compatible with BME280
+#if ITSDK_DRIVERS_DPS422 == __ENABLE
+	#ifndef __I2C_INCLUDED
+	  #define __I2C_INCLUDED
+	  #include "i2c.h"
+	#endif
+	#include <drivers/temphygropressure/infineon_dps422/dps422.h>
+#endif
+#define ITSDK_DRIVERS_DPS422_I2C				hi2c1						// I2C port to be used for communications
+#define __DPS422_SDO_HIGH						0x77
+#define __DPS422_SDO_LOW						0x76
+#define ITSDK_DRIVERS_DPS422_ADDRESS			__DPS422_SDO_LOW			//   Device address base on electrical conf
+#define ITSDK_DRIVERS_DPS422_SAVERAM			__DISABLE					//   Optimize driver for less memory, many more I2C communications
+
+// ------------------------------------------------------------------------
 // Light sensor : MAX44009
 
 #define ITSDK_DRIVERS_MAX44009					__DISABLE
