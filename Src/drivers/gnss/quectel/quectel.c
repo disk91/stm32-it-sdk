@@ -108,6 +108,7 @@ static gnss_ret_e __quectelSwitchToHotStart();
 static gnss_ret_e __quectelSwitchToWarmStart();
 static gnss_ret_e __quectelSwitchToColdStart();
 static gnss_ret_e __quectelSwitchToFullColdStart();
+static gnss_ret_e __quectelStop();
 static quectel_status_t __quectel_status;
 
 
@@ -190,12 +191,14 @@ gnss_ret_e quectel_lxx_initLowPower(gnss_config_t * config) {
 		#if (ITSDK_LOGGER_MODULE & __LOG_MOD_GNSS) > 0
 			log_error("QUECTEL_L8X - Failed to detect\r\n");
 		#endif
+		__quectelStop();
 		return GNSS_NOTFOUND;
 	}
 
 	// Check with a no action code, failed if failed
 	sprintf(cmd,"$PMTK000*");
 	if ( __quectedSendCommand(cmd,DRIVER_GNSS_QUECTEL_CMD_MAXZ,DRIVER_GNSS_QUECTEL_CMD_TEST) != GNSS_SUCCESS ) {
+		__quectelStop();
 		return GNSS_FAILED;
 	}
 
@@ -295,6 +298,22 @@ static gnss_ret_e __quectelSetRunMode(gnss_run_mode_e mode) {
 				return __quectelSwitchToHotStart();
 			}
 	}
+}
+
+/**
+ * Power off the device if the feature is supported
+ */
+static gnss_ret_e __quectelStop() {
+	if ( ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_PIN != __LP_GPIO_NONE ) {
+		// violent stop, no care
+		#if ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_POL == __HIGH
+		  gpio_reset(ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_PIN);
+		#else
+		  gpio_set(ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_PIN);
+		#endif
+		return GNSS_SUCCESS;
+	}
+	return GNSS_FAILED;
 }
 
 
