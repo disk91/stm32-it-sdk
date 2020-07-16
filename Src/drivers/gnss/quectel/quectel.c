@@ -195,13 +195,16 @@ gnss_ret_e quectel_lxx_initLowPower(gnss_config_t * config) {
 		return GNSS_NOTFOUND;
 	}
 
+	#if ITSDK_DRIVERS_GNSS_QUECTEL_MODEL == DRIVER_GNSS_QUECTEL_MODEL_L80
+	itsdk_delayMs(100);	// extra delay needed for L80
+	#endif
+
 	// Check with a no action code, failed if failed
 	sprintf(cmd,"$PMTK000*");
 	if ( __quectedSendCommand(cmd,DRIVER_GNSS_QUECTEL_CMD_MAXZ,DRIVER_GNSS_QUECTEL_CMD_TEST) != GNSS_SUCCESS ) {
 		__quectelStop();
 		return GNSS_FAILED;
 	}
-
 
 	// Get the firmware version (Quectel)
 	//sprintf(cmd,"$PQVERNO,R*");
@@ -584,6 +587,7 @@ static gnss_ret_e __quectelNMEA(gnss_data_t * data, uint8_t * line, uint16_t sz,
 	//__l[3]=0;
 	//log_info("[%s]",__l);
 
+	//log_info("[%s]",line);
 	switch (ret) {
 		case GNSS_PROPRIETARY: {
 			ret = GNSS_NOTSUPPORTED;
