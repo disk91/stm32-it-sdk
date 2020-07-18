@@ -221,11 +221,11 @@ int16_t itdt_convertDecChar4Int(char * v) {
  *  Format 001
  */
 uint16_t itdt_convertDecChar3UInt(char * v) {
-  uint8_t ret = itdt_convertHexChar2HalfInt(*v);v++;
+  uint16_t ret = itdt_convertHexChar2HalfInt(*v);v++;
   ret *= 10;
   ret += itdt_convertHexChar2HalfInt(*v);v++;
   ret *= 10;
-  ret += itdt_convertHexChar2HalfInt(*v);v++;
+  ret += itdt_convertHexChar2HalfInt(*v);
   return ret;
 }
 
