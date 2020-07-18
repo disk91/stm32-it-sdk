@@ -574,6 +574,9 @@ static bool __checkAndConvert(char * str,uint8_t start,uint8_t stop,uint8_t sz,u
 
 static itsdk_console_return_e __updateField(char * buffer, uint8_t sz, uint8_t *b, itsdk_secStoreBlocks_e type) {
 	if ( __checkAndConvert(buffer,5,sz,16,b) ) {
+		if ( type == ITSDK_SS_SIGFOXKEY ) {
+		   itsdk_encrypt_cifferKey(b,16);
+		}
 		if ( itsdk_secstore_writeBlock(type, b) == SS_SUCCESS ) {
 			_itsdk_console_printf("OK\r\n");
 			return ITSDK_CONSOLE_SUCCES;

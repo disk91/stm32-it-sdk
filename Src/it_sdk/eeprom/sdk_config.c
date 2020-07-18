@@ -701,7 +701,10 @@ static itsdk_console_return_e _itsdk_config_consolePriv(char * buffer, uint8_t s
 				{
 					uint8_t b[4];
 					if ( __checkAndConvert(buffer,5,sz,4,b) ) {
-						bcopy(b,&itsdk_config_shadow.sdk.sigfox.deviceId,4);
+						itsdk_config_shadow.sdk.sigfox.deviceId = (b[0] << 24) & 0xFF000000;
+						itsdk_config_shadow.sdk.sigfox.deviceId |= (b[1] << 16) & 0xFF0000;
+						itsdk_config_shadow.sdk.sigfox.deviceId |= (b[2] << 8) & 0xFF00;
+						itsdk_config_shadow.sdk.sigfox.deviceId |= (b[3]) & 0xFF;
 						_itsdk_console_printf("OK\r\n");
 						return ITSDK_CONSOLE_SUCCES;
 					}
