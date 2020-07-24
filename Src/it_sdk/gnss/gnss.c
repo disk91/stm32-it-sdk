@@ -146,7 +146,7 @@ gnss_ret_e gnss_start(gnss_run_mode_e mode, uint16_t fixFreq,  uint32_t timeoutS
 		__gnss_resetStructForNewFix();
 		__gnss_config.startupTimeS = (itsdk_time_get_ms()/1000);
 		__gnss_config.maxDurationS = timeoutS;
-		GNSS_LOG_INFO(("Gnss - Start for %dS\r\n",__gnss_config.maxDurationS));
+		GNSS_LOG_INFO(("Gnss - Start for %dS at %dS\r\n",__gnss_config.maxDurationS,__gnss_config.startupTimeS));
 		gnss_ret_e ret = __gnss_config.setRunMode(mode);
 		if ( ret == GNSS_SUCCESS ) __gnss_config.isRunning = 1;
 		return ret;
