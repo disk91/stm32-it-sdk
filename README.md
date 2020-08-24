@@ -47,6 +47,7 @@ Most is done to preserve code size, the SDK can target small flash MCU from 16KB
   * STM32L011
   * STM32L053
   * STM32L072
+  * STM32L052
   * MURATA CMWX1ZZABZ
 
 * Supported drivers
@@ -115,18 +116,20 @@ When generating the Project
 1. Clone this repository into the root of your project.
 2. For the next configuration, you need to do it ifor both Debug *and* Release configuration 
 3. Add in project properties >> C/C++ General >> Path&Symbol >> Source location >> the repository ItSdk Src directory.
-4. Add in project properties >> C/C++ Build >> Settings >> Tool Settings >> MCU GCC Compiler >> Includes the ItSdk >> Inc directory.
-5. In C/C++ Build / Settings / Build Step / pre-build steps you can add the command _touch "${workspace_loc:/${ProjName}/stm32-it-sdk/Src/it_sdk/console/console.c}"_ this will update the compile date on every build
-6. You can get detail on size of code generated on build by adding a post-build step _"arm-none-eabi-size"  --format=sysV ${BuildArtifactFileName}_
-7. Copy *ItSdk/Src/project_main.c.template* file into Core/Src/project_main.c and make the modification you want to get started. 
+4. Add in project properties >> C/C++ Build >> Settings >> Tool Settings >> MCU GCC Compiler >> Includes Path >>  Add the ItSdk Inc directory.
+5. Add in project properties >> C/C++ Build >> Settings >> Tool Settings >> MCU GCC Assembler >> Includes Path >> Add the ItSdk Inc directory.
+6. In C/C++ Build / Settings / Build Step / pre-build steps you can add the command _touch "${workspace_loc:/${ProjName}/stm32-it-sdk/Src/it_sdk/console/console.c}"_ this will update the compile date on every build
+7. You can get detail on size of code generated on build by adding a post-build step _"arm-none-eabi-size  --format=sysV ${BuildArtifactFileName}"_
+8. You can take a loop on [various stm32 code optimization](https://www.disk91.com/2020/technology/programming/code-optimization-with-stm32-cube-ide/) also. 
 
 # Configure the SDK
 
-1. Copy the *ItSdk/Inc/it_sdk/config.h.template* file into *Core/Inc/it_sdk/config.h*
-2. Copy the *ItSdk/Inc/it_sdk/configDrivers.h.template* file into *Core/Inc/it_sdk/configDrivers.h* [needed when using some of the drivers]
-3. Copy the *ItSdk/Inc/it_sdk/configSigfox.h.template* file into *Core/Inc/it_sdk/configSigfox.h* [needed when using sigfox drivers]
-4. Copy the *ItSdk/Inc/it_sdk/configLoRaWan.h.template* file into *Core/Inc/it_sdk/configLoRaWan.h* [needed when using LoRaWAn drivers]
-5. Edit these files and fill the different settings according to your environment and your choices.
+1. Copy one of the *ItSdk/Src/project_main.c.template* file into Core/Src/project_main.c and make the modification you want to get started.
+2. Copy the *ItSdk/Inc/it_sdk/config.h.template* file into *Core/Inc/it_sdk/config.h*
+3. Copy the *ItSdk/Inc/it_sdk/configDrivers.h.template* file into *Core/Inc/it_sdk/configDrivers.h* [needed when using some of the drivers]
+4. Copy the *ItSdk/Inc/it_sdk/configSigfox.h.template* file into *Core/Inc/it_sdk/configSigfox.h* [needed when using sigfox drivers]
+5. Copy the *ItSdk/Inc/it_sdk/configLoRaWan.h.template* file into *Core/Inc/it_sdk/configLoRaWan.h* [needed when using LoRaWAn drivers]
+6. Edit these files and fill the different settings according to your environment and your choices.
 
 
 # Modify the Cube Mx skeleton

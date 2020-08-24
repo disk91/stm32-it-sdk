@@ -45,7 +45,7 @@ ADC_HandleTypeDef hadc;
 #define CAL1_TEMP			30
 #define CAL1_VALUE          ((uint16_t*)((uint32_t)0x1FF8007A))
 #define VREFINT_CAL       ((uint16_t*) ((uint32_t) 0x1FF80078))
-#elif ITSDK_DEVICE == __DEVICE_STM32L031K6 || ITSDK_DEVICE == __DEVICE_STM32L053R8 || ITSDK_DEVICE == __DEVICE_STM32L072XX
+#elif ITSDK_DEVICE == __DEVICE_STM32L031K6 || ITSDK_DEVICE == __DEVICE_STM32L053R8 || ITSDK_DEVICE == __DEVICE_STM32L072XX || ITSDK_DEVICE == __DEVICE_STM32L052T8
 #define CAL2_TEMP			130 // 110 according to certain sources but 130 from Datasheet
 #define CAL2_VALUE          ((uint16_t*)((uint32_t)0x1FF8007E))
 #define CAL1_TEMP			30
@@ -397,6 +397,65 @@ uint16_t adc_getValue(uint32_t pin) {
 		channel = ADC_CHANNEL_12;	// PC2
 		break;
 
+	default:
+  	    ITSDK_ERROR_REPORT(ITSDK_ERROR_ADC_INVALID_PIN,(uint16_t)pin);
+	}
+#elif  ITSDK_DEVICE == __DEVICE_STM32L052T8
+	// For the BGA device I consider the pin number as Line||Column 65 => line 6 Column 5
+	switch (pin) {
+	case 0:
+		channel = ADC_CHANNEL_VREFINT; 	// VDD
+		break;
+	case 44:
+		GPIO_InitStruct.Pin = GPIO_PIN_0;
+		GPIO_TypeDefStruct = GPIOA;
+		channel = ADC_CHANNEL_0;	// PA0
+		break;
+	case 66:
+		GPIO_InitStruct.Pin = GPIO_PIN_1;
+		GPIO_TypeDefStruct = GPIOA;
+		channel = ADC_CHANNEL_1;	// PA1
+		break;
+	case 55:
+		GPIO_InitStruct.Pin = GPIO_PIN_2;
+		GPIO_TypeDefStruct = GPIOA;
+		channel = ADC_CHANNEL_2;	// PA2
+		break;
+	case 65:
+		GPIO_InitStruct.Pin = GPIO_PIN_3;
+		GPIO_TypeDefStruct = GPIOA;
+		channel = ADC_CHANNEL_3;	// PA3
+		break;
+	case 54:
+		GPIO_InitStruct.Pin = GPIO_PIN_4;
+		GPIO_TypeDefStruct = GPIOA;
+		channel = ADC_CHANNEL_4; 	// PA4
+		break;
+	case 64:
+		GPIO_InitStruct.Pin = GPIO_PIN_5;
+		GPIO_TypeDefStruct = GPIOA;
+		channel = ADC_CHANNEL_5;	// PA5
+		break;
+	case 53:
+		GPIO_InitStruct.Pin = GPIO_PIN_6;
+		GPIO_TypeDefStruct = GPIOA;
+		channel = ADC_CHANNEL_6;	// PA6
+		break;
+	case 63:
+		GPIO_InitStruct.Pin = GPIO_PIN_7;
+		GPIO_TypeDefStruct = GPIOA;
+		channel = ADC_CHANNEL_7;	// PA7
+		break;
+	case 43:
+		GPIO_InitStruct.Pin = GPIO_PIN_0;
+		GPIO_TypeDefStruct = GPIOB;
+		channel = ADC_CHANNEL_8;	// PB0
+		break;
+	case 33:
+		GPIO_InitStruct.Pin = GPIO_PIN_1;
+		GPIO_TypeDefStruct = GPIOB;
+		channel = ADC_CHANNEL_9;	// PB1
+		break;
 	default:
   	    ITSDK_ERROR_REPORT(ITSDK_ERROR_ADC_INVALID_PIN,(uint16_t)pin);
 	}
