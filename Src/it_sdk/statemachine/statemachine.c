@@ -62,7 +62,7 @@ void statem(machine_t * machine) {
 #endif
 
 #if defined ITSDK_STATEMACHINE_STATIC && ITSDK_STATEMACHINE_STATIC == __ENABLE
-   state_t * st = (machine->stm+(int)machine->currentState);
+   const state_t * st = (machine->stm+(int)machine->currentState);
 #else
 	state_t * st = &machine->stm[(int)machine->currentState];
 #endif
@@ -81,7 +81,7 @@ void statem(machine_t * machine) {
 	stateRet = st->process(st->param, machine->currentState, machine->loopCurrentStep, machine->totalLoop);
 	machine->currentState = (uint8_t)(stateRet & 0xFF);
 	#if defined ITSDK_STATEMACHINE_STATIC && ITSDK_STATEMACHINE_STATIC == __ENABLE
-	   state_t * newst = (machine->stm+(int)machine->currentState);
+	   const state_t * newst = (machine->stm+(int)machine->currentState);
 	#else
 	   state_t * newst = &machine->stm[(int)machine->currentState];
 	#endif

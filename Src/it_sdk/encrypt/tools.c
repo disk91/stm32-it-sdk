@@ -70,9 +70,9 @@ void itsdk_encrypt_unCifferKey(uint8_t * key, int len) {
  * configuration already setup.
  */
 #if ITSDK_WITH_SECURESTORE == __ENABLE && (( defined(ITSDK_SIGFOX_ENCRYPTION) && ( ITSDK_SIGFOX_ENCRYPTION > 0 )) || (defined(ITSDK_LORAWAN_ENCRYPTION) && ( ITSDK_LORAWAN_ENCRYPTION > 0)))
-itsdk_encrypt_return_t itsdk_encrypt_resetFactoryDefaults(bool force) {
+itsdk_encrypt_return_t itsdk_encrypt_resetFactoryDefaults(itsdk_bool_e force) {
 	uint8_t buffer[16];
-	if ( force || itsdk_secstore_readBlock(ITSDK_SS_AES_MASTERK, buffer) != SS_SUCCESS ) {
+	if ( force == BOOL_TRUE || itsdk_secstore_readBlock(ITSDK_SS_AES_MASTERK, buffer) != SS_SUCCESS ) {
 
 		uint64_t masterkey = ITSDK_ENCRYPT_AES_MASTERKEYH;
 		for ( int i = 0 ; i < 8 ; i++ ) {
@@ -103,7 +103,7 @@ itsdk_encrypt_return_t itsdk_encrypt_resetFactoryDefaults(bool force) {
 	return ENCRYPT_RETURN_SUCESS;
 }
 #else
-itsdk_encrypt_return_t itsdk_encrypt_resetFactoryDefaults(bool force) {
+itsdk_encrypt_return_t itsdk_encrypt_resetFactoryDefaults(itsdk_bool_e force) {
 	return ENCRYPT_RETURN_SUCESS;
 }
 #endif

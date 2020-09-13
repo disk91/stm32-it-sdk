@@ -206,6 +206,8 @@ See **/Example** directory for a direct access to these ready to use projects.
 When upgrading the SDK from a new version, the main impact is to add the new Settings expected in the different
 configuration file. Please find the different settings added version after version
 
+## from version 1.7.0
+
 ## from version 1.6.0
 ### config.h
  - ITSDK_WITH_WDG / allows to disable the watchdog 

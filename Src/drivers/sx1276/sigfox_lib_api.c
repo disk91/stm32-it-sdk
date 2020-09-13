@@ -35,7 +35,6 @@
 #include <drivers/sx1276/sigfox_lowlevel.h>
 #include <drivers/sigfox/sigfox_api.h>
 #include <drivers/sigfox/se_nvm.h>
-#include <it_sdk/sigfox/sigfox.h>
 #include <it_sdk/eeprom/eeprom.h>
 #include <it_sdk/eeprom/sdk_config.h>
 #include <it_sdk/wrappers.h>
