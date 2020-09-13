@@ -1913,7 +1913,7 @@ drivers_lis2dh12_ret_e __lis2dh_writeRegister(const uint8_t register_addr, const
 			register_addr,				// Register address (8b or 16b�
 			value,						// 8B value to be written
 			1							// Register address size 1B or 2B
-	     ) == I2C_OK ) return LIS2DH_SUCCESS;
+	     ) == __I2C_OK ) return LIS2DH_SUCCESS;
 	return LIS2DH_FAILED;
 
 }
@@ -1981,10 +1981,10 @@ uint8_t __lis2dh_readRegister(const uint8_t register_addr) {
 				1								// Register address size 1B or 2B
 			);
 		retry++;
-		if ( ret != I2C_OK ) {					// I've experience I2C error in certain situation, unclear why but secured here
+		if ( ret != __I2C_OK ) {					// I've experience I2C error in certain situation, unclear why but secured here
 			itsdk_delayMs(1);
 		}
-	} while ( ret != I2C_OK && retry < 10 );
+	} while ( ret != __I2C_OK && retry < 10 );
 	if ( retry == 10 ) {
 		LIS2DH_LOG_ERROR(("Lis2dh - I2C read error on 0x%02X\r\n", register_addr));
 	    return 0;

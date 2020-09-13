@@ -59,7 +59,7 @@ static _I2C_Status __writeMemory(drivers_st25dv_addr_e adrType, uint16_t memAdr,
 					16,											// 16 bits address
 					data,										// Data to be written
 					size										// Size of the data to be written
-			     ) ) != I2C_OK )
+			     ) ) != __I2C_OK )
 	{
 		try++;
 		itsdk_delayMs(ST25DV_I2C_RETRY_WAIT_MS);
@@ -70,7 +70,7 @@ static _I2C_Status __writeMemory(drivers_st25dv_addr_e adrType, uint16_t memAdr,
 		){
 			itsdk_delayMs((5+2)*((size/4)+1));						// Wait EEPROM Write 5ms per 32b blocks +2 for margin
 		}
-		return I2C_OK;
+		return __I2C_OK;
 	} else {
 		return r;
 	}
@@ -90,12 +90,12 @@ static _I2C_Status __readMemory(drivers_st25dv_addr_e adrType, uint16_t memAdr, 
 						16,											// 16 bits address
 						data,										// Data to be written
 						size										// Size of the data to be written
-				     ) ) != I2C_OK )
+				     ) ) != __I2C_OK )
 	{
 		try++;
 		itsdk_delayMs(ST25DV_I2C_RETRY_WAIT_MS);
 	}
-	return ( try < ST25DV_I2C_MAXTRY )?I2C_OK:r;
+	return ( try < ST25DV_I2C_MAXTRY )?__I2C_OK:r;
 }
 
 
@@ -112,7 +112,7 @@ static void __st25dv_timeout(uint32_t val) {
 		return;
 		break;
 	case ST25DV_WAKEUP:
-		if ( __readMemory(ST25DV_ADDR_DATA,ST25DV_EH_CTRL_DYN_REG,&v,1) == I2C_OK ) {
+		if ( __readMemory(ST25DV_ADDR_DATA,ST25DV_EH_CTRL_DYN_REG,&v,1) == __I2C_OK ) {
 			if ( (v & ST25DV_EH_CTRL_DYN_FIELD_ON_MASK) == 0 ) {
 				// Out of field confirmed
 				__st25dv_config.field = ST25DV_OUT_OF_FIELD;
@@ -147,7 +147,7 @@ void st25dv_process() {
     }
 
 	uint8_t v;
-	if ( __readMemory(ST25DV_ADDR_DATA,ST25DV_ITSTS_DYN_REG,&v,1) == I2C_OK ) {
+	if ( __readMemory(ST25DV_ADDR_DATA,ST25DV_ITSTS_DYN_REG,&v,1) == __I2C_OK ) {
 		if ( (v & ST25DV_ITSTS_FIELDFALLING_MASK) > 0) {
 			// we will go low power after expiration to limit the in/out frequency
 			//log_info("FieldOut");
@@ -220,7 +220,7 @@ drivers_st25dv_ret_e drivers_st25dv_setup(drivers_st25dv_mode_e mode) {
 
 
 	// Search for the device Get Id
-	if ( __readMemory(ST25DV_ADDR_SYST,ST25DV_ICREF_REG,&__st25dv_config.devId,1) != I2C_OK ) {
+	if ( __readMemory(ST25DV_ADDR_SYST,ST25DV_ICREF_REG,&__st25dv_config.devId,1) != __I2C_OK ) {
 		ITSDK_ERROR_REPORT(ITSDK_ERROR_DRV_ST25DV_NOTFOUND,0);
 		return ST25DV_NOTFOUND;
 	}
@@ -369,9 +369,9 @@ drivers_st25dv_ret_e _drivers_st25dv_presentI2CPassword(uint64_t pass) {
 		d[i+9] = (pass >> (56-8*i)) & 0xFF;
 	}
 	d[8] = ST25DV_I2CPASSWD_VALID_BYTE;
-	if ( __writeMemory(ST25DV_ADDR_SYST,ST25DV_I2CPASSWD_REG,d,17) == I2C_OK ) {
+	if ( __writeMemory(ST25DV_ADDR_SYST,ST25DV_I2CPASSWD_REG,d,17) == __I2C_OK ) {
 		// Verify login sucess
-		if ( __readMemory(ST25DV_ADDR_DATA,ST25DV_I2C_SSO_DYN_REG,d,1) == I2C_OK ) {
+		if ( __readMemory(ST25DV_ADDR_DATA,ST25DV_I2C_SSO_DYN_REG,d,1) == __I2C_OK ) {
 			if ( (d[0] & ST25DV_I2C_SSO_DYN_I2CSSO_MASK) > 0 ) {
 				return ST25DV_SUCCESS;
 			}
@@ -391,7 +391,7 @@ drivers_st25dv_ret_e _drivers_st25dv_changeI2CPassword(uint64_t pass) {
 		d[i+9] = (pass >> (56-8*i)) & 0xFF;
 	}
 	d[8] = ST25DV_I2CPASSWD_VALID_BYTE_WR;
-	if ( __writeMemory(ST25DV_ADDR_SYST,ST25DV_I2CPASSWD_REG,d,17) == I2C_OK ) {
+	if ( __writeMemory(ST25DV_ADDR_SYST,ST25DV_I2CPASSWD_REG,d,17) == __I2C_OK ) {
 		return ST25DV_SUCCESS;
 	}
 	return ST25DV_FAILED;
@@ -507,7 +507,7 @@ drivers_st25dv_ret_e drivers_st25dv_blocWrite(drivers_st25dv_zone_e zone, uint8_
 	// write block by block
 	while ( sz > 0 ) {
 		uint8_t _sz = (sz>=4)?4:sz;
-		if ( __writeMemory(ST25DV_ADDR_DATA,offset,data,_sz) != I2C_OK ) {
+		if ( __writeMemory(ST25DV_ADDR_DATA,offset,data,_sz) != __I2C_OK ) {
 			ret = ST25DV_FAILED;
 			break;
 		}
@@ -575,7 +575,7 @@ drivers_st25dv_ret_e drivers_st25dv_blocRead(drivers_st25dv_zone_e zone, uint8_t
 	// write block by block
 	while ( sz > 0 ) {
 		uint8_t _sz = (sz>=4)?4:sz;
-		if ( __readMemory(ST25DV_ADDR_DATA,offset,data,_sz) != I2C_OK ) {
+		if ( __readMemory(ST25DV_ADDR_DATA,offset,data,_sz) != __I2C_OK ) {
 		    __st25dv_config.state = p;
 			return ST25DV_FAILED;
 		}
@@ -647,7 +647,7 @@ drivers_st25dv_ret_e drivers_st25dv_ftmWrite(uint8_t * messages, uint16_t sz) {
 
 	if ( drivers_st25dv_ftmFreeForWriting() == ST25DV_EMPTYFTM ) {
 		// allgood
-		if ( __writeMemory(ST25DV_ADDR_DATA, ST25DV_MAILBOX_RAM_REG, messages, sz) == I2C_OK ) {
+		if ( __writeMemory(ST25DV_ADDR_DATA, ST25DV_MAILBOX_RAM_REG, messages, sz) == __I2C_OK ) {
 			return ST25DV_SUCCESS;
 		}
 	}
@@ -661,7 +661,7 @@ drivers_st25dv_ret_e drivers_st25dv_ftmRead(uint8_t * messages, uint16_t sz) {
 	if ( sz > ST25DV_I2C_MB_SIZE ) return ST25DV_FAILED;
 	if ( __st25dv_config.state == ST25DV_SLEEPING ) return ST25DV_FAILED;
 
-	if ( __readMemory(ST25DV_ADDR_DATA,ST25DV_MAILBOX_RAM_REG, messages, sz) == I2C_OK ) {
+	if ( __readMemory(ST25DV_ADDR_DATA,ST25DV_MAILBOX_RAM_REG, messages, sz) == __I2C_OK ) {
 		return ST25DV_SUCCESS;
 	}
 	return ST25DV_FAILED;

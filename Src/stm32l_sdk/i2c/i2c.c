@@ -49,7 +49,7 @@ _I2C_Status i2c_memWrite(
 		memAdrSize = I2C_MEMADD_SIZE_16BIT;
 		break;
 	default:
-		return I2C_ERROR;
+		return __I2C_ERROR;
 		break;
 	}
 	return (_I2C_Status)HAL_I2C_Mem_Write( i2c, devAdr, memAdr, memAdrSize, values, size, ITSDK_I2C_TIMEOUT );
@@ -91,7 +91,7 @@ _I2C_Status i2c_write8BRegister(
 		_buffer[1] = (uint8_t)(regAdr & 0xFF);
 		_buffer[2] = value;
 		sz=3;
-	} else return I2C_ERROR;
+	} else return __I2C_ERROR;
 	return i2c_write(i2c, devAdr, _buffer, sz);
 }
 
@@ -119,7 +119,7 @@ _I2C_Status i2c_write16BRegister(
 		_buffer[2] = (uint8_t)(value & 0xFF);
 		_buffer[3] = (uint8_t)(value >> 8);
 		sz=4;
-	} else return I2C_ERROR;
+	} else return __I2C_ERROR;
 	return i2c_write(i2c, devAdr, _buffer, sz);
 }
 
@@ -144,7 +144,7 @@ _I2C_Status i2c_memRead(
 		memAdrSize = I2C_MEMADD_SIZE_16BIT;
 		break;
 	default:
-		return I2C_ERROR;
+		return __I2C_ERROR;
 		break;
 	}
 	return (_I2C_Status)HAL_I2C_Mem_Read( i2c, devAdr, memAdr, memAdrSize, values, size, ITSDK_I2C_TIMEOUT );
@@ -188,12 +188,12 @@ _I2C_Status i2c_read8BRegister(
 		_buffer[1] = (uint8_t)(regAdr & 0xFF);
 		sz=2;
 	} else{
-		return I2C_ERROR;
+		return __I2C_ERROR;
 	}
-	if ( i2c_write(i2c, devAdr, _buffer, sz) == I2C_OK ) {
+	if ( i2c_write(i2c, devAdr, _buffer, sz) == __I2C_OK ) {
 		return i2c_read(i2c,devAdr,value,1);
 	} else {
-		return I2C_ERROR;
+		return __I2C_ERROR;
 	}
 }
 
@@ -218,12 +218,12 @@ _I2C_Status i2c_read16BRegister(
 		_buffer[0] = (uint8_t)(regAdr >> 8);
 		_buffer[1] = (uint8_t)(regAdr & 0xFF);
 		sz=2;
-	} else return I2C_ERROR;
-	if ( i2c_write(i2c, devAdr, _buffer, sz) == I2C_OK ) {
+	} else return __I2C_ERROR;
+	if ( i2c_write(i2c, devAdr, _buffer, sz) == __I2C_OK ) {
 		_I2C_Status r = i2c_read(i2c,devAdr,_buffer,2);
 		*value= (_buffer[0])+(_buffer[1] << 8);
 		return r;
-	} else return I2C_ERROR;
+	} else return __I2C_ERROR;
 }
 
 

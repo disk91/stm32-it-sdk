@@ -65,7 +65,7 @@ static _I2C_Status __writeRegister(uint8_t addr, uint8_t value) {
 drivers_bme280_ret_e drivers_bme280_setup(drivers_bme280_mode_e mode) {
 	// Check device presence
 	uint8_t v,w;
-	if (  __readRegister(DRIVER_BME280_REG_ID_ADR,&v) != I2C_OK ) {
+	if (  __readRegister(DRIVER_BME280_REG_ID_ADR,&v) != __I2C_OK ) {
 		ITSDK_ERROR_REPORT(ITSDK_ERROR_DRV_BME280_NOTFOUND,0);
 		return BME280_NOTFOUND;
 	}
@@ -311,7 +311,7 @@ drivers_bme280_ret_e drivers_bme280_getSensors(
 ) {
 	uint8_t v;
 	// Verify I2C
-	if (  __readRegister(DRIVER_BME280_REG_ID_ADR,&v) != I2C_OK ) {
+	if (  __readRegister(DRIVER_BME280_REG_ID_ADR,&v) != __I2C_OK ) {
 		ITSDK_ERROR_REPORT(ITSDK_ERROR_DRV_BME280_I2CERROR,0);
 		return BME280_FAILED;
 	}

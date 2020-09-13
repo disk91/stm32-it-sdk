@@ -45,7 +45,7 @@
 #include <it_sdk/eeprom/sdk_config.h>
 #include <it_sdk/eeprom/sdk_state.h>
 #include "stm32l0xx.h"
-#include "spi.h"
+//#include "spi.h"
 
 
 uint8_t STLL_Radio_ReadReg(uint8_t address) {
@@ -283,7 +283,7 @@ void STLL_Transmit_DMA_Start( uint16_t *pDataSource, uint16_t Size)
 				Size,
 				STLL_onSpiDmaTxComplete,		// Normally only half Tx callback should be rise
 				STLL_onSpiDmaTxComplete
-		  ) != SPI_OK ) {
+		  ) != __SPI_OK ) {
 		  LOG_ERROR_SFXSX1276(("** spi_transmit_dma_start Error \r\n"));
 	}
 }
@@ -368,7 +368,9 @@ void STLL_TIM2_Init( uint32_t period ) {
 	__TIM_HANDLER.Init.CounterMode   = TIM_COUNTERMODE_UP;
 	__TIM_HANDLER.Init.Period        = period-1;
 	__TIM_HANDLER.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+	#ifndef ITSDK_WITHOUT_AUTORELOADPRELOAD		// Catena compatibility
 	__TIM_HANDLER.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+	#endif
 	HAL_TIM_Base_Init(&__TIM_HANDLER);
 	sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
 	HAL_TIM_ConfigClockSource(&__TIM_HANDLER, &sClockSourceConfig);

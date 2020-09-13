@@ -175,10 +175,10 @@ void gpio_removeWakeUpAction();
 #if ITSDK_WITH_SPI == __SPI_ENABLED
 typedef enum
 {
-  SPI_OK       = 0x00U,
-  SPI_ERROR    = 0x01U,
-  SPI_BUSY     = 0x02U,
-  SPI_TIMEOUT  = 0x03U
+  __SPI_OK       = 0x00U,
+  __SPI_ERROR    = 0x01U,
+  __SPI_BUSY     = 0x02U,
+  __SPI_TIMEOUT  = 0x03U
 } _SPI_Status;
 
 _SPI_Status spi_rwRegister(
@@ -225,10 +225,10 @@ void spi_reset(
 #if ITSDK_WITH_I2C == __I2C_ENABLED
 typedef enum
 {
-  I2C_OK       = 0x00U,
-  I2C_ERROR    = 0x01U,
-  I2C_BUSY     = 0x02U,
-  I2C_TIMEOUT  = 0x03U
+  __I2C_OK       = 0x00U,
+  __I2C_ERROR    = 0x01U,
+  __I2C_BUSY     = 0x02U,
+  __I2C_TIMEOUT  = 0x03U
 } _I2C_Status;
 
 _I2C_Status i2c_memWrite(
