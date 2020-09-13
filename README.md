@@ -207,6 +207,8 @@ When upgrading the SDK from a new version, the main impact is to add the new Set
 configuration file. Please find the different settings added version after version
 
 ## from version 1.7.0
+### misc
+- retrun code from I2C and SPI moved from I2C_XX to \_\_I2C_XX and SPI_XX to \_\_SPI_XX
 
 ## from version 1.6.0
 ### config.h
