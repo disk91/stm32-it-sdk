@@ -118,7 +118,7 @@ void itsdk_setup() {
 	  // Init the secure store if not yet initialized
 	  if ( itsdk_secstore_isInit() != SS_SUCCESS ) {
 		  itsdk_secstore_init();
-		  itsdk_encrypt_resetFactoryDefaults(true);
+		  itsdk_encrypt_resetFactoryDefaults(BOOL_TRUE);
 		  #if ITSDK_WITH_LORAWAN_LIB == __ENABLE
 		    itsdk_lorawan_resetFactoryDefaults(true);
 		  #endif
@@ -126,7 +126,7 @@ void itsdk_setup() {
  		    itsdk_sigfox_resetFactoryDefaults(true);
 		  #endif
 	  } else {
-	     itsdk_encrypt_resetFactoryDefaults(false);	// on first boot init the ss communication credentials
+	     itsdk_encrypt_resetFactoryDefaults(BOOL_FALSE);	// on first boot init the ss communication credentials
 	  }
 	  itsdk_secStore_RegisterConsole();
 	#endif

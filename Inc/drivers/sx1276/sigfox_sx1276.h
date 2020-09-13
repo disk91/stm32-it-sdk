@@ -28,7 +28,6 @@
 
 #include <it_sdk/config.h>
 #if ( ITSDK_WITH_SIGFOX_LIB == __ENABLE ) && (ITSDK_SIGFOX_LIB == __SIGFOX_SX1276)
-#include <it_sdk/sigfox/sigfox.h>
 #include <it_sdk/logger/logger.h>
 #include <drivers/sx1276/sigfox_lowlevel.h>
 

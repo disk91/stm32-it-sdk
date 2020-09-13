@@ -51,7 +51,7 @@ typedef enum {
 void itsdk_encrypt_cifferKey(uint8_t * key, int len);
 void itsdk_encrypt_unCifferKey(uint8_t * key, int len);
 
-itsdk_encrypt_return_t itsdk_encrypt_resetFactoryDefaults(bool force);
+itsdk_encrypt_return_t itsdk_encrypt_resetFactoryDefaults(itsdk_bool_e force);
 itsdk_encrypt_return_t itsdk_encrypt_aes_getNonce(uint8_t * nonce);
 itsdk_encrypt_return_t itsdk_encrypt_aes_getSharedKey(uint32_t * sharedKey);
 itsdk_encrypt_return_t itsdk_encrypt_aes_getMasterKey(uint8_t * masterKey);
