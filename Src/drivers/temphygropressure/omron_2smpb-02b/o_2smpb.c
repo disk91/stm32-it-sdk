@@ -72,7 +72,7 @@ drivers_o2smpb_ret_e drivers_o2smpb_setup(drivers_o2smpb_mode_e mode) {
 	__o2smpb_config.mode = O2SMPB_MODE_UNKNONW;
 
 	// Check device presence
-	if (  __readRegister(DRIVER_O2SMPB_CHIPID_I2CADR,&v) != I2C_OK ) {
+	if (  __readRegister(DRIVER_O2SMPB_CHIPID_I2CADR,&v) != __I2C_OK ) {
 		ITSDK_ERROR_REPORT(ITSDK_ERROR_DRV_O2SMPB_NOTFOUND,0);
 		return O2SMPB_NOTFOUND;
 	}
@@ -152,7 +152,7 @@ drivers_o2smpb_ret_e drivers_o2smpb_setup(drivers_o2smpb_mode_e mode) {
 			if ( __writeRegister(
 					DRIVER_O2SMPB_CTRLMEAS_I2CADR,
 					DRIVER_O2SMPB_CTRLMEAS_TEMPAVG_4 | DRIVER_O2SMPB_CTRLMEAS_PRESAVG_4 | DRIVER_O2SMPB_CTRLMEAS_POWERMD_SLEEP
-				 ) != I2C_OK
+				 ) != __I2C_OK
 			) {
 				return O2SMPB_FAILED;
 			}
@@ -204,7 +204,7 @@ drivers_o2smpb_ret_e drivers_o2smpb_getSensors(
 
 	uint8_t v;
 	// Verify I2C
-	if (  __readRegister(DRIVER_O2SMPB_CHIPID_I2CADR,&v) != I2C_OK ) {
+	if (  __readRegister(DRIVER_O2SMPB_CHIPID_I2CADR,&v) != __I2C_OK ) {
 		ITSDK_ERROR_REPORT(ITSDK_ERROR_DRV_O2SMPB_NOTFOUND,0);
 		return O2SMPB_FAILED;
 	}
@@ -215,7 +215,7 @@ drivers_o2smpb_ret_e drivers_o2smpb_getSensors(
 		if ( __writeRegister(
 				DRIVER_O2SMPB_CTRLMEAS_I2CADR,
 				DRIVER_O2SMPB_CTRLMEAS_TEMPAVG_4 | DRIVER_O2SMPB_CTRLMEAS_PRESAVG_4 | DRIVER_O2SMPB_CTRLMEAS_POWERMD_FORCED
-			 ) != I2C_OK
+			 ) != __I2C_OK
 		) {
 			return O2SMPB_FAILED;
 		}

@@ -63,7 +63,7 @@ static _I2C_Status __writeRegister(uint8_t addr, uint8_t value) {
 drivers_max44009_ret_e drivers_max44009_setup(drivers_max44009_mode_e mode) {
 	// Check device presence
 	uint8_t v;
-	if (  __readRegister(DRIVER_MAX44009_REG_CONFIG_ADR,&v) != I2C_OK ) {
+	if (  __readRegister(DRIVER_MAX44009_REG_CONFIG_ADR,&v) != __I2C_OK ) {
 		ITSDK_ERROR_REPORT(ITSDK_ERROR_DRV_MAX44009_NOTFOUND,0);
 		return MAX44009_NOTFOUND;
 	}
@@ -98,11 +98,11 @@ drivers_max44009_ret_e drivers_max44009_getSensors(
 ) {
 	uint8_t h,l;
 	// Verify I2C
-	if (  __readRegister(DRIVER_MAX44009_REG_LUX_HIGH_ADR,&h) != I2C_OK ) {
+	if (  __readRegister(DRIVER_MAX44009_REG_LUX_HIGH_ADR,&h) != __I2C_OK ) {
 		ITSDK_ERROR_REPORT(DRIVER_MAX44009_REG_LUX_HIGH_ADR,0);
 		return MAX44009_FAILED;
 	}
-	if ( __readRegister(DRIVER_MAX44009_REG_LUX_LOW_ADR,&l) != I2C_OK ) {
+	if ( __readRegister(DRIVER_MAX44009_REG_LUX_LOW_ADR,&l) != __I2C_OK ) {
 		ITSDK_ERROR_REPORT(DRIVER_MAX44009_REG_LUX_HIGH_ADR,0);
 		return MAX44009_FAILED;
 	}

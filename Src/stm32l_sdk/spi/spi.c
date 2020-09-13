@@ -129,9 +129,9 @@ _SPI_Status spi_transmit_dma_start(
 		  __HAL_DMA_ENABLE_IT(hdma, DMA_IT_HT);
 	  }
 	  if ( HAL_SPI_Transmit_DMA(spi, pData, size) == HAL_OK ) {
-	     return SPI_OK;
+	     return __SPI_OK;
 	  } else {
-		  return SPI_ERROR;
+		  return __SPI_ERROR;
 	  }
 }
 
@@ -143,7 +143,7 @@ _SPI_Status spi_transmit_dma_stop(
 	 HAL_SPI_DMAStop( spi );
      __HAL_DMA_DISABLE_IT(hdma, DMA_IT_HT);
      __HAL_DMA_DISABLE_IT(hdma, DMA_IT_TC);
-	 return SPI_OK;
+	 return __SPI_OK;
 }
 
 

@@ -110,7 +110,7 @@ drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode) {
 	uint16_t v;
 
 
-	if (   __readRegister(ITSDK_DRIVERS_MAX17205_REG_DEVNAME_ADR,&v) == I2C_OK
+	if (   __readRegister(ITSDK_DRIVERS_MAX17205_REG_DEVNAME_ADR,&v) == __I2C_OK
 	    && (( v & ITSDK_DRIVERS_MAX17205_REG_DEVNAME_MSK ) != MAX17205_TYPE_SINGLE_CELL )
 		&& (( v & ITSDK_DRIVERS_MAX17205_REG_DEVNAME_MSK ) != MAX17205_TYPE_MULTI_CELL  )
 	) {
@@ -219,7 +219,7 @@ drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode) {
 
 
 	// Search for the device type ( aging but this time it is supposed to be ok
-	if ( __readRegister(ITSDK_DRIVERS_MAX17205_REG_DEVNAME_ADR,&v) != I2C_OK ) {
+	if ( __readRegister(ITSDK_DRIVERS_MAX17205_REG_DEVNAME_ADR,&v) != __I2C_OK ) {
 		ITSDK_ERROR_REPORT(ITSDK_ERROR_DRV_MAX17205_NOTFOUND,0);
 		return MAX17205_NOTFOUND;
 	}
@@ -303,7 +303,7 @@ drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode) {
  */
 drivers_max17205_ret_e drivers_max17205_getTemperature(int32_t * mTemp) {
 	int16_t v;
-	if ( __readRegister(ITSDK_DRIVERS_MAX17205_REG_TEMP_ADR,(uint16_t*)&v) != I2C_OK ) {
+	if ( __readRegister(ITSDK_DRIVERS_MAX17205_REG_TEMP_ADR,(uint16_t*)&v) != __I2C_OK ) {
 		return MAX17205_FAILED;
 	}
 	*mTemp = ((int32_t)v*1000) / 256;
@@ -340,7 +340,7 @@ drivers_max17205_ret_e drivers_max17205_getVoltage(drivers_max17205_cell_select_
 	}
 
 	uint16_t v;
-	if ( __readRegister(regAdr,&v) != I2C_OK ) {
+	if ( __readRegister(regAdr,&v) != __I2C_OK ) {
 		return MAX17205_FAILED;
 	}
 	switch (cell) {
@@ -371,7 +371,7 @@ drivers_max17205_ret_e drivers_max17205_getVoltage(drivers_max17205_cell_select_
 drivers_max17205_ret_e drivers_max17205_getCurrent(int32_t * uAmp) {
 
 	int16_t v;
-	if ( __readRegister(ITSDK_DRIVERS_MAX17205_REG_CURRENT_ADR,(uint16_t *)&v) != I2C_OK ) {
+	if ( __readRegister(ITSDK_DRIVERS_MAX17205_REG_CURRENT_ADR,(uint16_t *)&v) != __I2C_OK ) {
 		return MAX17205_FAILED;
 	}
 
@@ -389,7 +389,7 @@ drivers_max17205_ret_e drivers_max17205_getCurrent(int32_t * uAmp) {
 drivers_max17205_ret_e drivers_max17205_getCapacity(uint16_t * mah) {
 
 	uint16_t v;
-	if ( __readRegister(ITSDK_DRIVERS_MAX17205_REG_QH_ADR,&v) != I2C_OK ) {
+	if ( __readRegister(ITSDK_DRIVERS_MAX17205_REG_QH_ADR,&v) != __I2C_OK ) {
 		return MAX17205_FAILED;
 	}
 	*mah = v;

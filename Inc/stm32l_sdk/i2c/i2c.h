@@ -24,10 +24,10 @@
  *
  * ==========================================================
  */
-#ifndef STM32L_SDK_I2C_SPI_H_
-#define STM32L_SDK_I2C_SPI_H_
+#ifndef STM32L_SDK_I2C_I2C_H_
+#define STM32L_SDK_I2C_I2C_H_
 
 // Every think is in wrappers.h header file
 // to be common across platforms
 
-#endif /* STM32L_SDK_I2C_SPI_H_ */
+#endif /* STM32L_SDK_I2C_I2C_H_ */
