@@ -35,7 +35,7 @@
 #include <it_sdk/logger/logger.h>
 #include <it_sdk/logger/error.h>
 
-#if ITSDK_PLATFORM == __PLATFORM_STM32L0
+#if ITSDK_PLATFORM == __PLATFORM_STM32L0 && ITSDK_WITH_HW_TIMER > 0
    #include <stm32l_sdk/timer/timer.h>
 #endif
 
