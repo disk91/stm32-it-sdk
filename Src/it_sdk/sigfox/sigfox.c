@@ -230,7 +230,7 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendFrame(
 			uint8_t masterKey[16];
 			itsdk_encrypt_aes_getMasterKey(masterKey);
 
-			itsdk_aes_crt_encrypt_128B(
+			itsdk_aes_ctr_encrypt_128B(
 					buf,							// Data to be encrypted
 					buf,							// Can be the same as clearData
 					len,							// Size of data to be encrypted

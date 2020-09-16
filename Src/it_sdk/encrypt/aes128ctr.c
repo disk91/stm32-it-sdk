@@ -58,12 +58,12 @@
 #include <it_sdk/time/time.h>
 
 
-#if ( ITSDK_SIGFOX_ENCRYPTION & __PAYLOAD_ENCRYPT_AESCTR ) > 0 || ( ITSDK_LORAWAN_ENCRYPTION & __PAYLOAD_ENCRYPT_AESCTR ) > 0
+#if ( ITSDK_SIGFOX_ENCRYPTION & __PAYLOAD_ENCRYPT_AESCTR ) > 0 || ( ITSDK_LORAWAN_ENCRYPTION & __PAYLOAD_ENCRYPT_AESCTR ) > 0  || ITSDK_WITH_SIGFOX_LIB == __ENABLE
 /**
  * Encrypt a 128B block of Data with the given key
  * The key is protected by the ITSDK_PROTECT_KEY
  */
-void itsdk_aes_crt_encrypt_128B(
+void itsdk_aes_ctr_encrypt_128B(
 		uint8_t	* clearData,			// Data to be encrypted
 		uint8_t * encryptedData,		// Can be the same as clearData
 		uint8_t   dataLen,				// Size of data to be encrypted
