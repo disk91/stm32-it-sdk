@@ -65,7 +65,7 @@ itsdk_encrypt_return_t itsdk_encrypt_speck_getMasterKey(uint64_t * masterKey);
 #define itsdk_encrypt_unCifferKey64(v) itsdk_encrypt_cifferKey64(v)
 
 
-void itsdk_aes_crt_encrypt_128B(
+void itsdk_aes_ctr_encrypt_128B(
 		uint8_t	* clearData,			// Data to be encrypted
 		uint8_t * encryptedData,		// Can be the same as clearData
 		uint8_t   dataLen,				// Size of data to be encrypted

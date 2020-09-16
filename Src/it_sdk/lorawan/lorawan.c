@@ -297,7 +297,7 @@ static void __itsdk_lorawan_encrypt_payload(
 		uint8_t masterKey[16];
 		itsdk_encrypt_aes_getMasterKey(masterKey);
 
-		itsdk_aes_crt_encrypt_128B(
+		itsdk_aes_ctr_encrypt_128B(
 				payload,							// Data to be encrypted
 				payload,							// Can be the same as clearData
 				payloadSize,						// Size of data to be encrypted

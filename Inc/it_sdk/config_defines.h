@@ -259,9 +259,10 @@
 /**
  * NVM source for Sigfox lib
  */
-#define __SFX_NVM_LOCALEPROM	0					// MCU internal EEPROM
-#define __SFX_NVM_M95640		1					// External EEPROM type M95640
-#define __SFX_NVM_CONFIG_STATIC	2					// Configuration stored in the #define
+#define __SFX_NVM_NONE			0					// No NVM use
+#define __SFX_NVM_LOCALEPROM	1					// MCU internal EEPROM
+#define __SFX_NVM_M95640		2					// External EEPROM type M95640
+#define __SFX_NVM_CONFIG_STATIC	3					// Configuration stored in the #define
 
 /**
  * Drivers S2LP Config
