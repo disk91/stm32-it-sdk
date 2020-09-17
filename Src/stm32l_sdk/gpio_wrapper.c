@@ -372,7 +372,11 @@ void gpio_interruptClear(uint8_t bank, uint16_t id) {
  */
 gpio_irq_chain_t __gpio_irq_chain = { NULL, 0, NULL };
 gpio_irq_chain_t * __gpio_irq_wakeup = NULL;
+#if !defined ITSDK_WITH_GPIO_HANDLER || ITSDK_WITH_GPIO_HANDLER == __ENABLE
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+#else
+void gpio_Callback(uint16_t GPIO_Pin)
+#endif
 {
 
 	// When the __gpio_irq_wakeup handler is set this handler is called
@@ -394,7 +398,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 		}
 		c = c->next;
 	}
+	#if !defined ITSDK_WITH_GPIO_HANDLER || ITSDK_WITH_GPIO_HANDLER == __ENABLE
     __HAL_GPIO_EXTI_CLEAR_IT(GPIO_Pin);
+	#endif
 }
 
 /**

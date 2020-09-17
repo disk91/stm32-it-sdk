@@ -170,6 +170,10 @@ bool gpio_existAction(gpio_irq_chain_t * chain);
 void gpio_registerWakeUpAction(gpio_irq_chain_t * chain);
 void gpio_removeWakeUpAction();
 
+#if ITSDK_WITH_GPIO_HANDLER == __DISABLE
+void gpio_Callback(uint16_t GPIO_Pin);
+#endif
+
 // ================================================
 // spi
 #if ITSDK_WITH_SPI == __SPI_ENABLED
