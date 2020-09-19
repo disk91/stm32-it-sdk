@@ -208,7 +208,10 @@ configuration file. Please find the different settings added version after versi
 
 ## from version 1.7.0
 ### misc
-- retrun code from I2C and SPI moved from I2C_XX to \_\_I2C_XX and SPI_XX to \_\_SPI_XX
+- return code from I2C and SPI moved from I2C_XX to \_\_I2C_XX and SPI_XX to \_\_SPI_XX
+
+### config.h
+ - ITSDK_WITH_GPIO_HANDLER / Enable the internal GPIO Handler - now you can disable it basically 
 
 ## from version 1.6.0
 ### config.h
