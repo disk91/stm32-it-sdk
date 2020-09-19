@@ -437,10 +437,10 @@ itsdk_sigfox_init_t itsdk_sigfox_setTxSpeed(itdsk_sigfox_speed_t speed) {
 
 	#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
 		// not yet supported
-		LOG_WARN_SIGFOX(("Sigfox speed change not yet supported"));
+		LOG_WARN_SIGFOXSTK(("Sigfox speed change not yet supported"));
 	#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX1276
 		// not yet supported
-		LOG_WARN_SIGFOX(("Sigfox speed change not yet supported"));
+		LOG_WARN_SIGFOXSTK(("Sigfox speed change not yet supported"));
 	#endif
 
 	itsdk_state.sigfox.current_speed = speed;
