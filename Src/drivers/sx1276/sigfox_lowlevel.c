@@ -204,7 +204,6 @@ void STLL_SetEndOfTxFrame( void ) {
  * This function will we called on DMA transfer complete
  */
 void STLL_onSpiDmaTxComplete(void) {
-    gpio_change(__BANK_B, GPIO_PIN_5,0);
 	STLL_TX_IRQHandler_CB();
 }
 
