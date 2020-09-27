@@ -37,6 +37,9 @@
 #include <it_sdk/logger/logger.h>
 #include "stm32l0xx_hal.h"
 
+#ifndef ITSDK_DEVICE
+#error ITSDK_DEVICE is not defined
+#endif
 
 /**
  * Convert the bankId used as a generic Id to the right GPIO structure
