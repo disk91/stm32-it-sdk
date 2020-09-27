@@ -41,6 +41,10 @@
 #include "i2c.h"
 #endif
 
+#ifndef ITSDK_LOWPOWER_MISC_HALT
+#error "You must set ITSDK_LOWPOWER_MISC_HALT in itsdk/config.h"
+#endif
+
 #if (ITSDK_DEVICE == __DEVICE_STM32L072XX) && (ITSDK_LOWPOWER_MOD &__LOWPWR_MODE_WAKE_LPUART) > 0
 #error "STM32L0172 does not support LPUART WakeUp (or tells me what's wrong)"
 #endif
