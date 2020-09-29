@@ -34,6 +34,8 @@
 #if ITSDK_WITH_RTC != __RTC_NONE
 #include <rtc.h>
 
+#define STM32L_RTC_MODE_THRESHOLD	10000		// Below or 10s by tics, over 10s by seconds
+
 typedef struct s_rtc_irq_chain {
 	void (*irq_func)(RTC_HandleTypeDef *h);
 	struct s_rtc_irq_chain * next;
@@ -42,15 +44,16 @@ void rtc_registerIrqAction(rtc_irq_chain_t * chain);
 void rtc_removeIrqAction(rtc_irq_chain_t * chain);
 bool rtc_existAction(rtc_irq_chain_t * chain);
 
-void rtc_configure4LowPower(uint16_t ms);
+void rtc_configure4LowPower(uint32_t ms);
 void rtc_disable4LowPower();
 uint64_t rtc_getTimestampMs();
 uint64_t rtc_getTimestampMsRaw(bool adjust);
 void rtc_prepareSleepTime();
 void rtc_updateTimeAfterSleepTime();
 
-void rtc_runRtcUntil(uint16_t ms);
+void rtc_runRtcUntil(uint32_t ms);
 void rtc_runRtcUntilTicks(uint32_t ticks);
+void rtc_runRtcUntilSecods(uint32_t ms);
 uint32_t rtc_getTicksFromDuration(uint32_t ms);
 int32_t rtc_getMsFromTicks(uint32_t ticks);
 void rtc_disableWakeUp();

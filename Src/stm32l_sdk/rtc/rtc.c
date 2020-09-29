@@ -40,7 +40,7 @@
 /**
  * Configure the RTC source clock for running LowPower
  */
-void rtc_configure4LowPower(uint16_t ms) {
+void rtc_configure4LowPower(uint32_t ms) {
 		rtc_prepareSleepTime();
 	if ( ms > 0 ) {
 		rtc_runRtcUntil(ms);
@@ -57,11 +57,15 @@ void rtc_disable4LowPower() {
 
 
 /**
- * Run Rtc for a given time in ticks
- * Max is 16s
+ * Run Rtc for a given time (tics/seconds)
+ * Below 10 s by tics, over 10s by seconds
  */
-void rtc_runRtcUntil(uint16_t ms) {
-    rtc_runRtcUntilTicks(rtc_getTicksFromDuration((uint32_t)ms));
+void rtc_runRtcUntil(uint32_t ms) {
+	if ( ms >= STM32L_RTC_MODE_THRESHOLD ) {
+		rtc_runRtcUntilSecods(ms);
+	} else {
+		rtc_runRtcUntilTicks(rtc_getTicksFromDuration(ms));
+	}
 }
 
 /*
@@ -85,6 +89,12 @@ void rtc_runRtcUntilTicks(uint32_t ticks) {
     HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, ticks, RTC_WAKEUPCLOCK_RTCCLK_DIV16);
 }
 
+/**
+ * Run the RTC for a given number of seconds
+ */
+void rtc_runRtcUntilSecods(uint32_t ms) {
+    HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, ms/1000, RTC_WAKEUPCLOCK_CK_SPRE_16BITS);
+}
 
 void rtc_disableWakeUp() {
 	HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
