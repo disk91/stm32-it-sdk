@@ -41,7 +41,7 @@
  * Configure the RTC source clock for running LowPower
  */
 void rtc_configure4LowPower(uint16_t ms) {
-		rtc_prepareSleepTime();
+	rtc_prepareSleepTime();
 	if ( ms > 0 ) {
 		rtc_runRtcUntil(ms);
 	}
@@ -61,7 +61,16 @@ void rtc_disable4LowPower() {
  * Max is 16s
  */
 void rtc_runRtcUntil(uint16_t ms) {
-    rtc_runRtcUntilTicks(rtc_getTicksFromDuration((uint32_t)ms));
+	// Issue #48
+	// it seems that timer is limited to 16bis (even if 32 bits in the HAL code)
+	// So this is limiting in about 30s of sleeping time
+	uint32_t ticks = rtc_getTicksFromDuration((uint32_t)ms);
+	if ( ticks < 65536 ) {
+	    rtc_runRtcUntilTicks(ticks);
+	} else {
+		// If larger than 65535 we change the RTC cloc to have a 1s timabase and a longer period of time
+		rtc_runRtcUntilMs(ms);
+	}
 }
 
 /*
@@ -79,10 +88,18 @@ int32_t rtc_getMsFromTicks(uint32_t ticks) {
 }
 
 /**
- * Run the RTC for a given number of tics
+ * Run the RTC for a given number of ticks
  */
 void rtc_runRtcUntilTicks(uint32_t ticks) {
-    HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, ticks, RTC_WAKEUPCLOCK_RTCCLK_DIV16);
+	HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, ticks, RTC_WAKEUPCLOCK_RTCCLK_DIV16);
+}
+
+/**
+ * Run the RTC for a given number of ms
+ */
+void rtc_runRtcUntilMs(uint32_t ms) {
+	// the scale is 1 second
+	HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, (ms / 1000), RTC_WAKEUPCLOCK_CK_SPRE_16BITS);
 }
 
 

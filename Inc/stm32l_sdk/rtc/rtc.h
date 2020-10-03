@@ -51,6 +51,7 @@ void rtc_updateTimeAfterSleepTime();
 
 void rtc_runRtcUntil(uint16_t ms);
 void rtc_runRtcUntilTicks(uint32_t ticks);
+void rtc_runRtcUntilMs(uint32_t ms);
 uint32_t rtc_getTicksFromDuration(uint32_t ms);
 int32_t rtc_getMsFromTicks(uint32_t ticks);
 void rtc_disableWakeUp();
