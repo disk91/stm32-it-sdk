@@ -73,7 +73,9 @@ serial_read_response_e serial1_read(char * c);
 serial_read_response_e serial2_read(char * c);
 
 typedef enum {
-	SERIAL_SPEED_4800 = 0,
+	SERIAL_SPEED_1200 = 0,
+	SERIAL_SPEED_2400,
+	SERIAL_SPEED_4800,
 	SERIAL_SPEED_9600,
 	SERIAL_SPEED_19200,
 	SERIAL_SPEED_38400,
