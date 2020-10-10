@@ -381,20 +381,20 @@ sfx_u8 RF_API_stop(void)
  */
 sfx_u8 RF_API_send(sfx_u8 *stream, sfx_modulation_type_t type, sfx_u8 size)
 {
-  LOG_DEBUG_SFXSX1276(("RF_API_send (%d)\r\n",type));
+  LOG_DEBUG_SFXSX1276(("RF_API_send (%d)(%d)\r\n",type,size));
   sfx_u8 status =SFX_ERR_NONE;
   mod_error_t err;
   switch (type)
   {
     case SFX_DBPSK_100BPS :
       if ( (err = SGFX_SX1276_tx( (uint8_t *)stream, (uint8_t) size, 100 )) != MOD_SUCCESS) {
-    	  LOG_DEBUG_SFXSX1276(("Send Error (%d)\r\n",err));
+    	  LOG_DEBUG_SFXSX1276(("100 - Send Error (%d)\r\n",err));
           status = RF_ERR_API_SEND;
       }
       break;
     case SFX_DBPSK_600BPS :
       if ( (err = SGFX_SX1276_tx( (uint8_t *)stream, (uint8_t) size, 600 )) != MOD_SUCCESS) {
-    	  LOG_DEBUG_SFXSX1276(("Send Error  (%d)\r\n",err));
+    	  LOG_DEBUG_SFXSX1276(("600 - Send Error  (%d)\r\n",err));
           status = RF_ERR_API_SEND;
       }
       break;

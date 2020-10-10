@@ -189,6 +189,9 @@
 																		   // SPI Configured by CubeMX
 																		   //  Master, 8b, Polarity Low,
 																		   //  first bit msb, CRC disable...
+#ifndef ITSDK_RADIO_MAX_OUTPUT_DBM
+#define ITSDK_RADIO_MAX_OUTPUT_DBM	20									   // Maximum power oputput for this chip
+#endif
 
 #define ITSDK_SX1276_RESET_BANK		 __BANK_C							   // SX1276 GPIO FOR RESET
 #define ITSDK_SX1276_RESET_PIN		 __LP_GPIO_0

@@ -40,7 +40,7 @@ typedef struct {
 	struct {
 		bool					initialized;
 		uint8_t					rcz;
-		uint8_t					current_power;
+		int8_t					current_power;
 		uint16_t				current_speed;
 	} sigfox;
 	#endif

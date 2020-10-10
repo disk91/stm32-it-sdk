@@ -139,7 +139,7 @@ sx1276_sigfox_ret_t sx1276_sigfox_deinit( void ) {
 /**
  * Change power
  */
-sx1276_sigfox_ret_t sx1276_sigfox_setPower( uint8_t power ) {
+sx1276_sigfox_ret_t sx1276_sigfox_setPower( int8_t power ) {
 	LOG_INFO_SFXSX1276((">> sx1276_sigfox_setPower\r\n"));
 
 	STLL_RadioPowerSetBoard(power);

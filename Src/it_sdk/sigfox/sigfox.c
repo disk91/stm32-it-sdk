@@ -108,6 +108,11 @@ itsdk_sigfox_init_t itsdk_sigfox_setup() {
 		default:
 			ITSDK_ERROR_REPORT(ITSDK_ERROR_SIGFOX_RCZ_NOTSUPPORTED,(uint16_t)itsdk_state.sigfox.rcz);
 		}
+		#ifdef ITSDK_RADIO_MAX_OUTPUT_DBM
+ 	 	  if ( ITSDK_RADIO_MAX_OUTPUT_DBM < itsdk_state.sigfox.current_power ) {
+ 	 		  itsdk_state.sigfox.current_power = ITSDK_RADIO_MAX_OUTPUT_DBM;
+ 	 	  }
+		#endif
 	}
 	if (
 #if ITSDK_CONFIGURATION_MODE != __CONFIG_STATIC
@@ -308,8 +313,8 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendBit(
 
 	itdsk_sigfox_txrx_t result = SIGFOX_TXRX_ERROR;
 	#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP || ITSDK_SIGFOX_LIB == __SIGFOX_SX1276
-
-		uint16_t ret = SIGFOX_API_send_bit( bitValue,dwn,repeat,ack);
+		sfx_bool value = (bitValue)?SFX_TRUE:SFX_FALSE;
+		uint16_t ret = SIGFOX_API_send_bit( value,dwn,repeat,ack);
 		switch (ret&0xFF) {
 		case SFX_ERR_INT_GET_RECEIVED_FRAMES_TIMEOUT:
 			result = SIGFOX_TXRX_NO_DOWNLINK;
@@ -393,9 +398,13 @@ itsdk_sigfox_init_t itsdk_sigfox_getCurrentRcz(uint8_t * rcz) {
 /**
  * Change the transmission power to the given value
  */
-itsdk_sigfox_init_t itsdk_sigfox_setTxPower_ext(uint8_t power, bool force) {
+itsdk_sigfox_init_t itsdk_sigfox_setTxPower_ext(int8_t power, bool force) {
 	LOG_INFO_SIGFOXSTK(("itsdk_sigfox_setTxPower_ext\r\n"));
-
+	#ifdef ITSDK_RADIO_MAX_OUTPUT_DBM
+	  if ( ITSDK_RADIO_MAX_OUTPUT_DBM < power ) {
+	  power = ITSDK_RADIO_MAX_OUTPUT_DBM;
+	  }
+	#endif
 	if ( !force && power == itsdk_state.sigfox.current_power ) return SIGFOX_INIT_NOCHANGE;
 
 	#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
@@ -412,7 +421,7 @@ itsdk_sigfox_init_t itsdk_sigfox_setTxPower_ext(uint8_t power, bool force) {
 /**
  * Change the current sigfox network speed
  */
-itsdk_sigfox_init_t itsdk_sigfox_setTxPower(uint8_t power) {
+itsdk_sigfox_init_t itsdk_sigfox_setTxPower(int8_t power) {
 	LOG_DEBUG_SIGFOXSTK(("itsdk_sigfox_setTxPower\r\n"));
 	return itsdk_sigfox_setTxPower_ext(power,false);
 }
@@ -420,7 +429,7 @@ itsdk_sigfox_init_t itsdk_sigfox_setTxPower(uint8_t power) {
 /**
  * Get the current sigfox trasnmision power
  */
-itsdk_sigfox_init_t itsdk_sigfox_getTxPower(uint8_t * power) {
+itsdk_sigfox_init_t itsdk_sigfox_getTxPower(int8_t * power) {
 	LOG_DEBUG_SIGFOXSTK(("itsdk_sigfox_getTxPower\r\n"));
 	*power = itsdk_state.sigfox.current_power;
 	return SIGFOX_INIT_SUCESS;
