@@ -46,10 +46,14 @@ bool _eeprom_write(uint8_t bank, uint32_t offset, void * data, int len) {
 	uint32_t   _eepromAddr;
 	uint32_t   v;
 
-	if ( bank != 0 || len > EEPROM_SIZE) {
+	if ( bank != 0 || (offset + len) > EEPROM_SIZE) {
 	    ITSDK_ERROR_REPORT(ITSDK_ERROR_EEPROM_OUTOFBOUNDS,len);
 	}
 	_eepromAddr = (uint32_t)(EEPROM_START_ADDR+offset);
+	if ( (_eepromAddr & 0x3) != 0 ) {
+	    ITSDK_ERROR_REPORT(ITSDK_ERROR_EEPROM_NOTALIGNED,1);
+	    return false;
+	}
 
 	// Unlock EEPROM
 	if (FLASH->PECR & FLASH_PECR_PELOCK) {
@@ -79,10 +83,14 @@ bool _eeprom_read(uint8_t bank, uint32_t offset, void * data, int len) {
 	uint32_t   _eepromAddr;
 	uint32_t   v;
 
-	if ( bank != 0 || len > EEPROM_SIZE) {
+	if ( bank != 0 || (offset + len) > EEPROM_SIZE) {
 	    ITSDK_ERROR_REPORT(ITSDK_ERROR_EEPROM_OUTOFBOUNDS,len);
 	}
 	_eepromAddr = (uint32_t)(EEPROM_START_ADDR+offset);
+	if ( (_eepromAddr & 0x3) != 0 ) {
+	    ITSDK_ERROR_REPORT(ITSDK_ERROR_EEPROM_NOTALIGNED,0);
+	    return false;
+	}
 
 	// Read data
 	for (int i = 0; i < len; i += 4) {
