@@ -40,7 +40,7 @@
 /**
  * Configure the RTC source clock for running LowPower
  */
-void rtc_configure4LowPower(uint16_t ms) {
+void rtc_configure4LowPower(uint32_t ms) {
 	rtc_prepareSleepTime();
 	if ( ms > 0 ) {
 		rtc_runRtcUntil(ms);
@@ -60,7 +60,7 @@ void rtc_disable4LowPower() {
  * Run Rtc for a given time in ticks
  * Max is 16s
  */
-void rtc_runRtcUntil(uint16_t ms) {
+void rtc_runRtcUntil(uint32_t ms) {
 	// Issue #48
 	// it seems that timer is limited to 16bis (even if 32 bits in the HAL code)
 	// So this is limiting in about 30s of sleeping time
