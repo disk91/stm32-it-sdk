@@ -170,7 +170,7 @@ void CREDENTIALS_get_initial_pac( uint8_t* pac)
 /**
  * Returns the sigfox encryption status
  */
-sfx_bool CREDENTIALS_get_payload_encryption_flag(void)
+__attribute__((weak)) sfx_bool CREDENTIALS_get_payload_encryption_flag(void)
 {
     LOG_DEBUG_SFXSX1276((">> CREDENTIALS_get_payload_encryption_flag\r\n"));
     #if (defined ITSDK_SIGFOX_ENCRYPTION) && (( ITSDK_SIGFOX_ENCRYPTION & __PAYLOAD_ENCRYPT_SIGFOX) > 0)
