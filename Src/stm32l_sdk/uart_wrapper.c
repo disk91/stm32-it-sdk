@@ -223,6 +223,8 @@ itsdk_bool_e serial1_changeBaudRate(serial_baudrate_e bd) {
 		return BOOL_FALSE;
 	#endif
 	switch( bd ) {
+		case SERIAL_SPEED_300 : lhuart->Init.BaudRate = 300; break;
+		case SERIAL_SPEED_600 : lhuart->Init.BaudRate = 600; break;
 		case SERIAL_SPEED_1200 : lhuart->Init.BaudRate = 1200; break;
 		case SERIAL_SPEED_2400 : lhuart->Init.BaudRate = 2400; break;
 		case SERIAL_SPEED_4800 : lhuart->Init.BaudRate = 4800; break;
@@ -363,6 +365,8 @@ itsdk_bool_e serial2_changeBaudRate(serial_baudrate_e bd) {
 		return BOOL_FALSE;
 	#endif
 	switch( bd ) {
+		case SERIAL_SPEED_300 : lhuart->Init.BaudRate = 300; break;
+		case SERIAL_SPEED_600 : lhuart->Init.BaudRate = 600; break;
 		case SERIAL_SPEED_1200 : lhuart->Init.BaudRate = 1200; break;
 		case SERIAL_SPEED_2400 : lhuart->Init.BaudRate = 2400; break;
 		case SERIAL_SPEED_4800 : lhuart->Init.BaudRate = 4800; break;
