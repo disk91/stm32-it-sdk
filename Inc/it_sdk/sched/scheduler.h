@@ -40,6 +40,7 @@
 
 #define ITSDK_SCHED_CONF_IMMEDIATE	0x100		// The task is immediately executed vs will be executed in next time period
 
+
 #define ITSDK_SCHED_ERROR			0xFF
 
 #define ITSDK_SCHED_MAX_PERIOD		0x00FFFFFF	// 24b is the max duration
@@ -65,6 +66,6 @@ void itdt_sched_haltSched(uint8_t schedId);
 void itdt_sched_runSched(uint8_t schedId);
 uint32_t itdt_sched_nextRun();
 void itdt_sched_clearNextRun(uint8_t schedId);		// Set nextRun timestamp to now + period
-
+uint8_t itdt_sched_changeSched(uint8_t schedId, uint32_t periodMs, void (*f)(void) );
 
 #endif 	// IT_SDK_SCHEDULER_H_
