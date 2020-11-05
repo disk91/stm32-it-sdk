@@ -295,5 +295,8 @@
 // VERIFICATIONS
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+#if ITSDK_WDG_MS < ITSDK_LOWPOWER_RTC_MS
+  #error "Your Watchdog timer is shorter than you sleep duration"
+#endif
 
 #endif /* IT_SDK_CONFIG_H_ */
