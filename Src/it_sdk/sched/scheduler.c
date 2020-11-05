@@ -39,9 +39,9 @@ uint8_t __sNum = 0;
 
 
 /**
- * Register a new task in the scheduler with the given periode in Ms and the
- * associated function to call. The mode params defines the sheduler behavior
- * Returns the scedId on sucees or ITSDK_SCHED_ERROR on error.
+ * Register a new task in the scheduler with the given period in Ms and the
+ * associated function to call. The mode params defines the scheduler behavior
+ * Returns the scedId on success or ITSDK_SCHED_ERROR on error.
  */
 uint8_t itdt_sched_registerSched(uint32_t periodMs,uint16_t mode, void (*f)(void)) {
 
@@ -89,6 +89,31 @@ void itdt_sched_execute() {
 void itdt_sched_haltSched(uint8_t schedId) {
 	__scheds[schedId].halt = 1;
 	_LOG_SCHED(("[sched] (%d) halted\r\n",schedId));
+}
+
+/**
+ * Change sched configuration. This is only possible on a disable sched
+ * periodMs = 0 - do not change the period
+ * f = NULL - do not change the callback function
+ * Return ITSDK_SCHED_ERROR in case of error; sched Id otherwise
+ */
+uint8_t itdt_sched_changeSched(uint8_t schedId, uint32_t periodMs, void (*f)(void) ) {
+	if ( schedId >= 0 && schedId < __sNum && __scheds[schedId].halt == 1 ) {
+		if ( periodMs <= ITSDK_SCHED_MAX_PERIOD ) {
+			if ( periodMs > 0 ) {
+				__scheds[schedId].period=periodMs;
+			}
+			if ( f != NULL ) {
+				__scheds[schedId].func=f;
+			}
+		} else {
+			return ITSDK_SCHED_ERROR;
+		}
+	} else {
+		return ITSDK_SCHED_ERROR;
+	}
+	_LOG_SCHED(("[sched] (%d) updated to %d ms\r\n",schedId,periodMs));
+	return schedId;
 }
 
 /**
