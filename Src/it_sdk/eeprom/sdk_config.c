@@ -65,6 +65,8 @@
  */
 #if ITSDK_CONFIGURATION_MODE != __CONFIG_STATIC
 	static itsdk_config_ret_e itsdk_config_sdk_resetToFactory() {
+		ITSDK_ERROR_REPORT(ITSDK_ERROR_CONFIG_SDKFACT_DEFAULT,0);
+
 		itsdk_config.sdk.version = ITSDK_CONFIGURATION_SDK_VERSION;
 		itsdk_config.sdk.size = sizeof(itsdk_configuration_internal_t);
 		// ----------- Network choice ----------------------------------------------------
@@ -115,7 +117,11 @@
 
 	#if ITSDK_WITH_CONFIGURATION_APP == __ENABLE
 		/**
-		 * This function need to be overrided
+		 * This function need to be overide
+		 * In the application function, you should add a trace report
+		 *
+		 * ITSDK_ERROR_REPORT(ITSDK_ERROR_CONFIG_SDKAPP_DEFAULT,0);
+		 *
 		 */
 		__weak itsdk_config_ret_e itsdk_config_app_resetToFactory() {
 			itsdk_config.app.version = ITSDK_CONFIGURATION_APP_VERSION;

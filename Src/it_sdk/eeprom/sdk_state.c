@@ -31,6 +31,8 @@
 #if ITSDK_WITH_CONSOLE == __ENABLE
 #include <it_sdk/console/console.h>
 #endif
+#include <it_sdk/lorawan/lorawan.h>
+
 itsdk_state_t itsdk_state;
 
 void itsdk_state_init() {
@@ -85,13 +87,25 @@ void itsdk_print_state() {
 	#endif
    #endif
 #endif
-
+#if ITSDK_WITH_LORAWAN_LIB == __ENABLE
+	if ( itsdk_state.activeNetwork == __ACTIV_NETWORK_LORAWAN ) {
+  	  _itsdk_console_printf("state.lorawan.joined: %c\r\n",((itsdk_lorawan_getJoinState() == LORAWAN_JOIN_SUCCESS)?'Y':'N'));
+	}
+#endif
 #if ITSDK_WITH_SIGFOX_LIB == __ENABLE
 	_itsdk_console_printf("state.sigfox.initialized : %d\r\n",itsdk_state.sigfox.initialized);
   #if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_LOCALEPROM || ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_CONFIG_STATIC
 	_itsdk_console_printf("state.sigfox.rcz %d\r\n",itsdk_state.sigfox.rcz);
-	_itsdk_console_printf("state.sigfox.current_power : %d\r\n",itsdk_state.sigfox.current_power);
-	_itsdk_console_printf("state.sigfox.current_speed : %d\r\n",itsdk_state.sigfox.current_speed);
+	if (itsdk_state.sigfox.current_power == SIGFOX_DEFAULT_POWER ) {
+		_itsdk_console_printf("state.sigfox.current_power : DEFAULT\r\n");
+	} else {
+		_itsdk_console_printf("state.sigfox.current_power : %d\r\n",itsdk_state.sigfox.current_power);
+	}
+	if (itsdk_state.sigfox.current_speed == SIGFOX_DEFAULT_SPEED ) {
+		_itsdk_console_printf("state.sigfox.current_speed : DEFAULT\r\n");
+	} else {
+		_itsdk_console_printf("state.sigfox.current_speed : %d\r\n",itsdk_state.sigfox.current_speed);
+	}
   #elif ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_M95640
 	// The setting will be made later during sigfox init part
   #else
