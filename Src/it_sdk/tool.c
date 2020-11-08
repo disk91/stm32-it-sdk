@@ -143,6 +143,14 @@ char itdt_convertHalfInt2HexChar(uint8_t v,itsdk_bool_e upper) {
 }
 
 /* -----------------------------------------------------------
+ * Convert 0-9 char to 0-9 value
+ */
+uint8_t itdt_convertNumChar2Int(char c) {
+	  if ( c >= '0' && c <= '9' ) return c-'0';
+	  return 0xFF;
+}
+
+/* -----------------------------------------------------------
  * Convert a 0-F char to a 0-16 value
  */
 uint8_t itdt_convertHexChar2HalfInt(char c) {
@@ -221,12 +229,16 @@ int16_t itdt_convertDecChar4Int(char * v) {
  *  Format 001
  */
 uint16_t itdt_convertDecChar3UInt(char * v) {
-  uint16_t ret = itdt_convertHexChar2HalfInt(*v);v++;
-  ret *= 10;
-  ret += itdt_convertHexChar2HalfInt(*v);v++;
-  ret *= 10;
-  ret += itdt_convertHexChar2HalfInt(*v);
-  return ret;
+
+  uint16_t ret = 0;
+  for ( int i = 0 ; i < 3 ; i++ ) {
+	  ret *= 10;
+	  uint8_t c = itdt_convertNumChar2Int(*v);
+	  if ( c == 0xFF ) return 0xFFFF;
+	  v++;
+	  ret+= c;
+  }
+
 }
 
 /* -----------------------------------------------------------

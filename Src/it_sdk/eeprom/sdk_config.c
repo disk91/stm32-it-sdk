@@ -120,8 +120,9 @@
 		 * This function need to be overide
 		 * In the application function, you should add a trace report
 		 *
-		 * ITSDK_ERROR_REPORT(ITSDK_ERROR_CONFIG_SDKAPP_DEFAULT,0);
-		 *
+		 * ITSDK_ERROR_REPORT(ITSDK_ERROR_CONFIG_FACTORY_DEFAULT,1);
+		 * or
+		 * ITSDK_ERROR_REPORT(ITSDK_ERROR_CONFIG_APPCNF_UPGRADED,new_version);
 		 */
 		__weak itsdk_config_ret_e itsdk_config_app_resetToFactory() {
 			itsdk_config.app.version = ITSDK_CONFIGURATION_APP_VERSION;
@@ -187,14 +188,26 @@ itsdk_config_ret_e itsdk_config_loadConfiguration(itsdk_config_load_mode_e mode)
 		  if ( itsdk_config.sdk.size != sizeof(itsdk_configuration_internal_t) ) {
 			  force = 1;
 		  }
-		  itsdk_config_sdk_resetToFactory();
-		  ITSDK_ERROR_REPORT(ITSDK_ERROR_CONFIG_FACTORY_DEFAULT,1);
-		  hasChanged=1;
+		  // @TODO - there is no need to clean everything when the structure of the config remains the same
+		  // Let's do it better for the coming versions
+		  if ( force == 1 || itsdk_config.sdk.version <= 0x16 ) {
+			  itsdk_config_sdk_resetToFactory();
+			  ITSDK_ERROR_REPORT(ITSDK_ERROR_CONFIG_FACTORY_DEFAULT,0);
+			  hasChanged=1;
+		  } else {
+			  // Assuming there is not change just the version that has been updated
+			  itsdk_config.sdk.version = ITSDK_CONFIGURATION_SDK_VERSION;
+
+
+			  // Store the modifications
+			  eeprom_write(&itsdk_config, sizeof(itsdk_configuration_nvm_t), ITSDK_CONFIGURATION_MNG_VERSION);
+			  bcopy(&itsdk_config,&itsdk_config_shadow,sizeof(itsdk_configuration_nvm_t));
+			  ITSDK_ERROR_REPORT(ITSDK_ERROR_CONFIG_SDKCNF_UPGRADED,ITSDK_CONFIGURATION_SDK_VERSION);
+		  }
 	  }
 	  #if ITSDK_WITH_CONFIGURATION_APP == __ENABLE
 	  if ( force || itsdk_config.app.version != ITSDK_CONFIGURATION_APP_VERSION ) {
 		  itsdk_config_app_resetToFactory();
-		  ITSDK_ERROR_REPORT(ITSDK_ERROR_CONFIG_FACTORY_DEFAULT,2);
 		  hasChanged=1;
 	  }
 	  #endif

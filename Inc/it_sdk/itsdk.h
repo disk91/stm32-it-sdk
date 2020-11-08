@@ -67,6 +67,7 @@ void itdt_convertInt2HexChar(uint8_t v, char * dest, itsdk_bool_e upper);
 void itdt_convertIntTab2Hex(char * dest, uint8_t * tab, int len, itsdk_bool_e upper);
 bool itdt_isHexChar(char c, bool upper);
 bool itdt_isHexString(char * str,int n,itsdk_bool_e upper);
+uint8_t itdt_convertNumChar2Int(char c);
 uint8_t itdt_convertHexChar2HalfInt(char c);
 uint8_t itdt_convertHexChar2Int(char * v);
 uint32_t itdt_convertHexChar8Int(char * v);
