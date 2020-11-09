@@ -119,6 +119,9 @@ typedef struct {
 #define ITSDK_ERROR_CONFIG_SDKFACT_DEFAULT  0x00000073 | (ITSDK_ERROR_LEVEL_INFO  | ITSDK_ERROR_TYPE_SDK | ITSDK_ERROR_WITH_VALUE)	// The config has been restored to factory default (value bit 0 => SDK / bit 1 => APP)
 #define ITSDK_ERROR_CONFIG_SDKCNF_UPGRADED  0x00000074 | (ITSDK_ERROR_LEVEL_INFO  | ITSDK_ERROR_TYPE_SDK | ITSDK_ERROR_WITH_VALUE)	// The SDK config has been Upgraded with version given as value.
 #define ITSDK_ERROR_CONFIG_APPCNF_UPGRADED  0x00000075 | (ITSDK_ERROR_LEVEL_INFO  | ITSDK_ERROR_TYPE_SDK | ITSDK_ERROR_WITH_VALUE)	// The APP config has been Upgraded with version given as value.
+#define ITSDK_ERROR_CONFIG_CONFIG_BADMAGIC  0x00000076 | (ITSDK_ERROR_LEVEL_WARN  | ITSDK_ERROR_TYPE_SDK | ITSDK_ERROR_WOUT_VALUE)	// The config eeprom area do not start with magic, it has not yet been initialized or it has been scratched
+#define ITSDK_ERROR_CONFIG_CONFIG_BADMNGV   0x00000077 | (ITSDK_ERROR_LEVEL_WARN  | ITSDK_ERROR_TYPE_SDK | ITSDK_ERROR_WOUT_VALUE)	// The config eeprom area management version has changed. Impossible to upgrade
+#define ITSDK_ERROR_CONFIG_MIGRATE_FAILED   0x00000078 | (ITSDK_ERROR_LEVEL_WARN  | ITSDK_ERROR_TYPE_SDK | ITSDK_ERROR_WITH_VALUE)	// Config migration failed (size changed or unsupported migration path)(value bit 0 => SDK / bit 1 => APP)
 
 #define ITSDK_ERROR_LORAWAN_INVALID_DR		0x00000100 | (ITSDK_ERROR_LEVEL_FATAL | ITSDK_ERROR_TYPE_SDK | ITSDK_ERROR_WITH_VALUE)
 #define ITSDK_ERROR_LORAWAN_INVALID_TXPWR   0x00000101 | (ITSDK_ERROR_LEVEL_FATAL | ITSDK_ERROR_TYPE_SDK | ITSDK_ERROR_WITH_VALUE)

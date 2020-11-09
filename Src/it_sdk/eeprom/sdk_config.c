@@ -117,15 +117,20 @@
 
 	#if ITSDK_WITH_CONFIGURATION_APP == __ENABLE
 		/**
-		 * This function need to be overide
-		 * In the application function, you should add a trace report
-		 *
-		 * ITSDK_ERROR_REPORT(ITSDK_ERROR_CONFIG_FACTORY_DEFAULT,1);
-		 * or
-		 * ITSDK_ERROR_REPORT(ITSDK_ERROR_CONFIG_APPCNF_UPGRADED,new_version);
+		 * This function need to be overide - reset the app to factory default
 		 */
 		__weak itsdk_config_ret_e itsdk_config_app_resetToFactory() {
 			itsdk_config.app.version = ITSDK_CONFIGURATION_APP_VERSION;
+		    //ITSDK_ERROR_REPORT(ITSDK_ERROR_CONFIG_SDKFACT_DEFAULT,1);
+			ITSDK_ERROR_REPORT(ITSDK_ERROR_CONFIG_OVERRIDE_MISS,0);
+			return CONFIG_FAILED;
+		}
+		/**
+		 * This function need to be overide - upgrade the app configuration
+		 */
+		__weak itsdk_config_ret_e itsdk_config_app_upgradeConfiguration() {
+			itsdk_config.app.version = ITSDK_CONFIGURATION_APP_VERSION;
+		    //ITSDK_ERROR_REPORT(ITSDK_ERROR_CONFIG_APPCNF_UPGRADED,1);
 			ITSDK_ERROR_REPORT(ITSDK_ERROR_CONFIG_OVERRIDE_MISS,0);
 			return CONFIG_FAILED;
 		}
@@ -140,20 +145,23 @@
 		 itsdk_config_app_resetToFactory();
 		 #endif
 		 #if ITSDK_CONFIGURATION_MODE == __CONFIG_EEPROM
-	     eeprom_write(&itsdk_config, sizeof(itsdk_configuration_nvm_t), ITSDK_CONFIGURATION_MNG_VERSION);
+		 eeprom_write_config(&itsdk_config, sizeof(itsdk_configuration_nvm_t), ITSDK_CONFIGURATION_MNG_VERSION);
 		 #endif
 	     bcopy(&itsdk_config,&itsdk_config_shadow,sizeof(itsdk_configuration_nvm_t));
+		 ITSDK_ERROR_REPORT(ITSDK_ERROR_CONFIG_FACTORY_DEFAULT,3);
 	     return CONFIG_SUCCESS;
 	}
 
 	/**
 	 * Flush the current config into eeprom & shadow
+	 * The shadow config is lost
 	 */
 	itsdk_config_ret_e itsdk_config_flushConfig() {
 		 #if ITSDK_CONFIGURATION_MODE == __CONFIG_EEPROM
-	     eeprom_write(&itsdk_config, sizeof(itsdk_configuration_nvm_t), ITSDK_CONFIGURATION_MNG_VERSION);
+	     eeprom_write_config(&itsdk_config, sizeof(itsdk_configuration_nvm_t), ITSDK_CONFIGURATION_MNG_VERSION);
 		 #endif
 	     bcopy(&itsdk_config,&itsdk_config_shadow,sizeof(itsdk_configuration_nvm_t));
+	     ITSDK_ERROR_REPORT(ITSDK_ERROR_CONFIG_COMMIT_NEW_CONF,0);
 	     return CONFIG_SUCCESS;
 	}
 
@@ -178,63 +186,82 @@ itsdk_config_ret_e itsdk_config_loadConfiguration(itsdk_config_load_mode_e mode)
 #endif
 
 #if ITSDK_CONFIGURATION_MODE == __CONFIG_EEPROM
-  uint8_t v= ITSDK_CONFIGURATION_MNG_VERSION;
-  uint8_t hasChanged = 0;
-  if ( mode != CONFIG_FORCE_TO_FACTORY && eeprom_read(&itsdk_config, sizeof(itsdk_configuration_nvm_t), 1,&v) ) {
-	  uint8_t force = 0;
-	  // The data are correctly loaded
-	  if ( itsdk_config.sdk.version != ITSDK_CONFIGURATION_SDK_VERSION ) {
-		  // SDK version has changed
-		  if ( itsdk_config.sdk.size != sizeof(itsdk_configuration_internal_t) ) {
-			  force = 1;
-		  }
-		  // @TODO - there is no need to clean everything when the structure of the config remains the same
-		  // Let's do it better for the coming versions
-		  if ( force == 1 || itsdk_config.sdk.version <= 0x16 ) {
-			  itsdk_config_sdk_resetToFactory();
-			  ITSDK_ERROR_REPORT(ITSDK_ERROR_CONFIG_FACTORY_DEFAULT,0);
-			  hasChanged=1;
-		  } else {
-			  // Assuming there is not change just the version that has been updated
-			  itsdk_config.sdk.version = ITSDK_CONFIGURATION_SDK_VERSION;
+  uint8_t v;
+  uint8_t requestFactoryReset = 0;
+  uint8_t configUpdated = 0;
 
+  if ( mode != CONFIG_FORCE_TO_FACTORY ) {
+     if ( ! eeprom_read_config(&itsdk_config, sizeof(itsdk_configuration_nvm_t), ITSDK_CONFIGURATION_MNG_VERSION,&v, true) ) {
+		 // failed to read configuration
+		 if ( v == 0 ) {
+  		    ITSDK_ERROR_REPORT(ITSDK_ERROR_CONFIG_CONFIG_BADMAGIC,0);
+			requestFactoryReset=1;
+		 } else if ( v!= ITSDK_CONFIGURATION_MNG_VERSION ) {
+  		    // magic is invalid or MNG version has changed... impossible to migrate
+  		    ITSDK_ERROR_REPORT(ITSDK_ERROR_CONFIG_CONFIG_BADMNGV,0);
+			requestFactoryReset=1;
+		 }
+	  }
+   	  // we have a config loaded but it can be a wrong one
+	  // Process SDK
+      //   management remains the same but the version & size may have changed.
+	  //   migration is possible
+	  if ( requestFactoryReset == 0 && (itsdk_config.sdk.version != ITSDK_CONFIGURATION_SDK_VERSION || itsdk_config.sdk.size != sizeof(itsdk_configuration_internal_t) ) ) {
+	     // SDK version has changed or compilation option has changed
+	     if ( itsdk_config.sdk.size != sizeof(itsdk_configuration_internal_t) ) {
+	 	    // and the size has changed so we need to force a reset
+		    requestFactoryReset=1;
+		    ITSDK_ERROR_REPORT(ITSDK_ERROR_CONFIG_MIGRATE_FAILED,0);
+		 } else {
+		    // migration is possible ...
+		    itsdk_config.sdk.version = ITSDK_CONFIGURATION_SDK_VERSION;
 
-			  // Store the modifications
-			  eeprom_write(&itsdk_config, sizeof(itsdk_configuration_nvm_t), ITSDK_CONFIGURATION_MNG_VERSION);
-			  bcopy(&itsdk_config,&itsdk_config_shadow,sizeof(itsdk_configuration_nvm_t));
-			  ITSDK_ERROR_REPORT(ITSDK_ERROR_CONFIG_SDKCNF_UPGRADED,ITSDK_CONFIGURATION_SDK_VERSION);
-		  }
+		    configUpdated = 1;
+		    ITSDK_ERROR_REPORT(ITSDK_ERROR_CONFIG_SDKCNF_UPGRADED,ITSDK_CONFIGURATION_SDK_VERSION);
+		 }
 	  }
 	  #if ITSDK_WITH_CONFIGURATION_APP == __ENABLE
-	  if ( force || itsdk_config.app.version != ITSDK_CONFIGURATION_APP_VERSION ) {
-		  itsdk_config_app_resetToFactory();
-		  hasChanged=1;
-	  }
+	  if ( requestFactoryReset == 0 && itsdk_config.app.version != ITSDK_CONFIGURATION_APP_VERSION ) {
+		 // version has changed an upgrade can be possible, lets application level to decide.
+		 if ( itsdk_config_app_upgradeConfiguration() == CONFIG_UPGRADED ) {
+			 // at least the version has been upgraded
+			 configUpdated = 1;
+			 ITSDK_ERROR_REPORT(ITSDK_ERROR_CONFIG_APPCNF_UPGRADED,ITSDK_CONFIGURATION_APP_VERSION);
+		 } else {
+			 requestFactoryReset = 1;
+  		     ITSDK_ERROR_REPORT(ITSDK_ERROR_CONFIG_MIGRATE_FAILED,1);
+		 }
+      }
 	  #endif
-  } else {
-	  hasChanged=1;
-#endif
-	#if ITSDK_CONFIGURATION_MODE != __CONFIG_STATIC
-	  // The data are not valid - reset to factory default
-	  ITSDK_ERROR_REPORT(ITSDK_ERROR_CONFIG_FACTORY_DEFAULT,3);
+
+   } else requestFactoryReset = 1;
+
+
+   if ( requestFactoryReset == 1 ) {
 	  itsdk_config_sdk_resetToFactory();
-	 #if ITSDK_WITH_CONFIGURATION_APP == __ENABLE
 	  itsdk_config_app_resetToFactory();
-	 #endif
+	  configUpdated = 1;
+	  ITSDK_ERROR_REPORT(ITSDK_ERROR_CONFIG_FACTORY_DEFAULT,3);
+   }
+
+   if (configUpdated == 1) {
+	  // need to store the configuration
+      eeprom_write_config(&itsdk_config, sizeof(itsdk_configuration_nvm_t), ITSDK_CONFIGURATION_MNG_VERSION);
+   }
+   bcopy(&itsdk_config,&itsdk_config_shadow,sizeof(itsdk_configuration_nvm_t));
+
+ #endif
+ #if ITSDK_CONFIGURATION_MODE == __CONFIG_MEMORY
+      requestFactoryReset = 1;
+	  itsdk_config_sdk_resetToFactory();
+    #if ITSDK_WITH_CONFIGURATION_APP == __ENABLE
+	  itsdk_config_app_resetToFactory();
     #endif
-#if ITSDK_CONFIGURATION_MODE == __CONFIG_EEPROM
-  }
-  if ( hasChanged != 0 ) {
-     eeprom_write(&itsdk_config, sizeof(itsdk_configuration_nvm_t), ITSDK_CONFIGURATION_MNG_VERSION);
-  } else {
-	  bcopy(&itsdk_config,&itsdk_config_shadow,sizeof(itsdk_configuration_nvm_t));
-	  return CONFIG_LOADED;
-  }
-#endif
-#if ITSDK_CONFIGURATION_MODE != __CONFIG_STATIC
-  bcopy(&itsdk_config,&itsdk_config_shadow,sizeof(itsdk_configuration_nvm_t));
-#endif
-  return CONFIG_RESTORED_FROM_FACTORY;
+      bcopy(&itsdk_config,&itsdk_config_shadow,sizeof(itsdk_configuration_nvm_t));
+ #endif
+
+   return ( requestFactoryReset == 1 )?CONFIG_RESTORED_FROM_FACTORY:CONFIG_LOADED;
+
 }
 
 // ====================================================================================================
@@ -258,9 +285,11 @@ itsdk_config_ret_e itsdk_config_commitConfiguration(itsdk_config_commit_mode_e m
  if ( r != CONFIG_SUCCESS ) return r;
 
  bcopy(&itsdk_config_shadow,&itsdk_config,sizeof(itsdk_configuration_nvm_t));
+ ITSDK_ERROR_REPORT(ITSDK_ERROR_CONFIG_COMMIT_NEW_CONF,0);
+
 #if ITSDK_CONFIGURATION_MODE == __CONFIG_EEPROM
  if ( mode == CONFIG_COMMIT_SAVE || mode == CONFIG_COMMIT_SAVE_REBOOT ) {
-     eeprom_write(&itsdk_config, sizeof(itsdk_configuration_nvm_t), ITSDK_CONFIGURATION_MNG_VERSION);
+     eeprom_write_config(&itsdk_config, sizeof(itsdk_configuration_nvm_t), ITSDK_CONFIGURATION_MNG_VERSION);
  }
  if ( mode == CONFIG_COMMIT_SAVE_REBOOT ) {
 	 itsdk_delayMs(200);
@@ -425,7 +454,6 @@ static itsdk_console_return_e _itsdk_config_consolePriv(char * buffer, uint8_t s
   	    #if ITSDK_CONFIGURATION_MODE != __CONFIG_STATIC
 		case 'S':
 			// Commit the new configuration
-			ITSDK_ERROR_REPORT(ITSDK_ERROR_CONFIG_COMMIT_NEW_CONF,0);
 			itsdk_config_commitConfiguration(CONFIG_COMMIT_SAVE);
 			_itsdk_console_printf("OK\r\n");
 			return ITSDK_CONSOLE_SUCCES;
