@@ -239,6 +239,7 @@ uint16_t itdt_convertDecChar3UInt(char * v) {
 	  ret+= c;
   }
 
+  return ret;
 }
 
 /* -----------------------------------------------------------
