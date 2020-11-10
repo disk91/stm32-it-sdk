@@ -58,6 +58,9 @@ volatile uint8_t __serial2_bufferWr;
  */
 void serial1_init() {
 #if ( ITSDK_WITH_UART_RXIRQ & __UART_USART1 ) > 0 || ( ITSDK_WITH_UART_RXIRQ & __UART_LPUART1 ) > 0
+    // Reset circular buffer
+    __serial1_bufferRd = 0;
+    __serial1_bufferWr = 0;
 	#if ( ITSDK_WITH_UART_RXIRQ & __UART_LPUART1 ) > 0
 		UART_HandleTypeDef * _uart = &hlpuart1;
 	#elif  ( ITSDK_WITH_UART_RXIRQ & __UART_USART1 ) > 0
@@ -72,9 +75,6 @@ void serial1_init() {
     _uart->Instance->RDR;
     _uart->Instance->ISR;
     _uart->Instance->ICR;
-    // Reset circular buffer
-    __serial1_bufferRd = 0;
-    __serial1_bufferWr = 0;
 #endif
 }
 
@@ -252,6 +252,8 @@ itsdk_bool_e serial1_changeBaudRate(serial_baudrate_e bd) {
  */
 void serial2_init() {
 #if  ( ITSDK_WITH_UART_RXIRQ & __UART_USART2 ) > 0
+    __serial2_bufferRd = 0;
+    __serial2_bufferWr = 0;
     __HAL_UART_ENABLE_IT(&huart2,UART_IT_ERR);
     __HAL_UART_ENABLE_IT(&huart2,UART_IT_RXNE);
     __HAL_UART_DISABLE_IT(&huart2,UART_IT_TC);
@@ -260,8 +262,6 @@ void serial2_init() {
     huart2.Instance->RDR;
     huart2.Instance->ISR;
     huart2.Instance->ICR;
-    __serial2_bufferRd = 0;
-    __serial2_bufferWr = 0;
 #endif
 }
 
