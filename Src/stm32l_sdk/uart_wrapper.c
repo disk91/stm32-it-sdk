@@ -44,8 +44,8 @@
 
 #if ( ITSDK_WITH_UART_RXIRQ & __UART_USART1 ) > 0 || ( ITSDK_WITH_UART_RXIRQ & __UART_LPUART1 ) > 0
 uint8_t __serial1_buffer[ITSDK_WITH_UART_RXIRQ_BUFSZ];
-volatile uint8_t __serial1_bufferRd;
-volatile uint8_t __serial1_bufferWr;
+volatile uint8_t __serial1_bufferRd = 0;
+volatile uint8_t __serial1_bufferWr = 0;
 #endif
 #if ( ITSDK_WITH_UART_RXIRQ & __UART_USART2 ) > 0
 uint8_t __serial2_buffer[ITSDK_WITH_UART_RXIRQ_BUFSZ];
