@@ -195,7 +195,11 @@ serial_read_response_e serial1_read(char * ch) {
 
 	// get one of the pending char if some.
 	if (__HAL_UART_GET_FLAG(&huart1, UART_FLAG_RXNE)){
-		*ch = huart1.Instance->RDR & 0x1FF;
+
+        // the mask of data bits and parity to apply to UART RDR register
+        UART_MASK_COMPUTATION(&huart1);
+        *ch = huart1.Instance->RDR & huart1.Mask;
+
 		if (__HAL_UART_GET_FLAG(&huart1, UART_FLAG_RXNE)) {
 			return SERIAL_READ_PENDING_CHAR;
 		} else {
@@ -339,7 +343,11 @@ serial_read_response_e serial2_read(char * ch) {
 
 	// get one of the pending char if some.
 	if (__HAL_UART_GET_FLAG(&huart2, UART_FLAG_RXNE)){
-		*ch = huart2.Instance->RDR & 0x1FF;
+
+		// the mask of data bits and parity to apply to UART RDR register
+        UART_MASK_COMPUTATION(&huart2);
+        *ch = huart2.Instance->RDR & huart2.Mask;
+
 		if (__HAL_UART_GET_FLAG(&huart2, UART_FLAG_RXNE)) {
 			return SERIAL_READ_PENDING_CHAR;
 		} else {
