@@ -214,6 +214,8 @@ itsdk_config_ret_e itsdk_config_loadConfiguration(itsdk_config_load_mode_e mode)
 		    ITSDK_ERROR_REPORT(ITSDK_ERROR_CONFIG_MIGRATE_FAILED,0);
 		 } else {
 		    // migration is possible ...
+			//  if ( itsdk_config.sdk.version < 0x17 ) {
+			//  }
 		    itsdk_config.sdk.version = ITSDK_CONFIGURATION_SDK_VERSION;
 
 		    configUpdated = 1;
@@ -617,16 +619,8 @@ static itsdk_console_return_e _itsdk_config_consolePriv(char * buffer, uint8_t s
 			case '4':
 				// lora.retries
 				if ( sz >= 7 ) {
-					int v = 0;
-					char c = buffer[5];
-					if ( c >= '0' && c <= '9' ) {
-						v = 10*(c - '0');
-						c = buffer[6];
-						if ( c >= '0' && c <= '9' ) {
-							v = v + (c - '0');
-						} else 	v = -1;
-					} else v = -1;
-					if ( v >= 0 ) {
+					int v = itdt_convertDecCharNInt(&buffer[5],2);
+					if ( v != ITSDK_INVALID_VALUE_32B && v <= 5 ) {
 						itsdk_config_shadow.sdk.lorawan.retries = v;
 						_itsdk_console_printf("OK\r\n");
 						return ITSDK_CONSOLE_SUCCES;
@@ -640,16 +634,8 @@ static itsdk_console_return_e _itsdk_config_consolePriv(char * buffer, uint8_t s
 			case '8':
 				// sigfox.txPower
 				if ( sz >= 7 ) {
-					int v = 0;
-					char c = buffer[5];
-					if ( c >= '0' && c <= '9' ) {
-						v = 10*(c - '0');
-						c = buffer[6];
-						if ( c >= '0' && c <= '9' ) {
-							v = v + (c - '0');
-						} else 	v = -1;
-					} else v = -1;
-					if ( v >= 0 && v < 24 ) {
+					int v = itdt_convertDecCharNInt(&buffer[5],2);
+					if ( v != ITSDK_INVALID_VALUE_32B && v >= -1 && v < 24 ) {
 						itsdk_config_shadow.sdk.sigfox.txPower = v;
 						_itsdk_console_printf("OK\r\n");
 						return ITSDK_CONSOLE_SUCCES;
