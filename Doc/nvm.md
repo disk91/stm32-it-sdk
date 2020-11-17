@@ -16,7 +16,7 @@ The EEPROM is splet into 3 different zone, these zone will exists or not dependi
           +----------------------------------+
           +          CONFIGURATION           +
           +----------------------------------+
-          +            USER FREE             +
+          +            USER LAND             +
           +----------------------------------+
 ```
 

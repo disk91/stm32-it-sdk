@@ -28,6 +28,7 @@
 #define IT_SDK_EEPROM_SDK_STATE_H_
 
 #include <it_sdk/config.h>
+#include <it_sdk/wrappers.h>
 #include <stdint.h>
 #include <stdbool.h>
 
