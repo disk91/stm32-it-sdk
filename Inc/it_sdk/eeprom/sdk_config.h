@@ -118,6 +118,7 @@ typedef enum {
 	CONFIG_SUCCESS = 0,
 	CONFIG_LOADED,
 	CONFIG_RESTORED_FROM_FACTORY,
+	CONFIG_UPGRADED,
 
 	CONFIG_FAILED
 } itsdk_config_ret_e;
@@ -125,6 +126,7 @@ typedef enum {
 
 // These functions need to be override when the app mode is enabled
 itsdk_config_ret_e itsdk_config_app_resetToFactory();
+itsdk_config_ret_e itsdk_config_app_upgradeConfiguration();
 #if ITSDK_WITH_CONSOLE == __ENABLE
 void itsdk_config_app_printConfig(itsdk_configuration_nvm_t * c);
 #endif

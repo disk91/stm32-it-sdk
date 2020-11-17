@@ -54,6 +54,10 @@ void itsdk_restart();
 // replaced by ITSDK_ERROR_REPORT
 //void itsdk_error_handler(char * file, int line);
 
+// -----
+#define ITSDK_INVALID_VALUE_32B	0x0FFFFFFF
+#define ITSDK_INVALID_VALUE_16B 0x7FFF
+
 // ------------------------------------------------------------------------
 // Tool.c
 uint8_t itsdk_randomByte(void);
@@ -67,12 +71,14 @@ void itdt_convertInt2HexChar(uint8_t v, char * dest, itsdk_bool_e upper);
 void itdt_convertIntTab2Hex(char * dest, uint8_t * tab, int len, itsdk_bool_e upper);
 bool itdt_isHexChar(char c, bool upper);
 bool itdt_isHexString(char * str,int n,itsdk_bool_e upper);
+uint8_t itdt_convertNumChar2Int(char c);
 uint8_t itdt_convertHexChar2HalfInt(char c);
 uint8_t itdt_convertHexChar2Int(char * v);
 uint32_t itdt_convertHexChar8Int(char * v);
 uint16_t itdt_convertHexChar4Int(char * v);
 int16_t itdt_convertDecChar4Int(char * v);
 uint16_t itdt_convertDecChar3UInt(char * v);
+int32_t itdt_convertDecCharNInt(char * v, int sz);
 void itdt_convertHexStr2IntTab(char * hexstr,uint8_t * tab, int len);
 void itdt_macToString(char * str, uint8_t * mac);
 uint32_t itdt_align_32b(uint32_t v);

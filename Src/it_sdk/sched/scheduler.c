@@ -70,11 +70,11 @@ void itdt_sched_execute() {
 	for (int i = 0 ; i < __sNum ; i++) {
 		do {
 			if ( __scheds[i].nextRun <= t ) {
+	 		    __scheds[i].nextRun += (uint64_t)__scheds[i].period;
 				if ( !__scheds[i].halt ) {
 					_LOG_SCHED(("[sched] (%d) exec @%ld\r\n",i,t));
 					(*__scheds[i].func)();
 				}
-	 		    __scheds[i].nextRun += (uint64_t)__scheds[i].period;
 			}
 		} while (!__scheds[i].skip && __scheds[i].nextRun <= t );
 		while (__scheds[i].skip &&__scheds[i].nextRun <= t) __scheds[i].nextRun += __scheds[i].period;
