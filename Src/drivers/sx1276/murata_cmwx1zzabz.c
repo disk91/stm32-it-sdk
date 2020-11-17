@@ -312,6 +312,11 @@ void SX1276SetRfTxPower( int8_t power )
     uint8_t paConfig = 0;
     uint8_t paDac = 0;
 
+	#ifdef ITSDK_RADIO_POWER_OFFSET
+    power += ITSDK_RADIO_POWER_OFFSET;
+	#endif
+
+
     paConfig = SX1276Read( REG_PACONFIG );
     paDac = SX1276Read( REG_PADAC );
 

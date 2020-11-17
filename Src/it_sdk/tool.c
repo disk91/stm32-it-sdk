@@ -143,6 +143,14 @@ char itdt_convertHalfInt2HexChar(uint8_t v,itsdk_bool_e upper) {
 }
 
 /* -----------------------------------------------------------
+ * Convert 0-9 char to 0-9 value
+ */
+uint8_t itdt_convertNumChar2Int(char c) {
+	  if ( c >= '0' && c <= '9' ) return c-'0';
+	  return 0xFF;
+}
+
+/* -----------------------------------------------------------
  * Convert a 0-F char to a 0-16 value
  */
 uint8_t itdt_convertHexChar2HalfInt(char c) {
@@ -200,20 +208,9 @@ uint16_t itdt_convertHexChar4Int(char * v) {
  *  Convert a 4 char decimal (+ sign) string value into uint16_t value
  */
 int16_t itdt_convertDecChar4Int(char * v) {
-  int sign = 1;
-  if ( *v == '-' ) {
-     sign = -1;
-     v++;
-  }
-  uint16_t ret = itdt_convertHexChar2HalfInt(*v);v++;
-  ret *= 10;
-  ret += itdt_convertHexChar2HalfInt(*v);v++;
-  ret *= 10;
-  ret += itdt_convertHexChar2HalfInt(*v);v++;
-  ret *= 10;
-  ret += itdt_convertHexChar2HalfInt(*v);v++;
-  ret *=sign;
-  return ret;
+   int32_t ret = itdt_convertDecCharNInt(v,4);
+   if ( ret == ITSDK_INVALID_VALUE_32B ) return ITSDK_INVALID_VALUE_16B;
+   return ret;
 }
 
 /* -----------------------------------------------------------
@@ -221,12 +218,33 @@ int16_t itdt_convertDecChar4Int(char * v) {
  *  Format 001
  */
 uint16_t itdt_convertDecChar3UInt(char * v) {
-  uint16_t ret = itdt_convertHexChar2HalfInt(*v);v++;
-  ret *= 10;
-  ret += itdt_convertHexChar2HalfInt(*v);v++;
-  ret *= 10;
-  ret += itdt_convertHexChar2HalfInt(*v);
-  return ret;
+
+  int32_t ret = itdt_convertDecCharNInt(v,3);
+  if ( ret == ITSDK_INVALID_VALUE_32B ) return ITSDK_INVALID_VALUE_16B;
+  return (uint16_t)ret;
+}
+
+
+/**
+ * Convert a signed decimal number from a string to
+ * an Int32 value.
+ */
+int32_t itdt_convertDecCharNInt(char * v, int sz) {
+	int sign = 1;
+	if ( *v == '-' ) {
+	   sign = -1;
+	   v++;
+	}
+	uint16_t ret = 0;
+	for ( int i = 0 ; i < sz ; i++ ) {
+	  ret *= 10;
+	  uint8_t c = itdt_convertNumChar2Int(*v);
+	  if ( c == 0xFF ) return ITSDK_INVALID_VALUE_32B;
+	  v++;
+	  ret+= c;
+	 }
+	 ret *= sign;
+	 return ret;
 }
 
 /* -----------------------------------------------------------

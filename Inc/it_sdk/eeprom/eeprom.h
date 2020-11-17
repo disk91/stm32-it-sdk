@@ -31,7 +31,8 @@
 #include <it_sdk/itsdk.h>
 #include <it_sdk/config.h>
 
-#define ITDT_EEPROM_MAGIC 0xA5FC
+#define ITDT_EEPROM_MAGIC_USERLAND 0xCCA3
+#define ITDT_EEPROM_MAGIC_CONFIG   0xA5FC
 #define ITDT_EEPROM_BANK0 0
 #define ITDT_EEPROM_BANK1 1
 #define ITDT_EEPROM_BANK2 2
@@ -45,11 +46,14 @@ typedef struct s_eeprom_entry {
 	uint8_t	  align[3];				// align on 32b structure
 } t_eeprom_entry;
 
-bool eeprom_write(void * data, uint16_t len, uint8_t version);
-bool eeprom_read(void * data, uint16_t len, uint8_t version, uint8_t * versionR);
-bool eeprom_getPostConfigOffset(uint32_t * _offset);
-bool eeprom_getConfigOffset(uint32_t * _offset);
-bool eeprom_getConfigSize(uint32_t * _size);
+itsdk_bool_e eeprom_write_config(void * data, uint16_t len, uint8_t version);
+itsdk_bool_e eeprom_read_config(void * data, uint16_t len, uint8_t version, uint8_t * versionR, itsdk_bool_e bypassTest);
+itsdk_bool_e eeprom_write_userland(uint32_t offset, void * data, uint16_t len, itsdk_bool_e initialize);
+itsdk_bool_e eeprom_read_userland(uint32_t offset, void * data, uint16_t len);
+itsdk_bool_e eeprom_getPostConfigOffset(uint32_t * _offset);
+itsdk_bool_e eeprom_getConfigOffset(uint32_t * _offset);
+itsdk_bool_e eeprom_getConfigSize(uint32_t * _size);
+itsdk_bool_e eeprom_getUserLandOffset(uint32_t * _offset);
 void eeprom_clearAllEprom();
 
 #endif /* IT_SDK_EEPROM_EEPROM_H_ */

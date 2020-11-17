@@ -209,11 +209,16 @@ configuration file. Please find the different settings added version after versi
 ## from version 1.7.0
 ### misc
 - return code from I2C and SPI moved from I2C_XX to \_\_I2C_XX and SPI_XX to \_\_SPI_XX
+- eeprom interface have a UserLand area. The config zone has been refactored to support version upgrade.
 
 ### config.h
  - ITSDK_WITH_GPIO_HANDLER / Enable the internal GPIO Handler - now you can disable it basically 
+ - ITSDK_RADIO_POWER_OFFSET / Add an offset to radio Tx power - to compensate antenna loss transparently (global to all radios)
 
 ## from version 1.6.0
+### project settings
+ - Add in project properties >> C/C++ Build >> Settings >> Tool Settings >> MCU GCC Assembler >> Includes Path >> Add the ItSdk Inc directory.
+
 ### config.h
  - ITSDK_WITH_WDG / allows to disable the watchdog 
  - ITSDK_WITH_UART_RXIRQ / allows to enable an RX IRQ on Serial communications with internal circular buffer
