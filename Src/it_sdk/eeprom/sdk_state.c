@@ -89,7 +89,7 @@ void itsdk_print_state() {
 #endif
 #if ITSDK_WITH_LORAWAN_LIB == __ENABLE
 	if ( itsdk_state.activeNetwork == __ACTIV_NETWORK_LORAWAN ) {
-  	  _itsdk_console_printf("state.lorawan.joined: %c\r\n",((itsdk_lorawan_getJoinState() == LORAWAN_JOIN_SUCCESS)?'Y':'N'));
+  	  _itsdk_console_printf("state.lorawan.joined: %c\r\n",(itsdk_lorawan_hasjoined()?'Y':'N'));
 	}
 #endif
 #if ITSDK_WITH_SIGFOX_LIB == __ENABLE
