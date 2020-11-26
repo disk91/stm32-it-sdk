@@ -236,6 +236,8 @@
 #define ITSDK_WITH_LORAWAN_LIB		__DISABLE								// Include the lorawan code when 1 disabled when 0
 #define ITSDK_LORAWAN_LIB			__LORAWAN_SX1276
 
+#define ITSDK_RADIO_CERTIF			__DISABLE								// Enable code for radio certification
+
 #define ITSDK_PROTECT_KEY			0xA7459BC3 	 	/* CHANGE ME */			// A random value used to protect the SIGFOX (and others) KEY in memory (better than nothing)
 
 #define ITSDK_DEFAULT_NETWORK		__ACTIV_NETWORK_SIGFOX					// Default network to activate
