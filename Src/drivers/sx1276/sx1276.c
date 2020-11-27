@@ -285,7 +285,7 @@ RadioState_t SX1276GetStatus( void )
 
 void SX1276SetChannel( uint32_t freq )
 {
-	LOG_INFO_SX1276((">> SX1276SetChannel\r\n"));
+	LOG_INFO_SX1276((">> SX1276SetChannel %d\r\n",freq));
 
     uint32_t channel;
 
@@ -1484,7 +1484,7 @@ void SX1276OnTimeoutIrq( void* context )
         }
         break;
     case RF_TX_RUNNING:
-        // Tx timeout shouldn't happen.
+        // Tx timeout shouldn't happen other than continuous wave
         // But it has been observed that when it happens it is a result of a corrupted SPI transfer
         // it depends on the platform design.
         //

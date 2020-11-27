@@ -45,6 +45,9 @@
 #if ITSDK_WITH_SECURESTORE == __ENABLE
 #include <it_sdk/eeprom/securestore.h>
 #endif
+#if ITSDK_RADIO_CERTIF == __ENABLE && (ITSDK_WITH_SIGFOX_LIB == __ENABLE || ITSDK_WITH_LORAWAN_LIB == __ENABLE )
+#include <it_sdk/radio/certification.h>
+#endif
 
 static itsdk_console_state_t __console;
 static itsdk_console_chain_t __console_head_chain;
@@ -75,36 +78,36 @@ static itsdk_console_return_e _itsdk_console_private(char * buffer, uint8_t sz) 
 #endif
 			_itsdk_console_printf("r          : print last Reset Cause\r\n");
 
+#if ITSDK_RADIO_CERTIF == __ENABLE && (ITSDK_WITH_SIGFOX_LIB == __ENABLE || ITSDK_WITH_LORAWAN_LIB == __ENABLE )
+			_itsdk_console_printf("c:0:nnn    : CW for CE tests with power\r\n");
+			_itsdk_console_printf("c:1:nnn    : CW for EU Sigfox tests with power\r\n");
+#endif
+
 			return ITSDK_CONSOLE_SUCCES;
 		case 'X':
 			// exit console
 			__console.loginState=0;
-			_itsdk_console_printf("OK\r\n");
-			return ITSDK_CONSOLE_SUCCES;
+			goto success;
 		case 't':
 			// print time
 			_itsdk_console_printf("Run time is %d s\r\n",(uint32_t)(itsdk_time_get_ms()/1000L));
-			_itsdk_console_printf("OK\r\n");
-			return ITSDK_CONSOLE_SUCCES;
+			goto success;
 #if ITSDK_WITH_ADC != __ADC_NONE
 		case 'T':
 			// print temperature
 			{
 			uint16_t t = adc_getTemperature();
 			_itsdk_console_printf("Temperature is %d.%doC\r\n",t/100,t-((t/100)*100));
-			_itsdk_console_printf("OK\r\n");
-			return ITSDK_CONSOLE_SUCCES;
+			goto success;
 			}
 		case 'b':
 			// battery level
 			_itsdk_console_printf("Battery level %dmV\r\n",(uint32_t)(adc_getVBat()));
-			_itsdk_console_printf("OK\r\n");
-			return ITSDK_CONSOLE_SUCCES;
+			goto success;
 		case 'B':
 			// Vcc level
 			_itsdk_console_printf("VCC level %dmV\r\n",(uint32_t)(adc_getVdd()));
-			_itsdk_console_printf("OK\r\n");
-			return ITSDK_CONSOLE_SUCCES;
+			goto success;
 #endif
 		case 'r':
 			// Last Reset cause
@@ -120,8 +123,7 @@ static itsdk_console_return_e _itsdk_console_private(char * buffer, uint8_t sz) 
 			default:
 				_itsdk_console_printf("UNKNOWN\r\n"); break;
 			}
-			_itsdk_console_printf("OK\r\n");
-			return ITSDK_CONSOLE_SUCCES;
+			goto success;
 		case 'R':
 			// Reset device
 			_itsdk_console_printf("OK\r\n");
@@ -131,13 +133,11 @@ static itsdk_console_return_e _itsdk_console_private(char * buffer, uint8_t sz) 
 		case 'l':
 			// switch lowPower On
 			lowPower_enable();
-			_itsdk_console_printf("OK\r\n");
-			return ITSDK_CONSOLE_SUCCES;
+			goto success;
 		case 'L':
 			// switch LowPower Off
 			lowPower_disable();
-			_itsdk_console_printf("OK\r\n");
-			return ITSDK_CONSOLE_SUCCES;
+			goto success;
 		}
 	} else if (sz==2) {
 		if ( buffer[0] == 'R' && buffer[1] == '!' ) {
@@ -146,10 +146,34 @@ static itsdk_console_return_e _itsdk_console_private(char * buffer, uint8_t sz) 
 			eeprom_clearAllEprom();
 			itsdk_delayMs(100);
 			itsdk_reset();
-			return ITSDK_CONSOLE_SUCCES;
+			return ITSDK_CONSOLE_FAILED;
 		}
 	}
+#if ITSDK_RADIO_CERTIF == __ENABLE && (ITSDK_WITH_SIGFOX_LIB == __ENABLE || ITSDK_WITH_LORAWAN_LIB == __ENABLE )
+	  else if ( sz==7 ) {
+		if ( buffer[0] == 'c' && buffer[1] == ':' && buffer[3] == ':' ) {
+		 int power = itdt_convertDecChar3UInt(&buffer[4]);
+		 if ( power == ITSDK_INVALID_VALUE_16B ) goto failed;
+		 if ( buffer[2] == '0' ) {
+			 // CE certification, frequency 868.100.000MHz
+			 if ( startContinousWaveTransmission( 868100000,power,0 ) == BOOL_FALSE ) goto failed;
+			 goto success;
+		 } else if ( buffer[2] == '1' ) {
+			 // Sigfox RC1 certification, frequency 868.130.000MHz
+			 if ( startContinousWaveTransmission( 868130000,power,0 ) == BOOL_FALSE ) goto failed;
+			 goto success;
+		 } else goto failed;
+		}
+	}
+#endif
 	return ITSDK_CONSOLE_NOTFOUND;
+
+success:
+	_itsdk_console_printf("OK\r\n");
+	return ITSDK_CONSOLE_SUCCES;
+failed:
+	_itsdk_console_printf("KO\r\n");
+	return ITSDK_CONSOLE_FAILED;
 }
 
 static itsdk_console_return_e _itsdk_console_public(char * buffer, uint8_t sz) {

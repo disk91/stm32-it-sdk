@@ -234,6 +234,7 @@ int32_t itdt_convertDecCharNInt(char * v, int sz) {
 	if ( *v == '-' ) {
 	   sign = -1;
 	   v++;
+	   sz--;
 	}
 	uint16_t ret = 0;
 	for ( int i = 0 ; i < sz ; i++ ) {
