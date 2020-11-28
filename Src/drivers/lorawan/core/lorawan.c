@@ -495,9 +495,15 @@ void lorawan_driver_LORA_Init(
   	    mibReq.Param.Class= CLASS_A;
   	    LoRaMacMibSetRequestConfirm( &mibReq );
 
-	    mibReq.Type = MIB_SYSTEM_MAX_RX_ERROR;
-		mibReq.Param.SystemMaxRxError = ITSDK_LORAWAN_MAX_RX_ERROR;
+  		mibReq.Type = MIB_SYSTEM_MAX_RX_ERROR;
+		#if ITSDK_LORAWAN_MAX_RX_ERROR > 0
+		  mibReq.Param.SystemMaxRxError = ITSDK_LORAWAN_MAX_RX_ERROR;
+		#else
+		  mibReq.Param.SystemMaxRxError = 10;		// default 10ms
+		#endif
 		LoRaMacMibSetRequestConfirm( &mibReq );
+
+
 
 
 		// Sounds like this is remapping the channels

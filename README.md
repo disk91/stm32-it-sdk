@@ -216,6 +216,9 @@ configuration file. Please find the different settings added version after versi
  - ITSDK_RADIO_POWER_OFFSET / Add an offset to radio Tx power - to compensate antenna loss transparently (global to all radios)
  - ITSDK_RADIO_CERTIF / Enable code and console options for radio certification
 
+### configLoRaWan.h
+ - ITSDK_LORAWAN_RX2DELAY_MOD / Ms Delay added to RX 2 Window Start for calibration
+
 ## from version 1.6.0
 ### project settings
  - Add in project properties >> C/C++ Build >> Settings >> Tool Settings >> MCU GCC Assembler >> Includes Path >> Add the ItSdk Inc directory.
