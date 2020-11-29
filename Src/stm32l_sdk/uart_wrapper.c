@@ -363,7 +363,7 @@ serial_read_response_e serial2_read(char * ch) {
  */
 itsdk_bool_e serial2_changeBaudRate(serial_baudrate_e bd) {
 	UART_HandleTypeDef * lhuart;
-	#if  ( ITSDK_WITH_UART_RXIRQ & __UART_USART2 ) > 0
+	#if  ( ITSDK_WITH_UART & __UART_USART2 ) > 0
 	   lhuart = &huart2;
 	#else
 		return BOOL_FALSE;
