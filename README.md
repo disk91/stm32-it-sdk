@@ -59,7 +59,7 @@ Most is done to preserve code size, the SDK can target small flash MCU from 16KB
   * lorawan
     * murata cmwx1zzabz (sx1276)
   * T / H / P
-     * bosh bme280
+     * bosh bme280 & bmp280
      * omron 2smpb-02B
      * infineon DPS422
   * Light
@@ -215,6 +215,9 @@ configuration file. Please find the different settings added version after versi
  - ITSDK_WITH_GPIO_HANDLER / Enable the internal GPIO Handler - now you can disable it basically 
  - ITSDK_RADIO_POWER_OFFSET / Add an offset to radio Tx power - to compensate antenna loss transparently (global to all radios)
  - ITSDK_RADIO_CERTIF / Enable code and console options for radio certification
+
+### configLoRaWan.h
+ - ITSDK_LORAWAN_RX2DELAY_MOD / Ms Delay added to RX 2 Window Start for calibration
 
 ## from version 1.6.0
 ### project settings

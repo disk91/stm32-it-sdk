@@ -53,10 +53,12 @@
 #define ITSDK_LORAWAN_CNF_RETRY		3									   // Number of retry when Confirm mode is applied
 #ifndef ITSDK_MURATA_TCXO_WARMUP
 #define ITSDK_MURATA_TCXO_WARMUP	50									   // Warmup time for TCXO
-#define ITSDK_MURATA_WAKEUP_TIME    53 									   // WakeUp time correction for RX window start at least TCXO Time [ms]
+#define ITSDK_MURATA_WAKEUP_TIME    63 									   // WakeUp time correction for RX window start at least TCXO Time [ms]
 #endif
-#define ITSDK_LORAWAN_MAX_RX_ERROR	0									   // Extends the RX windows with +/- MS
+#define ITSDK_LORAWAN_MAX_RX_ERROR	10									   // Extends the RX windows with +/- MS
 																		   // This is for unprecised clocks (0=default value)
+#define ITSDK_LORAWAN_RX2DELAY_MOD	-20									   // Ms Delay added to RX2 Window Start for calibration
+
 #define ITSDK_LORAWAN_MAX_DWNLNKSZ	32									   // Max downlink Size in Byte for reception buffer
 
 																		   // =============================

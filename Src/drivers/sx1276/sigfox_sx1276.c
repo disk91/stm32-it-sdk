@@ -43,8 +43,8 @@ sx1276_sigfox_state_t	sx1276_sigfox_state;
  * Configure the sigfox stack for sx1276
  */
 sx1276_sigfox_ret_t sx1276_sigfox_init( void ) {
-	static sfx_rc_t  prcz;
-	static sfx_u32   pconfig_words[3];
+	static sfx_rc_t  __sfx1276_prcz;
+	static sfx_u32   __sfx1276_pconfig_words[3];
 	LOG_INFO_SFXSX1276((">> sx1276_sigfox_init\r\n"));
 
 	sfx_error_t error = SX1276_SIGFOX_ERR_NONE;
@@ -67,36 +67,36 @@ sx1276_sigfox_ret_t sx1276_sigfox_init( void ) {
 	case SIGFOX_RCZ1:
 		{
 			sfx_rc_t rcz = RC1;
-			bcopy(&rcz,&prcz,sizeof(rcz));
+			bcopy(&rcz,&__sfx1276_prcz,sizeof(rcz));
 		}
 		break;
 	case SIGFOX_RCZ2:
 		{
 			sfx_rc_t rcz = RC2;
-			bcopy(&rcz,&prcz,sizeof(rcz));
+			bcopy(&rcz,&__sfx1276_prcz,sizeof(rcz));
 			sfx_u32 config_words[3] = RC2_SM_CONFIG;
-			bcopy(config_words,pconfig_words,3*sizeof(sfx_u32));
+			bcopy(config_words,__sfx1276_pconfig_words,3*sizeof(sfx_u32));
 		}
 		break;
 	case SIGFOX_RCZ3C:
 		{
 			sfx_rc_t rcz = RC3C;
-			bcopy(&rcz,&prcz,sizeof(rcz));
+			bcopy(&rcz,&__sfx1276_prcz,sizeof(rcz));
 			sfx_u32 config_words[3] = RC3C_CONFIG;
-			bcopy(config_words,pconfig_words,3*sizeof(sfx_u32));
+			bcopy(config_words,__sfx1276_pconfig_words,3*sizeof(sfx_u32));
 		}
 		break;
 	case SIGFOX_RCZ4:
 		{
 			sfx_rc_t rcz = RC4;
-			bcopy(&rcz,&prcz,sizeof(rcz));
+			bcopy(&rcz,&__sfx1276_prcz,sizeof(rcz));
 			sfx_u32 config_words[3] = RC4_SM_CONFIG;
-			bcopy(config_words,pconfig_words,3*sizeof(sfx_u32));
+			bcopy(config_words,__sfx1276_pconfig_words,3*sizeof(sfx_u32));
 		}
 		break;
 	}
 	LOG_INFO_SFXSX1276((">> SIGFOX_API_open\r\n"));
-	sfx_error_t serror = SIGFOX_API_open(&prcz);
+	sfx_error_t serror = SIGFOX_API_open(&__sfx1276_prcz);
 
 	if ( serror != SFX_ERR_NONE ) {
 		LOG_ERROR_SFXSX1276(("[ERROR] Sigfox Open(%08X)\r\n",serror));
@@ -105,13 +105,13 @@ sx1276_sigfox_ret_t sx1276_sigfox_init( void ) {
 
 	switch (itsdk_state.sigfox.rcz) {
 	case SIGFOX_RCZ2:
-		error = SIGFOX_API_set_std_config(pconfig_words, RC2_SET_STD_TIMER_ENABLE);
+		error = SIGFOX_API_set_std_config(__sfx1276_pconfig_words, RC2_SET_STD_TIMER_ENABLE);
 		break;
 	case SIGFOX_RCZ3C:
-		error = SIGFOX_API_set_std_config(pconfig_words, NA);
+		error = SIGFOX_API_set_std_config(__sfx1276_pconfig_words, NA);
 		break;
 	case SIGFOX_RCZ4:
-		error = SIGFOX_API_set_std_config(pconfig_words, RC4_SET_STD_TIMER_ENABLE);
+		error = SIGFOX_API_set_std_config(__sfx1276_pconfig_words, RC4_SET_STD_TIMER_ENABLE);
 		break;
 	default:
 		break;
@@ -121,6 +121,7 @@ sx1276_sigfox_ret_t sx1276_sigfox_init( void ) {
 		LOG_ERROR_SFXSX1276(("[ERROR] Sigfox set config(%08X)\r\n",error));
 		error = SX1276_SIGFOX_ERR_CONFIG;
 	}
+
 	return error;
 }
 

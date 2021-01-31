@@ -909,7 +909,11 @@ static void ProcessRadioTxDone( void )
     TimerStart( &MacCtx.RxWindowTimer1 );
     if( MacCtx.NvmCtx->DeviceClass != CLASS_C )
     {
+		#ifdef ITSDK_LORAWAN_RX2DELAY_MOD
+        TimerSetValue( &MacCtx.RxWindowTimer2, MacCtx.RxWindow2Delay + ITSDK_LORAWAN_RX2DELAY_MOD );
+		#else
         TimerSetValue( &MacCtx.RxWindowTimer2, MacCtx.RxWindow2Delay );
+		#endif
         TimerStart( &MacCtx.RxWindowTimer2 );
     }
     if( ( MacCtx.NvmCtx->DeviceClass == CLASS_C ) || ( MacCtx.NvmCtx->NodeAckRequested == true ) )
