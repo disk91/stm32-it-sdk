@@ -54,10 +54,10 @@
 
 
 // ------------------------------------------------------------------------
-// Temp / Humidity / Pressure : BME280
+// Temp / Humidity / Pressure : BME280 / BMP280
 
 #define ITSDK_DRIVERS_BME280					__DISABLE					// BOSH BME 280 Temp / Hygro / Pressure
-#if ITSDK_DRIVERS_BME280 == __ENABLE
+#if ITSDK_DRIVERS_BME280 == __ENABLE										// BOSH BMP 280 Temp / Pressure
 	#ifndef __I2C_INCLUDED
 	  #define __I2C_INCLUDED
 	  #include "i2c.h"
