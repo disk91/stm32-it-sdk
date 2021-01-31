@@ -59,7 +59,7 @@ Most is done to preserve code size, the SDK can target small flash MCU from 16KB
   * lorawan
     * murata cmwx1zzabz (sx1276)
   * T / H / P
-     * bosh bme280
+     * bosh bme280 & bmp280
      * omron 2smpb-02B
      * infineon DPS422
   * Light

@@ -1,5 +1,6 @@
 /* ==========================================================
  * bme280.c - Bosh BME280 Temp / Hygro / Pressure I2C-SPI sensor
+ *            Bosh BMP280 Temp / Pressure I2C-SPI sensor
  * Project : Disk91 SDK
  * ----------------------------------------------------------
  * Created on: 15 f�vr. 2019
@@ -69,21 +70,23 @@ drivers_bme280_ret_e drivers_bme280_setup(drivers_bme280_mode_e mode) {
 		ITSDK_ERROR_REPORT(ITSDK_ERROR_DRV_BME280_NOTFOUND,0);
 		return BME280_NOTFOUND;
 	}
-	if ( v != DRIVER_BME280_REG_ID_VALUE ) {
+	if ( v != DRIVER_BME280_REG_ID_VALUE && v != DRIVER_BMP280_REG_ID_VALUE ) {
 		ITSDK_ERROR_REPORT(ITSDK_ERROR_DRV_BME280_NOTFOUND,0);
 		return BME280_NOTFOUND;
 	}
-
+	__bme280_config.type = ( v == DRIVER_BME280_REG_ID_VALUE )?BME280:BMP280;
 	// Configure the device according the selected mode
 	switch (mode) {
 	default:
 	case BME280_MODE_WEATHER_MONITORING:
 		// Forced mode
 		// Oversampling 1x for all
-		__readRegister(DRIVER_BME280_REG_CTRLHUM_ADR,&v);		// Humidity oversampling  x1
-		v &= ~DRIVER_BME280_REG_CTRLHUM_OSRD_MASK;
-		v |= DRIVER_BME280_REG_CTRLHUM_OSRD_X1;
-		__writeRegister(DRIVER_BME280_REG_CTRLHUM_ADR,v);
+		if ( __bme280_config.type == BME280 ) {
+			__readRegister(DRIVER_BME280_REG_CTRLHUM_ADR,&v);		// Humidity oversampling  x1
+			v &= ~DRIVER_BME280_REG_CTRLHUM_OSRD_MASK;
+			v |= DRIVER_BME280_REG_CTRLHUM_OSRD_X1;
+			__writeRegister(DRIVER_BME280_REG_CTRLHUM_ADR,v);
+		}
 
 		__readRegister(DRIVER_BME280_REG_CTRLMEAS_ADR,&v);		// Temperature oversampling x1
 		v &= ~DRIVER_BME280_REG_CTRLMEAS_OSRST_MASK;
@@ -107,38 +110,42 @@ drivers_bme280_ret_e drivers_bme280_setup(drivers_bme280_mode_e mode) {
 		break;
 
 	case BME280_MODE_HUMIDITY_SENSING:
-		// Oversampling 0x pressure 1x for temp & humidity
-		__readRegister(DRIVER_BME280_REG_CTRLHUM_ADR,&v);		// Humidity oversampling  x1
-		v &= ~DRIVER_BME280_REG_CTRLHUM_OSRD_MASK;
-		v |= DRIVER_BME280_REG_CTRLHUM_OSRD_X1;
-		__writeRegister(DRIVER_BME280_REG_CTRLHUM_ADR,v);
+		if ( __bme280_config.type == BME280 ) {
+			// Oversampling 0x pressure 1x for temp & humidity
+			__readRegister(DRIVER_BME280_REG_CTRLHUM_ADR,&v);		// Humidity oversampling  x1
+			v &= ~DRIVER_BME280_REG_CTRLHUM_OSRD_MASK;
+			v |= DRIVER_BME280_REG_CTRLHUM_OSRD_X1;
+			__writeRegister(DRIVER_BME280_REG_CTRLHUM_ADR,v);
 
-		__readRegister(DRIVER_BME280_REG_CTRLMEAS_ADR,&v);		// Temperature oversampling x1
-		v &= ~DRIVER_BME280_REG_CTRLMEAS_OSRST_MASK;
-		v |= DRIVER_BME280_REG_CTRLMEAS_OSRST_X1;
+			__readRegister(DRIVER_BME280_REG_CTRLMEAS_ADR,&v);		// Temperature oversampling x1
+			v &= ~DRIVER_BME280_REG_CTRLMEAS_OSRST_MASK;
+			v |= DRIVER_BME280_REG_CTRLMEAS_OSRST_X1;
 
-		v &= ~DRIVER_BME280_REG_CTRLMEAS_OSRSP_MASK;			// Pressure oversampling x 0
-		v |= DRIVER_BME280_REG_CTRLMEAS_OSRSP_SKIP;
-		__writeRegister(DRIVER_BME280_REG_CTRLMEAS_ADR,v);
-		// IIR filter off
-		__readRegister(DRIVER_BME280_REG_CONFIG_ADR,&v);		// IIR Filter Off
-		v &= ~DRIVER_BME280_REG_CONFIG_FILTER_MASK;
-		v |= DRIVER_BME280_REG_CONFIG_FILTER_OFF;
-		__writeRegister(DRIVER_BME280_REG_CONFIG_ADR,v);
+			v &= ~DRIVER_BME280_REG_CTRLMEAS_OSRSP_MASK;			// Pressure oversampling x 0
+			v |= DRIVER_BME280_REG_CTRLMEAS_OSRSP_SKIP;
+			__writeRegister(DRIVER_BME280_REG_CTRLMEAS_ADR,v);
+			// IIR filter off
+			__readRegister(DRIVER_BME280_REG_CONFIG_ADR,&v);		// IIR Filter Off
+			v &= ~DRIVER_BME280_REG_CONFIG_FILTER_MASK;
+			v |= DRIVER_BME280_REG_CONFIG_FILTER_OFF;
+			__writeRegister(DRIVER_BME280_REG_CONFIG_ADR,v);
 
-		// Switch to force mode
-		__readRegister(DRIVER_BME280_REG_CTRLMEAS_ADR,&v);		// Get the first data
-		v &= ~DRIVER_BME280_REG_CTRLMEAS_MODE_MASK;
-		v |= DRIVER_BME280_REG_CTRLMEAS_MODE_FORCED;
-		__writeRegister(DRIVER_BME280_REG_CTRLMEAS_ADR,v);
+			// Switch to force mode
+			__readRegister(DRIVER_BME280_REG_CTRLMEAS_ADR,&v);		// Get the first data
+			v &= ~DRIVER_BME280_REG_CTRLMEAS_MODE_MASK;
+			v |= DRIVER_BME280_REG_CTRLMEAS_MODE_FORCED;
+			__writeRegister(DRIVER_BME280_REG_CTRLMEAS_ADR,v);
+		} else return BME280_FAILED;
 		break;
 
 	case BME280_MODE_INDOOR_NAVIGATION:
 		// Oversampling 16x pressure 2x for temp & 1x humidity
-		__readRegister(DRIVER_BME280_REG_CTRLHUM_ADR,&v);		// Humidity oversampling  x1
-		v &= ~DRIVER_BME280_REG_CTRLHUM_OSRD_MASK;
-		v |= DRIVER_BME280_REG_CTRLHUM_OSRD_X1;
-		__writeRegister(DRIVER_BME280_REG_CTRLHUM_ADR,v);
+		if ( __bme280_config.type == BME280 ) {
+			__readRegister(DRIVER_BME280_REG_CTRLHUM_ADR,&v);		// Humidity oversampling  x1
+			v &= ~DRIVER_BME280_REG_CTRLHUM_OSRD_MASK;
+			v |= DRIVER_BME280_REG_CTRLHUM_OSRD_X1;
+			__writeRegister(DRIVER_BME280_REG_CTRLHUM_ADR,v);
+		}
 
 		__readRegister(DRIVER_BME280_REG_CTRLMEAS_ADR,&v);		// Temperature oversampling x2
 		v &= ~DRIVER_BME280_REG_CTRLMEAS_OSRST_MASK;
@@ -236,7 +243,7 @@ drivers_bme280_ret_e drivers_bme280_setup(drivers_bme280_mode_e mode) {
 	__readRegister(DRIVER_BME280_DIG_H6,&v);
 	__bme280_config.h6 = (int8_t)v;
 
-	return BME280_SUCCESS;
+	return (__bme280_config.type == BME280)?BME280_SUCCESS:BMP280_SUCCESS;
 }
 
 
@@ -349,11 +356,15 @@ drivers_bme280_ret_e drivers_bme280_getSensors(
 	adc = adc | (((int32_t)v) & 0xF);
 	*temperature = 10*__compensateTemp(adc);
 
-	__readRegister(DRIVER_BME280_REG_HUM_MSB_ADR,&v);
-	adc = ((int32_t)v) << 8;
-	__readRegister(DRIVER_BME280_REG_HUM_LSB_ADR,&v);
-	adc = adc | ((((int32_t)v)) & 0xFF);
-	*humidity = (1000*__compensateHumidity(adc))/1024;
+	if ( __bme280_config.type == BME280 ) {
+		__readRegister(DRIVER_BME280_REG_HUM_MSB_ADR,&v);
+		adc = ((int32_t)v) << 8;
+		__readRegister(DRIVER_BME280_REG_HUM_LSB_ADR,&v);
+		adc = adc | ((((int32_t)v)) & 0xFF);
+		*humidity = (1000*__compensateHumidity(adc))/1024;
+	} else {
+		*humidity = 0;
+	}
 
 	__readRegister(DRIVER_BME280_REG_PRESS_MSB_ADR,&v);
 	adc = ((int32_t)v) << 12;

@@ -1,8 +1,9 @@
 /* ==========================================================
  * bme280.c - Bosh BME280 Temp / Hygro / Pressure I2C-SPI sensor
+ *            Bosh BMP280 Temp / Pressure I2C-SPI sensor
  * Project : Disk91 SDK
  * ----------------------------------------------------------
- * Created on: 15 févr. 2019
+ * Created on: 15 fevr. 2019
  *     Author: Paul Pinault aka Disk91
  * ----------------------------------------------------------
  * Copyright (C) 2019 Disk91
@@ -35,7 +36,8 @@
 // ====================================================================
 
 typedef enum {
-	BME280_SUCCESS =0,
+	BME280_SUCCESS = 0,
+	BMP280_SUCCESS,
 	BME280_NOTFOUND,
 
 	BME280_FAILED
@@ -47,13 +49,20 @@ typedef enum {
 	BME280_MODE_WEATHER_MONITORING = 0,		// See Datasheet
 	BME280_MODE_HUMIDITY_SENSING,
 	BME280_MODE_INDOOR_NAVIGATION,
-
 											// Custom mode
 
 } drivers_bme280_mode_e;
 
+typedef enum {
+	BME280 = 0,								// Driver type
+	BMP280,
+} drivers_bme280_type_e;
+
 typedef struct {
 	drivers_bme280_ret_e 		mode;		// Setup mode
+	drivers_bme280_type_e		type;
+// TODO - make a memory optimized version where the calibration values are not stored into memory
+#warning TODO Optimisation memoire
 	uint16_t					t1;			// calibration
 	int16_t						t2;
 	int16_t						t3;
@@ -86,12 +95,12 @@ drivers_bme280_ret_e drivers_bme280_setup(drivers_bme280_mode_e mode);
 /**
  * Depends on mode, get the last sensor values or request a new value and get it
  * Get the sensors value.
- * Temperature is in m°C
+ * Temperature is in mÂ°C
  * Humidity is in m%RH
  * Pressure is in Pa
  */
 drivers_bme280_ret_e drivers_bme280_getSensors(
-		int32_t  * temperature,			// Temp in m°C
+		int32_t  * temperature,			// Temp in mï¿½C
 		uint32_t * pressure,			// Pressure un Pa
 		uint32_t * humidity				// Humidity in m%RH
 );
@@ -102,9 +111,11 @@ drivers_bme280_ret_e drivers_bme280_getSensors(
 
 #define DRIVER_BME280_DEVICE_ADR				0x76			// Device default address, this can be
 																// affected by the SDO Configuration
+																// Same address for BMP280
 
 #define DRIVER_BME280_REG_ID_ADR				0xD0			// RD - Device identification
 #define DRIVER_BME280_REG_ID_VALUE				0x60			//   This value confirms the device is BME280
+#define DRIVER_BMP280_REG_ID_VALUE				0x58			//   This value confirms the device is BMP280
 #define DRIVER_BME280_REG_RESET_ADR				0xE0			// WR - Reset register
 #define DRIVER_BME280_REG_RESET_VALUE			0xB6			//   Writting the value reset the device
 
