@@ -50,14 +50,16 @@
 // The new version of the compiler was protecting memory access against static elements
 // Making a hardfault in the sigfox api init function when it tried to write into this zone.
 // Non static declaration solve this issue
-sfx_u8 __sigfox_mem[ITSDK_SIGFOX_MEM_SIZE];
+// Next issue was on alignement, if not aligned on 4 it is possible that the first address is out of the
+// authorized area.
+sfx_u8 __sigfox_mem[ITSDK_SIGFOX_MEM_SIZE] __attribute((aligned(4)));
 
 /**
  * Static memory allocation
  */
 sfx_u8 MCU_API_malloc(sfx_u16 size, sfx_u8 **returned_pointer)
 {
-  LOG_DEBUG_SFXSX1276(("Sigfox lib mem req: %dB\r\n",size));
+  LOG_DEBUG_SFXSX1276(("Sigfox lib mem req: %dB \r\n",size));
   if(size>ITSDK_SIGFOX_MEM_SIZE) {
 	  LOG_ERROR_SFXSX1276(("Requesting more memory than maximum allowable\r\n"));
 	  return MCU_ERR_API_MALLOC;
