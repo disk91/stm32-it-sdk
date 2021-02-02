@@ -49,11 +49,13 @@
 
 
 uint8_t STLL_Radio_ReadReg(uint8_t address) {
+  LOG_DEBUG_SFXSX1276((">> STLL_RD %02X",address));
   return  SX1276Read( address);
 }
 
-void STLL_Radio_WriteReg( uint8_t addr, uint8_t data ) {
-  SX1276Write(  addr,  data );
+void STLL_Radio_WriteReg( uint8_t address, uint8_t data ) {
+  LOG_DEBUG_SFXSX1276((">> STLL_RW %02X,%02X\r\n",address,data));
+  SX1276Write( address,  data );
 }
 
 void STLL_Radio_ReadFifo(uint8_t size, uint8_t* buffer) {
@@ -176,6 +178,7 @@ void STLL_RadioPowerSetBoard( int8_t power)
 STLL_flag STLL_WaitEndOfTxFrame( void )
 {
   LOG_DEBUG_SFXSX1276((">> STLL_WaitEndOfTxFrame\r\n"));
+
   // Wait that flag EOFTX_EVT is set
   sx1276_sigfox_state.endOfTxEvent = SIGFOX_EVENT_CLEAR;
   while (   sx1276_sigfox_state.endOfTxEvent == SIGFOX_EVENT_CLEAR ) {
