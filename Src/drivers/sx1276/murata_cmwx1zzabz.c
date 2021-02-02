@@ -40,6 +40,7 @@ Maintainer: Miguel Luis and Gregory Cristian
 #include <drivers/lorawan/phy/radio.h>
 #include <drivers/sx1276/sx1276.h>
 #include <it_sdk/eeprom/sdk_state.h>
+#include <it_sdk/eeprom/sdk_config.h>
 
 #include <it_sdk/wrappers.h>
 
@@ -139,7 +140,6 @@ void SX1276InitLowPower( void ) {
 	SX1276SetAntSwLowPower(true);
 	itsdk_delayMs(10);
 	TCXO_OFF();
-
 }
 
 
@@ -309,83 +309,40 @@ void SX1276SetRfTxPower( int8_t power )
 {
 	LOG_INFO_SX1276((">> mSX1276SetRfTxPower (%d)\r\n",power));
 
-    uint8_t paConfig = 0;
-    uint8_t paDac = 0;
-
 	#ifdef ITSDK_RADIO_POWER_OFFSET
-    power += ITSDK_RADIO_POWER_OFFSET;
+	// Sigfox power modification can't be applied at low level
+	// because the library seems to change sx setting or rf route on the flow
+	if ( itsdk_config.sdk.activeNetwork == __ACTIV_NETWORK_LORAWAN ) {
+      power += ITSDK_RADIO_POWER_OFFSET;
+  	  LOG_INFO_SX1276(("   changed for (%d)\r\n",power));
+	}
 	#endif
 
-
-    paConfig = SX1276Read( REG_PACONFIG );
-    paDac = SX1276Read( REG_PADAC );
-
-    paConfig = ( paConfig & RF_PACONFIG_PASELECT_MASK ) | SX1276GetPaSelect( power );
+    uint8_t paConfig = SX1276Read( REG_PACONFIG );
     paConfig = ( paConfig & RF_PACONFIG_MAX_POWER_MASK ) | 0x70;
+    uint8_t paDac = SX1276Read( REG_PADAC );
 
-    if( ( paConfig & RF_PACONFIG_PASELECT_PABOOST ) == RF_PACONFIG_PASELECT_PABOOST )
-    {
-        if( power > 17 )
-        {
+    if ( power > 14 ) {
+    	paConfig = ( paConfig & RF_PACONFIG_PASELECT_MASK ) | RF_PACONFIG_PASELECT_PABOOST;
+        if( power > 17 ) {
+        	// 18 .. 20 dBm
             paDac = ( paDac & RF_PADAC_20DBM_MASK ) | RF_PADAC_20DBM_ON;
-        }
-        else
-        {
-            paDac = ( paDac & RF_PADAC_20DBM_MASK ) | RF_PADAC_20DBM_OFF;
-        }
-        if( ( paDac & RF_PADAC_20DBM_ON ) == RF_PADAC_20DBM_ON )
-        {
-            if( power < 5 )
-            {
-                power = 5;
-            }
-            if( power > 20 )
-            {
-                power = 20;
-            }
+            if( power > 20 ) power = 20;
             paConfig = ( paConfig & RF_PACONFIG_OUTPUTPOWER_MASK ) | ( uint8_t )( ( uint16_t )( power - 5 ) & 0x0F );
-        }
-        else
-        {
-            if( power < 2 )
-            {
-                power = 2;
-            }
-            if( power > 17 )
-            {
-                power = 17;
-            }
+        } else  {
+        	// 15 .. 17 dBm
+            paDac = ( paDac & RF_PADAC_20DBM_MASK ) | RF_PADAC_20DBM_OFF;
             paConfig = ( paConfig & RF_PACONFIG_OUTPUTPOWER_MASK ) | ( uint8_t )( ( uint16_t )( power - 2 ) & 0x0F );
         }
-    }
-    else
-    {
-        if( power < -1 )
-        {
-            power = -1;
-        }
-        if( power > 14 )
-        {
-            power = 14;
-        }
+        SX1276Write( REG_OCP, 0x32 ); // 18 = 0x12 = 150mA max
+    } else {
+    	// -1 .. 14dBm
+    	paConfig = ( paConfig & RF_PACONFIG_PASELECT_MASK ) | RF_PACONFIG_PASELECT_RFO;
+        if ( power < -1 ) power = -1;
         paConfig = ( paConfig & RF_PACONFIG_OUTPUTPOWER_MASK ) | ( uint8_t )( ( uint16_t )( power + 1 ) & 0x0F );
     }
     SX1276Write( REG_PACONFIG, paConfig );
     SX1276Write( REG_PADAC, paDac );
-}
-
-uint8_t SX1276GetPaSelect( uint8_t power )
-{
-	LOG_INFO_SX1276((">> mSX1276GetPaSelect\r\n"));
-
-    if (power >14)
-    {
-        return RF_PACONFIG_PASELECT_PABOOST;
-    }
-    else
-    {
-        return RF_PACONFIG_PASELECT_RFO;
-    }
 }
 
 /**
@@ -393,7 +350,7 @@ uint8_t SX1276GetPaSelect( uint8_t power )
  */
 void SX1276SetAntSwLowPower( bool status )
 {
-	LOG_INFO_SX1276((">> mSX1276SetAntSwLowPower (%s)\r\n",((status)?"LP":"FP")));
+	LOG_INFO_SX1276((">> mSX1276SetAntSwLowPower (%s)\r\n",((status)?"Off":"Ready")));
 
     if( status == false )
     {
@@ -419,17 +376,17 @@ void SX1276SetAntSwLowPower( bool status )
 
 void SX1276SetAntSw( uint8_t opMode )
 {
-	LOG_INFO_SX1276((">> mSX1276SetAntSw (%d)\r\n",opMode));
+	LOG_INFO_SX1276((">> mSX1276SetAntSw (%s)\r\n",((opMode==RFLR_OPMODE_TRANSMITTER)?"Tx":"Rx")));
 
     uint8_t paConfig =  SX1276Read( REG_PACONFIG );
     switch( opMode )
     {
     case RFLR_OPMODE_TRANSMITTER:
       if( ( paConfig & RF_PACONFIG_PASELECT_PABOOST ) == RF_PACONFIG_PASELECT_PABOOST ) {
-    	LOG_INFO_SX1276(("   PABOOST\r\n"));
+    	LOG_INFO_SX1276(("   paboost route\r\n"));
     	gpio_set(ITSDK_MURATA_ANTSW_TXBOOST_BANK,ITSDK_MURATA_ANTSW_TXBOOST_PIN);
       } else {
-      	LOG_INFO_SX1276(("   RFO\r\n"));
+      	LOG_INFO_SX1276(("   rfo route\r\n"));
         gpio_set(ITSDK_MURATA_ANTSW_TXRFO_BANK,ITSDK_MURATA_ANTSW_TXRFO_PIN);
       }
       SX1276.RxTx = 1;

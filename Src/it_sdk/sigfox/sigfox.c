@@ -66,6 +66,10 @@
 s2lp_config_t __s2lpConf;
 #endif
 
+/**
+ * Static definitions
+ */
+int8_t __itsdk_sigfox_getRealTxPower(int8_t reqPower);
 
 /**
  * All operation needed to initialize the sigfox stack
@@ -96,23 +100,18 @@ itsdk_sigfox_init_t itsdk_sigfox_setup() {
 		switch (itsdk_state.sigfox.rcz) {
 		case SIGFOX_RCZ1:
 		case SIGFOX_RCZ5:
-			itsdk_state.sigfox.current_power = 14;
+			  itsdk_state.sigfox.current_power = __itsdk_sigfox_getRealTxPower(14);
 			break;
 		case SIGFOX_RCZ2:
 		case SIGFOX_RCZ4:
-			itsdk_state.sigfox.current_power = 24;
+			  itsdk_state.sigfox.current_power = __itsdk_sigfox_getRealTxPower(24);
 			break;
 		case SIGFOX_RCZ3C:
-			itsdk_state.sigfox.current_power = 16;
+			  itsdk_state.sigfox.current_power = __itsdk_sigfox_getRealTxPower(16);
 			break;
 		default:
 			ITSDK_ERROR_REPORT(ITSDK_ERROR_SIGFOX_RCZ_NOTSUPPORTED,(uint16_t)itsdk_state.sigfox.rcz);
 		}
-		#ifdef ITSDK_RADIO_MAX_OUTPUT_DBM
- 	 	  if ( ITSDK_RADIO_MAX_OUTPUT_DBM < itsdk_state.sigfox.current_power ) {
- 	 		  itsdk_state.sigfox.current_power = ITSDK_RADIO_MAX_OUTPUT_DBM;
- 	 	  }
-		#endif
 	}
 	if (
 #if ITSDK_CONFIGURATION_MODE != __CONFIG_STATIC
@@ -196,6 +195,7 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendFrame(
 	if ( len > 12) return SIGFOX_ERROR_PARAMS;
 	if ( repeat > 2) repeat = 2;
 	if ( power == SIGFOX_POWER_DEFAULT ) power = itsdk_state.sigfox.current_power;
+	else power = __itsdk_sigfox_getRealTxPower(power);
 	if ( speed == SIGFOX_SPEED_DEFAULT ) speed = itsdk_state.sigfox.current_speed;
 	if ( ack && (dwn == NULL)) return SIGFOX_ERROR_PARAMS;
 
@@ -305,6 +305,7 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendBit(
 	// some basic checking...
 	if ( repeat > 2) repeat = 2;
 	if ( power == SIGFOX_POWER_DEFAULT ) power = itsdk_state.sigfox.current_power;
+	else power = __itsdk_sigfox_getRealTxPower(power);
 	if ( speed == SIGFOX_SPEED_DEFAULT ) speed = itsdk_state.sigfox.current_speed;
 	if ( ack && dwn == NULL) return SIGFOX_ERROR_PARAMS;
 
@@ -351,6 +352,7 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendOob(
 
 	// some basic checking...
 	if ( power == SIGFOX_POWER_DEFAULT ) power = itsdk_state.sigfox.current_power;
+	else power = __itsdk_sigfox_getRealTxPower(power);
 	if ( speed == SIGFOX_SPEED_DEFAULT ) speed = itsdk_state.sigfox.current_speed;
 	itsdk_sigfox_setTxPower(power);
 	itsdk_sigfox_setTxSpeed(speed);
@@ -399,13 +401,10 @@ itsdk_sigfox_init_t itsdk_sigfox_getCurrentRcz(uint8_t * rcz) {
  * Change the transmission power to the given value
  */
 itsdk_sigfox_init_t itsdk_sigfox_setTxPower_ext(int8_t power, bool force) {
-	LOG_INFO_SIGFOXSTK(("itsdk_sigfox_setTxPower_ext\r\n"));
-	#ifdef ITSDK_RADIO_MAX_OUTPUT_DBM
-	  if ( ITSDK_RADIO_MAX_OUTPUT_DBM < power ) {
-	  power = ITSDK_RADIO_MAX_OUTPUT_DBM;
-	  }
-	#endif
+	LOG_INFO_SIGFOXSTK(("itsdk_sigfox_setTxPower_ext(%d)\r\n",power));
+
 	if ( !force && power == itsdk_state.sigfox.current_power ) return SIGFOX_INIT_NOCHANGE;
+
 
 	#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
 		sfx_s16 delta = (power - itsdk_state.sigfox.current_power)*2;
@@ -788,6 +787,24 @@ itsdk_sigfox_init_t itsdk_sigfox_getRczFromRegion(uint32_t region, uint8_t * rcz
 		return SIGFOX_INIT_FAILED;
 	}
 	return SIGFOX_INIT_SUCESS;
+}
+
+// ===================================================================================
+// Tx Power management
+// ===================================================================================
+int8_t __itsdk_sigfox_getRealTxPower(int8_t reqPower) {
+  LOG_INFO_SIGFOXSTK(("__itsdk_sigfox_getRealTxPower(%d)",reqPower));
+  #ifdef ITSDK_RADIO_POWER_OFFSET
+	reqPower += ITSDK_RADIO_POWER_OFFSET;
+  #endif
+  #ifdef ITSDK_RADIO_MAX_OUTPUT_DBM
+    if ( ITSDK_RADIO_MAX_OUTPUT_DBM < reqPower ) {
+ 	  reqPower = ITSDK_RADIO_MAX_OUTPUT_DBM;
+ 	}
+  #endif
+  LOG_INFO_SIGFOXSTK(("(%d)\r\n",reqPower));
+  return reqPower;
+
 }
 
 // ===================================================================================
