@@ -97,15 +97,13 @@ static gpio_irq_chain_t __max17205_gpio_irq = {
 };
 
 /**
- * Function to detect if the passage from value A to B causes an overflow.
+ * Function to detect if the switch from value A to B causes an overflow.
  * Return 1 if overflow, 0 otherwise.
  */
 static uint8_t __overflow_detected(uint16_t p_u16A, uint16_t p_u16B)
 {
 	uint8_t l_u8Overflow = 0u;
-
-	if (p_u16A > (UINT16_MAX - p_u16B))
-	{
+	if (p_u16A > (UINT16_MAX - p_u16B))	{
 		l_u8Overflow = 1u;
 	}
 	return l_u8Overflow;
@@ -310,20 +308,22 @@ drivers_max17205_ret_e drivers_max17205_setup(drivers_max17205_mode_e mode) {
 
 	}
 
-	// Configure design capacity
-	// Check if DesignCap bit is enable
-   __readRegister(ITSDK_DRIVERS_MAX17205_REG_NVCFG, &v);
-   if ((v & ITSDK_DRIVERS_MAX17205_REG_NVCFG_DCAP_MSK) == 0)
-   {
-       v |= ITSDK_DRIVERS_MAX17205_REG_NVCFG_DCAP_MSK;
-       __writeRegister(ITSDK_DRIVERS_MAX17205_REG_NVCFG, v);
-   }
-   // Set design capacity value
-   // Maximum value that can be stored is 65 535 * LSB mAh
-   // LSB = 5 / ITSDK_DRIVERS_MAX17205_RSENSE_MOHM
-   v = (uint16_t) (ITSDK_DRIVERS_MAX17205_CAPA_MAX * (ITSDK_DRIVERS_MAX17205_RSENSE_MOHM/5));
-   __writeRegister(ITSDK_DRIVERS_MAX17205_REG_NDCAP, v);
-   __writeRegister(ITSDK_DRIVERS_MAX17205_REG_DCAP, v);
+	#if defined ITSDK_DRIVERS_MAX17205_CAPA_MAX && ITSDK_DRIVERS_MAX17205_CAPA_MAX > 0
+	 // Configure design capacity
+	 // Check if DesignCap bit is enable
+	 __readRegister(ITSDK_DRIVERS_MAX17205_REG_NVCFG, &v);
+	 if ((v & ITSDK_DRIVERS_MAX17205_REG_NVCFG_DCAP_MSK) == 0) {
+	   v |= ITSDK_DRIVERS_MAX17205_REG_NVCFG_DCAP_MSK;
+	   __writeRegister(ITSDK_DRIVERS_MAX17205_REG_NVCFG, v);
+	 }
+	 // Set design capacity value
+	 // Maximum value that can be stored is 65 535 * LSB mAh
+	 // LSB = 5 / ITSDK_DRIVERS_MAX17205_RSENSE_MOHM
+	  v = (uint16_t) (ITSDK_DRIVERS_MAX17205_CAPA_MAX * (ITSDK_DRIVERS_MAX17205_RSENSE_MOHM/5));
+	  __writeRegister(ITSDK_DRIVERS_MAX17205_REG_NDCAP, v);
+	  __writeRegister(ITSDK_DRIVERS_MAX17205_REG_DCAP, v);
+	#endif
+
 
 	__max17205_config.initialized = MAX17205_SUCCESS;
 	return MAX17205_SUCCESS;
@@ -441,15 +441,12 @@ drivers_max17205_ret_e drivers_max17205_getCoulomb(uint32_t * coulomb) {
 	 * It is necessary to differentiate between integer overflow and reverse counting in order to process or not the measurement.
 	 * It also happens that the QH register may contain 65535 in case of an error. */
 #if ITSDK_DRIVERS_MAX17205_CSN_TO_BAT == __ENABLE
-	if ((capa >= 0xFFFF) || ((capa < __max17205_config.lastCapa) && (__overflow_detected(__max17205_config.lastCapa,capa) == 0u)))
-	{
+	if ((capa >= 0xFFFF) || ((capa < __max17205_config.lastCapa) && (__overflow_detected(__max17205_config.lastCapa,capa) == 0u))) {
 		return MAX17205_FAILED;
 	}
-   uint16_t delta = (capa >= __max17205_config.lastCapa )? (capa - __max17205_config.lastCapa) : (capa + (0xFFFF - __max17205_config.lastCapa));
-
+	uint16_t delta = (capa >= __max17205_config.lastCapa )? (capa - __max17205_config.lastCapa) : (capa + (0xFFFF - __max17205_config.lastCapa));
 #else
-	if ((capa >= 0xFFFF) || ((capa > __max17205_config.lastCapa) && (__overflow_detected(capa,__max17205_config.lastCapa) == 0u)))
-	{
+	if ((capa >= 0xFFFF) || ((capa > __max17205_config.lastCapa) && (__overflow_detected(capa,__max17205_config.lastCapa) == 0u))){
 		return MAX17205_FAILED;
 	}
 	uint16_t delta = (capa <= __max17205_config.lastCapa )? __max17205_config.lastCapa - capa : (__max17205_config.lastCapa + (0xFFFF - capa));
