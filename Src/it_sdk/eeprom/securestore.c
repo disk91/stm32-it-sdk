@@ -799,7 +799,7 @@ static itsdk_console_return_e _itsdk_secStore_consolePriv(char * buffer, uint8_t
 			  case 'j':
 				  // ITSDK_SS_USER1
 				  if ( itsdk_secstore_readBlock(ITSDK_SS_USER1, b) == SS_SUCCESS ) {
-					  __console_print_hex(b,16);
+					  __console_print_hex(b,0,16);
 					  return ITSDK_CONSOLE_SUCCES;
 				  } else {
 					  _itsdk_console_printf("KO\r\n");
