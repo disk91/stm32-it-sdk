@@ -241,7 +241,9 @@ itsdk_config_ret_e itsdk_config_loadConfiguration(itsdk_config_load_mode_e mode)
 
    if ( requestFactoryReset == 1 ) {
 	  itsdk_config_sdk_resetToFactory();
+#if ITSDK_WITH_CONFIGURATION_APP == __ENABLE
 	  itsdk_config_app_resetToFactory();
+#endif
 	  configUpdated = 1;
 	  ITSDK_ERROR_REPORT(ITSDK_ERROR_CONFIG_FACTORY_DEFAULT,3);
    }

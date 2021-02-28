@@ -214,10 +214,14 @@ configuration file. Please find the different settings added version after versi
 ### config.h
  - ITSDK_WITH_GPIO_HANDLER / Enable the internal GPIO Handler - now you can disable it basically 
  - ITSDK_RADIO_POWER_OFFSET / Add an offset to radio Tx power - to compensate antenna loss transparently (global to all radios)
+ - ITSDK_RADIO_MAX_OUTPUT_DBM / Max radio Tx power supported by the radio chip
  - ITSDK_RADIO_CERTIF / Enable code and console options for radio certification
 
 ### configLoRaWan.h
  - ITSDK_LORAWAN_RX2DELAY_MOD / Ms Delay added to RX 2 Window Start for calibration
+
+### configDriver.h
+ - ITSDK_DRIVERS_MAX17205_CAPA_MAX / Max capacity - no impact if not declared
 
 ## from version 1.6.0
 ### project settings
