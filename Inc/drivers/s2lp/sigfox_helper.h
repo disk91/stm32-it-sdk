@@ -32,9 +32,8 @@
 #include <stdbool.h>
 #include <drivers/s2lp/s2lp.h>
 
-bool s2lp_sigfox_init(s2lp_config_t * conf);
-void s2lp_sigfox_cifferKey(s2lp_config_t * conf);
-void s2lp_sigfox_unCifferKey(s2lp_config_t * conf);
+void s2lp_sigfox_cifferKey();
+void s2lp_sigfox_unCifferKey();
 
 bool s2lp_sigfox_retreive_key(int32_t deviceId, uint8_t * pac, uint8_t * key);
 void enc_protect_key();

@@ -62,7 +62,7 @@
 #endif
 
 
-#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
+#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP && ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_M95640
 s2lp_config_t __s2lpConf;
 #endif
 
@@ -79,14 +79,7 @@ itsdk_sigfox_init_t itsdk_sigfox_setup() {
 
 	itsdk_sigfox_init_t ret = SIGFOX_INIT_SUCESS;
 #if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
-	eeprom_m95640_hwInit();
-	s2lp_hwInit();
-	eeprom_m95640_init(&ITSDK_DRIVERS_M95640_SPI);
-	s2lp_init();
-	s2lp_loadConfiguration(&__s2lpConf);
-	s2lp_sigfox_init(&__s2lpConf);
-
-	itsdk_state.sigfox.rcz = __s2lpConf.rcz;
+	ret = s2lp_sigfox_init();
 #elif ITSDK_SIGFOX_LIB == __SIGFOX_SX1276
 	itsdk_sigfox_resetFactoryDefaults(false);		// store the key if not yet done
 	ret = sx1276_sigfox_init();

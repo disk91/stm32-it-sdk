@@ -217,6 +217,10 @@ configuration file. Please find the different settings added version after versi
  - ITSDK_RADIO_MAX_OUTPUT_DBM / Max radio Tx power supported by the radio chip
  - ITSDK_RADIO_CERTIF / Enable code and console options for radio certification
 
+### configSigfox.h
+ - ITSDK_SIGFOX_FREQOFFSET  / S2LP - Frequency Offset
+ - ITSDK_SIGFOX_LBTOFFSET   / S2LP - LBT Offset
+  
 ### configLoRaWan.h
  - ITSDK_LORAWAN_RX2DELAY_MOD / Ms Delay added to RX 2 Window Start for calibration
 

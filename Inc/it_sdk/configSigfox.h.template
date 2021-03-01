@@ -50,7 +50,7 @@
 									)										// Encryption code activated
 
 #define ITSDK_SIGFOX_MEM_SIZE		256										// Static memory allocated to sigfox
-#define ITSDK_SIGFOX_NVM_SOURCE		__SFX_NVM_M95640						// where the non volatile information are stored
+#define ITSDK_SIGFOX_NVM_SOURCE		__SFX_NVM_LOCALEPROM					// where the non volatile information are stored
 																			// __SFX_NVM_LOCALEPROM for local storage
 
 #define ITSDK_SIGFOX_NVM_BASEADDR	0x600									// Base address in the NVM for sigfox lib
@@ -61,10 +61,13 @@
 									  0x00, 0x00, 0x00, 0x00 }				// The device PAC when NVM_SOURCE is HEADERS
 #define ITSDK_SIGFOX_KEY_TYPE		SIGFOX_KEY_PRIVATE						// Type of key to be used SIGFOX_KEY_PRIVATE / SIGFOX_KEY_PUBLI	
 #define ITSDK_SIGFOX_TXPOWER		SIGFOX_DEFAULT_POWER					// Default Tx power in dB - can be replaced by a value in dB	
-#define ITSDK_SIGFOX_MAXPOWER		20										// Max power for the board (the stack returns send error when 
+#define ITSDK_SIGFOX_MAXPOWER		ITSDK_RADIO_MAX_OUTPUT_DBM				// Max power for the board (the stack returns send error when 
 																			// power higher than stack supports
 #define ITSDK_SIGFOX_SPEED			SIGFOX_DEFAULT_SPEED					// Default Speed in bps - can be replaced by a value in BPS		
-#define ITSDK_SIGFOX_RSSICAL		0	
+#define ITSDK_SIGFOX_RSSICAL		0										// Rssi calibration Offset
+#define ITSDK_SIGFOX_FREQOFFSET		0										// Frequency Offset
+#define ITSDK_SIGFOX_LBTOFFSET		0										// Listen Before Talk Offset
+
 #define ITSDK_SIGFOX_IF_TX_RCZ1	 	500										// Interframe time for TX Frame
 #define ITSDK_SIGFOX_IF_TX_RCZ3	 	50										// Interframe time for TX Frame
 #define ITSDK_SIGFOX_IF_TXRX_RCZ1 	500										// Interframe time for TX/RX frame
@@ -113,9 +116,9 @@
 #define ITSDK_S2LP_CNF_TCX0			__S2LP_W_O_TCXO					   	   // Absence of a TCXO
 #define ITSDK_S2LP_CNF_RANGE		0
 #define ITSDK_S2LP_CNF_BAND			3
-#define ITSDK_S2LP_CNF_FREQ			50000000
-#define ITSDK_S2LP_CNF_OFFSET		0
-#define ITSDK_SIGFOX_EXTENSIONS	    __SIGFOX_MONARCH			   		  // Customize the sigfox lib (be careful as there is a link with precompiled library)
+#define ITSDK_S2LP_CNF_FREQ			50000000							   // TCXO Frequency
+#define ITSDK_S2LP_CNF_OFFSET		ITSDK_SIGFOX_FREQOFFSET
+#define ITSDK_SIGFOX_EXTENSIONS	    __SIGFOX_MONARCH			   		   // Customize the sigfox lib (be careful as there is a link with precompiled library)
 
 #endif //__SIGFOX_S2LP
 // +------------MURATA------------|--------------------------------------|---------------------------------------|

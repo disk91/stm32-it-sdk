@@ -243,6 +243,7 @@
 #define ITSDK_DEFAULT_NETWORK		__ACTIV_NETWORK_SIGFOX					// Default network to activate
 #define ITSDK_DEFAULT_REGION		__LPWAN_REGION_EU868				    // default region to activate 
 #define ITSDK_RADIO_POWER_OFFSET	0									    // Add or Remove some dBm to the expected power to compensate antenna loss
+#define ITSDK_RADIO_MAX_OUTPUT_DBM  27										// Max power output
 
 
 #define ITSDK_ENCRYPT_AES_SHAREDKEY	( 0xAE632397 ^ ITSDK_PROTECT_KEY )      // CHANGE ME

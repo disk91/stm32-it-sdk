@@ -257,12 +257,24 @@
 #define __SIGFOX_MONARCH		1
 
 /**
+ * S2LP PA configuration
+ */
+#define __SIGFOX_S2LP_PA_NONE 				0
+#define __SIGFOX_S2LP_PA_SKYWORKS_868		1
+
+/**
  * NVM source for Sigfox lib
  */
 #define __SFX_NVM_NONE			0					// No NVM use
 #define __SFX_NVM_LOCALEPROM	1					// MCU internal EEPROM
 #define __SFX_NVM_M95640		2					// External EEPROM type M95640
 #define __SFX_NVM_CONFIG_STATIC	3					// Configuration stored in the #define
+
+/**
+ * Type of S2LP chip (for specific code)
+ */
+#define __S2LP_GENERIC			0
+#define __S2LP_HT32SX			1
 
 /**
  * Drivers S2LP Config

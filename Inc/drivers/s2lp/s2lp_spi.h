@@ -182,6 +182,20 @@ typedef enum {
 #define COMMAND_HEADER      0x80
 
 
+/** Special configuration for HT32SX
+ * GPIO 0 : Output RX/TX Low Power
+ * GPIO1 : Output RX / Low Power
+ * GPIO2 : Output TX / Low Power
+ */
+
+#define S2LP_GPIO_DIG_OUT_TX_RX_MODE		0x90	/*!< TX or RX mode indicator (to enable an external range extender) */
+#define S2LP_GPIO_DIG_OUT_RX_STATE			0x50	/*!< RX state indication: "1" when demodulator is ON */
+#define S2LP_GPIO_DIG_OUT_TX_STATE			0x28	/*!< TX state indication: "1" when S2LP1 is passing in the TX state */
+#define S2LP_GPIO_MODE_DIGITAL_INPUT        0x01	/*!< Digital Input on GPIO */
+#define S2LP_GPIO_MODE_DIGITAL_OUTPUT_LP	0x02	/*!< Digital Output on GPIO (low current) */
+#define S2LP_GPIO_MODE_DIGITAL_OUTPUT_HP	0x03	/*!< Digital Output on GPIO (high current) */
+
+
 // << COPYRIGHT(c) 2018 STMicroelectronics >>
 
 // S2-LP_Spi_config_Headers
