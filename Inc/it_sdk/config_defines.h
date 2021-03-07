@@ -251,6 +251,15 @@
 #define __SIGFOX_SX1276		   10
 
 /**
+ * Supported zones (bit field)
+ */
+#define __SIGFOX_ETSI	1
+#define __SIGFOX_FCC	2
+#define __SIGFOX_ARIB	4
+#define __SIGFOX_ALL	7
+
+
+/**
  * Sigfox Extension
  */
 #define __SIGFOX_NONE			0

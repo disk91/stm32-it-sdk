@@ -38,11 +38,9 @@ void s2lp_sigfox_unCifferKey();
 bool s2lp_sigfox_retreive_key(int32_t deviceId, uint8_t * pac, uint8_t * key);
 void enc_protect_key();
 void enc_unprotect_key();
-void itsdk_sigfox_configInit(s2lp_config_t * cnf);
 int16_t s2lp_sigfox_getLastRssiLevel();
 void s2lp_sigfox_retreive_rssi();
 
-extern s2lp_config_t *	_s2lp_sigfox_config;
 
 #define S2LP_UNKNOWN_RSSI	0xFF;
 

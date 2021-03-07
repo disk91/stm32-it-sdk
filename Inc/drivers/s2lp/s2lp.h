@@ -36,6 +36,16 @@ itsdk_sigfox_init_t s2lp_sigfox_init();
 void s2lp_shutdown();
 void s2lp_wakeup();
 
+typedef enum {
+	S2LP_SIGFOX_ERR_NONE = 0,
+	S2LP_SIGFOX_ERR_BREAK,			// Force to break a wait loop
+	S2LP_SIGFOX_ERR_LIBINIT,		// Impossible to open Sigfox Lib
+	S2LP_SIGFOX_ERR_CONFIG,			// Error on Set Std Config
+	S2LP_SIGFOX_ERROR				// Error, no precision
+
+
+} s2lp_sigfox_ret_t;
+
 
 #if ITSDK_SIGFOX_NVM_SOURCE	== __SFX_NVM_M95640
 
@@ -125,16 +135,7 @@ typedef struct s2lp_config_s {
 
 
 // Config standardization
-void s2lp_loadConfiguration(
-		s2lp_config_t * s2lpConf
-);
-
-void s2lp_applyConfig(
-	s2lp_config_t * cnf
-);
-
-void s2lp_printConfig(
-		s2lp_config_t * s2lpConf
-);
+void s2lp_loadConfiguration();
+s2lp_sigfox_ret_t s2lp_sigfox_getSeqId( uint16_t * seqId );
 
 #endif /* IT_SDK_DRIVERS_S2LP_H_ */

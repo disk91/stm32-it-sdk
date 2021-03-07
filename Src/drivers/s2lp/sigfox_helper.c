@@ -30,6 +30,7 @@
 #include <it_sdk/itsdk.h>
 #include <drivers/s2lp/s2lp.h>
 #include <drivers/s2lp/s2lp_spi.h>
+#include <drivers/s2lp/st_lib_api.h>
 #include <drivers/sigfox/sigfox_api.h>
 #include <drivers/s2lp/sigfox_helper.h>
 #include <it_sdk/logger/logger.h>
@@ -43,12 +44,14 @@
  * Protect the private key in memory
  *  - basic Xor ... better than nothing
  */
+#if ITSDK_SIGFOX_NVM_SOURCE	== __SFX_NVM_M95640 || ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_HEADERS
 void s2lp_sigfox_cifferKey() {
 	itsdk_encrypt_cifferKey(s2lp_driver_config.key,16);
 }
 void s2lp_sigfox_unCifferKey() {
 	itsdk_encrypt_unCifferKey(s2lp_driver_config.key,16);
 }
+#endif
 
 /**
  * Some hack of the ST IDRetriever library to extract and set a better protection to
@@ -111,15 +114,35 @@ bool s2lp_sigfox_retreive_key(int32_t deviceId, uint8_t * pac, uint8_t * key) {
  * A valid frame has been received, the last Rssi is a valid Rssi
  */
 void s2lp_sigfox_retreive_rssi() {
-	_s2lp_sigfox_config->lastReceptionRssi = _s2lp_sigfox_config->lastReadRssi;
+	s2lp_driver_config.lastReceptionRssi = s2lp_driver_config.lastReadRssi;
 }
 
 /**
  * Get from S2LP the Last RSSI level after frame sync
  */
 int16_t s2lp_sigfox_getLastRssiLevel() {
-	return (int16_t)(_s2lp_sigfox_config->lastReceptionRssi) - 146;
+	return (int16_t)(s2lp_driver_config.lastReceptionRssi) - 146;
 }
+
+
+
+/**
+ * Return the sequence Id
+ */
+s2lp_sigfox_ret_t s2lp_sigfox_getSeqId( uint16_t * seqId ) {
+	LOG_DEBUG_S2LP((">> s2lp_sigfox_getSeqId\r\n"));
+	#if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_M95640
+	  *seqId = s2lp_driver_config.seqId;
+	#elif ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_LOCALEPROM || ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_HEADERS
+	  sfx_u8 read_data[SFX_NVMEM_BLOCK_SIZE];
+	  MCU_API_get_nv_mem(read_data);
+      *seqId = (read_data[SFX_NVMEM_SEQ_NUM]+(read_data[SFX_NVMEM_SEQ_NUM+1] << 8)) & 0xFFF;
+	#else
+	  #error "unsupported configuration"
+    #endif
+    return S2LP_SIGFOX_ERR_NONE;
+}
+
 
 #endif // ITSDK_WITH_SIGFOX_LIB test
 

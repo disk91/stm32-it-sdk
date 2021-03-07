@@ -64,13 +64,15 @@ typedef enum
 } itdsk_sigfox_oob_t;
 
 
-#define SIGFOX_UNSUPPORTED	0
+#define SIGFOX_UNSUPPORTED	99
+#define SIGFOX_RCNOTYETDEFINED 0
 #define SIGFOX_RCZ1		1
 #define SIGFOX_RCZ2 	2
 #define SIGFOX_RCZ3C 	3
 #define SIGFOX_RCZ4		4
 #define SIGFOX_RCZ5		5
 #define SIGFOX_RCZ6		6
+#define SIGFOX_RCZ7		7
 
 #define SIGFOX_KEY_PRIVATE	0
 #define SIGFOX_KEY_PUBLIC	1

@@ -73,6 +73,8 @@
 #define ITSDK_SIGFOX_IF_TXRX_RCZ1 	500										// Interframe time for TX/RX frame
 #define ITSDK_SIGFOX_IF_TXRX_RCZ3 	50										// Interframe time for TX/RX frame
 
+#define ITSDK_SIGFOX_SUPORTEDZONE	__SIGFOX_ALL							// Supports all zone (some driver have optim for only ETSI or FCC ...
+
 #define ITSDK_SIGFOX_KEY			{ 0x00, 0x00, 0x00, 0x00, \
 									  0x00, 0x00, 0x00, 0x00, \
 									  0x00, 0x00, 0x00, 0x00, \
@@ -83,12 +85,6 @@
                                       0x88, 0x99, 0xAA, 0xBB, \		
 									  0xCC, 0xDD, 0xEE, 0xFF }				// The sigfox PUBLIC key (do not change this)		
 	
-#define ITSDK_SIGFOX_AUX			{ 0x00, 0x00, 0x00, 0x00, \
-									  0x00, 0x00, 0x00, 0x00, \
-									  0x00, 0x00, 0x00, 0x00, \
-									  0x00, 0x00, 0x00, 0x00 }				// The device AUX when NVM_SOURCE is HEADERS
-									  										// Not really used, will be removed, keep 0.
-
 #endif
 // +---------------S2LP------------|--------------------------------------|---------------------------------------|
 #if ITSDK_SIGFOX_LIB == __SIGFOX_S2LP
@@ -96,6 +92,10 @@
 																		   // SPI Configured by CubeMX
 																		   //  Master, 8b, Polarity Low,
 																		   //  first bit msb, CRC disable...
+#define ITSDK_S2LP_TARGET			__S2LP_HT32SX						   // Target sub platform
+
+#define ITSDK_S2LP_OPTIMIZE_RAM		1									   // In some internal processing RAM of Flash optimization wil be prefered
+
 
 #define ITSDK_S2LP_CS_BANK			 __BANK_A							   // S2LP Chip Select PIN LAYOUT (Activ Low)
 #define ITSDK_S2LP_CS_PIN			 __LP_GPIO_1
@@ -114,7 +114,7 @@
 																		   //   Configured as Rising with pull-down
 
 #define ITSDK_S2LP_CNF_TCX0			__S2LP_W_O_TCXO					   	   // Absence of a TCXO
-#define ITSDK_S2LP_CNF_RANGE		0
+#define ITSDK_S2LP_CNF_RANGE		__SIGFOX_S2LP_PA_NONE				   // PA configuration
 #define ITSDK_S2LP_CNF_BAND			3
 #define ITSDK_S2LP_CNF_FREQ			50000000							   // TCXO Frequency
 #define ITSDK_S2LP_CNF_OFFSET		ITSDK_SIGFOX_FREQOFFSET

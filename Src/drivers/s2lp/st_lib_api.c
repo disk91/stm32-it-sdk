@@ -49,6 +49,9 @@
 #if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_M95640
 	#include <drivers/eeprom/m95640/m95640.h>
 #endif
+#if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_LOCALEPROM || ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_HEADERS
+#include <it_sdk/eeprom/eeprom.h>
+#endif
 #include <it_sdk/wrappers.h>
 #include <string.h>
 
@@ -230,11 +233,19 @@ sfx_u8 MCU_API_get_nv_mem(sfx_u8 read_data[SFX_NVMEM_BLOCK_SIZE])
 
 	return 0;	// success
 
-#elif ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_LOCALEPROM
-	#error "__SFX_NVM_LOCALEPROM - not yet implemented"
+#elif ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_LOCALEPROM || ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_HEADERS
+	uint32_t offset;
+	itsdk_sigfox_getNvmOffset(&offset);
+	uint8_t tab[SFX_NVMEM_BLOCK_SIZE+4] = {0};
+	uint8_t sz = itdt_align_32b(SFX_NVMEM_BLOCK_SIZE);
+	_eeprom_read(ITDT_EEPROM_BANK0, offset, (void *) tab, sz);
+	bcopy(tab,read_data,SFX_NVMEM_BLOCK_SIZE);
+	//log_info_array("MCU_NVM",read_data,SFX_NVMEM_BLOCK_SIZE);
+	return SFX_ERR_NONE;
 #endif
 
 }
+
 
 /**
  * This function is used to write back the sigfox block once modified.
@@ -263,15 +274,20 @@ sfx_u8 MCU_API_set_nv_mem(sfx_u8 data_to_write[SFX_NVMEM_BLOCK_SIZE])
 
 	return 0;	// success
 
-#elif ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_LOCALEPROM
-	#error "__SFX_NVM_LOCALEPROM - not yet implemented"
+#elif ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_LOCALEPROM || ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_HEADERS
+	//log_info_array("MCU_NVM",data_to_write,SFX_NVMEM_BLOCK_SIZE);
+
+	uint32_t offset;
+	itsdk_sigfox_getNvmOffset(&offset);
+
+	uint8_t tab[SFX_NVMEM_BLOCK_SIZE+4] = {0};
+	bcopy(data_to_write,tab,SFX_NVMEM_BLOCK_SIZE);
+	uint8_t sz = itdt_align_32b(SFX_NVMEM_BLOCK_SIZE);
+	_eeprom_write(ITDT_EEPROM_BANK0, offset, (void *) tab, sz);
+
+	return SFX_ERR_NONE;
 #endif
-
 }
-
-
-
-
 
 
 
@@ -333,8 +349,20 @@ sfx_u8 MCU_API_get_device_id_and_payload_encryption_flag(
 //	log_info("]\r\n");
 	return SFX_ERR_NONE;
 
-#elif ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_LOCALEPROM
-	#error "__SFX_NVM_LOCALEPROM - not yet implemented"
+#elif ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_LOCALEPROM || ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_HEADERS
+
+	itsdk_sigfox_device_is_t devId;
+	itsdk_sigfox_getDeviceId(&devId);
+	for (int i = 0 ; i < 4 ; i++) {
+	   	dev_id[3-i]=(devId >> ((32-8)-8*i)) & 0xFF;
+	}
+	LOG_DEBUG_S2LP((">> CREDENTIALS_get_payload_encryption_flag\r\n"));
+    #if (defined ITSDK_SIGFOX_ENCRYPTION) && (( ITSDK_SIGFOX_ENCRYPTION & __PAYLOAD_ENCRYPT_SIGFOX) > 0)
+     *payload_encryption_enabled = SFX_TRUE;
+    #else
+     *payload_encryption_enabled = SFX_FALSE;
+    #endif
+
 #endif
 
 }
@@ -360,7 +388,7 @@ sfx_u8 MCU_API_get_initial_pac(sfx_u8 initial_pac[PAC_LENGTH])
 	return SFX_ERR_NONE;
 
 #elif ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_LOCALEPROM
-	#error "__SFX_NVM_LOCALEPROM - not yet implemented"
+    itsdk_sigfox_getInitialPac(initial_pac);
 #endif
 
 }
@@ -369,8 +397,10 @@ sfx_u8 MCU_API_get_initial_pac(sfx_u8 initial_pac[PAC_LENGTH])
  * Change the low_power flag configuration
  */
 void ST_MCU_API_LowPower(sfx_u8 low_power_flag) {
-	LOG_DEBUG_S2LP((">> ST_MCU_API_LowPower\r\n"));
-	_s2lp_sigfox_config->low_power_flag=low_power_flag;
+	LOG_DEBUG_S2LP((">> ST_MCU_API_LowPower (not implemented) %d\r\n",low_power_flag));
+	// this is hardcoded, no need to make it dynamically
+	// Will seeen later
+	//_s2lp_sigfox_config->low_power_flag=low_power_flag;
 }
 
 
@@ -425,7 +455,7 @@ void ST_MCU_API_SpiRaw(uint8_t n_bytes,
 	// Hack to get the Reception RSSI and have the same value
 	// as the one returned to sigfox
 	if ( in_buffer[1] == 0xA2 ) {
-		_s2lp_sigfox_config->lastReadRssi = out_buffer[2];
+		s2lp_driver_config.lastReadRssi = out_buffer[2];
 	}
 }
 
@@ -437,8 +467,8 @@ void ST_MCU_API_SpiRaw(uint8_t n_bytes,
 */
 void ST_MCU_API_SetEncryptionPayload(uint8_t ePayload)
 {
-	LOG_DEBUG_S2LP((">> ST_MCU_API_SetEncryptionPayload\r\n"));
-	_s2lp_sigfox_config->payload_encryption = ePayload;
+	LOG_DEBUG_S2LP((">> ST_MCU_API_SetEncryptionPayload (not implemented - not make sense) %d \r\n",ePayload));
+	// _s2lp_sigfox_config->payload_encryption = ePayload;
 }
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
@@ -450,9 +480,10 @@ void ST_MCU_API_SetEncryptionPayload(uint8_t ePayload)
  * ST Key Retriever interface
  * Assuming the Flash is not supported.
  */
+#if ITSDK_S2LP_TARGET == __S2LP_GENERIC
 
-void EepromRead(uint16_t nAddress, uint8_t cNbBytes, uint8_t* pcBuffer) {
-	LOG_DEBUG_S2LP((">> EepromRead\r\n"));
+void __EepromRead(uint16_t nAddress, uint8_t cNbBytes, uint8_t* pcBuffer) {
+	LOG_DEBUG_S2LP((">> __EepromRead\r\n"));
 	#if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_M95640
 
 	eeprom_m95640_read(
@@ -470,6 +501,9 @@ void EepromRead(uint16_t nAddress, uint8_t cNbBytes, uint8_t* pcBuffer) {
 //	log_info("\r\n");
 
 	#elif ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_LOCALEPROM
+
+	LOG_ERROR_S2LP((">> NOT YET IMPLEMENTED, not clear about purpose \r\n"));
+
 	#else
 		#error "Unsupported NVM Source"
 	#endif
@@ -491,6 +525,7 @@ NVM_RW_RESULTS NVM_Read(uint32_t nAddress, uint8_t cNbBytes, uint8_t* pcBuffer)
   return tRet;
 }
 
+#endif
 
 /* ****************************************************************************************************
  * GPIO / INTERRUPT FUNCTIONS
@@ -761,9 +796,10 @@ void enc_utils_retrieve_key(uint8_t * key) {
 	for ( int i = 0 ; i < 32 ; i++ ) {
 		raw[i] = 0;
 	}
-
 #elif ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_LOCALEPROM
-	#error "__SFX_NVM_LOCALEPROM - not yet implemented"
+
+      itsdk_sigfox_getKEY(key);
+
 #else
 	#error "NVM Storage - not yet implemented"
 #endif

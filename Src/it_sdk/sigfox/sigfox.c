@@ -91,6 +91,9 @@ itsdk_sigfox_init_t itsdk_sigfox_setup() {
 		    itsdk_state.sigfox.current_power == SIGFOX_DEFAULT_POWER
 		) {
 		switch (itsdk_state.sigfox.rcz) {
+		case SIGFOX_RCNOTYETDEFINED:
+			 itsdk_state.sigfox.current_power = __itsdk_sigfox_getRealTxPower(0);
+			 break;
 		case SIGFOX_RCZ1:
 		case SIGFOX_RCZ5:
 			  itsdk_state.sigfox.current_power = __itsdk_sigfox_getRealTxPower(14);
@@ -100,6 +103,8 @@ itsdk_sigfox_init_t itsdk_sigfox_setup() {
 			  itsdk_state.sigfox.current_power = __itsdk_sigfox_getRealTxPower(24);
 			break;
 		case SIGFOX_RCZ3C:
+		case SIGFOX_RCZ6:
+		case SIGFOX_RCZ7:
 			  itsdk_state.sigfox.current_power = __itsdk_sigfox_getRealTxPower(16);
 			break;
 		default:
@@ -112,6 +117,7 @@ itsdk_sigfox_init_t itsdk_sigfox_setup() {
 #endif
 			itsdk_state.sigfox.current_speed == SIGFOX_DEFAULT_SPEED ) {
 		switch (itsdk_state.sigfox.rcz) {
+		case SIGFOX_RCNOTYETDEFINED:
 		case SIGFOX_RCZ1:
 		case SIGFOX_RCZ3C:
 		case SIGFOX_RCZ5:
@@ -119,6 +125,8 @@ itsdk_sigfox_init_t itsdk_sigfox_setup() {
 			break;
 		case SIGFOX_RCZ2:
 		case SIGFOX_RCZ4:
+		case SIGFOX_RCZ6:
+		case SIGFOX_RCZ7:
 			itsdk_state.sigfox.current_speed = SIGFOX_SPEED_600;
 			break;
 		default:
@@ -463,19 +471,19 @@ itsdk_sigfox_init_t itsdk_sigfox_getTxSpeed(itdsk_sigfox_speed_t * speed) {
 itsdk_sigfox_init_t itsdk_sigfox_getDeviceId(itsdk_sigfox_device_is_t * devId) {
 	LOG_INFO_SIGFOXSTK(("itsdk_sigfox_getDeviceId\r\n"));
 
-	#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
-		if ( itsdk_state.sigfox.initialized ) {
-		  *devId = __s2lpConf.id;
-		} else return SIGFOX_INIT_FAILED;
-    #else
-      #if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_LOCALEPROM
-		 *devId = itsdk_config.sdk.sigfox.deviceId;
-      #elif ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_CONFIG_STATIC
-		 *devId = ITSDK_SIGFOX_ID;
+    #if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_LOCALEPROM
+  	   *devId = itsdk_config.sdk.sigfox.deviceId;
+    #elif ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_CONFIG_STATIC
+	   *devId = ITSDK_SIGFOX_ID;
+	#elif ITSDK_SIGFOX_NVM_SOURCE	== __SFX_NVM_M95640
+      #if ITSDK_SIGFOX_LIB == __SIGFOX_S2LP
+		 *devId = s2lp_driver_config.deviceId
       #else
+         #error "Unsupported configuration"
+	   #endif
+    #else
 		#error UNSUPPORTED ITSDK_SIGFOX_NVM_SOURCE VALUE
-      #endif
-	#endif
+    #endif
 	return SIGFOX_INIT_SUCESS;
 }
 
@@ -486,22 +494,18 @@ itsdk_sigfox_init_t itsdk_sigfox_getDeviceId(itsdk_sigfox_device_is_t * devId) {
 itsdk_sigfox_init_t itsdk_sigfox_getInitialPac(uint8_t * pac) {
 	LOG_INFO_SIGFOXSTK(("itsdk_sigfox_getInitialPac\r\n"));
 
-	#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
-		if ( itsdk_state.sigfox.initialized ) {
-		  for ( int i = 0 ; i < 8 ; i++ ) {
-			  pac[i] = __s2lpConf.pac[i];
-		  }
-		} else return SIGFOX_INIT_FAILED;
-   #else
      #if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_LOCALEPROM
 		 bcopy(itsdk_config.sdk.sigfox.initialPac,pac,8);
      #elif ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_CONFIG_STATIC
 		 uint8_t _pac[8] = ITSDK_SIGFOX_PAC;
 		 bcopy(_pac,pac,8);
-     #else
-		#error UNSUPPORTED ITSDK_SIGFOX_NVM_SOURCE VALUE
+  	 #elif ITSDK_SIGFOX_NVM_SOURCE	== __SFX_NVM_M95640
+	   #if ITSDK_SIGFOX_LIB == __SIGFOX_S2LP
+		 bcopy(s2lp_driver_config.initialPac, pac, 8);
+       #else
+		 #error UNSUPPORTED ITSDK_SIGFOX_NVM_SOURCE VALUE
+       #endif
      #endif
-    #endif
 
 	return SIGFOX_INIT_SUCESS;
 }
@@ -529,7 +533,7 @@ itsdk_sigfox_init_t itsdk_sigfox_getLastSeqId(uint16_t * seqId) {
 	LOG_INFO_SIGFOXSTK(("itsdk_sigfox_getLastSeqId\r\n"));
 
 	#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
-		*seqId = _s2lp_sigfox_config->seqId;
+	    s2lp_sigfox_getSeqId(seqId);
     #elif ITSDK_SIGFOX_LIB == __SIGFOX_SX1276
 		sx1276_sigfox_getSeqId(seqId);
 	#endif
@@ -544,11 +548,11 @@ itsdk_sigfox_init_t itsdk_sigfox_getNextSeqId(uint16_t * seqId) {
 	LOG_INFO_SIGFOXSTK(("itsdk_sigfox_getNextSeqId\r\n"));
 
 	#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
-		*seqId = (_s2lp_sigfox_config->seqId+1) & 0x0FFF;
+		s2lp_sigfox_getSeqId(seqId);
     #elif ITSDK_SIGFOX_LIB == __SIGFOX_SX1276
 		sx1276_sigfox_getSeqId(seqId);
-		*seqId = (*seqId+1) & 0x0FFF;
 	#endif
+		*seqId = (*seqId+1) & 0x0FFF;
 
 	return SIGFOX_INIT_SUCESS;
 }

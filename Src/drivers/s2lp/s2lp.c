@@ -32,9 +32,12 @@
 
 #include <it_sdk/itsdk.h>
 #include <it_sdk/sigfox/sigfox.h>
+#include <it_sdk/eeprom/sdk_state.h>
+#include <it_sdk/eeprom/sdk_config.h>
 #include <drivers/s2lp/s2lp_spi.h>
 #include <drivers/s2lp/s2lp.h>
 #include <it_sdk/logger/logger.h>
+#include <it_sdk/logger/error.h>
 #include <drivers/s2lp/st_rf_api.h>
 #include <drivers/s2lp/st_lib_api.h>
 #include <drivers/s2lp/sigfox_retriever.h>
@@ -55,7 +58,7 @@ void s2lp_wakeup() {
 	itsdk_delayMs(1);
 }
 
-Ò
+
 itsdk_sigfox_init_t s2lp_sigfox_init() {
 	uint8_t tmp;
 
@@ -77,12 +80,12 @@ itsdk_sigfox_init_t s2lp_sigfox_init() {
 	#if ITSDK_S2LP_TARGET == __S2LP_HT32SX
 	// Front End Module initialization
 	// This is part of Ht32SX driver
-	uint8_t tmp[]={
+	uint8_t __tmp[]={
 		(uint8_t)S2LP_GPIO_DIG_OUT_TX_RX_MODE | (uint8_t)S2LP_GPIO_MODE_DIGITAL_OUTPUT_LP,
 		(uint8_t)S2LP_GPIO_DIG_OUT_RX_STATE   | (uint8_t)S2LP_GPIO_MODE_DIGITAL_OUTPUT_LP,
 		(uint8_t)S2LP_GPIO_DIG_OUT_TX_STATE   | (uint8_t)S2LP_GPIO_MODE_DIGITAL_OUTPUT_LP
 	};
-	s2lp_spi_writeRegisters(ITSDK_S2LP_SPI, S2LP_REG_GPIO0_CONF, sizeof(tmp), tmp);
+	s2lp_spi_writeRegisters(&ITSDK_S2LP_SPI, S2LP_REG_GPIO0_CONF, sizeof(__tmp), __tmp);
 	#endif
 
 	do {
@@ -122,39 +125,61 @@ itsdk_sigfox_init_t s2lp_sigfox_init() {
 	  ST_RF_API_set_rssi_offset(ITSDK_SIGFOX_RSSICAL);
 	#endif
 
-
-	 //  !!! ICI !!
-	  switch ( conf->rcz ) {
+	sfx_error_t retSigfox=SFX_ERR_NONE;
+	switch ( itsdk_state.sigfox.rcz ) {
+		case 0:
+			// When we want to init but the rcz is still undefined.
+			break;
 	  	case 1:
-	  		SIGFOX_API_open(&(sfx_rc_t)RC1);
+	  		retSigfox = SIGFOX_API_open(&(sfx_rc_t)RC1);
 	  		break;
 	  	case 2:
-	  		SIGFOX_API_open(&(sfx_rc_t)RC2);
+	  		retSigfox = SIGFOX_API_open(&(sfx_rc_t)RC2);
 	  		// In FCC we can choose the macro channel to use by a 86 bits bitmask
 	  	    //  In this case we use the first 9 macro channels
-	  		sfx_u32 config_words1[3]={1,0,0};
-	  		SIGFOX_API_set_std_config(config_words1,1);
-	  		log_error("RCZ2 implementation is actually not working");
-	  		ITSDK_ERROR_REPORT(ITSDK_ERROR_SIGFOX_RCZ_NOTSUPPORTED,(uint16_t)conf->rcz);
+	  		if ( retSigfox == SFX_ERR_NONE ) {
+	  		  sfx_u32 config_words1[3]={1,0,0};
+	  		retSigfox = SIGFOX_API_set_std_config(config_words1,0);  // was 1 previously but I don't exactly what is the timer mode. more recent source code is 0
+	  		}
 	  		break;
 	  	case 3:
-	  		SIGFOX_API_open(&(sfx_rc_t)RC3C);
-	  		sfx_u32 config_words2[3]=RC3C_CONFIG;
-	  		SIGFOX_API_set_std_config(config_words2,0);
+	  		retSigfox = SIGFOX_API_open(&(sfx_rc_t)RC3C);
+	  		if ( retSigfox == SFX_ERR_NONE ) {
+				sfx_u32 config_words2[3]=RC3C_CONFIG;
+				retSigfox = SIGFOX_API_set_std_config(config_words2,0);
+	  		}
 	  		break;
 	  	case 4:
-	  		SIGFOX_API_open(&(sfx_rc_t)RC4);
-	  		sfx_u32 config_words3[3]={0,0x40000000,0};
-	  		SIGFOX_API_set_std_config(config_words3,1);
-	  		log_error("RCZ4 implementation is actually not working");
-	  		ITSDK_ERROR_REPORT(ITSDK_ERROR_SIGFOX_RCZ_NOTSUPPORTED,(uint16_t)conf->rcz);
+	  		retSigfox = SIGFOX_API_open(&(sfx_rc_t)RC4);
+	  		if ( retSigfox == SFX_ERR_NONE ) {
+				sfx_u32 config_words3[3]={0,0x40000000,0};
+				retSigfox = SIGFOX_API_set_std_config(config_words3,1);
+	  		}
 	  		break;
+	#if ITSDK_S2LP_TARGET == __S2LP_HT32SX
 	  	case 5:
-	  		log_error("RCZ5 implementation is actually supported");
-	  		ITSDK_ERROR_REPORT(ITSDK_ERROR_SIGFOX_RCZ_NOTSUPPORTED,(uint16_t)conf->rcz);
+	  		retSigfox=SIGFOX_API_open(&(sfx_rc_t)RC5);
+	  		if ( retSigfox == SFX_ERR_NONE ) {
+	  		   sfx_u32 config_words[3]=RC5_CONFIG;
+	  		 retSigfox = SIGFOX_API_set_std_config(config_words,0);
+	  		}
 	  		break;
-
-	  	}
+	  	case 6:
+	  		retSigfox=SIGFOX_API_open(&(sfx_rc_t)RC6);
+	  		break;
+	  	case 7:
+	  		retSigfox=SIGFOX_API_open(&(sfx_rc_t)RC7);
+	  		break;
+	#endif
+	  	default:
+	  		log_error("RCZ%d implementation is actually supported\r\n",itsdk_state.sigfox.rcz);
+	  		ITSDK_ERROR_REPORT(ITSDK_ERROR_SIGFOX_RCZ_NOTSUPPORTED,(uint16_t)itsdk_state.sigfox.rcz);
+	  		retSigfox = SFX_ERR_API_OPEN;
+	  		break;
+	}
+	if ( retSigfox != SFX_ERR_NONE ) {
+		return SIGFOX_INIT_FAILED;
+	}
 	return SIGFOX_INIT_SUCESS;
 }
 
@@ -241,14 +266,13 @@ void s2lp_loadConfiguration() {
 		int i;
 		uint8_t pac[8] 		= ITSDK_SIGFOX_PAC;
 		uint8_t key[16] 	= IDTSK_SIGFOX_KEY;
-		uint8_t aux[16] 	= IDTSK_SIGFOX_AUX;
 		s2lp_driver_config.deviceId		= ITSDK_SIGFOX_ID;
 		itsdk_sigfox_getRczFromRegion(ITSDK_DEFAULT_REGION,&itsdk_state.sigfox.rcz);
 		for ( i =  0 ; i < 8 ; i++ ) itsdk_state.sigfox.initialPac[i] = pac[i];
 		for ( i =  0 ; i < 16 ; i++ ) {
 			s2lp_driver_config.key[i] = key[i];
 		}
-		sigfox_cifferKey();
+		s2lp_sigfox_cifferKey();
 		#warning "__SFX_NVM_HEADERS Not to be used in production"
 	#endif
 
