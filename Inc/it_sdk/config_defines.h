@@ -270,6 +270,7 @@
  */
 #define __SIGFOX_S2LP_PA_NONE 				0
 #define __SIGFOX_S2LP_PA_SKYWORKS_868		1
+#define __SIGFOX_S2LP_PA_FEM				2
 
 /**
  * NVM source for Sigfox lib
@@ -285,12 +286,27 @@
 #define __S2LP_GENERIC			0
 #define __S2LP_HT32SX			1
 
+
+/**
+ * RX filter
+ */
+#define __S2LP_3_3KHZ			0
+#define __S2LP_2_1KHZ 			1
+
+
 /**
  * Drivers S2LP Config
  */
 
 #define __S2LP_WITH_TCXO		1
 #define __S2LP_W_O_TCXO			0
+
+/**
+ * Driver MONARCH SAMPLING
+ */
+
+#define __S2LP_GPIO_SAMPLING	0
+#define __S2LP_FIFO_RX			1
 
 /**
  * Encryption type - Encryption are cumulative.

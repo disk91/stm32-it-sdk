@@ -264,6 +264,7 @@ S2LP_SPI_StatusBytes s2lp_spi_accessRaw(
 
 void s2lp_spi_setCsLow();
 void s2lp_spi_setCsHigh();
+uint8_t S2LPGetSpiInUse(void);
 
 #endif /* IT_SDK_DRIVERS_S2LP_SPI_H_ */
 

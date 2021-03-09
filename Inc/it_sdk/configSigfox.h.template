@@ -88,13 +88,14 @@
 #endif
 // +---------------S2LP------------|--------------------------------------|---------------------------------------|
 #if ITSDK_SIGFOX_LIB == __SIGFOX_S2LP
+#define ITSDK_SIGFOX_EXTENSIONS	    __SIGFOX_MONARCH			   		   // Customize the sigfox lib (be careful as there is a link with precompiled library)
 #define ITSDK_S2LP_SPI				hspi1								   // SPI To BE USED
 																		   // SPI Configured by CubeMX
 																		   //  Master, 8b, Polarity Low,
 																		   //  first bit msb, CRC disable...
 #define ITSDK_S2LP_TARGET			__S2LP_HT32SX						   // Target sub platform
 
-#define ITSDK_S2LP_OPTIMIZE_RAM		1									   // In some internal processing RAM of Flash optimization wil be prefered
+#define ITSDK_S2LP_OPTIMIZE_RAM		__ENABLE							   // In some internal processing RAM of Flash optimization wil be prefered
 
 
 #define ITSDK_S2LP_CS_BANK			 __BANK_A							   // S2LP Chip Select PIN LAYOUT (Activ Low)
@@ -112,13 +113,15 @@
 #define ITSDK_S2LP_GPIO3_BANK		 __BANK_C							   // S2LP Interrupt GPIO3 LAYOUT
 #define ITSDK_S2LP_GPIO3_PIN		 __LP_GPIO_0						   //   Default PC0 <=> GPIO3 on S2LP
 																		   //   Configured as Rising with pull-down
+#define ITSDK_S2LP_INTERRUPT_BANK	ITSDK_S2LP_GPIO0_BANK				   // GPIO used as Interrupt
+#define ITSDK_S2LP_INTERRUPT_PIN	ITSDK_S2LP_GPIO0_PIN	
 
 #define ITSDK_S2LP_CNF_TCX0			__S2LP_W_O_TCXO					   	   // Absence of a TCXO
 #define ITSDK_S2LP_CNF_RANGE		__SIGFOX_S2LP_PA_NONE				   // PA configuration
 #define ITSDK_S2LP_CNF_BAND			3
 #define ITSDK_S2LP_CNF_FREQ			50000000							   // TCXO Frequency
 #define ITSDK_S2LP_CNF_OFFSET		ITSDK_SIGFOX_FREQOFFSET
-#define ITSDK_SIGFOX_EXTENSIONS	    __SIGFOX_MONARCH			   		   // Customize the sigfox lib (be careful as there is a link with precompiled library)
+#define ITSDK_S2LP_CNF_MONARCH_G	__S2LP_FIFO_RX						   // Config GPIO Sampling vs FIFO for Monarch
 
 #endif //__SIGFOX_S2LP
 // +------------MURATA------------|--------------------------------------|---------------------------------------|

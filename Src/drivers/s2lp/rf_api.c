@@ -33,11 +33,19 @@
 
 
 #include <drivers/sigfox/sigfox_types.h>
+#include <drivers/sigfox/sigfox_api.h>
+#include <drivers/sigfox/monarch_api.h>
+#include <drivers/sigfox/rf_api.h>
 #include <drivers/s2lp/st_rf_api.h>
 #include <drivers/s2lp/s2lp.h>
+#include <drivers/s2lp/sigfox_helper.h>
 
 #if ( ITSDK_SIGFOX_EXTENSIONS & __SIGFOX_MONARCH ) > 0
 #include <drivers/s2lp/st_monarch_api.h>
+#endif
+
+#if ITSDK_S2LP_CNF_RANGE ==	__SIGFOX_S2LP_PA_FEM
+  #include <drivers/s2lp/s2lp_aux_fem.h>
 #endif
 
 #if (ITSDK_SIGFOX_SUPORTEDZONE & __SIGFOX_FCC) > 0
@@ -58,7 +66,7 @@ useful if someone wants to use less flash occupation sacrifying some RAM */
 
 /* The DEBUG symbol is used to print the names of the invoked functions */
 //#define DEBUG
-#if ITSDK_S2LP_OPTIMIZE_RAM == 0
+#if ITSDK_S2LP_OPTIMIZE_RAM == __DISABLE
   #define BUFF_PLACING
 #else
   #define BUFF_PLACING const
@@ -573,7 +581,7 @@ static void priv_ST_MANUF_tx_rf_dbpsk_init(sfx_modulation_type_t type)
 	regs[1]=fdev_m;
 	priv_ST_MANUF_WriteRegisters(0x11,2,regs);
 
-#if defined(FOR_ALL)
+#if ITSDK_SIGFOX_SUPORTEDZONE == __SIGFOX_ALL
 	if(st_manuf_context->pa_flag)
 	{
 		st_manuf_context->bpsk_ramps=st_manuf_context->fcc_bpsk_ramps;
@@ -582,14 +590,14 @@ static void priv_ST_MANUF_tx_rf_dbpsk_init(sfx_modulation_type_t type)
 	{
 		st_manuf_context->bpsk_ramps=st_manuf_context->fcc_bpsk_ramps; //MCR
 	}
-#elif defined(FOR_ETSI) || defined(FOR_ARIB)
+#elif (ITSDK_SIGFOX_SUPORTEDZONE & __SIGFOX_ETSI) > 0 || (ITSDK_SIGFOX_SUPORTEDZONE & __SIGFOX_ARIB) > 0
 	st_manuf_context->bpsk_ramps=st_manuf_context->etsi_bpsk_ramps;
-#elif defined(FOR_FCC)
+#elif (ITSDK_SIGFOX_SUPORTEDZONE & __SIGFOX_FCC) > 0
 	st_manuf_context->bpsk_ramps=st_manuf_context->fcc_bpsk_ramps;
 #endif
 
 
-#ifndef RAMPS_IN_RAM
+#if ITSDK_S2LP_OPTIMIZE_RAM == __ENABLE
 	for(uint8_t i=0;i<82;i++)
 		st_manuf_context->aux_fifo_ramp_fast[i]=st_manuf_context->bpsk_ramps->fifo_ramp_fast[i];
 #endif
@@ -620,7 +628,7 @@ static void priv_ST_MANUF_tx_rf_dbpsk_single_bit(uint8_t bit)
 	{
 		/* Give FDEV a peak in the FDEV_PEAK position.
     This value should be the opposite of the last one. */
-#ifndef RAMPS_IN_RAM
+#if ITSDK_S2LP_OPTIMIZE_RAM == __ENABLE
 		/* If ramps are in flash, we change the auxiliary buffer in RAM */
 		st_manuf_context->aux_fifo_ramp_fast[82-32]=(st_manuf_context->aux_fifo_ramp_fast[82-32]==st_manuf_context->bpsk_ramps->fdev_neg)?(st_manuf_context->bpsk_ramps->fdev_pos):(st_manuf_context->bpsk_ramps->fdev_neg);
 		priv_ST_MANUF_SpiRaw_Ramp(82, st_manuf_context->aux_fifo_ramp_fast, NULL, 1);
@@ -633,8 +641,8 @@ static void priv_ST_MANUF_tx_rf_dbpsk_single_bit(uint8_t bit)
 	else
 	{
 		/* If the bit to be transmitted is '1' --> proceed with a constant
-    pattern that does not change the instantaneous frequency and keeps power constant to max.
-    fifo_const_fast stores this one. */
+           pattern that does not change the instantaneous frequency and keeps power constant to max.
+           fifo_const_fast stores this one. */
 		priv_ST_MANUF_SpiRaw_Ramp(82, (uint8_t*)st_manuf_context->bpsk_ramps->fifo_const_fast, NULL, 1);
 	}
 }
@@ -873,7 +881,7 @@ static void priv_ST_MANUF_rx_rf_init(void)
 
 	/* channel filter */
 
-#ifdef MON_REF_DES
+#if ITSDK_S2LP_RX_FILTER == __S2LP_3_3KHZ
 	tmp=0x18; //3.3 KHz - Since there is LNA, we are able to receive even with a larger filter.
 #else
 	tmp=0x88; //2.1 KHz
@@ -928,12 +936,12 @@ static void priv_ST_MANUF_rx_rf_init(void)
 	priv_ST_MANUF_WriteRegisters(0x77, 1, &tmp);
 
 
-#if defined(FOR_ARIB) || defined(FOR_ALL)
+#if (ITSDK_SIGFOX_SUPORTEDZONE & __SIGFOX_ARIB) > 0 || (ITSDK_SIGFOX_SUPORTEDZONE == __SIGFOX_ALL)
 	st_manuf_context->tx_is_ready=0;
 #endif
 }
 
-#ifdef MONARCH_FEATURE_ENABLED
+#if (ITSDK_SIGFOX_EXTENSIONS & __SIGFOX_MONARCH) > 0
 
 static void priv_ST_MANUF_rx_monarch_rf_init(void)
 {
@@ -950,7 +958,7 @@ static void priv_ST_MANUF_rx_monarch_rf_init(void)
 
 
 	regs[2]=0x56;  //MOD2 MOD TYPE [7:4] + DATA_RATE_E [3:0] (DR_E=1)
-#ifdef MONARCH_GPIO_SAMPLING
+#if ITSDK_S2LP_CNF_MONARCH_G == __S2LP_GPIO_SAMPLING
 	dr_m=(uint16_t)((uint64_t)(16384*2^27)/f_dig-65536);
 	/* understand if we are getting the nearest integer */
 	tgt1=(uint64_t)f_dig*((uint64_t)dr_m+65536);
@@ -981,7 +989,7 @@ static void priv_ST_MANUF_rx_monarch_rf_init(void)
 	priv_ST_MANUF_WriteRegisters(0x17,2, regs);
 
 	//S2LP GPIO3 Configuration
-#ifdef MONARCH_GPIO_SAMPLING
+#if ITSDK_S2LP_CNF_MONARCH_G == __S2LP_GPIO_SAMPLING
 	regs[0]=0x42; // GPIO3_CONF RX data output, OOK Output
 #else
 	/* manuf_state to MONARCH SCAN to mux gpio it handler */
@@ -991,7 +999,7 @@ static void priv_ST_MANUF_rx_monarch_rf_init(void)
 	priv_ST_MANUF_WriteRegisters(0x03,1, regs);
 
 	//SET FIFO
-#ifndef MONARCH_GPIO_SAMPLING
+#if ITSDK_S2LP_CNF_MONARCH_G == __S2LP_FIFO_RX
 	//Set Almost full Mux Sel to Select RX fifo
 	priv_ST_MANUF_ReadRegisters(0x39, 1, regs);
 	regs[0] |= 0x04;
@@ -999,7 +1007,7 @@ static void priv_ST_MANUF_rx_monarch_rf_init(void)
 #endif
 
 	//DIRECT RX THROUGH GPIO/FIFO BYPASSING PKT HANDLER
-#ifdef MONARCH_GPIO_SAMPLING
+#if ITSDK_S2LP_CNF_MONARCH_G == __S2LP_GPIO_SAMPLING
 	regs[0]=0x20; //THROUGH GPIO
 #else
 	regs[0]=0x10; //THROUGH FIFO
@@ -1058,7 +1066,7 @@ sfx_u8 RF_API_init(sfx_rf_mode_t rf_mode)
 	//PRINTF("RF_API_init IN (rf_mode=%d)\n\r",rf_mode);
 	sfx_u8 tmp;
 
-#if defined(FOR_ARIB) || defined(FOR_ALL)
+#if (ITSDK_SIGFOX_SUPORTEDZONE & __SIGFOX_ARIB) > 0 || (ITSDK_SIGFOX_SUPORTEDZONE == __SIGFOX_ALL)
 	if(rf_mode==SFX_RF_MODE_TX && st_manuf_context->tx_is_ready)
 	{
 		st_manuf_context->tx_packet_struct.tx_state=ST_TX_STATE_NONE;
@@ -1080,24 +1088,24 @@ sfx_u8 RF_API_init(sfx_rf_mode_t rf_mode)
 		tmp=0xB0; priv_ST_MANUF_WriteRegisters(0x6D,1,&tmp);
 	}
 
-#if defined(FOR_FCC) || defined(FOR_ALL)
-#if defined(FOR_ALL)
+#if (ITSDK_SIGFOX_SUPORTEDZONE & __SIGFOX_FCC) > 0
+#if ITSDK_SIGFOX_SUPORTEDZONE == __SIGFOX_ALL
 	if(st_manuf_context->pa_flag)
 	{
 #endif
 		st_manuf_context->bpsk_ramps=st_manuf_context->fcc_bpsk_ramps;
-#if defined(FOR_ALL)
+#if ITSDK_SIGFOX_SUPORTEDZONE == __SIGFOX_ALL
 	}
 #endif
 #endif
 
-#if defined(FOR_ETSI) || defined(FOR_ARIB) || defined(FOR_ALL)//MCR
-#if defined(FOR_ALL)
+#if ITSDK_SIGFOX_SUPORTEDZONE != __SIGFOX_FCC //MCR
+#if ITSDK_SIGFOX_SUPORTEDZONE == __SIGFOX_ALL
 	else
 	{
 #endif
 		st_manuf_context->bpsk_ramps=st_manuf_context->etsi_bpsk_ramps;
-#if defined(FOR_ALL)
+#if ITSDK_SIGFOX_SUPORTEDZONE == __SIGFOX_ALL
 	}
 #endif
 #endif
@@ -1128,7 +1136,7 @@ sfx_u8 RF_API_init(sfx_rf_mode_t rf_mode)
 		priv_ST_MANUF_WriteRegisters(0x6C, 1, &tmp);
 	}
 
-#if defined(FOR_FCC) || defined(FOR_ALL)
+#if (ITSDK_SIGFOX_SUPORTEDZONE & __SIGFOX_FCC) > 0
 	uint8_t gpio_conf[3]={0x92,0x52,0x2A};
 	if(st_manuf_context->gpio_function_struct.gpio_tx_rx_pin!=0xFF)
 		priv_ST_MANUF_WriteRegisters(st_manuf_context->gpio_function_struct.gpio_tx_rx_pin,1,&gpio_conf[0]);
@@ -1141,7 +1149,7 @@ sfx_u8 RF_API_init(sfx_rf_mode_t rf_mode)
 
 	switch (rf_mode)
 	{
-#if defined(FOR_ARIB) || defined(FOR_ALL)
+#if (ITSDK_SIGFOX_SUPORTEDZONE & __SIGFOX_ARIB) > 0
 	case SFX_RF_MODE_CS200K_RX:
 		/* configure the RF IC into sensing 200KHz bandwidth to be able to read out RSSI level
     RSSI level will outputed during the wait_for_clear_channel api */
@@ -1178,7 +1186,7 @@ sfx_u8 RF_API_init(sfx_rf_mode_t rf_mode)
 	case SFX_RF_MODE_RX :
 		priv_ST_MANUF_rx_rf_init();
 		break;
-#ifdef MONARCH_FEATURE_ENABLED
+#if (ITSDK_SIGFOX_EXTENSIONS & __SIGFOX_MONARCH) > 0
 	case  SFX_RF_MODE_MONARCH:
 		priv_ST_MANUF_rx_monarch_rf_init();
 		break;
@@ -1214,13 +1222,13 @@ sfx_u8 RF_API_stop(void)
 	ST_MCU_API_Shutdown(1);
 
 	//To be verified, verify if for every condition the monarch end with RF_API_stop
-#ifndef MONARCH_GPIO_SAMPLING //Only for monarch fifo feature
+#if ITSDK_S2LP_CNF_MONARCH_G == __S2LP_FIFO_RX //Only for monarch fifo feature
 	if (st_manuf_context->manuf_state==ST_MANUF_STATE_MONARCH_SCAN)
 		st_manuf_context->manuf_state=ST_MANUF_STATE_IDLE;
 #endif
 
 	st_manuf_context->s2lp_irq_raised=0;
-#if defined(FOR_ARIB) || defined(FOR_ALL)
+#if (ITSDK_SIGFOX_SUPORTEDZONE & __SIGFOX_ARIB) > 0
 	st_manuf_context->tx_is_ready=0;
 #endif
 	//PRINTF("RF_API_stop OUT\n\r");
@@ -1265,15 +1273,11 @@ sfx_u8 RF_API_send(sfx_u8 *stream, sfx_modulation_type_t type, sfx_u8 size)
 	/* start the modulation of the data stream */
 	priv_ST_MANUF_rf_modulation_dbpsk(stream, size);
 
-#ifdef MONARCH_CLI_TESTS
-	printf("{{(SigfoxSendBPSK)} API call...{value:");
-	for(uint8_t i=0;i<size;i++)
-	{
-		printf("%.2X",stream[i]);
+	LOG_DEBUG_S2LP(("RF_API_send API call v"));
+	for(uint8_t i=0;i<size;i++)	{
+		LOG_DEBUG_S2LP(("%.2X",stream[i]));
 	}
-	printf("}}\n\r");
-#endif
-	//PRINTF("RF_API_send OUT\n\r");
+	LOG_DEBUG_S2LP(("\r\n"));
 
 	return SFX_ERR_NONE;
 }
@@ -1339,7 +1343,7 @@ sfx_u8 RF_API_start_continuous_transmission(sfx_modulation_type_t type)
 		priv_ST_MANUF_WriteRegisters(0x10, 1, &tmp);
 
 		// Set Power PA_POWER8
-#ifdef MON_REF_DES
+#if ITSDK_S2LP_CNF_RANGE == __SIGFOX_S2LP_PA_SKYWORKS_868
 		if (st_manuf_context->pa_flag)
 			tmp=34+st_manuf_context->power_reduction;
 		else
@@ -1606,7 +1610,7 @@ sfx_u8 RF_API_wait_for_clear_channel(sfx_u8 cs_min, sfx_s8 cs_threshold, sfx_rx_
 {
 	// PRINTF("RF_API_wait_for_clear_channel IN (cs_min=%d, cs_thr=%d)\n\r", cs_min, cs_threshold);
 
-#if defined(FOR_ARIB) || defined(FOR_ALL)
+#if (ITSDK_SIGFOX_SUPORTEDZONE & __SIGFOX_ARIB) > 0
 	uint8_t tmp[4]={0,0,0,0};
 	uint32_t f_dig=privGetXtalFrequency();
 	if(f_dig>DIG_DOMAIN_XTAL_THRESH) {
@@ -1760,8 +1764,8 @@ void ST_RF_API_S2LP_IRQ_CB(void)
 	{
 		st_manuf_context->s2lp_irq_raised=1;
 	}
-#ifdef  MONARCH_FEATURE_ENABLED
-#ifndef MONARCH_GPIO_SAMPLING
+#if (ITSDK_SIGFOX_EXTENSIONS & __SIGFOX_MONARCH) > 0
+#if ITSDK_S2LP_CNF_MONARCH_G ==	__S2LP_FIFO_RX
 	else if (st_manuf_context->manuf_state==ST_MANUF_STATE_MONARCH_SCAN)
 	{
 		ST_MONARCH_API_AFTHR_GPIO_CB();
@@ -1775,6 +1779,10 @@ void ST_RF_API_S2LP_IRQ_CB(void)
     are done in this same context.
     The user can decide to call this function in the interrupt ISR or
     in the ST_MCU_API_WaitForInterrupt() function. */
+
+		// As much as I searched there is no place in the code where the function S2LPSetSpiInUse is used in the
+		// code, so as a consequence, the GetSpiInUse will always returns false ...
+
 		if (S2LPGetSpiInUse()==0)
 			priv_ST_MANUF_Transmission_Tick();
 	}
@@ -1923,6 +1931,7 @@ sfx_u8 ST_RF_API_Get_Continuous_TX_or_MONARCH_Scan_Flag(void)
 
 sfx_u8 ST_RF_API_StartTx(void)
 {
+#if ITSDK_S2LP_CNF_RANGE ==	__SIGFOX_S2LP_PA_FEM
 	/*Configure External FE module*/
 	if (st_manuf_context->pa_flag==0)
 		FEM_Operation(FEM_TX_BYPASS);
@@ -1931,26 +1940,30 @@ sfx_u8 ST_RF_API_StartTx(void)
 
 	/*Put S2LP in TX*/
 	CMD_STROBE_TX();
+#endif
 	return SFX_ERR_NONE;
 }
 
 sfx_u8 ST_RF_API_StartRx(void)
 {
+#if ITSDK_S2LP_CNF_RANGE ==	__SIGFOX_S2LP_PA_FEM
 	/*Configure External FE module in RX*/
 	FEM_Operation(FEM_RX);
 	/*Put S2LP in RX*/
 	CMD_STROBE_RX();
+#endif
 	return SFX_ERR_NONE;
 }
 
 sfx_u8 ST_RF_API_StopRxTx(void)
 {
+#if ITSDK_S2LP_CNF_RANGE ==	__SIGFOX_S2LP_PA_FEM
 	/*Put S2LP in READY*/
 	CMD_STROBE_SABORT();
 
 	/*Configure External FE module in RX*/
 	FEM_Operation(FEM_SHUTDOWN);
-
+#endif
 	return SFX_ERR_NONE;
 }
 

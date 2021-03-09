@@ -544,8 +544,12 @@ gpio_irq_chain_t __sfx_gpio_irq = {
 volatile uint8_t __pendingIrqDelayed=0;
 void __GPIO_IRQHandler(uint16_t GPIO_Pin) {
 
-  if(GPIO_Pin==ITSDK_S2LP_GPIO3_PIN) {
+  if(GPIO_Pin==ITSDK_S2LP_INTERRUPT_PIN) {
+#if (ITSDK_SIGFOX_EXTENSIONS	&  __SIGFOX_MONARCH) > 0
+	  if (ST_RF_API_Get_Continuous_TX_or_MONARCH_Scan_Flag()==0) {
+#else
 	  if (ST_RF_API_Get_Continuous_TX_Flag()==0) {
+#endif
 		// Most of the Irq are delayed during Tx
 	   	__pendingIrqDelayed=1;
 	  } else {

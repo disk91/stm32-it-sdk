@@ -25,7 +25,7 @@
  * ==========================================================
  */
 #include <it_sdk/config.h>
-#if ITSDK_WITH_SIGFOX_LIB > 0
+#if ITSDK_WITH_SIGFOX_LIB > 0 && ITSDK_SIGFOX_LIB == __SIGFOX_S2LP
 
 #include <it_sdk/itsdk.h>
 #include <drivers/s2lp/s2lp.h>
@@ -51,7 +51,9 @@ void s2lp_sigfox_cifferKey() {
 void s2lp_sigfox_unCifferKey() {
 	itsdk_encrypt_unCifferKey(s2lp_driver_config.key,16);
 }
-#endif
+
+
+
 
 /**
  * Some hack of the ST IDRetriever library to extract and set a better protection to
@@ -108,7 +110,7 @@ bool s2lp_sigfox_retreive_key(int32_t deviceId, uint8_t * pac, uint8_t * key) {
 	 }
 	 return false;
  }
-
+#endif
 
 /**
  * A valid frame has been received, the last Rssi is a valid Rssi
@@ -125,6 +127,10 @@ int16_t s2lp_sigfox_getLastRssiLevel() {
 }
 
 
+uint8_t SE_NVM_set(uint8_t *data_to_write) {
+	LOG_DEBUG_S2LP((">> SE_NVM_set\r\n"));
+    return MCU_API_set_nv_mem(data_to_write);
+}
 
 /**
  * Return the sequence Id

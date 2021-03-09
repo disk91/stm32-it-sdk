@@ -220,7 +220,12 @@ configuration file. Please find the different settings added version after versi
 ### configSigfox.h
  - ITSDK_SIGFOX_FREQOFFSET  / S2LP - Frequency Offset
  - ITSDK_SIGFOX_LBTOFFSET   / S2LP - LBT Offset
-  
+ - ITSDK_S2LP_OPTIMIZE_RAM  / S2LP - RAM usage reduction
+ - ITSDK_S2LP_RX_FILTER / S2LP - RX Filter
+ - ITSDK_S2LP_CNF_MONARCH_G / S2LP -  Config GPIO Sampling vs FIFO for Monarch
+ - ITSDK_S2LP_INTERRUPT_BANK  / S2LP - GPIO used as Interrupt
+ - ITSDK_S2LP_INTERRUPT_PIN / S2LP - GPIO used as Interrupt
+ 
 ### configLoRaWan.h
  - ITSDK_LORAWAN_RX2DELAY_MOD / Ms Delay added to RX 2 Window Start for calibration
 

@@ -43,6 +43,10 @@
 #include <drivers/s2lp/sigfox_retriever.h>
 #include <drivers/s2lp/sigfox_helper.h>
 
+#if ITSDK_S2LP_CNF_RANGE ==	__SIGFOX_S2LP_PA_FEM
+  #include <drivers/s2lp/s2lp_aux_fem.h>
+#endif
+
 #if ITSDK_SIGFOX_NVM_SOURCE	== __SFX_NVM_M95640
 	#include <drivers/eeprom/m95640/m95640.h>
 #endif
@@ -77,15 +81,10 @@ itsdk_sigfox_init_t s2lp_sigfox_init() {
 	S2LP_SPI_StatusBytes status;
 	s2lp_wakeup();
 
-	#if ITSDK_S2LP_TARGET == __S2LP_HT32SX
-	// Front End Module initialization
-	// This is part of Ht32SX driver
-	uint8_t __tmp[]={
-		(uint8_t)S2LP_GPIO_DIG_OUT_TX_RX_MODE | (uint8_t)S2LP_GPIO_MODE_DIGITAL_OUTPUT_LP,
-		(uint8_t)S2LP_GPIO_DIG_OUT_RX_STATE   | (uint8_t)S2LP_GPIO_MODE_DIGITAL_OUTPUT_LP,
-		(uint8_t)S2LP_GPIO_DIG_OUT_TX_STATE   | (uint8_t)S2LP_GPIO_MODE_DIGITAL_OUTPUT_LP
-	};
-	s2lp_spi_writeRegisters(&ITSDK_S2LP_SPI, S2LP_REG_GPIO0_CONF, sizeof(__tmp), __tmp);
+ 	#if ITSDK_S2LP_CNF_RANGE ==	__SIGFOX_S2LP_PA_FEM
+ 	 // Front End Module initialization
+	 // This is part of Ht32SX driver
+	 FEM_Init();
 	#endif
 
 	do {
@@ -120,7 +119,7 @@ itsdk_sigfox_init_t s2lp_sigfox_init() {
 	  ST_RF_API_gpio_rx_pin(1);
 	  ST_RF_API_gpio_tx_pin(2);
 	  ST_RF_API_set_rssi_offset(ITSDK_SIGFOX_RSSICAL-16);
-	#elif ITSDK_S2LP_CNF_RANGE == __SIGFOX_S2LP_PA_NONE
+	#elif ITSDK_S2LP_CNF_RANGE == __SIGFOX_S2LP_PA_NONE || ITSDK_S2LP_CNF_RANGE ==	__SIGFOX_S2LP_PA_FEM
 	  ST_RF_API_set_pa(0);
 	  ST_RF_API_set_rssi_offset(ITSDK_SIGFOX_RSSICAL);
 	#endif

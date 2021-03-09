@@ -41,6 +41,7 @@ void enc_unprotect_key();
 int16_t s2lp_sigfox_getLastRssiLevel();
 void s2lp_sigfox_retreive_rssi();
 
+uint8_t SE_NVM_set(uint8_t *data_to_write);
 
 #define S2LP_UNKNOWN_RSSI	0xFF;
 

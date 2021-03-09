@@ -70,7 +70,7 @@
 #define ITSDK_I2C_TIMEOUT			100										//    I2C transaction timeout in ms
 #define ITSDK_WITH_HW_TIMER			__TIMER_ENABLED							// Use Hardware Timer
 #define ITSDK_HW_TIMER1_HANDLE		htim21									// Timer handler to be used as primary timer
-#define ITSDK_HW_TIMER1_ID			21										// Timer hadware 1 - id/name
+#define ITSDK_HW_TIMER1_ID			21										// Timer hardware 1 - id/name
 #define ITSDK_HW_TIMER1_FREQ		32000000								// Primary timer base frequency
 #define ITSDK_HW_TIMER1_MAX			65536									// Timer's counter max value ( 2^size )
 #define ITSDK_TIMER_SLOTS			5										// Maximum number of SOFT TIMER available in parallel - 0 disable SOFT TIMER code
