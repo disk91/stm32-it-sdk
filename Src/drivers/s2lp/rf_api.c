@@ -326,8 +326,9 @@ static st_manuf_t st_manuf=
 
 /* SPI functions - these functions are implemented using the priv_ST_MANUF_SpiRaw */
 
-static void priv_ST_MANUF_SpiRaw_Ramp(uint8_t n_bytes,uint8_t* buff_in, uint8_t* buff_out, uint8_t blocking)
-{
+static void priv_ST_MANUF_SpiRaw_Ramp(uint8_t n_bytes,uint8_t* buff_in, uint8_t* buff_out, uint8_t blocking) {
+	LOG_DEBUG_S2LP((">> priv_ST_MANUF_SpiRaw_Ramp\r\n"));
+
 	if(st_manuf_context->power_reduction!=0 && buff_in!=zeroes)
 	{
 		uint32_t i;
@@ -350,8 +351,8 @@ static void priv_ST_MANUF_SpiRaw_Ramp(uint8_t n_bytes,uint8_t* buff_in, uint8_t*
 }
 
 /* command strobe - used to strobe commands to the S2-LP */
-static void priv_ST_MANUF_CmdStrobe(uint8_t cmd)
-{
+static void priv_ST_MANUF_CmdStrobe(uint8_t cmd) {
+	LOG_DEBUG_S2LP((">> priv_ST_MANUF_CmdStrobe\r\n"));
 	uint8_t tx_spi_buffer[2];
 
 	tx_spi_buffer[0]=0x80;
@@ -361,8 +362,8 @@ static void priv_ST_MANUF_CmdStrobe(uint8_t cmd)
 }
 
 /* write registers function */
-static void priv_ST_MANUF_WriteRegisters(uint8_t address, uint8_t n_bytes, uint8_t* buffer)
-{
+static void priv_ST_MANUF_WriteRegisters(uint8_t address, uint8_t n_bytes, uint8_t* buffer) {
+	LOG_DEBUG_S2LP((">> priv_ST_MANUF_WriteRegisters\r\n"));
 	uint8_t tx_spi_buffer[24];
 
 	tx_spi_buffer[0]=0x00;
@@ -377,8 +378,8 @@ static void priv_ST_MANUF_WriteRegisters(uint8_t address, uint8_t n_bytes, uint8
 }
 
 /* read registers function */
-static void priv_ST_MANUF_ReadRegisters(uint8_t address, uint8_t n_bytes, uint8_t* buffer)
-{
+static void priv_ST_MANUF_ReadRegisters(uint8_t address, uint8_t n_bytes, uint8_t* buffer) {
+	LOG_DEBUG_S2LP((">> priv_ST_MANUF_ReadRegisters\r\n"));
 	uint8_t rx_spi_buffer[130],tx_spi_buffer[130];
 
 	tx_spi_buffer[0]=0x01;
@@ -398,19 +399,19 @@ static void priv_ST_MANUF_ReadRegisters(uint8_t address, uint8_t n_bytes, uint8_
 }
 
 /* set XTAL frequency function */
-static void privSetXtalFrequency(uint32_t lXtalFrequency)
-{
+static void privSetXtalFrequency(uint32_t lXtalFrequency) {
+	LOG_DEBUG_S2LP((">> privSetXtalFrequency\r\n"));
 	st_manuf_context->priv_xtal_freq = lXtalFrequency;
 }
 
 /* get XTAL frequency function */
-static uint32_t privGetXtalFrequency(void)
-{
+static uint32_t privGetXtalFrequency(void) {
+	LOG_DEBUG_S2LP((">> privGetXtalFrequency\r\n"));
 	return st_manuf_context->priv_xtal_freq;
 }
 
-static void priv_ST_MANUF_tx_rf_init(void)
-{
+static void priv_ST_MANUF_tx_rf_init(void) {
+	LOG_DEBUG_S2LP((">> priv_ST_MANUF_tx_rf_init\r\n"));
 	uint8_t tmp;
 
 	/* TX in direct via FIFO mode */
@@ -468,8 +469,8 @@ static void priv_ST_MANUF_tx_rf_init(void)
 }
 
 /* radio configuration for TX and RX */
-static void priv_ST_MANUF_tx_rf_dbpsk_init(sfx_modulation_type_t type)
-{
+static void priv_ST_MANUF_tx_rf_dbpsk_init(sfx_modulation_type_t type) {
+	LOG_DEBUG_S2LP((">> priv_ST_MANUF_tx_rf_dbpsk_init\r\n"));
 	uint32_t f_dig=privGetXtalFrequency();
 	uint16_t dr_m = 0x0000;
 	uint8_t mod_e = 0x00;
@@ -604,16 +605,16 @@ static void priv_ST_MANUF_tx_rf_dbpsk_init(sfx_modulation_type_t type)
 }
 
 /* Function to generate PN9 */
-void pn9_next(uint16_t *last)
-{
+void pn9_next(uint16_t *last) {
+	LOG_DEBUG_S2LP((">> pn9_next\r\n"));
 	uint16_t retval;
 	retval =  (((*last & 0x20) >> 5) ^ *last) << 8;
 	retval |= (*last >> 1) & 0xff;
 	*last = retval & 0x1ff;
 }
 
-uint16_t pn9_next_byte(uint16_t state)
-{
+uint16_t pn9_next_byte(uint16_t state) {
+	LOG_DEBUG_S2LP((">> pn9_next_byte\r\n"));
 	int i;
 	for (i=0; i<8; i++) {
 		pn9_next(&state);
@@ -622,8 +623,8 @@ uint16_t pn9_next_byte(uint16_t state)
 }
 
 /* Function to transmit a single bit */
-static void priv_ST_MANUF_tx_rf_dbpsk_single_bit(uint8_t bit)
-{
+static void priv_ST_MANUF_tx_rf_dbpsk_single_bit(uint8_t bit) {
+	LOG_DEBUG_S2LP((">> priv_ST_MANUF_tx_rf_dbpsk_single_bit\r\n"));
 	if(bit==0)
 	{
 		/* Give FDEV a peak in the FDEV_PEAK position.
@@ -648,8 +649,8 @@ static void priv_ST_MANUF_tx_rf_dbpsk_single_bit(uint8_t bit)
 }
 
 /* Transmission state machine */
-static void priv_ST_MANUF_Transmission_Tick(void)
-{
+static void priv_ST_MANUF_Transmission_Tick(void) {
+	LOG_DEBUG_S2LP((">> priv_ST_MANUF_Transmission_Tick\r\n"));
 	switch(st_manuf_context->tx_packet_struct.tx_state)
 	{
 	/*
@@ -781,8 +782,8 @@ static void priv_ST_MANUF_Transmission_Tick(void)
 }
 
 /* Function used both for BPSK MOD and CONTINUOS BPSK */
-static void priv_ST_MANUF_rf_load_first_ramp_up()
-{
+static void priv_ST_MANUF_rf_load_first_ramp_up() {
+	LOG_DEBUG_S2LP((">> priv_ST_MANUF_rf_load_first_ramp_up\r\n"));
 	uint8_t tmp;
 	/* TX FIFO flush */
 	CMD_STROBE_FTX();
@@ -805,8 +806,8 @@ static void priv_ST_MANUF_rf_load_first_ramp_up()
 	st_manuf_context->tx_packet_struct.tx_state=ST_TX_STATE_RAMP_UP_2;
 }
 
-static void priv_ST_MANUF_rf_modulation_dbpsk(uint8_t* stream, uint8_t size)
-{
+static void priv_ST_MANUF_rf_modulation_dbpsk(uint8_t* stream, uint8_t size) {
+	LOG_DEBUG_S2LP((">> priv_ST_MANUF_rf_modulation_dbpsk\r\n"));
 	st_manuf_context->tx_packet_struct.continuous_tx_flag=0; //The transmission will be a packet and not PN9
 
 	/* save the current pointer to data and size */
@@ -830,8 +831,8 @@ static void priv_ST_MANUF_rf_modulation_dbpsk(uint8_t* stream, uint8_t size)
 	st_manuf_context->manuf_state=ST_MANUF_STATE_IDLE;
 }
 
-static void priv_ST_MANUF_rx_rf_init(void)
-{
+static void priv_ST_MANUF_rx_rf_init(void) {
+	LOG_DEBUG_S2LP((">> priv_ST_MANUF_rx_rf_init\r\n"));
 	uint64_t tgt1,tgt2;
 	uint32_t f_dig=privGetXtalFrequency();
 	uint16_t dr_m;
@@ -943,8 +944,8 @@ static void priv_ST_MANUF_rx_rf_init(void)
 
 #if (ITSDK_SIGFOX_EXTENSIONS & __SIGFOX_MONARCH) > 0
 
-static void priv_ST_MANUF_rx_monarch_rf_init(void)
-{
+static void priv_ST_MANUF_rx_monarch_rf_init(void) {
+	LOG_DEBUG_S2LP((">> priv_ST_MANUF_rx_monarch_rf_init\r\n"));
 	/*It Informs trough ST_RF_API_Get_Continuous_TX_or_MONARCH_Scan_Flag, the mcu api
   that monarch scan is ongoing*/
 	uint64_t tgt1,tgt2;
@@ -1041,8 +1042,8 @@ static void priv_ST_MANUF_rx_monarch_rf_init(void)
  *
  ********************************************************/
 
-__weak void ST_RF_API_custom_setting(void)
-{
+__weak void ST_RF_API_custom_setting(void) {
+	LOG_DEBUG_S2LP((">> ST_RF_API_custom_setting\r\n"));
 }
 
 /*!******************************************************************
@@ -1061,8 +1062,8 @@ __weak void ST_RF_API_custom_setting(void)
  * \retval SFX_ERRNONE:              No error
  * \retval RF_ERR_API_INIT:          Init Radio link error
  *******************************************************************/
-sfx_u8 RF_API_init(sfx_rf_mode_t rf_mode)
-{
+sfx_u8 RF_API_init(sfx_rf_mode_t rf_mode) {
+	LOG_DEBUG_S2LP((">> RF_API_init\r\n"));
 	//PRINTF("RF_API_init IN (rf_mode=%d)\n\r",rf_mode);
 	sfx_u8 tmp;
 
@@ -1211,8 +1212,8 @@ sfx_u8 RF_API_init(sfx_rf_mode_t rf_mode)
  * \retval SFX_ERR_NONE:              No error
  * \retval RF_ERR_API_STOP:           Close Radio link error
  *******************************************************************/
-sfx_u8 RF_API_stop(void)
-{
+sfx_u8 RF_API_stop(void) {
+	LOG_DEBUG_S2LP((">> RF_API_stop\r\n"));
 	//PRINTF("RF_API_stop IN\n\r");
 
 	/* give an abort command (just for safety) */
@@ -1253,8 +1254,8 @@ sfx_u8 RF_API_stop(void)
  * \retval SFX_ERR_NONE:                    No error
  * \retval RF_ERR_API_SEND:                 Send data stream error
  *******************************************************************/
-sfx_u8 RF_API_send(sfx_u8 *stream, sfx_modulation_type_t type, sfx_u8 size)
-{
+sfx_u8 RF_API_send(sfx_u8 *stream, sfx_modulation_type_t type, sfx_u8 size) {
+	LOG_DEBUG_S2LP((">> RF_API_send\r\n"));
 	//PRINTF("RF_API_send IN\n\r");
 
 	//PRINTF("FTS: [");
@@ -1292,8 +1293,8 @@ sfx_u8 RF_API_send(sfx_u8 *stream, sfx_modulation_type_t type, sfx_u8 size)
  * \retval SFX_ERR_NONE:                                 No error
  * \retval RF_ERR_API_START_CONTINUOUS_TRANSMISSION:     Continuous Transmission Start error
  *******************************************************************/
-sfx_u8 RF_API_start_continuous_transmission(sfx_modulation_type_t type)
-{
+sfx_u8 RF_API_start_continuous_transmission(sfx_modulation_type_t type) {
+	LOG_DEBUG_S2LP((">> RF_API_start_continuous_transmission\r\n"));
 	//PRINTF("RF_API_start_continuous_transmission IN\n\r");
 
 	if(st_manuf_context->manuf_state!=ST_MANUF_STATE_IDLE)
@@ -1370,8 +1371,8 @@ sfx_u8 RF_API_start_continuous_transmission(sfx_modulation_type_t type)
  * \retval SFX_ERR_NONE:                                 No error
  * \retval RF_ERR_API_STOP_CONTINUOUS_TRANSMISSION:      Continuous Transmission Stop error
  *******************************************************************/
-sfx_u8 RF_API_stop_continuous_transmission (void)
-{
+sfx_u8 RF_API_stop_continuous_transmission (void) {
+	LOG_DEBUG_S2LP((">> RF_API_stop_continuous_transmission\r\n"));
 	// PRINTF("RF_API_stop_continuous_transmission IN\n\r");
 
 	ST_RF_API_StopRxTx();
@@ -1396,8 +1397,8 @@ sfx_u8 RF_API_stop_continuous_transmission (void)
  * \retval SFX_ERR_NONE:                    No error
  * \retval RF_ERR_API_CHANGE_FREQ:          Change frequency error
  *******************************************************************/
-sfx_u8 RF_API_change_frequency(sfx_u32 frequency)
-{
+sfx_u8 RF_API_change_frequency(sfx_u32 frequency) {
+	LOG_DEBUG_S2LP((">> RF_API_change_frequency\r\n"));
 	//PRINTF("RF_API_change_frequency IN %d\n\r",frequency);
 
 	uint8_t tmp[4];
@@ -1480,8 +1481,8 @@ sfx_u8 RF_API_change_frequency(sfx_u32 frequency)
  * \retval SFX_ERR_NONE:                      No error
  * \retval RF_ERR_API_WAIT_FRAME_TIMEOUT:     Wait frame error
  *******************************************************************/
-sfx_u8 RF_API_wait_frame(sfx_u8 *frame, sfx_s16 *rssi, sfx_rx_state_enum_t * state)
-{
+sfx_u8 RF_API_wait_frame(sfx_u8 *frame, sfx_s16 *rssi, sfx_rx_state_enum_t * state) {
+	LOG_DEBUG_S2LP((">> RF_API_wait_frame\r\n"));
 	sfx_u8 sync_detected=0;
 	sfx_u8 n_bytes, tmp[4]={0,0,0,0};
 
@@ -1606,8 +1607,8 @@ sfx_u8 RF_API_wait_frame(sfx_u8 *frame, sfx_s16 *rssi, sfx_rx_state_enum_t * sta
  *
  * \retval SFX_ERR_NONE:                      No error
  *******************************************************************/
-sfx_u8 RF_API_wait_for_clear_channel(sfx_u8 cs_min, sfx_s8 cs_threshold, sfx_rx_state_enum_t * state)
-{
+sfx_u8 RF_API_wait_for_clear_channel(sfx_u8 cs_min, sfx_s8 cs_threshold, sfx_rx_state_enum_t * state) {
+	LOG_DEBUG_S2LP((">> RF_API_wait_for_clear_channel\r\n"));
 	// PRINTF("RF_API_wait_for_clear_channel IN (cs_min=%d, cs_thr=%d)\n\r", cs_min, cs_threshold);
 
 #if (ITSDK_SIGFOX_SUPORTEDZONE & __SIGFOX_ARIB) > 0
@@ -1733,8 +1734,8 @@ sfx_u8 RF_API_wait_for_clear_channel(sfx_u8 cs_min, sfx_s8 cs_threshold, sfx_rx_
  * \retval SFX_ERR_NONE:                No error
  * \retval RF_ERR_API_GET_VERSION:      Get Version error
  *******************************************************************/
-sfx_u8 RF_API_get_version(sfx_u8 **version, sfx_u8 *size)
-{
+sfx_u8 RF_API_get_version(sfx_u8 **version, sfx_u8 *size) {
+	LOG_DEBUG_S2LP((">> RF_API_get_version\r\n"));
 	(*size) = ST_RF_API_VER_SIZE;
 	(*version) = (sfx_u8*)ST_RF_API_VER;
 
@@ -1743,21 +1744,21 @@ sfx_u8 RF_API_get_version(sfx_u8 **version, sfx_u8 *size)
 
 /* This is the callback that notifies that the MCU timer called
  *  by the MANUF_API_timer_start started/has expired. */
-void ST_RF_API_Timer_CB(sfx_u8 state)
-{
+void ST_RF_API_Timer_CB(sfx_u8 state) {
+	LOG_DEBUG_S2LP((">> ST_RF_API_Timer_CB\r\n"));
 	st_manuf_context->api_timer_raised=state;
 }
 
 /* This is the callback that notifies that the MCU timer started
  *  by the MANUF_API_timer_start has expired. */
-void ST_RF_API_Timer_Channel_Clear_CB(void)
-{
+void ST_RF_API_Timer_Channel_Clear_CB(void) {
+	LOG_DEBUG_S2LP((">> ST_RF_API_Timer_Channel_Clear_CB\r\n"));
 	st_manuf_context->api_timer_channel_clear_raised=1;
 }
 
 /* This is the callback to be called each time an interrupt from S2-LP occurs */
-void ST_RF_API_S2LP_IRQ_CB(void)
-{
+void ST_RF_API_S2LP_IRQ_CB(void) {
+	LOG_DEBUG_S2LP((">> ST_RF_API_S2LP_IRQ_CB\r\n"));
 	/* If we are not transmitting the current implementation manages the actions to do
 	 *  with a flag (s2lp_irq_raised) that makes the functions waiting can be ticked on */
 	if((st_manuf_context->manuf_state!=ST_MANUF_STATE_TX) && (st_manuf_context->manuf_state!=ST_MANUF_STATE_MONARCH_SCAN))
@@ -1789,67 +1790,67 @@ void ST_RF_API_S2LP_IRQ_CB(void)
 }
 
 /* RSSI offset as param */
-sfx_u8 ST_RF_API_set_rssi_offset(int8_t rssi_off)
-{
+sfx_u8 ST_RF_API_set_rssi_offset(int8_t rssi_off) {
+	LOG_DEBUG_S2LP((">> ST_RF_API_set_rssi_offset\r\n"));
 	st_manuf_context->rssi_offset=rssi_off;
 
 	return SFX_ERR_NONE;
 }
 
-sfx_u8 ST_RF_API_get_rssi_offset(int8_t *rssi_off)
-{
+sfx_u8 ST_RF_API_get_rssi_offset(int8_t *rssi_off) {
+	LOG_DEBUG_S2LP((">> ST_RF_API_get_rssi_offset\r\n"));
 	(*rssi_off)=st_manuf_context->rssi_offset;
 
 	return SFX_ERR_NONE;
 }
 
 /* XTAL FREQ as param */
-sfx_u8 ST_RF_API_set_xtal_freq(sfx_u32 xtal)
-{
+sfx_u8 ST_RF_API_set_xtal_freq(sfx_u32 xtal) {
+	LOG_DEBUG_S2LP((">> ST_RF_API_set_xtal_freq\r\n"));
 	st_manuf_context->xtal_lib=xtal;
 
 	return SFX_ERR_NONE;
 }
 
-sfx_u8 ST_RF_API_get_xtal_freq(sfx_u32 *xtal)
-{
+sfx_u8 ST_RF_API_get_xtal_freq(sfx_u32 *xtal) {
+	LOG_DEBUG_S2LP((">> ST_RF_API_get_xtal_freq\r\n"));
 	(*xtal)=st_manuf_context->xtal_lib;
 
 	return SFX_ERR_NONE;
 }
 
 /* FREQ offset as param */
-sfx_u8 ST_RF_API_set_freq_offset(sfx_s32 offset)
-{
+sfx_u8 ST_RF_API_set_freq_offset(sfx_s32 offset) {
+	LOG_DEBUG_S2LP((">> ST_RF_API_set_freq_offset\r\n"));
 	st_manuf_context->rf_offset=offset;
 
 	return SFX_ERR_NONE;
 }
 
-sfx_u8 ST_RF_API_get_freq_offset(sfx_s32 *offset)
-{
+sfx_u8 ST_RF_API_get_freq_offset(sfx_s32 *offset) {
+	LOG_DEBUG_S2LP((">> ST_RF_API_get_freq_offset\r\n"));
 	(*offset)=st_manuf_context->rf_offset;
 
 	return SFX_ERR_NONE;
 }
 
 /* LBT offset as param */
-sfx_u8 ST_RF_API_set_lbt_thr_offset(sfx_s8 lbt_thr_off)
-{
+sfx_u8 ST_RF_API_set_lbt_thr_offset(sfx_s8 lbt_thr_off) {
+	LOG_DEBUG_S2LP((">> ST_RF_API_set_lbt_thr_offset\r\n"));
 	st_manuf_context->lbt_thr_offset=lbt_thr_off;
 
 	return SFX_ERR_NONE;
 }
 
-sfx_u8 ST_RF_API_get_lbt_thr_offset(sfx_s8 *lbt_thr_off)
-{
+sfx_u8 ST_RF_API_get_lbt_thr_offset(sfx_s8 *lbt_thr_off) {
+	LOG_DEBUG_S2LP((">> ST_RF_API_get_lbt_thr_offset\r\n"));
 	(*lbt_thr_off)=st_manuf_context->lbt_thr_offset;
 
 	return SFX_ERR_NONE;
 }
 
-sfx_u8 ST_RF_API_gpio_irq_pin(uint8_t gpio_pin)
-{
+sfx_u8 ST_RF_API_gpio_irq_pin(uint8_t gpio_pin) {
+	LOG_DEBUG_S2LP((">> ST_RF_API_gpio_irq_pin\r\n"));
 	if(gpio_pin>3)
 		return ST_RF_ERR_API_ERROR;
 
@@ -1858,8 +1859,8 @@ sfx_u8 ST_RF_API_gpio_irq_pin(uint8_t gpio_pin)
 	return SFX_ERR_NONE;
 }
 
-sfx_u8 ST_RF_API_gpio_tx_rx_pin(uint8_t gpio_pin)
-{
+sfx_u8 ST_RF_API_gpio_tx_rx_pin(uint8_t gpio_pin) {
+	LOG_DEBUG_S2LP((">> ST_RF_API_gpio_tx_rx_pin\r\n"));
 	if(gpio_pin>3 && gpio_pin!=0xFF)
 		return ST_RF_ERR_API_ERROR;
 
@@ -1868,8 +1869,8 @@ sfx_u8 ST_RF_API_gpio_tx_rx_pin(uint8_t gpio_pin)
 	return SFX_ERR_NONE;
 }
 
-sfx_u8 ST_RF_API_gpio_rx_pin(uint8_t gpio_pin)
-{
+sfx_u8 ST_RF_API_gpio_rx_pin(uint8_t gpio_pin) {
+	LOG_DEBUG_S2LP((">> ST_RF_API_gpio_rx_pin\r\n"));
 	if(gpio_pin>3 && gpio_pin!=0xFF)
 		return ST_RF_ERR_API_ERROR;
 
@@ -1878,8 +1879,8 @@ sfx_u8 ST_RF_API_gpio_rx_pin(uint8_t gpio_pin)
 	return SFX_ERR_NONE;
 }
 
-sfx_u8 ST_RF_API_gpio_tx_pin(uint8_t gpio_pin)
-{
+sfx_u8 ST_RF_API_gpio_tx_pin(uint8_t gpio_pin) {
+	LOG_DEBUG_S2LP((">> ST_RF_API_gpio_tx_pin\r\n"));
 	if(gpio_pin>3 && gpio_pin!=0xFF)
 		return ST_RF_ERR_API_ERROR;
 
@@ -1888,8 +1889,8 @@ sfx_u8 ST_RF_API_gpio_tx_pin(uint8_t gpio_pin)
 	return SFX_ERR_NONE;
 }
 
-sfx_u8 ST_RF_API_reduce_output_power(int16_t reduction)
-{
+sfx_u8 ST_RF_API_reduce_output_power(int16_t reduction) {
+	LOG_DEBUG_S2LP((">> ST_RF_API_reduce_output_power\r\n"));
 	if((int16_t)st_manuf_context->bpsk_ramps->fifo_ramp_fast[3]+reduction<st_manuf_context->bpsk_ramps->max_power)
 	{}//return ST_MANUF_POWER_ERROR;
 
@@ -1898,39 +1899,39 @@ sfx_u8 ST_RF_API_reduce_output_power(int16_t reduction)
 	return SFX_ERR_NONE;
 }
 
-sfx_u8 ST_RF_API_set_tcxo(sfx_u8 tcxo)
-{
+sfx_u8 ST_RF_API_set_tcxo(sfx_u8 tcxo) {
+	LOG_DEBUG_S2LP((">> ST_RF_API_set_tcxo\r\n"));
 	st_manuf_context->tcxo_flag=tcxo;
 
 	return SFX_ERR_NONE;
 }
 
-sfx_u8 ST_RF_API_set_pa(uint8_t pa)
-{
+sfx_u8 ST_RF_API_set_pa(uint8_t pa) {
+	LOG_DEBUG_S2LP((">> ST_RF_API_set_pa\r\n"));
 	st_manuf_context->pa_flag=pa;
 
 	return SFX_ERR_NONE;
 }
 
-sfx_u8 ST_RF_API_get_ramp_duration(void)
-{
+sfx_u8 ST_RF_API_get_ramp_duration(void) {
+	LOG_DEBUG_S2LP((">> ST_RF_API_get_ramp_duration\r\n"));
 	return st_manuf_context->bpsk_ramps->ramp_start_duration;
 }
 
-sfx_u8 ST_RF_API_smps(uint8_t mode)
-{
+sfx_u8 ST_RF_API_smps(uint8_t mode) {
+	LOG_DEBUG_S2LP((">> ST_RF_API_smps\r\n"));
 	st_manuf_context->smps_mode=mode;
 
 	return SFX_ERR_NONE;
 }
 
-sfx_u8 ST_RF_API_Get_Continuous_TX_or_MONARCH_Scan_Flag(void)
-{
+sfx_u8 ST_RF_API_Get_Continuous_TX_or_MONARCH_Scan_Flag(void) {
+	LOG_DEBUG_S2LP((">> ST_RF_API_Get_Continuous_TX_or_MONARCH_Scan_Flag\r\n"));
 	return (sfx_u8) st_manuf_context->tx_packet_struct.continuous_tx_flag;
 }
 
-sfx_u8 ST_RF_API_StartTx(void)
-{
+sfx_u8 ST_RF_API_StartTx(void) {
+	LOG_DEBUG_S2LP((">> ST_RF_API_StartTx\r\n"));
 #if ITSDK_S2LP_CNF_RANGE ==	__SIGFOX_S2LP_PA_FEM
 	/*Configure External FE module*/
 	if (st_manuf_context->pa_flag==0)
@@ -1944,8 +1945,8 @@ sfx_u8 ST_RF_API_StartTx(void)
 	return SFX_ERR_NONE;
 }
 
-sfx_u8 ST_RF_API_StartRx(void)
-{
+sfx_u8 ST_RF_API_StartRx(void) {
+	LOG_DEBUG_S2LP((">> ST_RF_API_StartRx\r\n"));
 #if ITSDK_S2LP_CNF_RANGE ==	__SIGFOX_S2LP_PA_FEM
 	/*Configure External FE module in RX*/
 	FEM_Operation(FEM_RX);
@@ -1955,8 +1956,8 @@ sfx_u8 ST_RF_API_StartRx(void)
 	return SFX_ERR_NONE;
 }
 
-sfx_u8 ST_RF_API_StopRxTx(void)
-{
+sfx_u8 ST_RF_API_StopRxTx(void) {
+	LOG_DEBUG_S2LP((">> ST_RF_API_StopRxTx\r\n"));
 #if ITSDK_S2LP_CNF_RANGE ==	__SIGFOX_S2LP_PA_FEM
 	/*Put S2LP in READY*/
 	CMD_STROBE_SABORT();
@@ -1967,8 +1968,8 @@ sfx_u8 ST_RF_API_StopRxTx(void)
 	return SFX_ERR_NONE;
 }
 
-sfx_s16 ST_RF_API_GetRSSI(void)
-{
+sfx_s16 ST_RF_API_GetRSSI(void) {
+	LOG_DEBUG_S2LP((">> ST_RF_API_GetRSSI\r\n"));
 	sfx_u8 last_rssi;
 
 	/* Read the RSSI value captured at the end of the SYNC word detection of the received packet */
@@ -1978,8 +1979,8 @@ sfx_s16 ST_RF_API_GetRSSI(void)
 }
 
 /* Retrieve FIFO data */
-void ST_RF_API_ReadFifo(sfx_u8 n_bytes, sfx_u8* buffer, sfx_u8 flush )
-{
+void ST_RF_API_ReadFifo(sfx_u8 n_bytes, sfx_u8* buffer, sfx_u8 flush ) {
+	LOG_DEBUG_S2LP((">> ST_RF_API_ReadFifo\r\n"));
 	/* Read the num of bytes stored into the RX FIFO */
 	priv_ST_MANUF_ReadFifo(n_bytes, buffer);
 
@@ -1988,8 +1989,8 @@ void ST_RF_API_ReadFifo(sfx_u8 n_bytes, sfx_u8* buffer, sfx_u8 flush )
 }
 
 /* Retrieve FIFO data */
-sfx_u8 ST_RF_API_ReadFifoStatus()
-{
+sfx_u8 ST_RF_API_ReadFifoStatus() {
+	LOG_DEBUG_S2LP((">> ST_RF_API_ReadFifoStatus\r\n"));
 	/* Read the num of bytes stored into the RX FIFO */
 	sfx_u8 occuped_slot;
 	priv_ST_MANUF_ReadRegisters(0x90, 1, &occuped_slot);
@@ -1997,8 +1998,8 @@ sfx_u8 ST_RF_API_ReadFifoStatus()
 	return occuped_slot;
 }
 
-void ST_RF_API_SetFifoLength(sfx_u8 n_bytes)
-{
+void ST_RF_API_SetFifoLength(sfx_u8 n_bytes) {
+	LOG_DEBUG_S2LP((">> ST_RF_API_SetFifoLength\r\n"));
 	// Set the almost full threshold (It starts form the top of the fifo)
 	sfx_u8 reg=128-n_bytes;
 	priv_ST_MANUF_WriteRegisters(0x3C,1, &reg); //FIFO_CONFIG3
@@ -2008,22 +2009,43 @@ void ST_RF_API_SetFifoLength(sfx_u8 n_bytes)
 
 /* Monarch weak functions */
 
-__weak sfx_u8 MONARCH_API_malloc(sfx_u16 size, sfx_u8 **returned_pointer) { return MONARCH_ERR_API_MALLOC; }
+__weak sfx_u8 MONARCH_API_malloc(sfx_u16 size, sfx_u8 **returned_pointer) {
+	LOG_DEBUG_S2LP((">> MONARCH_API_malloc\r\n"));
+	return MONARCH_ERR_API_MALLOC;
+}
 
-__weak sfx_u8 MONARCH_API_free(sfx_u8 *ptr) { return MONARCH_ERR_API_FREE; }
+__weak sfx_u8 MONARCH_API_free(sfx_u8 *ptr) {
+	LOG_DEBUG_S2LP((">> MONARCH_API_free\r\n"));
+	return MONARCH_ERR_API_FREE;
+}
 
-__weak sfx_u8 MONARCH_API_timer_start (sfx_u16 timer_value, sfx_timer_unit_enum_t unit, sfx_error_t(* timeout_callback_handler)(void)) { return MONARCH_ERR_API_TIMER_START; }
+__weak sfx_u8 MONARCH_API_timer_start (sfx_u16 timer_value, sfx_timer_unit_enum_t unit, sfx_error_t(* timeout_callback_handler)(void)) {
+	LOG_DEBUG_S2LP((">> MONARCH_API_timer_start\r\n"));
+	return MONARCH_ERR_API_TIMER_START;
+}
 
-__weak sfx_u8 MONARCH_API_timer_stop (void) { return SFX_ERR_API_GET_VERSION; }
+__weak sfx_u8 MONARCH_API_timer_stop (void) {
+	LOG_DEBUG_S2LP((">> MONARCH_API_timer_stop\r\n"));
+	return SFX_ERR_API_GET_VERSION;
+}
 
 __weak sfx_u8 MONARCH_API_configure_search_pattern ( sfx_monarch_pattern_search_t list_freq_pattern[],
 		sfx_u8 size,
 		sfx_monarch_listening_mode_t mode,
-		sfx_error_t(* monarch_pattern_freq_result_callback_handler)(sfx_u32 freq, sfx_pattern_enum_t pattern, sfx_s16 rssi)){ return MONARCH_ERR_API_CONFIGURE_SEARCH_PATTERN; }
+		sfx_error_t(* monarch_pattern_freq_result_callback_handler)(sfx_u32 freq, sfx_pattern_enum_t pattern, sfx_s16 rssi)){
+	LOG_DEBUG_S2LP((">> MONARCH_API_configure_search_pattern\r\n"));
+	return MONARCH_ERR_API_CONFIGURE_SEARCH_PATTERN;
+}
 
-__weak sfx_u8 MONARCH_API_stop_search_pattern(void) { return MONARCH_ERR_API_STOP_SEARCH_PATTERN; }
+__weak sfx_u8 MONARCH_API_stop_search_pattern(void) {
+	LOG_DEBUG_S2LP((">> MONARCH_API_stop_search_pattern\r\n"));
+	return MONARCH_ERR_API_STOP_SEARCH_PATTERN;
+}
 
-__weak sfx_u8 MONARCH_API_get_version(sfx_u8 **version, sfx_u8 *size) { return MONARCH_ERR_API_TIMER_STOP; }
+__weak sfx_u8 MONARCH_API_get_version(sfx_u8 **version, sfx_u8 *size) {
+	LOG_DEBUG_S2LP((">> MONARCH_API_get_version\r\n"));
+	return MONARCH_ERR_API_TIMER_STOP;
+}
 
 
 

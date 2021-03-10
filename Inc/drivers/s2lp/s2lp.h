@@ -33,6 +33,7 @@
 
 void s2lp_hwInit();
 itsdk_sigfox_init_t s2lp_sigfox_init();
+itsdk_sigfox_init_t s2lp_sigfox_deinit();
 void s2lp_shutdown();
 void s2lp_wakeup();
 

@@ -61,11 +61,6 @@
 	#include <it_sdk/eeprom/eeprom.h>
 #endif
 
-
-#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP && ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_M95640
-s2lp_config_t __s2lpConf;
-#endif
-
 /**
  * Static definitions
  */
@@ -78,10 +73,13 @@ itsdk_sigfox_init_t itsdk_sigfox_setup() {
 	LOG_INFO_SIGFOXSTK(("itsdk_sigfox_setup\r\n"));
 
 	itsdk_sigfox_init_t ret = SIGFOX_INIT_SUCESS;
+#if ITSDK_WITH_SECURESTORE == __ENABLE
+	itsdk_sigfox_resetFactoryDefaults(false);	// store the default hardcoded key if not yet done
+#endif
+
 #if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
 	ret = s2lp_sigfox_init();
 #elif ITSDK_SIGFOX_LIB == __SIGFOX_SX1276
-	itsdk_sigfox_resetFactoryDefaults(false);		// store the key if not yet done
 	ret = sx1276_sigfox_init();
 #endif
 	if (
@@ -160,7 +158,7 @@ itsdk_sigfox_init_t itsdk_sigfox_loop() {
  */
 itsdk_sigfox_init_t itsdk_sigfox_deinit() {
 	#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
-		#warning "Not yets implemented"
+	    s2lp_sigfox_deinit();
 	#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX1276
 		sx1276_sigfox_deinit();
 	#endif

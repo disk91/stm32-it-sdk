@@ -54,16 +54,19 @@
 s2lp_drivers_config_t s2lp_driver_config;
 
 void s2lp_shutdown() {
+	LOG_DEBUG_S2LP((">> s2lp_shutdown\r\n"));
 	gpio_set(ITSDK_S2LP_SDN_BANK,ITSDK_S2LP_SDN_PIN);
 }
 
 void s2lp_wakeup() {
+	LOG_DEBUG_S2LP((">> s2lp_wakeup\r\n"));
 	gpio_reset(ITSDK_S2LP_SDN_BANK,ITSDK_S2LP_SDN_PIN);
 	itsdk_delayMs(1);
 }
 
 
 itsdk_sigfox_init_t s2lp_sigfox_init() {
+	LOG_DEBUG_S2LP((">> s2lp_sigfox_init\r\n"));
 	uint8_t tmp;
 
  #if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_M95640
@@ -98,7 +101,7 @@ itsdk_sigfox_init_t s2lp_sigfox_init() {
 
 	// Get the version
     s2lp_spi_readRegisters(&ITSDK_S2LP_SPI,S2LP_REG_DEVICE_INFO0, 1, &tmp);
-    log_debug("S2LP version 0x%0X\r\n",tmp);
+    LOG_INFO_S2LP(("S2LP version 0x%0X\r\n",tmp));
     if(tmp==S2LP_VERSION_2_0 || tmp==S2LP_VERSION_2_1) {
     	// Sounds like a bug on the SPI ...
     	// preventing conflict when accessing the eeprom or other I2C
@@ -171,7 +174,7 @@ itsdk_sigfox_init_t s2lp_sigfox_init() {
 	  		break;
 	#endif
 	  	default:
-	  		log_error("RCZ%d implementation is actually supported\r\n",itsdk_state.sigfox.rcz);
+	  		LOG_ERROR_S2LP(("RCZ%d implementation is actually supported\r\n",itsdk_state.sigfox.rcz));
 	  		ITSDK_ERROR_REPORT(ITSDK_ERROR_SIGFOX_RCZ_NOTSUPPORTED,(uint16_t)itsdk_state.sigfox.rcz);
 	  		retSigfox = SFX_ERR_API_OPEN;
 	  		break;
@@ -182,6 +185,17 @@ itsdk_sigfox_init_t s2lp_sigfox_init() {
 	return SIGFOX_INIT_SUCESS;
 }
 
+
+itsdk_sigfox_init_t s2lp_sigfox_deinit( ) {
+	LOG_DEBUG_S2LP((">> s2lp_sigfox_deinit\r\n"));
+
+	sfx_error_t err = SIGFOX_API_close();
+	if ( err == SFX_ERR_NONE ) {
+		return SIGFOX_INIT_SUCESS;
+	}
+	LOG_ERROR_S2LP(("Deinit failed with error 0x%04X\r\n",err));
+	return SIGFOX_INIT_FAILED;
+}
 
 
 /**
@@ -200,7 +214,7 @@ itsdk_sigfox_init_t s2lp_sigfox_init() {
  *
  */
 void s2lp_loadConfiguration() {
-
+	LOG_DEBUG_S2LP((">> s2lp_loadConfiguration\r\n"));
 	#if ITSDK_SIGFOX_NVM_SOURCE	== __SFX_NVM_M95640
 		s2lp_eprom_config_t eeprom_cnf;
 		eeprom_m95640_read(&ITSDK_DRIVERS_M95640_SPI,0x0000, 32, (uint8_t *)&eeprom_cnf);
@@ -229,7 +243,7 @@ void s2lp_loadConfiguration() {
 		     }
 		     break;
 		   default:
-			   log_warn("S2LP - Config - Freq not recognized\r\n");
+			   LOG_WARN_S2LP(("S2LP - Config - Freq not recognized\r\n"));
 			   s2lp_driver_config.tcxoFreq = 50000000;
 		     break;
 		}
