@@ -309,6 +309,12 @@ itsdk_accel_ret_e accel_startMovementCapture(
 	 else if ( frequency > ACCEL_WISH_FREQUENCY_10HZ ) fifoWatemark = __accel_getAccelMinFifoWTM();
   }
 
+  // Clear Fifo
+  __accel_dataBufferRd = 0;
+  __accel_dataBufferWr = 0;
+  __accel_dataBufferSz = 0;
+  __accel_dataOverrun = BOOL_FALSE;
+
   #if ITSDK_DRIVERS_ACCEL_LIS2DH12 == __ENABLE
 	//uint8_t	driverWatermark = (dataBlock > DRIVER_LIS2DH_DEFAULT_WATERMARK)?
     ACCEL_LOG_INFO(("ACCEL - Start Lis2dh - Data Aq\r\n"));
@@ -386,7 +392,7 @@ static void __accel_movementCaptureCallback(
 		if ( __accel_dataBufferWr == __accel_dataBufferRd ) {
 			__accel_dataBufferRd = ( __accel_dataBufferRd + 1 ) & (ITSDK_DRIVERS_ACCEL_DATABLOCK_BUFFER_SZ-1);
 			__accel_dataOverrun = BOOL_TRUE;
-			__accel_dataBufferSz = (ITSDK_DRIVERS_ACCEL_DATABLOCK_BUFFER_SZ-1);
+			__accel_dataBufferSz = ITSDK_DRIVERS_ACCEL_DATABLOCK_BUFFER_SZ;
 		}
 		itsdk_leaveCriticalSection();
 	}
