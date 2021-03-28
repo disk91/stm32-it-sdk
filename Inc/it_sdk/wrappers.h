@@ -257,18 +257,18 @@ _I2C_Status i2c_write(
 
 _I2C_Status i2c_write8BRegister(
 		ITSDK_I2C_HANDLER_TYPE * i2c,
-		uint16_t  devAdr,			// Non shifted device address
-		uint16_t  regAdr,			// Register address (8b or 16b�
-		uint8_t   value,			// 8B value to be written
-		uint16_t  regSize			// Register address size 1B or 2B
+		uint16_t  devAdr,							// Non shifted device address
+		uint16_t  regAdr,							// Register address (8b or 16b)
+		uint8_t   value,							// 8B value to be written
+		uint16_t  regSize							// Register address size 1B or 2B
 );
 
-_I2C_Status i2c_write16BRegister(		// 16B Word => LSB first on I2C
+_I2C_Status i2c_write16BRegister(					// 16B Word => LSB first on I2C
 		ITSDK_I2C_HANDLER_TYPE * i2c,
-		uint16_t  devAdr,			// Non shifted device address
-		uint16_t  regAdr,			// Register address (8b or 16b�
-		uint16_t  value,			// 16B value to be written
-		uint16_t  regSize			// Register address size 1B or 2B
+		uint16_t  devAdr,							// Non shifted device address
+		uint16_t  regAdr,							// Register address (8b or 16b)
+		uint16_t  value,							// 16B value to be written
+		uint16_t  regSize							// Register address size 1B or 2B
 );
 
 _I2C_Status i2c_memRead(
@@ -289,18 +289,18 @@ _I2C_Status i2c_read(
 
 _I2C_Status i2c_read8BRegister(
 		ITSDK_I2C_HANDLER_TYPE * i2c,
-		uint16_t  devAdr,			// Non shifted device address
-		uint16_t  regAdr,			// Register address (8b or 16b�
-		uint8_t * value,			// 8B value to be read
-		uint16_t  regSize			// Register address size 1B or 2B
+		uint16_t  devAdr,							// Non shifted device address
+		uint16_t  regAdr,							// Register address (8b or 16b)
+		uint8_t * value,							// 8B value to be read
+		uint16_t  regSize							// Register address size 1B or 2B
 );
 
-_I2C_Status i2c_read16BRegister(    // 16B Word => LSB first on I2C
+_I2C_Status i2c_read16BRegister(    				// 16B Word => LSB first on I2C
 		ITSDK_I2C_HANDLER_TYPE * i2c,
-		uint16_t  devAdr,			// Non shifted device address
-		uint16_t  regAdr,			// Register address (8b or 16b�
-		uint16_t * value,			// 8B value to be read
-		uint16_t  regSize			// Register address size 1B or 2B
+		uint16_t  devAdr,							// Non shifted device address
+		uint16_t  regAdr,							// Register address (8b or 16b)
+		uint16_t * value,							// 8B value to be read
+		uint16_t  regSize							// Register address size 1B or 2B
 );
 
 void i2c_reset(
@@ -311,15 +311,15 @@ void i2c_reset(
 // ================================================
 // Reset Cause
 typedef enum {
-	RESET_CAUSE_BOR = 0,		// under voltage			0
-	RESET_CAUSE_RESET_PIN,		// hardware reset pin		1
-	RESET_CAUSE_POWER_ON,		// power on					2
-	RESET_CAUSE_SOFTWARE,		// software reset			3
-	RESET_CAUSE_IWDG,			// Independent Watchdog		4
-	RESET_CAUSE_WWDG,			// Window Watchdog			5
-	RESET_CAUSE_LOWPOWER,		// Low-Power reset Flag		6
+	RESET_CAUSE_BOR 		= 0,		// under voltage			0
+	RESET_CAUSE_RESET_PIN 	= 1,		// hardware reset pin		1
+	RESET_CAUSE_POWER_ON 	= 2,		// power on					2
+	RESET_CAUSE_SOFTWARE	= 3,		// software reset			3
+	RESET_CAUSE_IWDG		= 4,		// Independent Watchdog		4
+	RESET_CAUSE_WWDG		= 5,		// Window Watchdog			5
+	RESET_CAUSE_LOWPOWER 	= 6,		// Low-Power reset Flag		6
 
-	RESET_CAUSE_UNKNONW
+	RESET_CAUSE_UNKNONW 	= 99
 } itsdk_reset_cause_t;
 
 void itsdk_cleanResetCause();
