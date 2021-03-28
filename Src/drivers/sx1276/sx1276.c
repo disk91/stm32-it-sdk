@@ -276,6 +276,18 @@ uint32_t SX1276Init( RadioEvents_t * events )
     return ( uint32_t )LoRaBoardCallbacks->SX1276BoardGetWakeTime( ) + ITSDK_MURATA_WAKEUP_TIME;// BOARD_WAKEUP_TIME;
 }
 
+void SX1276DumpRegisters() {
+    log_info("Dump Sx1276 registers");
+    for ( uint8_t a = 0 ; a < 0x70 ; a++ ) {
+        if ( (a & 0x7) == 0 ) {
+            log_info("\r\n[0x%02X] ",a );
+        }
+        uint8_t v = SX1276Read( a );
+        log_info("%02X ",v);
+    }
+    log_info("\r\n");
+}
+
 RadioState_t SX1276GetStatus( void )
 {
 	LOG_INFO_SX1276((">> SX1276GetStatus\r\n"));

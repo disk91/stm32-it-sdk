@@ -306,6 +306,19 @@ void STLL_Transmit_DMA_Stop( void )
 	spi_transmit_dma_stop(&__SPI_HANDLER);
 	HAL_NVIC_DisableIRQ(DMA1_Channel2_3_IRQn);
 
+#ifdef ITSDK_MCCI_SPI_HACK
+	// Apparently the SPI is trashed after this reconfiguration and some of the first read can be missing
+	// Value at address 1 is 0x08, so let's verify we have this value.
+	// This sounds related to certain HAL version of something else not yet identified
+	// This is happening on MCCI / Arduino port
+	int i = 0;
+	uint8_t v;
+	do {
+		v = SX1276Read( 0x01 );
+		i++;
+	} while ( v != 0x8 && i < 32 );
+#endif
+
     // Restore the normal SPI configuration
 #if ITSDK_SX1276_SPI == hspi1
 	bzero(&__SPI_HANDLER,sizeof(SPI_HandleTypeDef));

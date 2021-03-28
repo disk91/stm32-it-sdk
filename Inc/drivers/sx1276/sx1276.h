@@ -581,5 +581,6 @@ bool SX1276CheckRfFrequency( uint32_t frequency );
 void SX1276IoInit( void );
 void SX1276IoDeInit( void );
 void SX1276SetRfTxPower( int8_t power );
+void SX1276DumpRegisters();
 
 #endif /* __SX1276_H__ */
