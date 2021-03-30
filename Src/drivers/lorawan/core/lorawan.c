@@ -548,7 +548,11 @@ itsdk_lorawan_join_t lorawan_driver_LORA_Join(
     	    LoRaMacStatus_t r = LoRaMacMlmeRequest( &mlmeReq );
 			if ( r != LORAMAC_STATUS_OK ) {
 				LOG_WARN_LORAWAN(("LoRaMacMlmeRequest return error(%d)\r\n",r));
-				__loraWanState.joinState = LORAWAN_STATE_JOIN_FAILED;
+				if ( r == LORAMAC_STATUS_NO_CHANNEL_FOUND ) {
+				   __loraWanState.joinState = LORAWAN_STATE_JOIN_BUSY;
+				} else {
+				   __loraWanState.joinState = LORAWAN_STATE_JOIN_FAILED;
+				}
 				lorawan_driver_onJoinFailed();
 			} else {
 				__loraWanState.joinState = LORAWAN_STATE_JOINING;
@@ -588,7 +592,11 @@ itsdk_lorawan_join_t lorawan_driver_LORA_Join(
     	if ( __loraWanState.joinState == LORAWAN_STATE_JOIN_SUCCESS ) {
     		return LORAWAN_JOIN_SUCCESS;
     	} else {
-    		return LORAWAN_JOIN_FAILED;
+    		if (__loraWanState.joinState == LORAWAN_STATE_JOIN_BUSY ) {
+    		  return LORAWAN_JOIN_BUSY;
+    		} else {
+    		  return LORAWAN_JOIN_FAILED;
+    		}
     	}
     } else {
     	return LORAWAN_JOIN_PENDING;
