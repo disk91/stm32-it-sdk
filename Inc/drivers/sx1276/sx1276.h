@@ -573,8 +573,6 @@ uint32_t SX1276GetWakeTime( void );
 
 void SX1276IoIrqInit( DioIrqHandler **irqHandlers );
 
-uint8_t SX1276GetPaSelect( uint8_t power );
-
 void SX1276SetAntSwLowPower( bool status );
 
 void SX1276SetAntSw( uint8_t opMode );
