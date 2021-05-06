@@ -1,6 +1,6 @@
 # Configuration
 
-The ItSdk is a configuration based SDK. Most of the configuration is satically made in the different configuration files.
+The ItSdk is a configuration based SDK. Most of the configuration is statically made in the different configuration files.
 This document is about the dynamic configuration part: the way this static configuration is stored into the NVM memory and able to be updated dynamically at run.
 
 ## Configuration storage
