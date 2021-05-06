@@ -46,10 +46,10 @@
  */
 #define __DEVICE_STM32L011D4		1
 #define __DEVICE_STM32L072XX		2
-#define __DEVICE_STM32L053R8		3
-#define __DEVICE_STM32L031K6		4
-#define __DEVICE_STM32L052T8    5
-#define __DEVICE_STM32L082XX    6
+#define __DEVICE_STM32L082XX    3
+#define __DEVICE_STM32L053R8		4
+#define __DEVICE_STM32L031K6		5
+#define __DEVICE_STM32L052T8    6
 
 /**
  * Supported Low Power Mode
