@@ -128,14 +128,6 @@ static void __st25dv_timeout(uint32_t val) {
 }
 
 /**
- * This function need to be override - callback to manage Rf write
- */
-__weak drivers_st25dv_ret_e drivers_st25dv_RfWriteCB() {
-	ITSDK_ERROR_REPORT(ITSDK_ERROR_CONFIG_OVERRIDE_MISS,0);
-	return ST25DV_FAILED;
-}
-
-/**
  * The Process is part of the main loop
  * It process the result of the IRQ change
  * This way the IRQ is processed synchronously instead of being async.
@@ -179,7 +171,6 @@ void st25dv_process() {
 		if ( (v & ST25DV_ITSTS_RFWRITE_MASK) > 0 ) {
 			// call on RF Write operation into the UserLand
 			//log_info("RfWrite");
-			drivers_st25dv_RfWriteCB();
 		}
 		if ( (v & ST25DV_ITSTS_RFINTERRUPT_MASK) > 0 ) {
 			//log_info("RfInt");
