@@ -66,6 +66,13 @@ From the RF side, the Block 0 to 0xFF can be accessed with standard NFC command.
 ## FTM
 The Fast Transfer Mode is allowing a fast serial communication over NFC. It is actually not yet supported. It will be a different way to implement a serial console over FTM.
 
+## NFC events call-backs
+
+The drivers allows to override call-backs for different events detected by the ST25DV:
+
+- RF write: drivers_st25dv_RfWriteCB()
+- ...
+
 ## Side notes
 >The ST25DV is a bit a mess because it does not manage RF interface and I2C interface in parallel. It bases the access on First Come First Serve. For this reason the library is implementing retry on the I2C communication. 
 When making your RF client application you also need to retry your communications but you also need to let time for the MCU to access the I2C bus.
