@@ -38,10 +38,10 @@
  ******************************************************************************/
 
 /** I2C device address for Si72xx */
-#define SI7200_ADDR_0      0x30
-#define SI7200_ADDR_1      0x31
-#define SI7200_ADDR_2      0x32
-#define SI7200_ADDR_3      0x33
+#define SI72XX_ADDR_0      0x30
+#define SI72XX_ADDR_1      0x31
+#define SI72XX_ADDR_2      0x32
+#define SI72XX_ADDR_3      0x33
 
 /** I2C registers for Si72xx */
 #define SI72XX_HREVID             0xC0
