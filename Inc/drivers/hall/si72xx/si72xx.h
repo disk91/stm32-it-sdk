@@ -91,13 +91,14 @@ typedef enum {
  */
 typedef enum drivers_si72xx_ret_e
 {
-    __SI72XX_OK       =  0,
-    __SI72XX_ERROR    =  1,
-    __SI72XX_BUSY     =  2,
-    __SI72XX_TIMEOUT  =  3,   /* until here, I2C errors (cf. _I2C_Status) */
-    __SI72XX_NODATA   =  4,
-    __SI72XX_MISCALIB =  5,
-    __SI72XX_UNKNOWN  =  6,
+    __SI72XX_OK       =  	0,
+    __SI72XX_ERROR    =  	1,
+    __SI72XX_BUSY     =  	2,
+    __SI72XX_TIMEOUT  =  	3,   /* until here, I2C errors (cf. _I2C_Status) */
+    __SI72XX_NODATA   =  	4,
+    __SI72XX_MISCALIB = 	5,
+    __SI72XX_UNKNOWN  =  	6,
+	__SI72XX_INVALID_ARG = 	7
 } drivers_si72xx_ret_e;
 
 /*******************************************************************************
@@ -110,12 +111,14 @@ drivers_si72xx_ret_e Si72xx_Read_MagField_Data(uint8_t addr,
 drivers_si72xx_ret_e Si72xx_FromIdle_GoToSleep(uint8_t addr);
 drivers_si72xx_ret_e Si72xx_FromIdle_GoToSltimeena(uint8_t addr);
 
+drivers_si72xx_ret_e Si72xx_Set_mT_Range(uint8_t addr,
+                                         Si72xxFieldScale_t mTScale);
 drivers_si72xx_ret_e Si72xx_ReadMagFieldDataAndSleep(uint8_t addr,
                                          Si72xxFieldScale_t mTScale,
                                          Si72xxSleepMode_t sleepMode,
                                          int16_t *magFieldData);
 drivers_si72xx_ret_e Si72xx_EnterSleepMode(uint8_t addr,
-                               Si72xxSleepMode_t sleepMode);
+										Si72xxSleepMode_t sleepMode);
 drivers_si72xx_ret_e Si72xx_EnterLatchMode (uint8_t addr);
 drivers_si72xx_ret_e Si72xx_ReadTemperatureAndSleep(uint8_t addr,
                                         int32_t *rawTemp);
@@ -135,5 +138,17 @@ drivers_si72xx_ret_e Si72xx_ReadVariantAndSleep(uint8_t addr,
                                     uint8_t *pnVariant);
 drivers_si72xx_ret_e Si72xx_SelfTest(uint8_t addr);
 
+
+// =============================================================================================
+
+int32_t Si72xx_ConvertDataCodesToMagneticField(Si72xxFieldScale_t fieldScale, int16_t dataCode);
+
+drivers_si72xx_ret_e Si72xx_Set_Threshold (uint8_t addr,
+										   Si72xxFieldScale_t mTScale,
+										   float threshold);
+drivers_si72xx_ret_e Si72xx_Set_Hysteresis (uint8_t addr,
+											Si72xxFieldScale_t mTScale,
+											float hysteresis);
+drivers_si72xx_ret_e Debug_Si72xx_register (uint8_t addr);
 
 #endif /* DRIVERS_HALL_SI72XX_SI72XX_H */

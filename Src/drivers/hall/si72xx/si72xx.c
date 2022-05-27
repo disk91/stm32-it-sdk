@@ -30,6 +30,7 @@
  * ==========================================================
  */
 
+#include <math.h>
 
 #include <it_sdk/wrappers.h>
 #include <it_sdk/logger/error.h>
@@ -37,6 +38,7 @@
 #include <it_sdk/itsdk.h>
 
 #include <drivers/hall/si72xx/si72xx.h>
+
 
 #if ITSDK_DRIVERS_SI72XX == __ENABLE
 
@@ -147,7 +149,8 @@
     i2c_st = i2c_read8BRegister(&ITSDK_DRIVERS_SI72XX_I2C, addr, reg_addr, read_ptr, 1);              \
     if (i2c_st != __I2C_OK)                                                     \
     {                                                                           \
-        res = SI72XX_FROM_I2C_STATUS(i2c_st);                                   \
+        log_info("\r\n(d) ERROR SI72XX_READ_8B\r\n");							\
+		res = SI72XX_FROM_I2C_STATUS(i2c_st);                                   \
         goto RETURN;                                                            \
     }
 
@@ -171,7 +174,8 @@
     i2c_st = i2c_write8BRegister(&ITSDK_DRIVERS_SI72XX_I2C, addr, reg_addr, write_val, 1);            \
     if (i2c_st != __I2C_OK)                                                     \
     {                                                                           \
-        res = SI72XX_FROM_I2C_STATUS(i2c_st);                                   \
+		log_info("\r\n(d) ERROR SI72XX_WRITE_8B\r\n");							\
+		res = SI72XX_FROM_I2C_STATUS(i2c_st);                                   \
         goto RETURN;                                                            \
     }
 
@@ -181,8 +185,7 @@
 
 // "private" functions
 
-static inline int32_t Si72xx_ConvertDataCodesToMagneticField(Si72xxFieldScale_t fieldScale,
-                                                             int16_t dataCode);
+//static inline int32_t Si72xx_ConvertDataCodesToMagneticField(Si72xxFieldScale_t fieldScale, int16_t dataCode);
 
 
 /***********************************************************************//**
@@ -266,20 +269,31 @@ drivers_si72xx_ret_e Si72xx_FromIdle_GoToSltimeena(uint8_t addr)
     drivers_si72xx_ret_e res = __SI72XX_OK;
     _I2C_Status i2c_st = __I2C_OK;
 
+    /* To store read register value */
     uint8_t read = 0;
 
+	/* Setting SLTIMEENA to enable the sleep timer in order to make periodic measurements and update output pin
+	 * Resetting ONEBURST, SLEEP and STOP to don't go to classic sleep
+     * Setting USESTORE to not reloaded after each sleep cycle the SI72XX_CTRL1 and SI72XX_CTRL2 registers
+     * */
     SI72XX_READ_8B(SI72XX_CTRL3, &read);
     read = ((read & ~SI72XX_SL_FAST_MASK) | SI72XX_SLTIMEENA_MASK);
     SI72XX_WRITE_8B(SI72XX_CTRL3, read);
     SI72XX_READ_8B(SI72XX_POWER_CTRL, &read);
+    /* Reset the ONEBURST, SLEEP and STOP bits
+     * Set the USESTORE bit
+     * */
     read = (read & ~( SI72XX_ONEBURST_MASK |
                       SI72XX_STOP_MASK     |
-                      SI72XX_SLEEP_MASK));
+                      SI72XX_SLEEP_MASK))  |
+                      SI72XX_USESTORE_MASK;
     SI72XX_WRITE_8B(SI72XX_POWER_CTRL, read);
 
 RETURN:
     return res;
 }
+
+
 
 /***********************************************************************//**
  * @brief
@@ -408,6 +422,7 @@ drivers_si72xx_ret_e Si72xx_ReadMagFieldDataAndSleep(uint8_t addr,
     drivers_si72xx_ret_e res = __SI72XX_OK;
     _I2C_Status i2c_st = __I2C_OK;
 
+    /* to get register value */
     uint8_t read = 0;
 
     SI72XX_INT_CALL(Si72xx_WakeUpAndIdle(addr))
@@ -420,7 +435,7 @@ drivers_si72xx_ret_e Si72xx_ReadMagFieldDataAndSleep(uint8_t addr,
     SI72XX_INT_CALL(Si72xx_Set_mT_Range(addr, mTScale))
 
     /* Set the burst-size for averaging */
-    SI72XX_WRITE_8B(SI72XX_CTRL4, SI72XX_DF_BURSTSIZE_1 | SI72XX_DF_BW_128);
+    SI72XX_WRITE_8B(SI72XX_CTRL4, SI72XX_DF_BURSTSIZE_1 | SI72XX_DF_BW_128); // SI72XX_DF_BURSTSIZE_128 | SI72XX_DF_BW_4096
 
     /* Perform a magnetic field conversion */
     SI72XX_READ_8B(SI72XX_POWER_CTRL, &read);
@@ -445,7 +460,7 @@ drivers_si72xx_ret_e Si72xx_ReadMagFieldDataAndSleep(uint8_t addr,
             SI72XX_INT_CALL(Si72xx_FromIdle_GoToSltimeena(addr))
             break;
         case SI72XX_IDLE_MODE :
-            //TODO
+        	// TODO
             break;
         default :
             ;
@@ -484,7 +499,7 @@ drivers_si72xx_ret_e Si72xx_EnterSleepMode(uint8_t addr,
             SI72XX_INT_CALL(Si72xx_FromIdle_GoToSltimeena(addr))
             break;
         case SI72XX_IDLE_MODE :
-            //TODO
+            // TODO
             break;
         default :
             ;
@@ -823,7 +838,7 @@ drivers_si72xx_ret_e Si72xx_SelfTest(uint8_t addr)
     SI72XX_WRITE_8B(SI72XX_TM_FG, 1);
 
     /* Measure field strength */
-    SI72XX_INT_CALL(Si72xx_ReadMagFieldDataAndSleep(addr, SI7210_200MT, SI72XX_IDLE_MODE, &field_pos)) // 200mT
+    SI72XX_INT_CALL(Si72xx_ReadMagFieldDataAndSleep(addr, SI7210_200MT, SI72XX_IDLE_MODE, &field_pos)); // 200mT
     field_pos = Si72xx_ConvertDataCodesToMagneticField(SI7210_200MT, field_pos)/1000;
 
     /* Enable test field generator coil in POSITIVE direction. */
@@ -864,7 +879,7 @@ RETURN:
     return res;
 }
 
-/**************************************************************************//**
+/****************************************************************************
  * @brief  Convert Si7210 I2C Data Readings to Magnetic Field in microTeslas
  * @param[in] fieldScale
  *   20mT or 200mT full-scale magnetic field range
@@ -872,8 +887,8 @@ RETURN:
  *   signed 15bit value read from hall sensor after magnetic field conversion
  * @return microTeslas
  *****************************************************************************/
-static inline int32_t Si72xx_ConvertDataCodesToMagneticField(Si72xxFieldScale_t fieldScale,
-                                                             int16_t dataCode)
+//static inline int32_t Si72xx_ConvertDataCodesToMagneticField(Si72xxFieldScale_t fieldScale, int16_t dataCode)
+int32_t Si72xx_ConvertDataCodesToMagneticField(Si72xxFieldScale_t fieldScale, int16_t dataCode)
 {
     switch (fieldScale)
     {
@@ -887,4 +902,216 @@ static inline int32_t Si72xx_ConvertDataCodesToMagneticField(Si72xxFieldScale_t 
             return 0;
     }
 }
+
+
+
+
+// =============================================================================
+
+
+/**************************************************************************
+ *  @brief
+ *  Function to set threshold value in sw_op register of Si7210 sensor (based on application note AN1018 and https://github.com/FARLY7/si7210-driver)
+ *   Command can only be issued if Si72xx is idle mode.
+ * @param[in] addr
+ *   The I2C address of the sensor
+ * @param[in] mTScale
+ *   The magnetic scale sensor
+ * @param[in] threshold
+ *   The threshold value in mT. Threshold value available from 0.08 mT to 19.2 mT (for 20 mT scale) or 0.8 mT to 192 mT (for 200 mT scale)
+ **************************************************************************/
+drivers_si72xx_ret_e Si72xx_Set_Threshold (uint8_t addr, Si72xxFieldScale_t mTScale, float threshold)
+{
+    /* required for SI72XX_READ/WRITE_8B / SI72XX_INT_CALL macro call */
+    drivers_si72xx_ret_e res = __SI72XX_OK;
+    _I2C_Status i2c_st = __I2C_OK;
+
+    /* hysteresis value set to 10% of the threshold */
+    float hysteresis = threshold * 0.1;
+
+    /* Idle mode */
+    SI72XX_INT_CALL(Si72xx_WakeUpAndIdle(addr));
+
+  	/* Verifying the threshold value according to the scale */
+  	if (mTScale != SI7210_200MT && mTScale != SI7210_20MT)
+  	{
+		return __SI72XX_INVALID_ARG;
+  	}
+
+   	/* To store read register value */
+  	uint8_t read = 0;
+  	SI72XX_READ_8B(SI72XX_POWER_CTRL, &read);
+  	SI72XX_WRITE_8B(SI72XX_POWER_CTRL, (read & ~SI72XX_USESTORE_MASK) | SI72XX_STOP_MASK); /* Set the STOP bit */
+
+  	/* Calculation of the threshold value and adapt his scale according to datasheet */
+  	if (mTScale == SI7210_200MT)
+  	{
+  		/* x20 (LSB = 0.05 mT) to adapt the range from 200mT to 4000 */
+  		threshold *= 20.0;
+  	}
+  	else
+  	{
+		/* x200 (LSB = 0.005 mT) : to adapt the range from 20mT to 4000 */
+  		threshold *= 200.0;
+  	}
+
+    /* Available range from 16 to 3840,
+     * from 0.08 mT to 19.2 mT (20 mT scale) or 0.8 mT to 192 mT (200 mT scale) */
+    if(threshold < 16)
+    {
+        threshold = 16;
+    }
+    else if (threshold > 3840)
+    {
+    	threshold = 3840;
+    }
+
+    /* sw_op register to fill for threshold
+     * threshold = ( 16 + sw_op[3:0] ) × 2^sw_op[6:4] */
+    uint8_t div2_thr = 0;
+
+    /* 4 bits max value : 15 */
+    while (threshold >= 32)
+    {
+    	threshold /= 2;
+    	div2_thr++;
+    }
+    threshold -= 16;
+
+
+    /* Build the register value */
+    uint8_t ctrl1 = 0; /* reset sw_low4field to have 0V by default on alert pin */
+    ctrl1 |= ((div2_thr & 0x07) << 4) | ((uint8_t)(roundf(threshold)) & 0x0F);
+
+	/* Write ctrl1 into SI72XX_CTRL1 register */
+    SI72XX_WRITE_8B(SI72XX_CTRL1, ctrl1);
+
+RETURN:
+	return res;
+}
+
+
+
+/**************************************************************************
+ * @brief
+ *  Function to set hysteresis value in sw_hyst register of Si7210 sensor (based on application note AN1018)
+ *  Command can only be issued if Si72xx is idle mode.
+ * @param[in] addr
+ *   The I2C address of the sensor
+ * @param[in] mTScale
+ *   The magnetic scale sensor
+ * @param[in] hysteresis
+ *   The hysteresis value in mT. Hysteresis value available from 0.04 mT to 8.96 mT (for 20 mT scale) or 0.4 mT to 89.6 mT (for 200 mT scale)
+**************************************************************************/
+drivers_si72xx_ret_e Si72xx_Set_Hysteresis (uint8_t addr, Si72xxFieldScale_t mTScale, float hysteresis)
+{
+    /* required for SI72XX_READ/WRITE_8B / SI72XX_INT_CALL macro call */
+    drivers_si72xx_ret_e res = __SI72XX_OK;
+    _I2C_Status i2c_st = __I2C_OK;
+
+    /* Idle mode */
+    SI72XX_INT_CALL(Si72xx_WakeUpAndIdle(addr));
+
+    /****************************************************/
+    /*					SET HYSTERESIS					*/
+    /****************************************************/
+
+  	/* Calculation of the hysteresis value and adapt his scale according to datasheet
+  	 * LSB = 0.005 mT  */
+    if (mTScale == SI7210_200MT)
+  	{
+  		/* x20 to adapt the range from 90 mT to 2000 */
+    	hysteresis *= 20.0;
+  	}
+  	else if (mTScale == SI7210_20MT)
+  	{
+		/* x200 : to adapt the range from 9 mT to 2000 */
+  		hysteresis *= 200.0;
+  	}
+  	else
+  	{
+  		return __SI72XX_INVALID_ARG;
+  	}
+
+    /* Available range from 8 to 1792,
+     * from 0.04 mT to 8.96 mT (20 mT scale) or 0.4 mT to 89.6 mT (200 mT scale) */
+    if (hysteresis < 8)
+    {
+    	hysteresis = 8;
+    }
+    else if (hysteresis > 1792)
+    {
+    	hysteresis = 1792;
+    }
+
+    /* sw_hyst register to fill for hysteresis
+     * hysteresis = (8 + sw_hyst[2:0]) × 2^sw_hyst[5:3] */
+    uint8_t div2_hys = 0;
+
+    /* 3 bits max value : 7 */
+    while (hysteresis >= 16)
+    {
+    	hysteresis /= 2;
+    	div2_hys++;
+    }
+    hysteresis -= 8;
+
+    /* Build the register value
+     *	sw_fieldpolsel = 0b00 => absolute value field to compare with threshold
+     *      sw_hyst = 0b00 0000 */
+	uint8_t ctrl2 = 0; /* reset sw_fieldpolsel to compare with absolute value */
+	ctrl2 |= ((div2_hys & 0x07) << 3) | ((uint8_t)(roundf(hysteresis)) & 0x07);
+
+	/* Write ctrl2 into SI72XX_CTRL2 register */
+	SI72XX_WRITE_8B(SI72XX_CTRL2, ctrl2);
+
+RETURN:
+	return res;
+}
+
+
+
+
+
+/**************************************************************************
+ * @brief
+ *  Print some of the hall sensor registers.
+ *  Command can only be issued if Si72xx is idle mode.
+ * @param[in] addr
+ *   The I2C address of the sensor
+ **************************************************************************/
+drivers_si72xx_ret_e Debug_Si72xx_register (uint8_t addr)
+{
+	// required for SI72XX_READ/WRITE_8B / SI72XX_INT_CALL macro call
+	drivers_si72xx_ret_e res = __SI72XX_OK;
+	_I2C_Status i2c_st = __I2C_OK;
+
+  	/* To store read register value */
+  	uint8_t read = 0;
+
+  	/* Idle mode */
+  	SI72XX_INT_CALL(Si72xx_WakeUpAndIdle(addr));
+
+  	log_info("\r(i) Debug SI72xx register :\r\n");
+	/* Read every register and deplay their value on uart terminal */
+  	SI72XX_READ_8B(SI72XX_POWER_CTRL, &read);
+  	log_info("\r\t(i) SI72XX_POWER_CTRL (0x%02x) : %02x\r\n", SI72XX_POWER_CTRL, read);
+
+  	SI72XX_READ_8B(SI72XX_CTRL1, &read);
+  	log_info("\t(i) SI72XX_CTRL1 (0x%02x) : %02x\r\n", SI72XX_CTRL1, read);
+
+  	SI72XX_READ_8B(SI72XX_CTRL2, &read);
+  	log_info("\t(i) SI72XX_CTRL2 (0x%02x) : %02x\r\n", SI72XX_CTRL2, read);
+
+RETURN:
+  	return res;
+}
+
+
+
 #endif
+
+
+
+
+
