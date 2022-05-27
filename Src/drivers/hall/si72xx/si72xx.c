@@ -124,10 +124,10 @@
 // convert type _I2C_Status -> drivers_si72xx_ret_e
 // (which reflects original I2C errors, but it has some extra values)
 #define SI72XX_FROM_I2C_STATUS(i2c_st)                                          \
-    i2c_st == __I2C_ERROR   ? __SI72XX_ERROR   :                                \
-    i2c_st == __I2C_BUSY    ? __SI72XX_BUSY    :                                \
-    i2c_st == __I2C_TIMEOUT ? __SI72XX_TIMEOUT :                                \
-                              __SI72XX_UNKNOWN
+		i2c_st == __I2C_ERROR   ? __SI72XX_ERROR   :                                \
+				i2c_st == __I2C_BUSY    ? __SI72XX_BUSY    :                                \
+						i2c_st == __I2C_TIMEOUT ? __SI72XX_TIMEOUT :                                \
+								__SI72XX_UNKNOWN
 
 /***********************************************************************//**
  * @brief
@@ -146,13 +146,13 @@
  * OR's the I2C status as follows: i2c_st |= i2c_read8BRegister(...);
  **************************************************************************/
 #define SI72XX_READ_8B(reg_addr, read_ptr)                                      \
-    i2c_st = i2c_read8BRegister(&ITSDK_DRIVERS_SI72XX_I2C, addr, reg_addr, read_ptr, 1);              \
-    if (i2c_st != __I2C_OK)                                                     \
-    {                                                                           \
-        log_info("\r\n(d) ERROR SI72XX_READ_8B\r\n");							\
-		res = SI72XX_FROM_I2C_STATUS(i2c_st);                                   \
-        goto RETURN;                                                            \
-    }
+		i2c_st = i2c_read8BRegister(&ITSDK_DRIVERS_SI72XX_I2C, addr, reg_addr, read_ptr, 1);              \
+		if (i2c_st != __I2C_OK)                                                     \
+		{                                                                           \
+			log_info("\r\n(d) ERROR SI72XX_READ_8B\r\n");							\
+			res = SI72XX_FROM_I2C_STATUS(i2c_st);                                   \
+			goto RETURN;                                                            \
+		}
 
 /***********************************************************************//**
  * @brief
@@ -171,17 +171,17 @@
  * OR's the I2C status as follows: i2c_st |= i2c_write8BRegister(...);
  **************************************************************************/
 #define SI72XX_WRITE_8B(reg_addr, write_val)                                    \
-    i2c_st = i2c_write8BRegister(&ITSDK_DRIVERS_SI72XX_I2C, addr, reg_addr, write_val, 1);            \
-    if (i2c_st != __I2C_OK)                                                     \
-    {                                                                           \
-		log_info("\r\n(d) ERROR SI72XX_WRITE_8B\r\n");							\
-		res = SI72XX_FROM_I2C_STATUS(i2c_st);                                   \
-        goto RETURN;                                                            \
-    }
+		i2c_st = i2c_write8BRegister(&ITSDK_DRIVERS_SI72XX_I2C, addr, reg_addr, write_val, 1);            \
+		if (i2c_st != __I2C_OK)                                                     \
+		{                                                                           \
+			log_info("\r\n(d) ERROR SI72XX_WRITE_8B\r\n");							\
+			res = SI72XX_FROM_I2C_STATUS(i2c_st);                                   \
+			goto RETURN;                                                            \
+		}
 
 #define SI72XX_INT_CALL(func)                                                   \
-    res = func;                                                                 \
-    if (res != __SI72XX_OK) goto RETURN;
+		res = func;                                                                 \
+		if (res != __SI72XX_OK) goto RETURN;
 
 // "private" functions
 
@@ -198,34 +198,34 @@
  *   Mag-field conversion reading, signed 16-bit integer
  **************************************************************************/
 drivers_si72xx_ret_e Si72xx_Read_MagField_Data(uint8_t addr,
-                                               int16_t *magData)
+		int16_t *magData)
 {
-    // required for SI72XX_READ/WRITE_8B / SI72XX_INT_CALL macro call
-    drivers_si72xx_ret_e res = __SI72XX_OK;
-    _I2C_Status i2c_st = __I2C_OK;
+	// required for SI72XX_READ/WRITE_8B / SI72XX_INT_CALL macro call
+	drivers_si72xx_ret_e res = __SI72XX_OK;
+	_I2C_Status i2c_st = __I2C_OK;
 
-    uint8_t read = 0;
-    uint8_t freshBit = 0;
+	uint8_t read = 0;
+	uint8_t freshBit = 0;
 
-    SI72XX_READ_8B(SI72XX_DSPSIGM, &read);
+	SI72XX_READ_8B(SI72XX_DSPSIGM, &read);
 
-    freshBit = ((read & SI72XX_FRESH_BIT_MASK) >> SI72XX_FRESH_BIT_SHIFT);
-    if (freshBit == 0)
-    {
-        res = __SI72XX_NODATA;
-        goto RETURN;
-    }
+	freshBit = ((read & SI72XX_FRESH_BIT_MASK) >> SI72XX_FRESH_BIT_SHIFT);
+	if (freshBit == 0)
+	{
+		res = __SI72XX_NODATA;
+		goto RETURN;
+	}
 
-    *magData = ((((uint16_t)read) & SI72XX_DSPSIGM_MASK) << SI72XX_DSPSIGM_SHIFT);
+	*magData = ((((uint16_t)read) & SI72XX_DSPSIGM_MASK) << SI72XX_DSPSIGM_SHIFT);
 
-    SI72XX_READ_8B(SI72XX_DSPSIGL, &read);
-    /* Data code output is 15-bit unsigned value where 0mT=16384 */
-    *magData |= read;
-    /* Converts data code output to a signed integer */
-    *magData = *magData - SI72XX_ZERO_FIELD;
+	SI72XX_READ_8B(SI72XX_DSPSIGL, &read);
+	/* Data code output is 15-bit unsigned value where 0mT=16384 */
+	*magData |= read;
+	/* Converts data code output to a signed integer */
+	*magData = *magData - SI72XX_ZERO_FIELD;
 
-RETURN:
-    return res;
+	RETURN:
+	return res;
 }
 
 /***********************************************************************//**
@@ -237,21 +237,21 @@ RETURN:
  **************************************************************************/
 drivers_si72xx_ret_e Si72xx_FromIdle_GoToSleep(uint8_t addr)
 {
-    // required for SI72XX_READ/WRITE_8B / SI72XX_INT_CALL macro call
-    drivers_si72xx_ret_e res = __SI72XX_OK;
-    _I2C_Status i2c_st = __I2C_OK;
+	// required for SI72XX_READ/WRITE_8B / SI72XX_INT_CALL macro call
+	drivers_si72xx_ret_e res = __SI72XX_OK;
+	_I2C_Status i2c_st = __I2C_OK;
 
-    uint8_t read = 0;
+	uint8_t read = 0;
 
-    SI72XX_READ_8B(SI72XX_CTRL3, &read);
-    read = (read & (~SI72XX_SLTIMEENA_MASK));
-    SI72XX_WRITE_8B(SI72XX_CTRL3, read);
-    SI72XX_READ_8B(SI72XX_POWER_CTRL, &read);
-    read = (read | SI72XX_SLEEP_MASK);
-    SI72XX_WRITE_8B(SI72XX_POWER_CTRL, read);
+	SI72XX_READ_8B(SI72XX_CTRL3, &read);
+	read = (read & (~SI72XX_SLTIMEENA_MASK));
+	SI72XX_WRITE_8B(SI72XX_CTRL3, read);
+	SI72XX_READ_8B(SI72XX_POWER_CTRL, &read);
+	read = (read | SI72XX_SLEEP_MASK);
+	SI72XX_WRITE_8B(SI72XX_POWER_CTRL, read);
 
-RETURN:
-    return res;
+	RETURN:
+	return res;
 }
 
 /***********************************************************************//**
@@ -265,32 +265,32 @@ RETURN:
  **************************************************************************/
 drivers_si72xx_ret_e Si72xx_FromIdle_GoToSltimeena(uint8_t addr)
 {
-    // required for SI72XX_READ/WRITE_8B / SI72XX_INT_CALL macro call
-    drivers_si72xx_ret_e res = __SI72XX_OK;
-    _I2C_Status i2c_st = __I2C_OK;
+	// required for SI72XX_READ/WRITE_8B / SI72XX_INT_CALL macro call
+	drivers_si72xx_ret_e res = __SI72XX_OK;
+	_I2C_Status i2c_st = __I2C_OK;
 
-    /* To store read register value */
-    uint8_t read = 0;
+	/* To store read register value */
+	uint8_t read = 0;
 
 	/* Setting SLTIMEENA to enable the sleep timer in order to make periodic measurements and update output pin
 	 * Resetting ONEBURST, SLEEP and STOP to don't go to classic sleep
-     * Setting USESTORE to not reloaded after each sleep cycle the SI72XX_CTRL1 and SI72XX_CTRL2 registers
-     * */
-    SI72XX_READ_8B(SI72XX_CTRL3, &read);
-    read = ((read & ~SI72XX_SL_FAST_MASK) | SI72XX_SLTIMEENA_MASK);
-    SI72XX_WRITE_8B(SI72XX_CTRL3, read);
-    SI72XX_READ_8B(SI72XX_POWER_CTRL, &read);
-    /* Reset the ONEBURST, SLEEP and STOP bits
-     * Set the USESTORE bit
-     * */
-    read = (read & ~( SI72XX_ONEBURST_MASK |
-                      SI72XX_STOP_MASK     |
-                      SI72XX_SLEEP_MASK))  |
-                      SI72XX_USESTORE_MASK;
-    SI72XX_WRITE_8B(SI72XX_POWER_CTRL, read);
+	 * Setting USESTORE to not reloaded after each sleep cycle the SI72XX_CTRL1 and SI72XX_CTRL2 registers
+	 * */
+	SI72XX_READ_8B(SI72XX_CTRL3, &read);
+	read = ((read & ~SI72XX_SL_FAST_MASK) | SI72XX_SLTIMEENA_MASK);
+	SI72XX_WRITE_8B(SI72XX_CTRL3, read);
+	SI72XX_READ_8B(SI72XX_POWER_CTRL, &read);
+	/* Reset the ONEBURST, SLEEP and STOP bits
+	 * Set the USESTORE bit
+	 * */
+	read = (read & ~( SI72XX_ONEBURST_MASK |
+			SI72XX_STOP_MASK     |
+			SI72XX_SLEEP_MASK))  |
+					SI72XX_USESTORE_MASK;
+	SI72XX_WRITE_8B(SI72XX_POWER_CTRL, read);
 
-RETURN:
-    return res;
+	RETURN:
+	return res;
 }
 
 
@@ -307,12 +307,12 @@ RETURN:
 
 drivers_si72xx_ret_e Si72xx_WakeUpAndIdle(uint8_t devAdr)
 {
-    uint8_t value;
+	uint8_t value;
 
-    if (i2c_write(&ITSDK_DRIVERS_SI72XX_I2C, devAdr, NULL, 0) != __I2C_OK)
-        return __I2C_ERROR;
+	if (i2c_write(&ITSDK_DRIVERS_SI72XX_I2C, devAdr, NULL, 0) != __I2C_OK)
+		return __I2C_ERROR;
 
-    return i2c_read(&ITSDK_DRIVERS_SI72XX_I2C, devAdr, &value, 1);
+	return i2c_read(&ITSDK_DRIVERS_SI72XX_I2C, devAdr, &value, 1);
 
 }
 
@@ -329,27 +329,27 @@ drivers_si72xx_ret_e Si72xx_WakeUpAndIdle(uint8_t devAdr)
  *       OTP data read out
  **************************************************************************/
 drivers_si72xx_ret_e Si72xx_Read_OTP(uint8_t addr,
-                                     uint8_t otpAddr,
-                                     uint8_t *otpData)
+		uint8_t otpAddr,
+		uint8_t *otpData)
 {
-    // required for SI72XX_READ/WRITE_8B / SI72XX_INT_CALL macro call
-    drivers_si72xx_ret_e res = __SI72XX_OK;
-    _I2C_Status i2c_st = __I2C_OK;
+	// required for SI72XX_READ/WRITE_8B / SI72XX_INT_CALL macro call
+	drivers_si72xx_ret_e res = __SI72XX_OK;
+	_I2C_Status i2c_st = __I2C_OK;
 
-    uint8_t read = 0;
+	uint8_t read = 0;
 
-    SI72XX_READ_8B(SI72XX_OTP_CTRL, &read);
-    if (read & SI72XX_OTP_BUSY_MASK)
-        return __SI72XX_BUSY;
+	SI72XX_READ_8B(SI72XX_OTP_CTRL, &read);
+	if (read & SI72XX_OTP_BUSY_MASK)
+		return __SI72XX_BUSY;
 
-    SI72XX_WRITE_8B(SI72XX_OTP_ADDR, otpAddr);
-    SI72XX_WRITE_8B(SI72XX_OTP_CTRL, SI72XX_OTP_READ_EN_MASK);
-    SI72XX_READ_8B(SI72XX_OTP_DATA, &read);
+	SI72XX_WRITE_8B(SI72XX_OTP_ADDR, otpAddr);
+	SI72XX_WRITE_8B(SI72XX_OTP_CTRL, SI72XX_OTP_READ_EN_MASK);
+	SI72XX_READ_8B(SI72XX_OTP_DATA, &read);
 
-    *otpData = read;
+	*otpData = read;
 
-RETURN:
-    return res;
+	RETURN:
+	return res;
 }
 
 /***********************************************************************//**
@@ -362,39 +362,39 @@ RETURN:
  *   20mT or 200mT
  **************************************************************************/
 drivers_si72xx_ret_e Si72xx_Set_mT_Range(uint8_t addr,
-                                         Si72xxFieldScale_t mTScale)
+		Si72xxFieldScale_t mTScale)
 {
-    // required for SI72XX_READ/WRITE_8B / SI72XX_INT_CALL macro call
-    drivers_si72xx_ret_e res = __SI72XX_OK;
-    _I2C_Status i2c_st = __I2C_OK;
+	// required for SI72XX_READ/WRITE_8B / SI72XX_INT_CALL macro call
+	drivers_si72xx_ret_e res = __SI72XX_OK;
+	_I2C_Status i2c_st = __I2C_OK;
 
-    uint8_t srcAddr = 0;
-    uint8_t data = 0;
+	uint8_t srcAddr = 0;
+	uint8_t data = 0;
 
-    if (mTScale == SI7210_20MT)
-    {
-        srcAddr = SI72XX_OTP_20MT_ADDR;
-    }
-    else if (mTScale == SI7210_200MT)
-    {
-        srcAddr = SI72XX_OTP_200MT_ADDR;
-    }
+	if (mTScale == SI7210_20MT)
+	{
+		srcAddr = SI72XX_OTP_20MT_ADDR;
+	}
+	else if (mTScale == SI7210_200MT)
+	{
+		srcAddr = SI72XX_OTP_200MT_ADDR;
+	}
 
-    SI72XX_INT_CALL(Si72xx_Read_OTP(addr, srcAddr++, &data))
-    SI72XX_WRITE_8B(SI72XX_A0, data);
-    SI72XX_INT_CALL(Si72xx_Read_OTP(addr, srcAddr++, &data))
-    SI72XX_WRITE_8B(SI72XX_A1, data);
-    SI72XX_INT_CALL(Si72xx_Read_OTP(addr, srcAddr++, &data))
-    SI72XX_WRITE_8B(SI72XX_A2, data);
-    SI72XX_INT_CALL(Si72xx_Read_OTP(addr, srcAddr++, &data))
-    SI72XX_WRITE_8B(SI72XX_A3, data);
-    SI72XX_INT_CALL(Si72xx_Read_OTP(addr, srcAddr++, &data))
-    SI72XX_WRITE_8B(SI72XX_A4, data);
-    SI72XX_INT_CALL(Si72xx_Read_OTP(addr, srcAddr++, &data))
-    SI72XX_WRITE_8B(SI72XX_A5, data);
+	SI72XX_INT_CALL(Si72xx_Read_OTP(addr, srcAddr++, &data))
+	SI72XX_WRITE_8B(SI72XX_A0, data);
+	SI72XX_INT_CALL(Si72xx_Read_OTP(addr, srcAddr++, &data))
+	SI72XX_WRITE_8B(SI72XX_A1, data);
+	SI72XX_INT_CALL(Si72xx_Read_OTP(addr, srcAddr++, &data))
+	SI72XX_WRITE_8B(SI72XX_A2, data);
+	SI72XX_INT_CALL(Si72xx_Read_OTP(addr, srcAddr++, &data))
+	SI72XX_WRITE_8B(SI72XX_A3, data);
+	SI72XX_INT_CALL(Si72xx_Read_OTP(addr, srcAddr++, &data))
+	SI72XX_WRITE_8B(SI72XX_A4, data);
+	SI72XX_INT_CALL(Si72xx_Read_OTP(addr, srcAddr++, &data))
+	SI72XX_WRITE_8B(SI72XX_A5, data);
 
-RETURN:
-    return res;
+	RETURN:
+	return res;
 }
 
 /***********************************************************************//**
@@ -414,60 +414,60 @@ RETURN:
  *   Magnetic-field conversion reading, signed 16-bit integer
  **************************************************************************/
 drivers_si72xx_ret_e Si72xx_ReadMagFieldDataAndSleep(uint8_t addr,
-                                                     Si72xxFieldScale_t mTScale,
-                                                     Si72xxSleepMode_t sleepMode,
-                                                     int16_t *magFieldData)
+		Si72xxFieldScale_t mTScale,
+		Si72xxSleepMode_t sleepMode,
+		int16_t *magFieldData)
 {
-    // required for SI72XX_READ/WRITE_8B / SI72XX_INT_CALL macro call
-    drivers_si72xx_ret_e res = __SI72XX_OK;
-    _I2C_Status i2c_st = __I2C_OK;
+	// required for SI72XX_READ/WRITE_8B / SI72XX_INT_CALL macro call
+	drivers_si72xx_ret_e res = __SI72XX_OK;
+	_I2C_Status i2c_st = __I2C_OK;
 
-    /* to get register value */
-    uint8_t read = 0;
+	/* to get register value */
+	uint8_t read = 0;
 
-    SI72XX_INT_CALL(Si72xx_WakeUpAndIdle(addr))
+	SI72XX_INT_CALL(Si72xx_WakeUpAndIdle(addr))
 
-    /* set the stop-bit */
-    SI72XX_READ_8B(SI72XX_POWER_CTRL, &read);
-    read = ((read & ~SI72XX_POWERCTRL_MASK) | SI72XX_STOP_MASK);
-    SI72XX_WRITE_8B(SI72XX_POWER_CTRL, read);
+	/* set the stop-bit */
+	SI72XX_READ_8B(SI72XX_POWER_CTRL, &read);
+	read = ((read & ~SI72XX_POWERCTRL_MASK) | SI72XX_STOP_MASK);
+	SI72XX_WRITE_8B(SI72XX_POWER_CTRL, read);
 
-    SI72XX_INT_CALL(Si72xx_Set_mT_Range(addr, mTScale))
+	SI72XX_INT_CALL(Si72xx_Set_mT_Range(addr, mTScale))
 
-    /* Set the burst-size for averaging */
-    SI72XX_WRITE_8B(SI72XX_CTRL4, SI72XX_DF_BURSTSIZE_1 | SI72XX_DF_BW_128); // SI72XX_DF_BURSTSIZE_128 | SI72XX_DF_BW_4096
+	/* Set the burst-size for averaging */
+	SI72XX_WRITE_8B(SI72XX_CTRL4, SI72XX_DF_BURSTSIZE_1 | SI72XX_DF_BW_128); // SI72XX_DF_BURSTSIZE_128 | SI72XX_DF_BW_4096
 
-    /* Perform a magnetic field conversion */
-    SI72XX_READ_8B(SI72XX_POWER_CTRL, &read);
-    read = ((read & ~SI72XX_POWERCTRL_MASK) | SI72XX_ONEBURST_MASK);
-    SI72XX_WRITE_8B(SI72XX_POWER_CTRL, read);
+	/* Perform a magnetic field conversion */
+	SI72XX_READ_8B(SI72XX_POWER_CTRL, &read);
+	read = ((read & ~SI72XX_POWERCTRL_MASK) | SI72XX_ONEBURST_MASK);
+	SI72XX_WRITE_8B(SI72XX_POWER_CTRL, read);
 
-    /* Wait for measurement to complete */
-    SI72XX_READ_8B(SI72XX_POWER_CTRL, &read);
-    while ((read & SI72XX_MEASRO_MASK) >> SI72XX_MEASRO_SHIFT)
-    {
-        SI72XX_READ_8B(SI72XX_POWER_CTRL, &read);
-    }
+	/* Wait for measurement to complete */
+	SI72XX_READ_8B(SI72XX_POWER_CTRL, &read);
+	while ((read & SI72XX_MEASRO_MASK) >> SI72XX_MEASRO_SHIFT)
+	{
+		SI72XX_READ_8B(SI72XX_POWER_CTRL, &read);
+	}
 
-    SI72XX_INT_CALL(Si72xx_Read_MagField_Data(addr, magFieldData))
+	SI72XX_INT_CALL(Si72xx_Read_MagField_Data(addr, magFieldData))
 
-    switch (sleepMode)
-    {
-        case SI72XX_SLEEP_MODE :
-            SI72XX_INT_CALL(Si72xx_FromIdle_GoToSleep(addr))
-            break;
-        case SI72XX_SLTIMEENA_MODE :
-            SI72XX_INT_CALL(Si72xx_FromIdle_GoToSltimeena(addr))
-            break;
-        case SI72XX_IDLE_MODE :
-        	// TODO
-            break;
-        default :
-            ;
-    }
+	switch (sleepMode)
+	{
+	case SI72XX_SLEEP_MODE :
+		SI72XX_INT_CALL(Si72xx_FromIdle_GoToSleep(addr))
+		break;
+	case SI72XX_SLTIMEENA_MODE :
+		SI72XX_INT_CALL(Si72xx_FromIdle_GoToSltimeena(addr))
+		break;
+	case SI72XX_IDLE_MODE :
+		// TODO
+		break;
+	default :
+		;
+	}
 
-RETURN:
-    return res;
+	RETURN:
+	return res;
 }
 
 /***********************************************************************//**
@@ -483,30 +483,30 @@ RETURN:
  *   SI72XX_SLTIMEENA: Si72xx into sltimeena mode. Updates output periodically
  **************************************************************************/
 drivers_si72xx_ret_e Si72xx_EnterSleepMode(uint8_t addr,
-                                           Si72xxSleepMode_t sleepMode)
+		Si72xxSleepMode_t sleepMode)
 {
-    // required for SI72XX_READ/WRITE_8B / SI72XX_INT_CALL macro call
-    drivers_si72xx_ret_e res = __SI72XX_OK;
+	// required for SI72XX_READ/WRITE_8B / SI72XX_INT_CALL macro call
+	drivers_si72xx_ret_e res = __SI72XX_OK;
 
-    SI72XX_INT_CALL(Si72xx_WakeUpAndIdle(addr))
+	SI72XX_INT_CALL(Si72xx_WakeUpAndIdle(addr))
 
-    switch (sleepMode)
-    {
-        case SI72XX_SLEEP_MODE :
-            SI72XX_INT_CALL(Si72xx_FromIdle_GoToSleep(addr))
-            break;
-        case SI72XX_SLTIMEENA_MODE :
-            SI72XX_INT_CALL(Si72xx_FromIdle_GoToSltimeena(addr))
-            break;
-        case SI72XX_IDLE_MODE :
-            // TODO
-            break;
-        default :
-            ;
-    }
+	switch (sleepMode)
+	{
+	case SI72XX_SLEEP_MODE :
+		SI72XX_INT_CALL(Si72xx_FromIdle_GoToSleep(addr))
+		break;
+	case SI72XX_SLTIMEENA_MODE :
+		SI72XX_INT_CALL(Si72xx_FromIdle_GoToSltimeena(addr))
+		break;
+	case SI72XX_IDLE_MODE :
+		// TODO
+		break;
+	default :
+		;
+	}
 
-RETURN:
-    return res;
+	RETURN:
+	return res;
 }
 
 /***********************************************************************//**
@@ -518,41 +518,41 @@ RETURN:
  **************************************************************************/
 drivers_si72xx_ret_e Si72xx_EnterLatchMode(uint8_t addr)
 {
-    // required for SI72XX_READ/WRITE_8B / SI72XX_INT_CALL macro call
-    drivers_si72xx_ret_e res = __SI72XX_OK;
-    _I2C_Status i2c_st = __I2C_OK;
+	// required for SI72XX_READ/WRITE_8B / SI72XX_INT_CALL macro call
+	drivers_si72xx_ret_e res = __SI72XX_OK;
+	_I2C_Status i2c_st = __I2C_OK;
 
-    uint8_t read = 0;
+	uint8_t read = 0;
 
-    SI72XX_INT_CALL(Si72xx_WakeUpAndIdle(addr))
+	SI72XX_INT_CALL(Si72xx_WakeUpAndIdle(addr))
 
-    /* Set Stop-bit */
-    SI72XX_READ_8B(SI72XX_POWER_CTRL, &read);
-    read = (read | SI72XX_USESTORE_MASK | SI72XX_STOP_MASK);
-    SI72XX_WRITE_8B(SI72XX_POWER_CTRL, read);
+	/* Set Stop-bit */
+	SI72XX_READ_8B(SI72XX_POWER_CTRL, &read);
+	read = (read | SI72XX_USESTORE_MASK | SI72XX_STOP_MASK);
+	SI72XX_WRITE_8B(SI72XX_POWER_CTRL, read);
 
-    /* Set output high for low magnetic field */
-    /* Set sw_op to zero for latch mode */
-    read = (SI72XX_SWOP_LATCHMODE | SI72XX_SW_LOW4FIELD_MASK);
-    SI72XX_WRITE_8B(SI72XX_CTRL1, read);
+	/* Set output high for low magnetic field */
+	/* Set sw_op to zero for latch mode */
+	read = (SI72XX_SWOP_LATCHMODE | SI72XX_SW_LOW4FIELD_MASK);
+	SI72XX_WRITE_8B(SI72XX_CTRL1, read);
 
-    /* Set output to unipolar positive with hysteresis = 0.2mT */
-    read = ((SI72XX_FIELDPOLSEL_LATCHMODE << SI72XX_FIELDPOLSEL_SHIFT)
-            | SI72XX_SWHYST_LATCHMODE);
-    SI72XX_WRITE_8B(SI72XX_CTRL2, read);
+	/* Set output to unipolar positive with hysteresis = 0.2mT */
+	read = ((SI72XX_FIELDPOLSEL_LATCHMODE << SI72XX_FIELDPOLSEL_SHIFT)
+			| SI72XX_SWHYST_LATCHMODE);
+	SI72XX_WRITE_8B(SI72XX_CTRL2, read);
 
-    /* Enable the sleep-timer for periodic measurements */
-    SI72XX_READ_8B(SI72XX_CTRL3, &read);
-    read = (read | SI72XX_SLTIMEENA_MASK);
-    SI72XX_WRITE_8B(SI72XX_CTRL3, read);
+	/* Enable the sleep-timer for periodic measurements */
+	SI72XX_READ_8B(SI72XX_CTRL3, &read);
+	read = (read | SI72XX_SLTIMEENA_MASK);
+	SI72XX_WRITE_8B(SI72XX_CTRL3, read);
 
-    /* Clear stop-bit */
-    SI72XX_READ_8B(SI72XX_POWER_CTRL, &read);
-    read = (read & ~SI72XX_STOP_MASK);
-    SI72XX_WRITE_8B(SI72XX_POWER_CTRL, read);
+	/* Clear stop-bit */
+	SI72XX_READ_8B(SI72XX_POWER_CTRL, &read);
+	read = (read & ~SI72XX_STOP_MASK);
+	SI72XX_WRITE_8B(SI72XX_POWER_CTRL, read);
 
-RETURN:
-    return res;
+	RETURN:
+	return res;
 }
 
 /***********************************************************************//**
@@ -565,66 +565,66 @@ RETURN:
  *   Temperature measurement in millidegree Celsius
  **************************************************************************/
 drivers_si72xx_ret_e Si72xx_ReadTemperatureAndSleep(uint8_t addr,
-                                                    int32_t *rawTemp)
+		int32_t *rawTemp)
 {
-    // required for SI72XX_READ/WRITE_8B / SI72XX_INT_CALL macro call
-    drivers_si72xx_ret_e res = __SI72XX_OK;
-    _I2C_Status i2c_st = __I2C_OK;
+	// required for SI72XX_READ/WRITE_8B / SI72XX_INT_CALL macro call
+	drivers_si72xx_ret_e res = __SI72XX_OK;
+	_I2C_Status i2c_st = __I2C_OK;
 
-    uint8_t read = 0;
-    uint8_t dspSigM, dspSigL;
-    uint8_t freshBit;
-    int16_t dataValue;
-    int32_t milliCelsius;
+	uint8_t read = 0;
+	uint8_t dspSigM, dspSigL;
+	uint8_t freshBit;
+	int16_t dataValue;
+	int32_t milliCelsius;
 
-    uint16_t tempCtrl4Setting = 0x00;
+	uint16_t tempCtrl4Setting = 0x00;
 
-    SI72XX_INT_CALL(Si72xx_WakeUpAndIdle(addr))
+	SI72XX_INT_CALL(Si72xx_WakeUpAndIdle(addr))
 
-    /* Set stop-bit */
-    SI72XX_READ_8B(SI72XX_POWER_CTRL, &read);
-    read = ((read & ~SI72XX_POWERCTRL_MASK) | SI72XX_STOP_MASK);
-    SI72XX_WRITE_8B(SI72XX_POWER_CTRL, read);
+	/* Set stop-bit */
+	SI72XX_READ_8B(SI72XX_POWER_CTRL, &read);
+	read = ((read & ~SI72XX_POWERCTRL_MASK) | SI72XX_STOP_MASK);
+	SI72XX_WRITE_8B(SI72XX_POWER_CTRL, read);
 
-    /* clear IIR & FIR filtering */
-    SI72XX_WRITE_8B(SI72XX_CTRL4, tempCtrl4Setting);
+	/* clear IIR & FIR filtering */
+	SI72XX_WRITE_8B(SI72XX_CTRL4, tempCtrl4Setting);
 
-    /* Select temperature conversion */
-    SI72XX_READ_8B(SI72XX_DSPSIGSEL, &read);
-    read = ((read & ~SI72XX_DSPSIGSEL_MASK) | SI72XX_DSPSIGSEL_TEMP);
-    SI72XX_WRITE_8B(SI72XX_DSPSIGSEL, read);
+	/* Select temperature conversion */
+	SI72XX_READ_8B(SI72XX_DSPSIGSEL, &read);
+	read = ((read & ~SI72XX_DSPSIGSEL_MASK) | SI72XX_DSPSIGSEL_TEMP);
+	SI72XX_WRITE_8B(SI72XX_DSPSIGSEL, read);
 
-    /* Perform temperature conversion */
-    SI72XX_READ_8B(SI72XX_POWER_CTRL, &read);
-    read = (((read & (~SI72XX_STOP_MASK)) & ~(SI72XX_SLEEP_MASK))
-            | SI72XX_ONEBURST_MASK);
-    SI72XX_WRITE_8B(SI72XX_POWER_CTRL, read);
+	/* Perform temperature conversion */
+	SI72XX_READ_8B(SI72XX_POWER_CTRL, &read);
+	read = (((read & (~SI72XX_STOP_MASK)) & ~(SI72XX_SLEEP_MASK))
+			| SI72XX_ONEBURST_MASK);
+	SI72XX_WRITE_8B(SI72XX_POWER_CTRL, read);
 
-    /* Read conversion res */
-    SI72XX_READ_8B(SI72XX_DSPSIGM, &dspSigM);
-    SI72XX_READ_8B(SI72XX_DSPSIGL, &dspSigL);
+	/* Read conversion res */
+	SI72XX_READ_8B(SI72XX_DSPSIGM, &dspSigM);
+	SI72XX_READ_8B(SI72XX_DSPSIGL, &dspSigL);
 
-    SI72XX_INT_CALL(Si72xx_FromIdle_GoToSleep(addr))
+	SI72XX_INT_CALL(Si72xx_FromIdle_GoToSleep(addr))
 
-    freshBit = dspSigM >> SI72XX_FRESH_BIT_SHIFT;
-    if (freshBit == 0)
-    {
-        res = __SI72XX_NODATA;
-        goto RETURN;
-    }
+	freshBit = dspSigM >> SI72XX_FRESH_BIT_SHIFT;
+	if (freshBit == 0)
+	{
+		res = __SI72XX_NODATA;
+		goto RETURN;
+	}
 
-    /* dataValue = (Dspigm[6:0]<<5) + (Dspigl[7:0]>>3) */
-    dataValue = (((uint16_t)dspSigM) & SI72XX_DSPSIGM_MASK) << 8;
-    dataValue = (dataValue | dspSigL) >> 3;
+	/* dataValue = (Dspigm[6:0]<<5) + (Dspigl[7:0]>>3) */
+	dataValue = (((uint16_t)dspSigM) & SI72XX_DSPSIGM_MASK) << 8;
+	dataValue = (dataValue | dspSigL) >> 3;
 
-    /* rawTemp(mC) = ((dataValue^2)*(-3.83*10^-6))+(0.16094*dataValue)-279.8 */
-    milliCelsius = ((int32_t)dataValue * (int32_t)dataValue * -383 / 100000)
-                   + ((16094 * dataValue) / 100) - 279800;
+	/* rawTemp(mC) = ((dataValue^2)*(-3.83*10^-6))+(0.16094*dataValue)-279.8 */
+	milliCelsius = ((int32_t)dataValue * (int32_t)dataValue * -383 / 100000)
+                		   + ((16094 * dataValue) / 100) - 279800;
 
-    *rawTemp = milliCelsius;
+	*rawTemp = milliCelsius;
 
-RETURN:
-    return res;
+	RETURN:
+	return res;
 }
 
 /***********************************************************************//**
@@ -639,36 +639,36 @@ RETURN:
  *   Temperature gain correction
  **************************************************************************/
 drivers_si72xx_ret_e Si72xx_ReadTempCorrectionDataAndSleep(uint8_t addr,
-                                                           int16_t *offsetValue,
-                                                           int16_t *gainValue)
+		int16_t *offsetValue,
+		int16_t *gainValue)
 {
-    // required for SI72XX_READ/WRITE_8B / SI72XX_INT_CALL macro call
-    drivers_si72xx_ret_e res = __SI72XX_OK;
-    _I2C_Status i2c_st = __I2C_OK;
+	// required for SI72XX_READ/WRITE_8B / SI72XX_INT_CALL macro call
+	drivers_si72xx_ret_e res = __SI72XX_OK;
+	_I2C_Status i2c_st = __I2C_OK;
 
-    uint8_t read = 0;
+	uint8_t read = 0;
 
-    SI72XX_INT_CALL(Si72xx_WakeUpAndIdle(addr))
+	SI72XX_INT_CALL(Si72xx_WakeUpAndIdle(addr))
 
-    /* Set Stop-bit */
-    SI72XX_READ_8B(SI72XX_POWER_CTRL, &read);
-    read = ((read & ~SI72XX_POWERCTRL_MASK) | SI72XX_STOP_MASK);
-    SI72XX_WRITE_8B(SI72XX_POWER_CTRL, read);
+	/* Set Stop-bit */
+	SI72XX_READ_8B(SI72XX_POWER_CTRL, &read);
+	read = ((read & ~SI72XX_POWERCTRL_MASK) | SI72XX_STOP_MASK);
+	SI72XX_WRITE_8B(SI72XX_POWER_CTRL, read);
 
-    /* Read offset register value */
-    SI72XX_INT_CALL(Si72xx_Read_OTP(addr, SI72XX_OFFSET_ADDR, &read))
-    /* Calculate offset: Offset = value(0x1D)/16 */
-    *offsetValue = (int8_t)read * 1000 / 16;
+	/* Read offset register value */
+	SI72XX_INT_CALL(Si72xx_Read_OTP(addr, SI72XX_OFFSET_ADDR, &read))
+	/* Calculate offset: Offset = value(0x1D)/16 */
+	*offsetValue = (int8_t)read * 1000 / 16;
 
-    /* Read gain register value */
-    SI72XX_INT_CALL(Si72xx_Read_OTP(addr, SI72XX_GAIN_ADDR, &read))
-    /* calculate gain: Gain = (value(0x1E)/2048) + 1 */
-    *gainValue = ((int8_t)read * 1000 / 2048) + 1000;
+	/* Read gain register value */
+	SI72XX_INT_CALL(Si72xx_Read_OTP(addr, SI72XX_GAIN_ADDR, &read))
+	/* calculate gain: Gain = (value(0x1E)/2048) + 1 */
+	*gainValue = ((int8_t)read * 1000 / 2048) + 1000;
 
-    SI72XX_INT_CALL(Si72xx_FromIdle_GoToSleep(addr))
+	SI72XX_INT_CALL(Si72xx_FromIdle_GoToSleep(addr))
 
-RETURN:
-    return res;
+	RETURN:
+	return res;
 }
 
 /**************************************************************************//**
@@ -684,199 +684,199 @@ RETURN:
  *   Gain correction data
  *****************************************************************************/
 drivers_si72xx_ret_e Si72xx_ReadCorrectedTempAndSleep(uint8_t addr,
-                                                      int16_t offsetData,
-                                                      int16_t gainData,
-                                                      int32_t *correctedTemp)
+		int16_t offsetData,
+		int16_t gainData,
+		int32_t *correctedTemp)
 {
-    // required for SI72XX_READ/WRITE_8B / SI72XX_INT_CALL macro call
-    drivers_si72xx_ret_e res = __SI72XX_OK;
-    _I2C_Status i2c_st = __I2C_OK;
+	// required for SI72XX_READ/WRITE_8B / SI72XX_INT_CALL macro call
+	drivers_si72xx_ret_e res = __SI72XX_OK;
+	_I2C_Status i2c_st = __I2C_OK;
 
-    uint8_t read = 0;
-    uint8_t dspSigM, dspSigL;
-    uint8_t freshBit;
-    int16_t dataValue;
-    int32_t rawTemp;
-    int32_t milliCelsius;
+	uint8_t read = 0;
+	uint8_t dspSigM, dspSigL;
+	uint8_t freshBit;
+	int16_t dataValue;
+	int32_t rawTemp;
+	int32_t milliCelsius;
 
-    uint16_t tempCtrl4Setting = 0x00;
+	uint16_t tempCtrl4Setting = 0x00;
 
-    SI72XX_INT_CALL(Si72xx_WakeUpAndIdle(addr))
+	SI72XX_INT_CALL(Si72xx_WakeUpAndIdle(addr))
 
-    /* Set stop-bit */
-    SI72XX_READ_8B(SI72XX_POWER_CTRL, &read);
-    read = ((read & ~SI72XX_POWERCTRL_MASK) | SI72XX_STOP_MASK);
-    SI72XX_WRITE_8B(SI72XX_POWER_CTRL, read);
+	/* Set stop-bit */
+	SI72XX_READ_8B(SI72XX_POWER_CTRL, &read);
+	read = ((read & ~SI72XX_POWERCTRL_MASK) | SI72XX_STOP_MASK);
+	SI72XX_WRITE_8B(SI72XX_POWER_CTRL, read);
 
-    /* Clear IIR and FIR filtering */
-    SI72XX_WRITE_8B(SI72XX_CTRL4, tempCtrl4Setting);
+	/* Clear IIR and FIR filtering */
+	SI72XX_WRITE_8B(SI72XX_CTRL4, tempCtrl4Setting);
 
-    /* Select Temperature conversion */
-    SI72XX_READ_8B(SI72XX_DSPSIGSEL, &read);
-    read = ((read & ~SI72XX_DSPSIGSEL_MASK) | SI72XX_DSPSIGSEL_TEMP);
-    SI72XX_WRITE_8B(SI72XX_DSPSIGSEL, read);
+	/* Select Temperature conversion */
+	SI72XX_READ_8B(SI72XX_DSPSIGSEL, &read);
+	read = ((read & ~SI72XX_DSPSIGSEL_MASK) | SI72XX_DSPSIGSEL_TEMP);
+	SI72XX_WRITE_8B(SI72XX_DSPSIGSEL, read);
 
-    /* Perform temperature conversion */
-    SI72XX_READ_8B(SI72XX_POWER_CTRL, &read);
-    read = (((read & (~SI72XX_STOP_MASK)) & ~(SI72XX_SLEEP_MASK))
-            | SI72XX_ONEBURST_MASK);
-    SI72XX_WRITE_8B(SI72XX_POWER_CTRL, read);
+	/* Perform temperature conversion */
+	SI72XX_READ_8B(SI72XX_POWER_CTRL, &read);
+	read = (((read & (~SI72XX_STOP_MASK)) & ~(SI72XX_SLEEP_MASK))
+			| SI72XX_ONEBURST_MASK);
+	SI72XX_WRITE_8B(SI72XX_POWER_CTRL, read);
 
-    /* Read temperature conversion result */
-    SI72XX_READ_8B(SI72XX_DSPSIGM, &dspSigM);
-    SI72XX_READ_8B(SI72XX_DSPSIGL, &dspSigL);
+	/* Read temperature conversion result */
+	SI72XX_READ_8B(SI72XX_DSPSIGM, &dspSigM);
+	SI72XX_READ_8B(SI72XX_DSPSIGL, &dspSigL);
 
-    SI72XX_INT_CALL(Si72xx_FromIdle_GoToSleep(addr))
+	SI72XX_INT_CALL(Si72xx_FromIdle_GoToSleep(addr))
 
-    freshBit = dspSigM >> SI72XX_FRESH_BIT_SHIFT;
-    if (freshBit == 0)
-    {
-        res = __SI72XX_NODATA;
-        goto RETURN;
-    }
+	freshBit = dspSigM >> SI72XX_FRESH_BIT_SHIFT;
+	if (freshBit == 0)
+	{
+		res = __SI72XX_NODATA;
+		goto RETURN;
+	}
 
-    /* dataValue = (Dspigm[6:0]<<5) + (Dspigl[7:0]>>3) */
-    dataValue = (((uint16_t)dspSigM) & SI72XX_DSPSIGM_MASK) << 8;
-    dataValue = (dataValue | dspSigL) >> 3;
+	/* dataValue = (Dspigm[6:0]<<5) + (Dspigl[7:0]>>3) */
+	dataValue = (((uint16_t)dspSigM) & SI72XX_DSPSIGM_MASK) << 8;
+	dataValue = (dataValue | dspSigL) >> 3;
 
-    /* rawTemp equation is from Si7210 datasheet */
-    /* rawTemp(mC) = ((dataValue^2)*(-3.83*10^-6))+(0.16094*dataValue)-279.8 */
-    rawTemp = ((int32_t)dataValue * (int32_t)dataValue * -383 / 100000)
-                + ((16094 * dataValue) / 100) - 279800;
+	/* rawTemp equation is from Si7210 datasheet */
+	/* rawTemp(mC) = ((dataValue^2)*(-3.83*10^-6))+(0.16094*dataValue)-279.8 */
+	rawTemp = ((int32_t)dataValue * (int32_t)dataValue * -383 / 100000)
+                		+ ((16094 * dataValue) / 100) - 279800;
 
-    milliCelsius = ((rawTemp * (int32_t)gainData) + offsetData) / 1000;
+	milliCelsius = ((rawTemp * (int32_t)gainData) + offsetData) / 1000;
 
-    *correctedTemp = milliCelsius;
+	*correctedTemp = milliCelsius;
 
-RETURN:
-    return res;
+	RETURN:
+	return res;
 }
 
 /**************************************************************************
-* @brief
-*   Wake-up Si72xx, read out part Revision and ID, and place Si72xx
-*   back to SLEEP sleep-mode.
-* @param[in] addr
-*   The I2C address of the sensor
-* @param[out] partId
-*        Si7210 part ID
-* @param[out] partRev
-*        Si72xx part Revision
-**************************************************************************/
+ * @brief
+ *   Wake-up Si72xx, read out part Revision and ID, and place Si72xx
+ *   back to SLEEP sleep-mode.
+ * @param[in] addr
+ *   The I2C address of the sensor
+ * @param[out] partId
+ *        Si7210 part ID
+ * @param[out] partRev
+ *        Si72xx part Revision
+ **************************************************************************/
 drivers_si72xx_ret_e Si72xx_IdentifyAndSleep(uint8_t addr,
-                                             uint8_t *partId,
-                                             uint8_t *partRev)
+		uint8_t *partId,
+		uint8_t *partRev)
 {
-    // required for SI72XX_READ/WRITE_8B / SI72XX_INT_CALL macro call
-    drivers_si72xx_ret_e res = __SI72XX_OK;
-    _I2C_Status i2c_st = __I2C_OK;
+	// required for SI72XX_READ/WRITE_8B / SI72XX_INT_CALL macro call
+	drivers_si72xx_ret_e res = __SI72XX_OK;
+	_I2C_Status i2c_st = __I2C_OK;
 
-    uint8_t read = 0;
+	uint8_t read = 0;
 
-    SI72XX_INT_CALL(Si72xx_WakeUpAndIdle(addr))
-    SI72XX_READ_8B(SI72XX_POWER_CTRL, &read);
-    SI72XX_WRITE_8B(SI72XX_POWER_CTRL, (read | SI72XX_STOP_MASK));
-    SI72XX_READ_8B(SI72XX_HREVID, &read);
-    SI72XX_INT_CALL(Si72xx_FromIdle_GoToSleep(addr))
+	SI72XX_INT_CALL(Si72xx_WakeUpAndIdle(addr))
+	SI72XX_READ_8B(SI72XX_POWER_CTRL, &read);
+	SI72XX_WRITE_8B(SI72XX_POWER_CTRL, (read | SI72XX_STOP_MASK));
+	SI72XX_READ_8B(SI72XX_HREVID, &read);
+	SI72XX_INT_CALL(Si72xx_FromIdle_GoToSleep(addr))
 
-    *partRev = read &  SI72XX_REV_MASK;
-    *partId  = read >> SI72XX_ID_SHIFT;
+	*partRev = read &  SI72XX_REV_MASK;
+	*partId  = read >> SI72XX_ID_SHIFT;
 
-RETURN:
-    return res;
+	RETURN:
+	return res;
 }
 
 /**************************************************************************
-* @brief
-*   Wake-up Si72xx, read out Si72xx base part-number and variant, and
-*   place sensor back to SLEEP sleep-mode.
-* @param[in] addr
-*   The I2C address of the sensor
-* @param[out] basePn
-*        Si7210 part ID
-* @param[out] partRev
-*        Si72xx part Revision
-**************************************************************************/
+ * @brief
+ *   Wake-up Si72xx, read out Si72xx base part-number and variant, and
+ *   place sensor back to SLEEP sleep-mode.
+ * @param[in] addr
+ *   The I2C address of the sensor
+ * @param[out] basePn
+ *        Si7210 part ID
+ * @param[out] partRev
+ *        Si72xx part Revision
+ **************************************************************************/
 drivers_si72xx_ret_e Si72xx_ReadVariantAndSleep(uint8_t addr,
-                                                uint8_t *basePn,
-                                                uint8_t *pnVariant)
+		uint8_t *basePn,
+		uint8_t *pnVariant)
 {
-    // required for SI72XX_READ/WRITE_8B / SI72XX_INT_CALL macro call
-    drivers_si72xx_ret_e res = __SI72XX_OK;
+	// required for SI72XX_READ/WRITE_8B / SI72XX_INT_CALL macro call
+	drivers_si72xx_ret_e res = __SI72XX_OK;
 
-    uint8_t read = 0;
+	uint8_t read = 0;
 
-    SI72XX_INT_CALL(Si72xx_WakeUpAndIdle(addr))
-    SI72XX_INT_CALL(Si72xx_Read_OTP(addr, SI72XX_BASE_PART_NUMBER, &read))
-    *basePn = read;
-    SI72XX_INT_CALL(Si72xx_Read_OTP(addr, SI72XX_PART_VARIANT, &read))
-    *pnVariant = read;
-    SI72XX_INT_CALL(Si72xx_FromIdle_GoToSleep(addr))
+	SI72XX_INT_CALL(Si72xx_WakeUpAndIdle(addr))
+	SI72XX_INT_CALL(Si72xx_Read_OTP(addr, SI72XX_BASE_PART_NUMBER, &read))
+	*basePn = read;
+	SI72XX_INT_CALL(Si72xx_Read_OTP(addr, SI72XX_PART_VARIANT, &read))
+	*pnVariant = read;
+	SI72XX_INT_CALL(Si72xx_FromIdle_GoToSleep(addr))
 
-RETURN:
-    return res;
+	RETURN:
+	return res;
 }
 
 /**************************************************************************
-* @brief
-*   Self-test sequence offered by the device. It uses an internal
-*   coil to generate and test the + and - field.
-* @param[in] addr
-*   The I2C address of the sensor
-**************************************************************************/
+ * @brief
+ *   Self-test sequence offered by the device. It uses an internal
+ *   coil to generate and test the + and - field.
+ * @param[in] addr
+ *   The I2C address of the sensor
+ **************************************************************************/
 drivers_si72xx_ret_e Si72xx_SelfTest(uint8_t addr)
 {
-    // required for SI72XX_READ/WRITE_8B / SI72XX_INT_CALL macro call
-    drivers_si72xx_ret_e res = __SI72XX_OK;
-    _I2C_Status i2c_st = __I2C_OK;
+	// required for SI72XX_READ/WRITE_8B / SI72XX_INT_CALL macro call
+	drivers_si72xx_ret_e res = __SI72XX_OK;
+	_I2C_Status i2c_st = __I2C_OK;
 
-    int16_t field_pos = 0;
-    int16_t field_neg = 0;
+	int16_t field_pos = 0;
+	int16_t field_neg = 0;
 
-    /* Enable test field generator coil in POSITIVE direction. */
-    SI72XX_INT_CALL(Si72xx_WakeUpAndIdle(addr))
-    SI72XX_WRITE_8B(SI72XX_TM_FG, 1);
+	/* Enable test field generator coil in POSITIVE direction. */
+	SI72XX_INT_CALL(Si72xx_WakeUpAndIdle(addr))
+	SI72XX_WRITE_8B(SI72XX_TM_FG, 1);
 
-    /* Measure field strength */
-    SI72XX_INT_CALL(Si72xx_ReadMagFieldDataAndSleep(addr, SI7210_200MT, SI72XX_IDLE_MODE, &field_pos)); // 200mT
-    field_pos = Si72xx_ConvertDataCodesToMagneticField(SI7210_200MT, field_pos)/1000;
+	/* Measure field strength */
+	SI72XX_INT_CALL(Si72xx_ReadMagFieldDataAndSleep(addr, SI7210_200MT, SI72XX_IDLE_MODE, &field_pos)); // 200mT
+	field_pos = Si72xx_ConvertDataCodesToMagneticField(SI7210_200MT, field_pos)/1000;
 
-    /* Enable test field generator coil in POSITIVE direction. */
-    SI72XX_WRITE_8B(SI72XX_TM_FG, 2);
+	/* Enable test field generator coil in POSITIVE direction. */
+	SI72XX_WRITE_8B(SI72XX_TM_FG, 2);
 
-    /* Measure field strength */
-    SI72XX_INT_CALL(Si72xx_ReadMagFieldDataAndSleep(addr, SI7210_200MT, SI72XX_IDLE_MODE, &field_neg))
-    field_neg = Si72xx_ConvertDataCodesToMagneticField(SI7210_200MT, field_neg)/1000;
+	/* Measure field strength */
+	SI72XX_INT_CALL(Si72xx_ReadMagFieldDataAndSleep(addr, SI7210_200MT, SI72XX_IDLE_MODE, &field_neg))
+	field_neg = Si72xx_ConvertDataCodesToMagneticField(SI7210_200MT, field_neg)/1000;
 
-    /* Disable test field generator coil. */
-    SI72XX_WRITE_8B(SI72XX_TM_FG, 0);
+	/* Disable test field generator coil. */
+	SI72XX_WRITE_8B(SI72XX_TM_FG, 0);
 
-    /* Send to sleep mode */
-    SI72XX_INT_CALL(Si72xx_EnterSleepMode(addr, SI72XX_SLEEP_MODE))
+	/* Send to sleep mode */
+	SI72XX_INT_CALL(Si72xx_EnterSleepMode(addr, SI72XX_SLEEP_MODE))
 
-    /* Vdd of SI7210. This is used in device's self-test calculations */
-    #define SI72xx_VDD          (3.3f)
+	/* Vdd of SI7210. This is used in device's self-test calculations */
+#define SI72xx_VDD          (3.3f)
 
-    float b_out = 1.16 * SI72xx_VDD;
-    float b_upper = b_out + (b_out * 0.25); /* +25% */
-    float b_lower = b_out - (b_out * 0.25); /* -25% */
+	float b_out = 1.16 * SI72xx_VDD;
+	float b_upper = b_out + (b_out * 0.25); /* +25% */
+	float b_lower = b_out - (b_out * 0.25); /* -25% */
 
-    if( (field_pos <= b_upper) &&
-        (field_pos >= b_lower) &&
-        (field_neg >= (b_upper * -1)) &&
-        (field_neg <= (b_lower * -1)))
-    {
-        log_info("(i) Sensor 0x%X self test PASS\r\n", addr);
-    }
-    else
-    {
-        log_info("(i) Sensor 0x%X self test FAIL!\r\n", addr);
-        res = __SI72XX_MISCALIB;
-        goto RETURN;
-    }
+	if( (field_pos <= b_upper) &&
+			(field_pos >= b_lower) &&
+			(field_neg >= (b_upper * -1)) &&
+			(field_neg <= (b_lower * -1)))
+	{
+		log_info("(i) Sensor 0x%X self test PASS\r\n", addr);
+	}
+	else
+	{
+		log_info("(i) Sensor 0x%X self test FAIL!\r\n", addr);
+		res = __SI72XX_MISCALIB;
+		goto RETURN;
+	}
 
-RETURN:
-    return res;
+	RETURN:
+	return res;
 }
 
 /****************************************************************************
@@ -890,17 +890,17 @@ RETURN:
 //static inline int32_t Si72xx_ConvertDataCodesToMagneticField(Si72xxFieldScale_t fieldScale, int16_t dataCode)
 int32_t Si72xx_ConvertDataCodesToMagneticField(Si72xxFieldScale_t fieldScale, int16_t dataCode)
 {
-    switch (fieldScale)
-    {
-        case SI7210_20MT :
-            /* 20mT: 1(LSB) = 1.25uT */
-            return (dataCode * 125) / 100;
-        case SI7210_200MT :
-            /* 200mT: 1(LSB) = 12.5uT */
-            return (dataCode * 125) / 10;
-        default :
-            return 0;
-    }
+	switch (fieldScale)
+	{
+	case SI7210_20MT :
+		/* 20mT: 1(LSB) = 1.25uT */
+		return (dataCode * 125) / 100;
+	case SI7210_200MT :
+		/* 200mT: 1(LSB) = 12.5uT */
+		return (dataCode * 125) / 10;
+	default :
+		return 0;
+	}
 }
 
 
@@ -922,71 +922,71 @@ int32_t Si72xx_ConvertDataCodesToMagneticField(Si72xxFieldScale_t fieldScale, in
  **************************************************************************/
 drivers_si72xx_ret_e Si72xx_Set_Threshold (uint8_t addr, Si72xxFieldScale_t mTScale, float threshold)
 {
-    /* required for SI72XX_READ/WRITE_8B / SI72XX_INT_CALL macro call */
-    drivers_si72xx_ret_e res = __SI72XX_OK;
-    _I2C_Status i2c_st = __I2C_OK;
+	/* required for SI72XX_READ/WRITE_8B / SI72XX_INT_CALL macro call */
+	drivers_si72xx_ret_e res = __SI72XX_OK;
+	_I2C_Status i2c_st = __I2C_OK;
 
-    /* hysteresis value set to 10% of the threshold */
-    float hysteresis = threshold * 0.1;
+	/* hysteresis value set to 10% of the threshold */
+	float hysteresis = threshold * 0.1;
 
-    /* Idle mode */
-    SI72XX_INT_CALL(Si72xx_WakeUpAndIdle(addr));
+	/* Idle mode */
+	SI72XX_INT_CALL(Si72xx_WakeUpAndIdle(addr));
 
-  	/* Verifying the threshold value according to the scale */
-  	if (mTScale != SI7210_200MT && mTScale != SI7210_20MT)
-  	{
+	/* Verifying the threshold value according to the scale */
+	if (mTScale != SI7210_200MT && mTScale != SI7210_20MT)
+	{
 		return __SI72XX_INVALID_ARG;
-  	}
+	}
 
-   	/* To store read register value */
-  	uint8_t read = 0;
-  	SI72XX_READ_8B(SI72XX_POWER_CTRL, &read);
-  	SI72XX_WRITE_8B(SI72XX_POWER_CTRL, (read & ~SI72XX_USESTORE_MASK) | SI72XX_STOP_MASK); /* Set the STOP bit */
+	/* To store read register value */
+	uint8_t read = 0;
+	SI72XX_READ_8B(SI72XX_POWER_CTRL, &read);
+	SI72XX_WRITE_8B(SI72XX_POWER_CTRL, (read & ~SI72XX_USESTORE_MASK) | SI72XX_STOP_MASK); /* Set the STOP bit */
 
-  	/* Calculation of the threshold value and adapt his scale according to datasheet */
-  	if (mTScale == SI7210_200MT)
-  	{
-  		/* x20 (LSB = 0.05 mT) to adapt the range from 200mT to 4000 */
-  		threshold *= 20.0;
-  	}
-  	else
-  	{
+	/* Calculation of the threshold value and adapt his scale according to datasheet */
+	if (mTScale == SI7210_200MT)
+	{
+		/* x20 (LSB = 0.05 mT) to adapt the range from 200mT to 4000 */
+		threshold *= 20.0;
+	}
+	else
+	{
 		/* x200 (LSB = 0.005 mT) : to adapt the range from 20mT to 4000 */
-  		threshold *= 200.0;
-  	}
+		threshold *= 200.0;
+	}
 
-    /* Available range from 16 to 3840,
-     * from 0.08 mT to 19.2 mT (20 mT scale) or 0.8 mT to 192 mT (200 mT scale) */
-    if(threshold < 16)
-    {
-        threshold = 16;
-    }
-    else if (threshold > 3840)
-    {
-    	threshold = 3840;
-    }
+	/* Available range from 16 to 3840,
+	 * from 0.08 mT to 19.2 mT (20 mT scale) or 0.8 mT to 192 mT (200 mT scale) */
+	if(threshold < 16)
+	{
+		threshold = 16;
+	}
+	else if (threshold > 3840)
+	{
+		threshold = 3840;
+	}
 
-    /* sw_op register to fill for threshold
-     * threshold = ( 16 + sw_op[3:0] ) × 2^sw_op[6:4] */
-    uint8_t div2_thr = 0;
+	/* sw_op register to fill for threshold
+	 * threshold = ( 16 + sw_op[3:0] ) × 2^sw_op[6:4] */
+	uint8_t div2_thr = 0;
 
-    /* 4 bits max value : 15 */
-    while (threshold >= 32)
-    {
-    	threshold /= 2;
-    	div2_thr++;
-    }
-    threshold -= 16;
+	/* 4 bits max value : 15 */
+	while (threshold >= 32)
+	{
+		threshold /= 2;
+		div2_thr++;
+	}
+	threshold -= 16;
 
 
-    /* Build the register value */
-    uint8_t ctrl1 = 0; /* reset sw_low4field to have 0V by default on alert pin */
-    ctrl1 |= ((div2_thr & 0x07) << 4) | ((uint8_t)(roundf(threshold)) & 0x0F);
+	/* Build the register value */
+	uint8_t ctrl1 = 0; /* reset sw_low4field to have 0V by default on alert pin */
+	ctrl1 |= ((div2_thr & 0x07) << 4) | ((uint8_t)(roundf(threshold)) & 0x0F);
 
 	/* Write ctrl1 into SI72XX_CTRL1 register */
-    SI72XX_WRITE_8B(SI72XX_CTRL1, ctrl1);
+	SI72XX_WRITE_8B(SI72XX_CTRL1, ctrl1);
 
-RETURN:
+	RETURN:
 	return res;
 }
 
@@ -1002,70 +1002,70 @@ RETURN:
  *   The magnetic scale sensor
  * @param[in] hysteresis
  *   The hysteresis value in mT. Hysteresis value available from 0.04 mT to 8.96 mT (for 20 mT scale) or 0.4 mT to 89.6 mT (for 200 mT scale)
-**************************************************************************/
+ **************************************************************************/
 drivers_si72xx_ret_e Si72xx_Set_Hysteresis (uint8_t addr, Si72xxFieldScale_t mTScale, float hysteresis)
 {
-    /* required for SI72XX_READ/WRITE_8B / SI72XX_INT_CALL macro call */
-    drivers_si72xx_ret_e res = __SI72XX_OK;
-    _I2C_Status i2c_st = __I2C_OK;
+	/* required for SI72XX_READ/WRITE_8B / SI72XX_INT_CALL macro call */
+	drivers_si72xx_ret_e res = __SI72XX_OK;
+	_I2C_Status i2c_st = __I2C_OK;
 
-    /* Idle mode */
-    SI72XX_INT_CALL(Si72xx_WakeUpAndIdle(addr));
+	/* Idle mode */
+	SI72XX_INT_CALL(Si72xx_WakeUpAndIdle(addr));
 
-    /****************************************************/
-    /*					SET HYSTERESIS					*/
-    /****************************************************/
+	/****************************************************/
+	/*					SET HYSTERESIS					*/
+	/****************************************************/
 
-  	/* Calculation of the hysteresis value and adapt his scale according to datasheet
-  	 * LSB = 0.005 mT  */
-    if (mTScale == SI7210_200MT)
-  	{
-  		/* x20 to adapt the range from 90 mT to 2000 */
-    	hysteresis *= 20.0;
-  	}
-  	else if (mTScale == SI7210_20MT)
-  	{
+	/* Calculation of the hysteresis value and adapt his scale according to datasheet
+	 * LSB = 0.005 mT  */
+	if (mTScale == SI7210_200MT)
+	{
+		/* x20 to adapt the range from 90 mT to 2000 */
+		hysteresis *= 20.0;
+	}
+	else if (mTScale == SI7210_20MT)
+	{
 		/* x200 : to adapt the range from 9 mT to 2000 */
-  		hysteresis *= 200.0;
-  	}
-  	else
-  	{
-  		return __SI72XX_INVALID_ARG;
-  	}
+		hysteresis *= 200.0;
+	}
+	else
+	{
+		return __SI72XX_INVALID_ARG;
+	}
 
-    /* Available range from 8 to 1792,
-     * from 0.04 mT to 8.96 mT (20 mT scale) or 0.4 mT to 89.6 mT (200 mT scale) */
-    if (hysteresis < 8)
-    {
-    	hysteresis = 8;
-    }
-    else if (hysteresis > 1792)
-    {
-    	hysteresis = 1792;
-    }
+	/* Available range from 8 to 1792,
+	 * from 0.04 mT to 8.96 mT (20 mT scale) or 0.4 mT to 89.6 mT (200 mT scale) */
+	if (hysteresis < 8)
+	{
+		hysteresis = 8;
+	}
+	else if (hysteresis > 1792)
+	{
+		hysteresis = 1792;
+	}
 
-    /* sw_hyst register to fill for hysteresis
-     * hysteresis = (8 + sw_hyst[2:0]) × 2^sw_hyst[5:3] */
-    uint8_t div2_hys = 0;
+	/* sw_hyst register to fill for hysteresis
+	 * hysteresis = (8 + sw_hyst[2:0]) × 2^sw_hyst[5:3] */
+	uint8_t div2_hys = 0;
 
-    /* 3 bits max value : 7 */
-    while (hysteresis >= 16)
-    {
-    	hysteresis /= 2;
-    	div2_hys++;
-    }
-    hysteresis -= 8;
+	/* 3 bits max value : 7 */
+	while (hysteresis >= 16)
+	{
+		hysteresis /= 2;
+		div2_hys++;
+	}
+	hysteresis -= 8;
 
-    /* Build the register value
-     *	sw_fieldpolsel = 0b00 => absolute value field to compare with threshold
-     *      sw_hyst = 0b00 0000 */
+	/* Build the register value
+	 *	sw_fieldpolsel = 0b00 => absolute value field to compare with threshold
+	 *      sw_hyst = 0b00 0000 */
 	uint8_t ctrl2 = 0; /* reset sw_fieldpolsel to compare with absolute value */
 	ctrl2 |= ((div2_hys & 0x07) << 3) | ((uint8_t)(roundf(hysteresis)) & 0x07);
 
 	/* Write ctrl2 into SI72XX_CTRL2 register */
 	SI72XX_WRITE_8B(SI72XX_CTRL2, ctrl2);
 
-RETURN:
+	RETURN:
 	return res;
 }
 
@@ -1086,25 +1086,25 @@ drivers_si72xx_ret_e Debug_Si72xx_register (uint8_t addr)
 	drivers_si72xx_ret_e res = __SI72XX_OK;
 	_I2C_Status i2c_st = __I2C_OK;
 
-  	/* To store read register value */
-  	uint8_t read = 0;
+	/* To store read register value */
+	uint8_t read = 0;
 
-  	/* Idle mode */
-  	SI72XX_INT_CALL(Si72xx_WakeUpAndIdle(addr));
+	/* Idle mode */
+	SI72XX_INT_CALL(Si72xx_WakeUpAndIdle(addr));
 
-  	log_info("\r(i) Debug SI72xx register :\r\n");
+	log_info("\r(i) Debug SI72xx register :\r\n");
 	/* Read every register and deplay their value on uart terminal */
-  	SI72XX_READ_8B(SI72XX_POWER_CTRL, &read);
-  	log_info("\r\t(i) SI72XX_POWER_CTRL (0x%02x) : %02x\r\n", SI72XX_POWER_CTRL, read);
+	SI72XX_READ_8B(SI72XX_POWER_CTRL, &read);
+	log_info("\r\t(i) SI72XX_POWER_CTRL (0x%02x) : %02x\r\n", SI72XX_POWER_CTRL, read);
 
-  	SI72XX_READ_8B(SI72XX_CTRL1, &read);
-  	log_info("\t(i) SI72XX_CTRL1 (0x%02x) : %02x\r\n", SI72XX_CTRL1, read);
+	SI72XX_READ_8B(SI72XX_CTRL1, &read);
+	log_info("\t(i) SI72XX_CTRL1 (0x%02x) : %02x\r\n", SI72XX_CTRL1, read);
 
-  	SI72XX_READ_8B(SI72XX_CTRL2, &read);
-  	log_info("\t(i) SI72XX_CTRL2 (0x%02x) : %02x\r\n", SI72XX_CTRL2, read);
+	SI72XX_READ_8B(SI72XX_CTRL2, &read);
+	log_info("\t(i) SI72XX_CTRL2 (0x%02x) : %02x\r\n", SI72XX_CTRL2, read);
 
-RETURN:
-  	return res;
+	RETURN:
+	return res;
 }
 
 
