@@ -294,6 +294,57 @@ void s2lp_loadConfiguration() {
 
 }
 
+#if ITSDK_S2LP_TARGET == __S2LP_HT32SX
+
+NVM_RW_RESULTS NVM_Read(uint32_t nAddress, uint8_t cNbBytes, uint8_t* pcBuffer)
+{
+
+/*
+	NVM_RW_RESULTS tRet = NVM_RW_OK;
+	FLS_RW_StatusTypeDef flRet = FLS_RW_OK;
+*/
+	log_error("### NVM_Read. WHAT !! 0x%08X %d bytes \r\n",nAddress, cNbBytes );
+
+/*
+	flRet = (FLS_RW_StatusTypeDef)_nvmReadOperation(nAddress, cNbBytes, pcBuffer);
+
+	if(flRet != FLS_RW_OK)
+		tRet = NVM_READ_ERROR;
+*/
+	return NVM_RW_OK;
+}
+
+NVM_RW_RESULTS NVM_Write(uint32_t nAddress, uint8_t cNbBytes, uint8_t* pcBuffer, NVM_WRITE_MODE writeMode)
+{
+
+	log_error("### NVM_Write. WHAT !! 0x%08X %d bytes %d \r\n   ",nAddress, cNbBytes, writeMode );
+	for ( int i = 0 ; i < cNbBytes ; i++ ) {
+		log_error("%02X ");
+	}
+	log_error("\r\n");
+
+/*
+	NVM_RW_RESULTS tRet = NVM_RW_OK;
+	FLS_RW_StatusTypeDef flRet = FLS_RW_OK;
+
+	flRet = (FLS_RW_StatusTypeDef)_nvmWriteOperation(nAddress, cNbBytes, pcBuffer, writeMode);
+
+	if(flRet != FLS_RW_OK)
+		tRet = NVM_WRITE_ERROR;
+*/
+	return NVM_RW_OK;
+}
+
+uint32_t GetNVMBoardDataAddress()
+{
+	return 0x10101010;
+}
+
+uint8_t EepromRead(uint16_t nAddress, uint8_t cNbBytes, uint8_t* pcBuffer) {
+	log_error("### EepromRead. WHAT !! 0x%08X %d bytes \r\n   ",nAddress, cNbBytes );
+}
+
+#endif
 
 #endif // ITSDK_SIGFOX_LIB test
 

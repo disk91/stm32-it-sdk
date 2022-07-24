@@ -149,6 +149,8 @@ S2LP_SPI_StatusBytes s2lp_spi_accessRaw(
 
   // Disable S2LP Interrupt
   s2lp_spi_setCsLow();
+
+#warning partie a revoir car l'interruption dépend de la config ...
   gpio_interruptPriority(ITSDK_S2LP_GPIO3_BANK, ITSDK_S2LP_GPIO3_PIN, 4, 4);
   gpio_interruptDisable(ITSDK_S2LP_GPIO3_BANK, ITSDK_S2LP_GPIO3_PIN);
 

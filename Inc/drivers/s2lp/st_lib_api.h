@@ -366,6 +366,13 @@ void ST_MCU_API_SetEncryptionPayload(uint8_t ePayload);
 
 typedef enum
 {
+  NVM_WRITE_MODE_WRITEOVER = 0, /*!< Write data without erase the page */
+  NVM_WRITE_MODE_ERASE = 1      /*!< Erase the page before write */
+} NVM_WRITE_MODE;
+
+
+typedef enum
+{
   NVM_RW_OK = 0,
   NVM_WRITE_ERROR,
   NVM_READ_ERROR,

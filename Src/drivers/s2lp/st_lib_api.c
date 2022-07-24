@@ -76,19 +76,25 @@ static void priv_ST_MCU_API_delay(uint32_t delay_ms) {
 	itsdk_delayMs(delay_ms);
 }
 
+// The new version of the compiler was protecting memory access against static elements
+// Making a hardfault in the sigfox api init function when it tried to write into this zone.
+// Non static declaration solve this issue
+// Next issue was on alignement, if not aligned on 4 it is possible that the first address is out of the
+// authorized area.
+sfx_u8 __sigfox_mem[ITSDK_SIGFOX_MEM_SIZE] __attribute((aligned(4)));
+
 /**
  * Static memory allocation
  */
 sfx_u8 MCU_API_malloc(sfx_u16 size, sfx_u8 **returned_pointer)
 {
-  static sfx_u8 mem[ITSDK_SIGFOX_MEM_SIZE];
-  
+
   LOG_DEBUG_S2LP(("Sigfox lib mem req: %dB\r\n",size));
   if(size>ITSDK_SIGFOX_MEM_SIZE) {
 	  LOG_ERROR_S2LP(("Requesting more memory than maximum allowable\r\n"));
 	  return MCU_ERR_API_MALLOC;
   } else {
-    (*returned_pointer)=mem;
+    (*returned_pointer)=__sigfox_mem;
   }
   return SFX_ERR_NONE;
 }
@@ -350,13 +356,11 @@ sfx_u8 MCU_API_get_device_id_and_payload_encryption_flag(
 	return SFX_ERR_NONE;
 
 #elif ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_LOCALEPROM || ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_HEADERS
-
 	itsdk_sigfox_device_is_t devId;
 	itsdk_sigfox_getDeviceId(&devId);
 	for (int i = 0 ; i < 4 ; i++) {
 	   	dev_id[3-i]=(devId >> ((32-8)-8*i)) & 0xFF;
 	}
-	LOG_DEBUG_S2LP((">> CREDENTIALS_get_payload_encryption_flag\r\n"));
     #if (defined ITSDK_SIGFOX_ENCRYPTION) && (( ITSDK_SIGFOX_ENCRYPTION & __PAYLOAD_ENCRYPT_SIGFOX) > 0)
      *payload_encryption_enabled = SFX_TRUE;
     #else
@@ -544,8 +548,10 @@ gpio_irq_chain_t __sfx_gpio_irq = {
 volatile uint8_t __pendingIrqDelayed=0;
 void __GPIO_IRQHandler(uint16_t GPIO_Pin) {
 
+  LOG_DEBUG_S2LP(("."));
+
   if(GPIO_Pin==ITSDK_S2LP_INTERRUPT_PIN) {
-#if (ITSDK_SIGFOX_EXTENSIONS	&  __SIGFOX_MONARCH) > 0
+#if (ITSDK_SIGFOX_EXTENSIONS & __SIGFOX_MONARCH) > 0
 	  if (ST_RF_API_Get_Continuous_TX_or_MONARCH_Scan_Flag()==0) {
 #else
 	  if (ST_RF_API_Get_Continuous_TX_Flag()==0) {
@@ -571,6 +577,11 @@ void ST_MCU_API_GpioIRQ(sfx_u8 pin, sfx_u8 new_state, sfx_u8 trigger)
 {
   LOG_DEBUG_S2LP((">> ST_MCU_API_GpioIRQ %d %d %d \r\n",pin,new_state,trigger));
 
+#if ITSDK_S2LP_TARGET == __S2LP_HT32SX
+  // HT32SX only use gpio 0 for irq
+  pin = 0;
+  LOG_DEBUG_S2LP(("   Forced to %d %d %d \r\n",pin,new_state,trigger));
+#endif
   uint16_t gpioPin;
   uint8_t  gpioBank;
 
@@ -600,9 +611,17 @@ void ST_MCU_API_GpioIRQ(sfx_u8 pin, sfx_u8 new_state, sfx_u8 trigger)
   if(new_state) {
     gpio_registerIrqAction(&__sfx_gpio_irq);	// Install the action as the irq can be activated outside this code
 	if ( trigger ) {
-		gpio_configure(gpioBank,gpioPin, GPIO_INTERRUPT_RISING_PULLDWN );
+		#if ITSDK_S2LP_TARGET == __S2LP_HT32SX
+			gpio_configure(gpioBank,gpioPin, GPIO_INTERRUPT_RISING );
+		#else
+			gpio_configure(gpioBank,gpioPin, GPIO_INTERRUPT_RISING_PULLDWN );
+		#endif
 	} else {
-		gpio_configure(gpioBank,gpioPin, GPIO_INTERRUPT_FALLING_PULLUP );
+		#if ITSDK_S2LP_TARGET == __S2LP_HT32SX
+			gpio_configure(gpioBank,gpioPin, GPIO_INTERRUPT_FALLING );
+		#else
+			gpio_configure(gpioBank,gpioPin, GPIO_INTERRUPT_FALLING_PULLUP );
+		#endif
 	}
 	gpio_interruptPriority(gpioBank,gpioPin,IRQ_PRIORITY, 0x00);
 	gpio_interruptEnable(gpioBank,gpioPin);
@@ -642,7 +661,7 @@ void ST_MCU_API_WaitForInterrupt(void)
 	  }
 	  // other actions
 	  #if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_GPIO ) > 0
-		 lowPower_switch();
+ 	    lowPower_switch();
 	  #endif
 	  itsdk_stimer_run();
 	  #if ITSDK_WDG_MS > 0

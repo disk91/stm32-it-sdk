@@ -76,7 +76,7 @@ gnss_ret_e gnss_setup() {
 
 /**
  * This function is call on every wake-up to proceed the pending characters on the serial
- * port and call the associated services and execeute all the asynchronous operation proposed
+ * port and call the associated services and execute all the asynchronous operation proposed
  * by gnss driver
  */
 void gnss_process_loop(itsdk_bool_e force) {
@@ -171,7 +171,7 @@ gnss_ret_e gnss_start(gnss_run_mode_e mode, uint16_t fixFreq,  uint32_t timeoutS
 gnss_ret_e gnss_stop(gnss_run_mode_e mode) {
 	if ( !__gnss_config.setupDone ) return GNSS_NOTREADY;
 	if ( mode == GNSS_STOP_MODE || mode == GNSS_BACKUP_MODE || mode == GNSS_SLEEP_MODE ) {
-		 __gnss_config.isRunning = 0;
+		__gnss_config.isRunning = 0;
 		gnss_ret_e ret = __gnss_config.setRunMode(mode);
 		GNSS_LOG_INFO(("Gnss - Stopped \r\n"));
 		return ret;

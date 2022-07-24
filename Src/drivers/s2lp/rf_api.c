@@ -327,7 +327,7 @@ static st_manuf_t st_manuf=
 /* SPI functions - these functions are implemented using the priv_ST_MANUF_SpiRaw */
 
 static void priv_ST_MANUF_SpiRaw_Ramp(uint8_t n_bytes,uint8_t* buff_in, uint8_t* buff_out, uint8_t blocking) {
-	LOG_DEBUG_S2LP((">> priv_ST_MANUF_SpiRaw_Ramp\r\n"));
+	LOG_DEBUG_S2LP((">> priv_ST_MANUF_SpiRaw_Ramp blocking(%d)\r\n",blocking));
 
 	if(st_manuf_context->power_reduction!=0 && buff_in!=zeroes)
 	{
@@ -385,28 +385,26 @@ static void priv_ST_MANUF_ReadRegisters(uint8_t address, uint8_t n_bytes, uint8_
 	tx_spi_buffer[0]=0x01;
 	tx_spi_buffer[1]=address;
 
-	for(uint32_t i=0;i<n_bytes;i++)
-	{
+	for(uint32_t i=0;i<n_bytes;i++)	{
 		tx_spi_buffer[i+2]=0xFF;
 	}
 
 	priv_ST_MANUF_SpiRaw(n_bytes+2,tx_spi_buffer,rx_spi_buffer);
 
-	for(uint32_t i=0;i<n_bytes;i++)
-	{
+	for(uint32_t i=0;i<n_bytes;i++) 	{
 		buffer[i]=rx_spi_buffer[i+2];
 	}
 }
 
 /* set XTAL frequency function */
 static void privSetXtalFrequency(uint32_t lXtalFrequency) {
-	LOG_DEBUG_S2LP((">> privSetXtalFrequency\r\n"));
+	LOG_DEBUG_S2LP((">> privSetXtalFrequency %d\r\n",lXtalFrequency));
 	st_manuf_context->priv_xtal_freq = lXtalFrequency;
 }
 
 /* get XTAL frequency function */
 static uint32_t privGetXtalFrequency(void) {
-	LOG_DEBUG_S2LP((">> privGetXtalFrequency\r\n"));
+	LOG_DEBUG_S2LP((">> privGetXtalFrequency %d\r\n",st_manuf_context->priv_xtal_freq));
 	return st_manuf_context->priv_xtal_freq;
 }
 
