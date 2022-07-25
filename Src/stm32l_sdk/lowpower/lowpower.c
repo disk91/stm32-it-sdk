@@ -28,14 +28,16 @@
  * ==========================================================
  */
 
+#include <stm32l_sdk/config.h>
 #include <stm32l_sdk/lowpower/lowpower.h>
 #include <stm32l_sdk/rtc/rtc.h>
 #include <it_sdk/config.h>
 #include <it_sdk/lowpower/lowpower.h>
 #include <it_sdk/logger/logger.h>
 #include <it_sdk/wrappers.h>
-#include "stm32l0xx_hal.h"
+#if (ITSDK_WITH_UART & __UART_LPUART1) > 0 || (ITSDK_WITH_UART & __UART_USART2) > 0
 #include "usart.h"
+#endif
 #include "gpio.h"
 #if ( ITSDK_LOWPOWER_MISC_HALT & __LP_HALT_I2C2 ) > 0 || ( ITSDK_LOWPOWER_MISC_HALT & __LP_HALT_I2C1 )
 #include "i2c.h"

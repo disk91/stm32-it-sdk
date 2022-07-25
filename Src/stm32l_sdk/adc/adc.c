@@ -27,13 +27,17 @@
  * ==========================================================
  */
 #include <it_sdk/config.h>
-#if ITSDK_PLATFORM == __PLATFORM_STM32L0
+#if ITSDK_PLATFORM == __PLATFORM_STM32L0 || ITSDK_PLATFORM == __PLATFORM_STM32WLE
 #include <it_sdk/itsdk.h>
 #include <it_sdk/eeprom/sdk_state.h>
 #include <it_sdk/logger/error.h>
 #include <it_sdk/debug.h>
 #include <it_sdk/time/time.h>
-#include "stm32l0xx_hal.h"
+#if ITSDK_PLATFORM == __PLATFORM_STM32L0
+	#include "stm32l0xx_hal.h"
+#elif ITSDK_PLATFORM == __PLATFORM_STM32WLE
+	#include "stm32wlxx_hal.h"
+#endif
 
 #if ( ITSDK_WITH_ADC & __ADC_ENABLED ) > 0
 ADC_HandleTypeDef hadc;
@@ -51,6 +55,13 @@ ADC_HandleTypeDef hadc;
 #define CAL1_TEMP			30
 #define CAL1_VALUE          ((uint16_t*)((uint32_t)0x1FF8007A))
 #define VREFINT_CAL         ((uint16_t*) ((uint32_t) 0x1FF80078))
+#elif ITSDK_DEVICE == __DEVICE_STM32WLE5JC
+#define CAL2_TEMP			130 // 110 according to certain sources but 130 from Datasheet
+#define CAL2_VALUE          ((uint16_t*)((uint32_t)0x1FFF75C8))
+#define CAL1_TEMP			30
+#define CAL1_VALUE          ((uint16_t*)((uint32_t)0x1FFF75A8))
+#define VREFINT_CAL         ((uint16_t*) ((uint32_t) 0x1FFF75AA))
+#warning Make sure it works as the memory address have 2 bytes
 #else
 #warning DEVICE IS NOT DEFINED FOR CALIBRATION
 #define CAL2_TEMP			130

@@ -26,7 +26,7 @@
  *
  * ==========================================================
  */
-
+#include <stdlib.h>
 #include <it_sdk/sched/scheduler.h>
 #include <it_sdk/time/time.h>
 #include <it_sdk/logger/logger.h>

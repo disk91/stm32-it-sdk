@@ -30,7 +30,7 @@
 #include <it_sdk/radio/certification.h>
 
 
-#if ITSDK_LORAWAN_LIB == __LORAWAN_SX1276 || ITSDK_SIGFOX_LIB == __SIGFOX_SX1276
+#if ( ITSDK_WITH_SIGFOX_LIB == __ENABLE || ITSDK_WITH_LORAWAN_LIB == __ENABLE  ) && ( ITSDK_LORAWAN_LIB == __LORAWAN_SX1276 || ITSDK_SIGFOX_LIB == __SIGFOX_SX1276 )
 #include <drivers/sx1276/sx1276.h>
 #endif
 
@@ -39,7 +39,7 @@
  * The waves stops after the given duration. 0 for infinite.
  */
 itsdk_bool_e startContinousWaveTransmission(uint32_t frequency, int8_t power, uint32_t durationMs ) {
-#if ITSDK_LORAWAN_LIB == __LORAWAN_SX1276 || ITSDK_SIGFOX_LIB == __SIGFOX_SX1276
+#if  ( ITSDK_WITH_SIGFOX_LIB == __ENABLE || ITSDK_WITH_LORAWAN_LIB == __ENABLE  ) && ( ITSDK_LORAWAN_LIB == __LORAWAN_SX1276 || ITSDK_SIGFOX_LIB == __SIGFOX_SX1276 )
 	SX1276IoInit();
 	SX1276Init( NULL );
 	if ( durationMs == 0 || durationMs > 65535000 ) durationMs = 65535000;
@@ -54,7 +54,7 @@ itsdk_bool_e startContinousWaveTransmission(uint32_t frequency, int8_t power, ui
  * Stop continuous wave when it is possible return BOOL_FALSE when not possible
  */
 itsdk_bool_e stopContinousWaveTransmission( void ) {
-#if ITSDK_LORAWAN_LIB == __LORAWAN_SX1276 || ITSDK_SIGFOX_LIB == __SIGFOX_SX1276
+#if ( ITSDK_WITH_SIGFOX_LIB == __ENABLE || ITSDK_WITH_LORAWAN_LIB == __ENABLE  ) && ( ITSDK_LORAWAN_LIB == __LORAWAN_SX1276 || ITSDK_SIGFOX_LIB == __SIGFOX_SX1276 )
 	return BOOL_FALSE;
 #else
 	return BOOL_FALSE;

@@ -28,11 +28,17 @@
  */
 #include <string.h>
 #include <it_sdk/config.h>
-#if ITSDK_PLATFORM == __PLATFORM_STM32L0
+#if ITSDK_PLATFORM == __PLATFORM_STM32L0 || ITSDK_PLATFORM == __PLATFORM_STM32WLE
 #include <it_sdk/logger/logger.h>
 #include <it_sdk/wrappers.h>
-#include "stm32l0xx_hal.h"
-#include "usart.h"
+#if ITSDK_PLATFORM == __PLATFORM_STM32L0
+	#include "stm32l0xx_hal.h"
+#elif ITSDK_PLATFORM == __PLATFORM_STM32WLE
+	#include "stm32wlxx_hal.h"
+#endif
+#if ITSDK_WITH_UART > 0
+	#include "usart.h"
+#endif
 
 #if ITSDK_LOGGER_WITH_SEG_RTT == __ENABLE
 #include <drivers/SeggerRTT/SEGGER_RTT.h>
@@ -217,6 +223,7 @@ serial_read_response_e serial1_read(char * ch) {
  * Return BOOL_TRUE on success
  */
 itsdk_bool_e serial1_changeBaudRate(serial_baudrate_e bd) {
+  #if ITSDK_WITH_UART > 0
 	UART_HandleTypeDef * lhuart;
 	#if ( ITSDK_WITH_UART & __UART_LPUART1 ) > 0
 		lhuart = &hlpuart1;
@@ -244,6 +251,9 @@ itsdk_bool_e serial1_changeBaudRate(serial_baudrate_e bd) {
 	}
 	serial1_init();
 	return BOOL_TRUE;
+  #else
+	return BOOL_FALSE;
+  #endif
 }
 
 // ---------------------------------------------------------------------------
@@ -362,6 +372,7 @@ serial_read_response_e serial2_read(char * ch) {
  * Return BOOL_TRUE on success
  */
 itsdk_bool_e serial2_changeBaudRate(serial_baudrate_e bd) {
+  #if ITSDK_WITH_UART > 0
 	UART_HandleTypeDef * lhuart;
 	#if  ( ITSDK_WITH_UART & __UART_USART2 ) > 0
 	   lhuart = &huart2;
@@ -387,6 +398,9 @@ itsdk_bool_e serial2_changeBaudRate(serial_baudrate_e bd) {
 	}
 	serial2_init();
 	return BOOL_TRUE;
+  #else
+	return BOOL_FALSE;
+  #endif
 }
 
 

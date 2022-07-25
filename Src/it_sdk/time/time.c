@@ -24,10 +24,11 @@
  *
  * ==========================================================
  */
+#include <stdlib.h>
 #include <it_sdk/config.h>
 #include <it_sdk/itsdk.h>
 #include <it_sdk/time/time.h>
-#if ITSDK_PLATFORM == __PLATFORM_STM32L0
+#if ITSDK_PLATFORM == __PLATFORM_STM32L0 || ITSDK_PLATFORM == __PLATFORM_STM32WLE
 	#include <stm32l_sdk/rtc/rtc.h>
 	#include <stm32l_sdk/time/time.h>
 #endif
@@ -210,7 +211,7 @@ itsdk_bool_e itsdk_time_is_EPOC_s(uint32_t * destTime) {
  */
 void itsdk_time_reset() {
     #if ITSDK_WITH_RTC != __RTC_NONE
-      #if ITSDK_PLATFORM == __PLATFORM_STM32L0
+      #if ITSDK_PLATFORM == __PLATFORM_STM32L0 || ITSDK_PLATFORM == __PLATFORM_STM32WLE
   		rtc_resetTime();
   	  #else
 		#error "platform not supported"
@@ -223,7 +224,7 @@ void itsdk_time_reset() {
  * Init time functions
  */
 void itsdk_time_init() {
-#if ITSDK_PLATFORM == __PLATFORM_STM32L0
+#if ITSDK_PLATFORM == __PLATFORM_STM32L0 || ITSDK_PLATFORM == __PLATFORM_STM32WLE
   #if ITSDK_WITH_RTC != __RTC_NONE
 	rtc_resetTime();
 	rtc_adjustTime();

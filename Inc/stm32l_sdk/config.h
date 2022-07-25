@@ -29,7 +29,13 @@
 #define STM32L_SDK_CONFIG_H_
 
 #include <it_sdk/config.h>
-#include "stm32l0xx_hal.h"
+
+#if ITSDK_PLATFORM == __PLATFORM_STM32L0
+	#include "stm32l0xx_hal.h"
+#elif ITSDK_PLATFORM == __PLATFORM_STM32WLE
+	#include "stm32wlxx_hal.h"
+#endif
+
 
 // Fix the poor quality of generated code...
 void SystemClock_Config(void);

@@ -40,6 +40,7 @@
 #define __PLATFORM_EFM32_TD			0
 #define __PLATFORM_STM32L0			1
 #define __PLAFTORM_ESP8266			2
+#define __PLATFORM_STM32WLE			3
 
 /**
  * Devices
@@ -49,6 +50,8 @@
 #define __DEVICE_STM32L053R8		3
 #define __DEVICE_STM32L031K6		4
 #define __DEVICE_STM32L052T8		5
+
+#define __DEVICE_STM32WLE5JC		21
 
 /**
  * Supported Low Power Mode
