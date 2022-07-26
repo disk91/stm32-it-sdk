@@ -26,7 +26,7 @@
  * ==========================================================
  */
 #include <it_sdk/config.h>
-#if ITSDK_PLATFORM == __PLATFORM_STM32L0
+#if ITSDK_PLATFORM == __PLATFORM_STM32L0 || ITSDK_PLATFORM == __PLATFORM_STM32WLE
 #if ITSDK_WITH_HW_TIMER != __TIMER_NONE
 #include <it_sdk/debug.h>
 #include <it_sdk/time/timer.h>

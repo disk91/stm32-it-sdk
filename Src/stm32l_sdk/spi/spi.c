@@ -25,7 +25,7 @@
  */
 #include <it_sdk/config.h>
 
-#if ITSDK_WITH_SPI == __SPI_ENABLED
+#if ITSDK_WITH_SPI == __SPI_ENABLED && (ITSDK_PLATFORM == __PLATFORM_STM32L0 || ITSDK_PLATFORM == __PLATFORM_STM32WLE)
 #include <stm32l_sdk/spi/spi.h>
 #include <it_sdk/wrappers.h>
 

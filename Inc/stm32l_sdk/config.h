@@ -57,7 +57,18 @@ void SystemClock_Config(void);
     #include <tim.h>
 #endif
 
+#if ITSDK_PLATFORM == __PLATFORM_STM32WLE
+  // Missing defines in the new ST framework
+  #if ITSDK_DEVICE	== __DEVICE_STM32WLE5JC
+  #define GPIOA_PIN_AVAILABLE	((uint16_t)0xFFFFU)
+  #define GPIOB_PIN_AVAILABLE	((uint16_t)0xFFFFU)
+  #define GPIOC_PIN_AVAILABLE	((uint16_t)0xE07FU)
+  #define GPIOH_PIN_AVAILABLE	((uint16_t)0x0004U)
+  #else
+   #error the device support needs to be added
+  #endif
 
+#endif
 
 
 #endif /* STM32L_SDK_CONFIG_H_ */

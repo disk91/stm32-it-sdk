@@ -174,6 +174,7 @@ uint32_t __getAdcValue(uint32_t channel, uint8_t oversampling) {
 #else
 
 uint32_t __getAdcValue(uint32_t channel, uint8_t oversampling) {
+  #if ITSDK_PLATFORM == __PLATFORM_STM32L0
 	  __HAL_RCC_ADC1_CLK_ENABLE();
 
 	  __HAL_RCC_ADC1_FORCE_RESET();			// without reset the values were not correct
@@ -231,6 +232,66 @@ uint32_t __getAdcValue(uint32_t channel, uint8_t oversampling) {
 	  HAL_ADC_Stop(&hadc);
 	  __HAL_RCC_ADC1_CLK_DISABLE();
 	  return v;
+  #elif ITSDK_PLATFORM == __PLATFORM_STM32WLE
+	  __HAL_RCC_ADC_CLK_ENABLE();
+
+	  __HAL_RCC_ADC_FORCE_RESET();			// without reset the values were not correct
+	  __NOP();
+	  __NOP();
+	  __HAL_RCC_ADC_RELEASE_RESET();
+
+	  ADC_ChannelConfTypeDef sConfig;
+
+	  // Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
+	  hadc.Instance = ADC;
+	  hadc.Init.OversamplingMode = DISABLE;
+	  hadc.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
+	  hadc.Init.Resolution = ADC_RESOLUTION_12B;
+	  hadc.Init.ScanConvMode = DISABLE;
+	  hadc.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+	  hadc.Init.ContinuousConvMode = DISABLE;
+	  hadc.Init.DiscontinuousConvMode = DISABLE;
+	  hadc.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+	  hadc.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+	  hadc.Init.DMAContinuousRequests = DISABLE;
+	  hadc.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+	  hadc.Init.Overrun = ADC_OVR_DATA_PRESERVED;
+	  hadc.Init.LowPowerAutoWait = DISABLE;
+	  hadc.Init.LowPowerAutoPowerOff = DISABLE;
+	  if (HAL_ADC_Init(&hadc) != HAL_OK) {
+		  ITSDK_ERROR_REPORT(ITSDK_ERROR_ADC_INIT_FAILED,0);
+	  }
+
+	  if ( HAL_ADCEx_Calibration_Start(&hadc) != HAL_OK) {
+		  ITSDK_ERROR_REPORT(ITSDK_ERROR_ADC_CALIBRATION_FAILED,0);
+	  }
+
+	  // Configure for the selected ADC regular channel to be converted.
+	  sConfig.Channel = channel;
+	  sConfig.Rank = ADC_RANK_CHANNEL_NUMBER;
+	  if (HAL_ADC_ConfigChannel(&hadc, &sConfig) != HAL_OK) {
+		  ITSDK_ERROR_REPORT(ITSDK_ERROR_ADC_CONFCHANNEL_FAILED,0);
+	  }
+
+	  uint32_t v = 0;
+	  for( int i = 0; i < oversampling ; i++ ) {
+		  HAL_ADC_Start(&hadc);
+		  if (HAL_ADC_PollForConversion(&hadc, 100) != HAL_OK) {
+		  		  HAL_ADC_Stop(&hadc);
+		  		  __HAL_RCC_ADC_CLK_DISABLE();
+		  		  return ADC_CONVERSION_ERROR;
+		  }
+		  v += HAL_ADC_GetValue(&hadc);
+	  }
+	  v = v / oversampling;
+
+	  HAL_ADC_Stop(&hadc);
+	  __HAL_RCC_ADC_CLK_DISABLE();
+	  return v;
+
+  #else
+   #error "Unknow plateform, need to be defined"
+  #endif
 }
 
 
@@ -470,6 +531,74 @@ uint16_t adc_getValue(uint32_t pin) {
 	default:
   	    ITSDK_ERROR_REPORT(ITSDK_ERROR_ADC_INVALID_PIN,(uint16_t)pin);
 	}
+#elif ITSDK_DEVICE == __DEVICE_STM32WLE5JC
+	switch (pin) {
+		case 0:
+			channel = ADC_CHANNEL_VREFINT; 	// VDD
+			break;
+		case 41:
+			GPIO_InitStruct.Pin = GPIO_PIN_14;
+			GPIO_TypeDefStruct = GPIOA;
+			channel = ADC_CHANNEL_10;	// PA14
+			break;
+		case 91:
+			GPIO_InitStruct.Pin = GPIO_PIN_12;
+			GPIO_TypeDefStruct = GPIOA;
+			channel = ADC_CHANNEL_8;	// PA12
+			break;
+		case 32:
+			GPIO_InitStruct.Pin = GPIO_PIN_15;
+			GPIO_TypeDefStruct = GPIOA;
+			channel = ADC_CHANNEL_11;	// PA15
+			break;
+		case 82:
+			GPIO_InitStruct.Pin = GPIO_PIN_13;
+			GPIO_TypeDefStruct = GPIOA;
+			channel = ADC_CHANNEL_9;	// PA13
+			break;
+		case 92:
+			GPIO_InitStruct.Pin = GPIO_PIN_11;
+			GPIO_TypeDefStruct = GPIOA;
+			channel = ADC_CHANNEL_7;	// PA11
+			break;
+		case 13:
+			GPIO_InitStruct.Pin = GPIO_PIN_3;
+			GPIO_TypeDefStruct = GPIOB;
+			channel = ADC_CHANNEL_2;	// PB3
+			break;
+		case 23:
+			GPIO_InitStruct.Pin = GPIO_PIN_4;
+			GPIO_TypeDefStruct = GPIOB;
+			channel = ADC_CHANNEL_3;	// PB4
+			break;
+		case 63:
+			GPIO_InitStruct.Pin = GPIO_PIN_14;
+			GPIO_TypeDefStruct = GPIOB;
+			channel = ADC_CHANNEL_1;	// PB14
+			break;
+		case 83:
+			GPIO_InitStruct.Pin = GPIO_PIN_10;
+			GPIO_TypeDefStruct = GPIOA;
+			channel = ADC_CHANNEL_6;	// PA10
+			break;
+		case 74:
+			GPIO_InitStruct.Pin = GPIO_PIN_13;
+			GPIO_TypeDefStruct = GPIOB;
+			channel = ADC_CHANNEL_0;	// PB13
+			break;
+		case 84:
+			GPIO_InitStruct.Pin = GPIO_PIN_2;
+			GPIO_TypeDefStruct = GPIOB;
+			channel = ADC_CHANNEL_4;	// PB2
+			break;
+		case 75:
+			GPIO_InitStruct.Pin = GPIO_PIN_1;
+			GPIO_TypeDefStruct = GPIOB;
+			channel = ADC_CHANNEL_5;	// PB1
+			break;
+		default:
+	  	    ITSDK_ERROR_REPORT(ITSDK_ERROR_ADC_INVALID_PIN,(uint16_t)pin);
+		}
 #else
 	#error DEVICE NOT DEFINED
 #endif
