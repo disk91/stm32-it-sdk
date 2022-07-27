@@ -144,7 +144,7 @@ void gpio_configure_ext(uint8_t bank, uint16_t id, itsdk_gpio_type_t type, itsdk
 		  __GPIOE_CLK_ENABLE();
 		  break;
     #endif
-	#if ITSDK_DEVICE == __DEVICE_STM32L072XX
+	#if ITSDK_DEVICE == __DEVICE_STM32L072XX || ITSDK_DEVICE == __DEVICE_STM32WLE5JC
 	case __BANK_H:
 		  __GPIOH_CLK_ENABLE();
 		  break;

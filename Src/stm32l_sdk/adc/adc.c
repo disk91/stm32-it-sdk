@@ -40,7 +40,7 @@
 #endif
 
 #if ( ITSDK_WITH_ADC & __ADC_ENABLED ) > 0
-ADC_HandleTypeDef hadc;
+static ADC_HandleTypeDef hadc;
 
 // check the device datasheet for precised address
 #if ITSDK_DEVICE == __DEVICE_STM32L011D4
