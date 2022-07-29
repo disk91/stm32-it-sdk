@@ -82,7 +82,7 @@
 #define ITSDK_WITH_GPIO_HANDLER		__ENABLE								// Enable the internal GPIO Handler, when disable you need to map it manually - default enable
 
 
-#define ITSDK_LOGGER_CONF			0x0070									// error->info level on serial1 => USART2 (see logger.c)
+#define ITSDK_LOGGER_CONF			0x0070									// error->info level on serial2 => USART2 (see logger.c)
                                                                             // File | Serial1 | Serial2 | Debug
 #define ITSDK_LOGGER_WITH_SEG_RTT	__DISABLE								// enable SEGGER RTT trace driver for DEBUG interface
 #define ITSDK_LOGGER_MODULE			( \

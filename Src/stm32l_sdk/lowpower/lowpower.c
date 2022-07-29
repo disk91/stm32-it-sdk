@@ -43,6 +43,7 @@
 #include "i2c.h"
 #endif
 
+
 #ifndef ITSDK_LOWPOWER_MISC_HALT
 #error "You must set ITSDK_LOWPOWER_MISC_HALT in itsdk/config.h"
 #endif
@@ -88,9 +89,11 @@ stm32l_lowPowerReturn_e __attribute__((optimize("O3"))) stm32l_lowPowerSetup(uin
 			}
 		#endif
 		HAL_SuspendTick();
-	    __HAL_RCC_PWR_CLK_ENABLE();				// Enable Power Control clock
- 	    HAL_PWREx_EnableUltraLowPower();		// Ultra low power mode
- 	    HAL_PWREx_EnableFastWakeUp();			// Fast wake-up for ultra low power mode
+		#if ITSDK_PLATFORM == __PLATFORM_STM32L0
+	      __HAL_RCC_PWR_CLK_ENABLE();			// Enable Power Control clock
+ 	      HAL_PWREx_EnableUltraLowPower();		// Ultra low power mode
+ 	      HAL_PWREx_EnableFastWakeUp();			// Fast wake-up for ultra low power mode
+		#endif
 
  	    if ( mode == STM32L_LOWPOWER_NORMAL_STOP ) {
 
@@ -195,7 +198,15 @@ stm32l_lowPowerReturn_e __attribute__((optimize("O3"))) stm32l_lowPowerSetup(uin
 		#if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_GPIO ) > 0
 			__lowPower_wakeup_pin=0xFFFF;
 		#endif
- 	    HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
+		#if ITSDK_PLATFORM == __PLATFORM_STM32WLE
+		  #if ((ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_UART1) > 0)  || ((ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_UART2) > 0)
+			HAL_PWREx_EnterSTOP1Mode(PWR_STOPENTRY_WFI);
+		  #else
+			HAL_PWREx_EnterSTOP2Mode(PWR_STOPENTRY_WFI);
+		  #endif
+		#else
+			HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
+		#endif
 	}
 	return STM32L_LOWPOWER_SUCCESS;
 }

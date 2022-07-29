@@ -51,7 +51,7 @@
 #define __DEVICE_STM32L031K6		4
 #define __DEVICE_STM32L052T8		5
 
-#define __DEVICE_STM32WLE5JC		21
+#define __DEVICE_STM32WLE5JC		21				// 256K Flash & 64K Ram
 
 /**
  * Supported Low Power Mode
