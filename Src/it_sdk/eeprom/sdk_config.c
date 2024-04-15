@@ -187,10 +187,9 @@ itsdk_config_ret_e itsdk_config_loadConfiguration(itsdk_config_load_mode_e mode)
 	__console_configMng.next = NULL;
 	itsdk_console_registerCommand(&__console_configMng);
 #endif
-
+    uint8_t requestFactoryReset = 0;
 #if ITSDK_CONFIGURATION_MODE == __CONFIG_EEPROM
   uint8_t v;
-  uint8_t requestFactoryReset = 0;
   uint8_t configUpdated = 0;
 
   if ( mode != CONFIG_FORCE_TO_FACTORY ) {

@@ -33,6 +33,7 @@
  */
 #define __CUBEMX_VERSIONXXX			499
 #define __CUBEMX_VERSION500			500
+#define __CUBEMX_VERSION6XX			600
 
 /**
  * Supported Hardware Platform
@@ -214,6 +215,7 @@
 #define __LOG_MOD_GNSS			0x00000100			// Gnss & underlaying drivers
 #define __LOG_MOD_ACCEL			0x00000200			// Accelerometer & underlaying drivers
 #define __LOG_MOD_LOWPOWER		0x00000400			// Print the wakeup reason - see lowpower.c
+#define __LOG_MOD_EEPROM		0x00000800			// Trace the EEprom (for virtual EEPROM) critical operations
 
 #define __LOG_MOD_CUSTOM1		0x00010000			// User level logging
 #define __LOG_MOD_CUSTOM2		0x00020000			// User level logging

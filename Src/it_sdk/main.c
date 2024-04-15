@@ -169,10 +169,10 @@ void itsdk_loop() {
 	#if ITSDK_SHEDULER_TASKS > 0
 	   itdt_sched_execute();
 	#endif
-	#if ITSDK_DRIVERS_WITH_ACCEL_DRIVER == __ENABLE
+	#if ITSDK_WITH_DRIVERS == __ENABLE && ITSDK_DRIVERS_WITH_ACCEL_DRIVER == __ENABLE
 	   accel_process_loop();
     #endif
-	#if ITSDK_DRIVERS_WITH_GNSS_DRIVER == __ENABLE
+	#if ITSDK_WITH_DRIVERS == __ENABLE && ITSDK_DRIVERS_WITH_GNSS_DRIVER == __ENABLE
 	   gnss_process_loop(BOOL_FALSE);
 	#endif
 	project_loop();
