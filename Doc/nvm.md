@@ -108,7 +108,15 @@ Each of the pages header is structured the following way:
   +------------+------------+-----------+ +-----------+------------+
   
   +----------------------------. 64 .------------------------------+
-  +                          Page State                            +
+  +                          Page State H                          +
+  +----------------------------------------------------------------+
+
+  +----------------------------. 64 .------------------------------+
+  +                          Page State L                          +
+  +----------------------------------------------------------------+
+
+  +----------------------------. 64 .------------------------------+
+  +                          Reserved (alignment)                  +
   +----------------------------------------------------------------+
   
   Magic is 0x916E indicating the EEPROM page has been initialize
@@ -116,9 +124,21 @@ Each of the pages header is structured the following way:
   Version is soft eeprom version for later potential migration
   
   Page State
-  0xFFFF...FFFF - initializing, transfer from another in progress
-  0xA55A...xxxx - ready to be used
-  0x0000...0000 - transfered, can be cleared
+  Different states in life cycle:
+  
+ 
+              +---------------------------------------+
+              \/                                      |
+  FREE -> INIT_EMPTY -> MOVE_IN -> READY -> MOVE_OUT -+
+    |          |                    ^
+    +----------+--------------------+
+  
+  State H  State L
+  0xFFFF / 0xFFFF - FREE			- The page is not initialized, blank memory
+  0xFFFF / 0x9999 - INIT EMPTY		- The page as been init but not yet in use, maintain the aging of the page
+  0xFFFF / 0x0000 - MOVE IN			- During garbage collection, indicate memory transfer to this page
+  0xA5A5 / 0x0000 - READY			- The page is open for adding lines into it
+  0x0000 / 0x0000 - MOVE OUT		- During Garbage collection, indicate source of transfer to a MOVE_IN page
 
 ```
 
@@ -153,8 +173,8 @@ page erasing cycles. It means for 6K user accessible memory
 | Accessible Memory | Total Need Memory | 2K Pages used | 2K Pages min total    | Min Real Memory |
 | ----------------- | ----------------- | ------------- | --------------------- |-----------------|
 | 4 KB              | 4.6KB             | 3             | 4                     | 8K              |
-| 6 KB              | 6.8KB             | 4             | 5                     | 10K             | 
-| 8 KB              | 9.1KB             | 5             | 6                     | 12K             |
+| 6 KB              | 6.9KB             | 4             | 5                     | 10K             | 
+| 8 KB              | 9.2KB             | 5             | 6                     | 12K             |
 | 16 KB             | 18.2KB            | 10            | 11                    | 22K             |
 
 It's better to increase the total page when you are using most of the used pages or to over reserve eeprom size for a smaller storage need. Say it 
@@ -167,6 +187,16 @@ When no more space is available (1 page is still available) to store new line we
 
 Destination is the empty page, when the empty page aging is > 100 and 2x the min aging, we switch the pages to free low aging pages for next writes and clean also the pages not changing a lot
 
+### Garbage collection
+
+When only one single page is free, we must start a garbage collection. This will compact the entries by removing the cleared lines.
+We need to reduce the write cycle and avoid to have a major difference in term of aging. On top of this, certain value never change and
+we may group them in pages to reduce the page modifications. (these pages will be later swapped to offer more write cycles for a given var.
+
+Process:
+- concat in one page the most cleared pages to free one or more.
+- free the pages
+- look for pages to swap when we have aging < avg_aging && max_aging > 2*avg_aging && max_aging > 100
 
 
 
