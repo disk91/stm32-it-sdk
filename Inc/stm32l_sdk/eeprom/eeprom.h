@@ -55,6 +55,7 @@
 																	// @TODO - improve this with not fixed value but parameter including the aging
 																	// currently, best is to commission more memory than required.
 	#define EEPROM_AGING_REPORT		8000							// when a page has been reset this amount of time, report it to user
+	#define __EEPROM_WITH_TEST										// disable the test code.
 #endif
 
 #ifndef EEPROM_END_ADDR
@@ -64,5 +65,25 @@
 
 uint32_t __eepromRead(uint32_t addr);
 bool __eepromWrite(uint32_t addr, uint32_t v);
+
+// callback used by garbage collector (for virtual eeprom only)
+void __eeprom_onGarbageCallback();
+
+// callback used when a flash memory issue appears
+typedef enum {
+	EEPROM_WARN_UNKNOWN,
+	EEPROM_WARN_PAGE_AGE_IS_HIGH,			// When the page age is passing EEPROM_AGING_REPORT, risk of flash hw failure soon
+	EEPROM_WARN_NO_FREE_PAGE,				// Impossible to get a free page but this is not blocking
+	EEPROM_WARN_GARBAGE_FAILED,				// Problem during garbage collection, not critical, eventually see other error fired previously
+
+	EEPROM_ERR,								// used to have a ERR vs WARN easy test (never used)
+	EEPROM_ERR_FAILED_TO_RESET_PAGE,		// Impossible to reset the flash page
+	EEPROM_ERR_NO_FREE_PAGE,				// Impossible to get a free page for garbaging
+	EEPROM_ERR_PAGE_MOVE_FAILED,			// Impossible to move a page to another for garbaging
+	EEPROM_ERR_GARBAGE_COMMIT,				// Failed to commit the garbage collection, page not switched ready
+	EEPROM_ERR_GARBAGE_FAILED,				// Critical error during garbage collection, eventually see other error fired previously
+} __eeprom_error_t;
+
+void __eeprom_onFlashErrorCallback( __eeprom_error_t errCode );
 
 #endif /* STM32L_SDK_EEPROM_EEPROM_H_ */

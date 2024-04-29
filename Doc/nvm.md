@@ -82,8 +82,8 @@ The Soft EEPROM work with 2K pages containing vitual memory zone defined like th
    
   
    Address
-   10 bits allows 1024 entries for 2*14*1024 eeprom storage as all addresses are even. 
-   ability to create EEPROM up to 28KB
+   10 bits allows 1024 entries for 14*1024 eeprom storage
+   ability to create EEPROM up to 14KB
    
    address 0 can't be used, means Cleared line
    adresss 3FF can't be used, means empty line

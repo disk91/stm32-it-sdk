@@ -51,7 +51,7 @@
 #define EEPROM_START_PAGE  ( EEPROM_START_ADDR / EEPROM_PAGE_SIZE )
 
 // Get the starting address of a page
-#define EEPROM_PAGE_ADDR(__p__) (EEPROM_START_ADDR + __p__ * EEPROM_PAGE_SIZE )
+#define EEPROM_PAGE_ADDR(__p__) (EEPROM_START_ADDR + (__p__) * EEPROM_PAGE_SIZE )
 
 
 typedef struct {
@@ -166,9 +166,17 @@ bool __eeprom_page_init(int page, ___eeprom_state_t targetState ) {
 	uint32_t pAddr = EEPROM_PAGE_ADDR(page);
 	__eeprom_page_header_t h = (*(volatile __eeprom_page_header_t*)pAddr);
 
+	// In case the page is already in the expected status, does not change it and return success,
+	// this is a way to test a state also
+	if ( h.magic == EEPROM_MAGIC && h.version == EEPROM_VERSION &&  h.state_h == nh.state_h && h.state_l == nh.state_l ) return true;
+
+	#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
+		log_debug("EEprom init page %d from %04X:%04X to %04X:%04X\r\n",page,(uint16_t)h.state_h,(uint16_t)h.state_l,(uint16_t)nh.state_h,(uint16_t)nh.state_l);
+	#endif
+
 	// There are two transitions where we need to clear the page
 	// target is FREE_PAGE or INIT_EMPTY or Source is not initialized
-	if (   ( h.magic != EEPROM_MAGIC || h.version != EEPROM_VERSION )		// STATE_FREE equivalent
+	if (   ( h.magic != EEPROM_MAGIC || h.version != EEPROM_VERSION )				// STATE_FREE equivalent
 		|| targetState == STATE_FREE												// STATE_FREE
 		|| targetState == STATE_INIT_EMPTY
 	) {
@@ -177,17 +185,19 @@ bool __eeprom_page_init(int page, ___eeprom_state_t targetState ) {
 			nh.aging = (h.aging == EEPROM_PAGE_MAX_AGE)?EEPROM_PAGE_MAX_AGE:h.aging+1;
 			if ( nh.aging == EEPROM_AGING_REPORT ) {
 				#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
-					log_warn("Page %d reach the aging limit\r\n",page);
+					log_warn("EEprom Page %d reach the aging limit\r\n",page);
 				#endif
-				// call a user callback function to inform the user level of this problem
-				// @TODO
+				// call a user callback function to inform the user level of this potential problem
+				__eeprom_onFlashErrorCallback( EEPROM_WARN_PAGE_AGE_IS_HIGH );
+
 			}
 		}
 		// clear the page
 		if ( ! __eeprom_page_clear(page) ) {
 			#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
-				log_error("Page %d failed to clear\r\n",page);
+				log_error("EEprom Page %d failed to clear\r\n",page);
 			#endif
+			__eeprom_onFlashErrorCallback( EEPROM_ERR_FAILED_TO_RESET_PAGE );
 			return false;
 		}
 	} else {
@@ -224,7 +234,7 @@ bool __eeprom_page_init(int page, ___eeprom_state_t targetState ) {
 		if ( *_t != *_r ) {
 			// failure
 			#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
-				log_error("Page init failure for page %d\r\n",page);
+				log_error("EEprom Page init failure for page %d\r\n",page);
 			#endif
 			return false;
 		}
@@ -238,7 +248,7 @@ bool __eeprom_page_init(int page, ___eeprom_state_t targetState ) {
  * Return true when a page state is READY, page is a 2K page
  * 0 to 256 as a maximum
  */
-bool __eemprom_is_page_ready( uint8_t page ) {
+bool __eeprom_is_page_ready( uint8_t page ) {
 	if ( page >= EEPROM_TOTAL_PAGES ) return false; // out of range
 
 	uint32_t pAddr = EEPROM_PAGE_ADDR(page);
@@ -281,21 +291,42 @@ uint8_t __eeprom_get_free_page() {
 }
 
 
+/**
+ * Count free pages and return how many exists
+ */
+uint8_t __eeprom_count_free_page() {
+	uint8_t c = 0;
+	for ( int page = 0; page < EEPROM_TOTAL_PAGES ; page++ ) {
+		uint32_t pAddr = EEPROM_PAGE_ADDR(page);
+		__eeprom_page_header_t h = (*(volatile __eeprom_page_header_t*)pAddr);
+		if (   ( h.magic == 0xFFFF && h.version == 0xFF )
+			|| (   h.magic == EEPROM_MAGIC && h.version == EEPROM_VERSION
+			    && (    ( h.state_h == EEPROM_PAGE_STATE_INIT_EMPTY_H && h.state_l == EEPROM_PAGE_STATE_INIT_EMPTY_L)
+				     || ( h.state_h == EEPROM_PAGE_STATE_FREE_H && h.state_l == EEPROM_PAGE_STATE_FREE_L)
+			       )
+			   )
+		) {
+			c++;
+		}
+	}
+	return c;
+}
+
 // ================================================================
 // LINE MANAGEMENT
 // ================================================================
 
-// Address field is only even addresses so 2^0 bit is removed ; Adress 0 is prohibited so expected offset is incremented
-// the adresses are for bloc of 14 Bytes so we align address on the first address of a such block
-#define EEPROM_ADDR_TO_LINE_ADDR(__addr__) (((_EEPROM_BYTE_PER_LINE * (__addr__ / _EEPROM_BYTE_PER_LINE)) >> 1) + 1)
+// Address field is only even addresses so 2^0 bit is removed ; Address 0 is prohibited so expected offset is incremented
+// the addresses are for bloc of 14 Bytes so we align address on the first address of a such block
+#define EEPROM_ADDR_TO_LINE_ADDR(__addr__) (( ((__addr__) / _EEPROM_BYTE_PER_LINE) ) + 1)
 
 // Reversed operation
-#define EEPROM_LINE_ADDR_TO_ADDR(__addr__) ((__addr__ - 1) << 1)
+#define EEPROM_LINE_ADDR_TO_ADDR(__addr__) (((__addr__) - 1) * _EEPROM_BYTE_PER_LINE)
 
 #define _EEPROM_BYTE_PER_LINE	14
 
 // Get the starting address of lines in a page
-#define EEPROM_FIRST_LINE_ADDR_IN_PAGE(__p__) ( EEPROM_START_ADDR + __p__ * EEPROM_PAGE_SIZE + sizeof(__eeprom_page_header_t) )
+#define EEPROM_FIRST_LINE_ADDR_IN_PAGE(__p__) ( EEPROM_START_ADDR + (__p__) * EEPROM_PAGE_SIZE + sizeof(__eeprom_page_header_t) )
 
 
 
@@ -325,7 +356,7 @@ uint32_t __eeprom_find_virtual_line( uint32_t vAddr ) {
 
 	for ( int page = 0; page < EEPROM_TOTAL_PAGES ; page ++ ) {
 		// check if init, else need to init a new one to add this entry
-		if ( __eemprom_is_page_ready(page) ) {
+		if ( __eeprom_is_page_ready(page) ) {
 			// search in page
 			uint32_t lAddr = EEPROM_FIRST_LINE_ADDR_IN_PAGE(page);
 			for ( int i = 0 ; i < EEPROM_LINE_PER_PAGE ; i++ ) {
@@ -367,7 +398,7 @@ uint32_t __eeprom_find_empty_line(uint8_t pageSearch) {
 
 	while ( page < EEPROM_TOTAL_PAGES ) {
 		// check if init, else need to init a new one to add this entry
-		if ( __eemprom_is_page_ready(page) ) {
+		if ( __eeprom_is_page_ready(page) ) {
 			// search in page
 			uint32_t lAddr = EEPROM_FIRST_LINE_ADDR_IN_PAGE(page);
 			for ( int i = 0 ; i < EEPROM_LINE_PER_PAGE ; i++ ) {
@@ -380,16 +411,10 @@ uint32_t __eeprom_find_empty_line(uint8_t pageSearch) {
 	}
 
 	// if not found, let see if we have a free page available
-	int freePages = 0;
-	int firstFreePage = -1;
-	for ( int page = 0; page < EEPROM_TOTAL_PAGES ; page ++ ) {
-		if ( ! __eemprom_is_page_ready(page) ) {
-			if ( firstFreePage == -1 ) firstFreePage = page;
-			freePages++;
-		}
+	if ( __eeprom_count_free_page() > 1 ) {
+	   return __eeprom_get_free_page();
 	}
-	if ( freePages == 1 ) return 0xFF; // compaction required
-	return firstFreePage;
+	return 0xFF; // we need to call garbage collector to compact it
 
 }
 
@@ -603,18 +628,41 @@ void _eeprom_info() {
 			EEPROM_TOTAL_PAGES*EEPROM_LINE_PER_PAGE,
 			s.allocated_lines,s.free_lines, s.trashed_lines
 	);
+	for (int i = 0 ; i < EEPROM_TOTAL_PAGES ; i++ ) {
+		uint32_t pAddr = EEPROM_PAGE_ADDR(i);
+		__eeprom_page_header_t h = (*(volatile __eeprom_page_header_t*)pAddr);
+
+		log_info("P[%02d] Age(%04d) St(%01X:%01X) Free(%03d) Trash(%03d) Untouched(%03d)\r\n",
+				i,h.aging, (int8_t)h.state_h & 0xF, (int8_t)h.state_l & 0xF,
+				s.free_lines_per_page[i], s.trashed_lines_per_page[i], s.untouched_lines_per_page[i]
+		);
+	}
+
 }
 
 // ===============================================================================
 // GARBAGE COLLECTION
 // ===============================================================================
 
+// For test purpose, get the ability to simulate crashes
+// 1   		- crash after a page is switched in move out state
+// 2/3 		- crash after a page switched in move_in, 2 will be the first one, 3 will be the second one
+// 10-99	- crash after a certain number of transfered line (10 - 0 up to 99 - 89 )
+// 100		- crash before transfer terminate
+// 101		- crash in middle of transfer terminate
+#ifdef __EEPROM_WITH_TEST
+   static uint8_t injectCrash = 0;
+#endif
 
 /**
  * Once a group of pages have been transfered to another page, we can commit these
  * modifications by moving move_in page to ready and move_out page to init_empty
  */
 bool __eeprom_transfer_to_terminate() {
+
+	#ifdef __EEPROM_WITH_TEST
+		if ( injectCrash == 100 ) return false;
+	#endif
 
 	// The first step is to commit MOVE_IN page into READY page
 	for ( int page = 0; page < EEPROM_TOTAL_PAGES ; page++ ) {
@@ -631,6 +679,11 @@ bool __eeprom_transfer_to_terminate() {
 			}
 		}
 	}
+
+	#ifdef __EEPROM_WITH_TEST
+		if ( injectCrash == 101 ) return false;
+	#endif
+
 	// The second step is to commit MOVE_OUT page into INIT_EMPTY stage for being available for reusing
 	for ( int page = 0; page < EEPROM_TOTAL_PAGES ; page++ ) {
 		uint32_t pAddr = EEPROM_PAGE_ADDR(page);
@@ -707,13 +760,33 @@ bool __eeprom_move_page(int psrc, int pdst, int * q_src, int * q_dst) {
 	*q_src = 0;
 	*q_dst = 0;
 
+	//log_info("** move (%d) to (%d)\r\n",psrc,pdst);
+
 	// First step is to make sure the page status is EEPROM_PAGE_STATE_MOVE_OUT
-	if ( __eeprom_page_init(psrc,STATE_MOVE_OUT) ) {
+	if ( ! __eeprom_page_init(psrc,STATE_MOVE_OUT) ) {
 		#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
 		  log_error("EEPROM impossible to switch page to move_out\r\n");
 		#endif
 		return false;
 	}
+
+	#ifdef __EEPROM_WITH_TEST
+    	if ( injectCrash == 1 ) return false;
+	#endif
+
+	// Then make sure the destination state is EEPROM_PAGE_STATE_MOVE_IN or switch it from INIT only
+	if ( ! __eeprom_page_init(pdst,STATE_MOVE_IN) ) {
+		#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
+		  log_error("EEPROM impossible to switch page to move_in\r\n");
+		#endif
+		return false;
+	}
+
+	#ifdef __EEPROM_WITH_TEST
+		if ( injectCrash == 2 ) return false;
+		if ( injectCrash == 3 ) injectCrash--; // will crash the next time
+	#endif
+
 
 	// Search first free line in destination page
 	uint32_t lAddr_d = EEPROM_FIRST_LINE_ADDR_IN_PAGE(pdst);
@@ -727,11 +800,17 @@ bool __eeprom_move_page(int psrc, int pdst, int * q_src, int * q_dst) {
 	int toMove = 0;
 	uint32_t lAddr_s = EEPROM_FIRST_LINE_ADDR_IN_PAGE(psrc);
 	for ( int i = 0 ; i < EEPROM_LINE_PER_PAGE ; i++ ){
-		__eeprom_line_t l = (*(volatile __eeprom_line_t*)lAddr_s);	// to optimize, here we read the whole line but we just need addr
+		__eeprom_line_t l = (*(volatile __eeprom_line_t*)lAddr_s);	// to be optimized, here we read the whole line but we just need addr
 		if ( l.addr != 0x3FF && l.addr != 0x000 ) {
 			toMove++;
 		}
 		lAddr_s += sizeof(__eeprom_line_t);
+	}
+
+	// Nothing to be done, all entries to be trashed
+	if ( toMove == 0 ) {
+		*q_src = EEPROM_LINE_PER_PAGE;
+		return true;
 	}
 
 	// Now we can transfer the lines to destination
@@ -740,6 +819,12 @@ bool __eeprom_move_page(int psrc, int pdst, int * q_src, int * q_dst) {
 	while ( lAddr_s < EEPROM_PAGE_ADDR(psrc+1) && lAddr_d < EEPROM_PAGE_ADDR(pdst+1) ) {
 		__eeprom_line_t l = (*(volatile __eeprom_line_t*)lAddr_s);	// to optimize, here we read the whole line but we just need addr
 		if ( l.addr != 0x3FF && l.addr != 0x000 ) {
+
+			#ifdef __EEPROM_WITH_TEST
+				if ( injectCrash == 10 ) return false;
+				if ( injectCrash > 10 && injectCrash < 100 ) injectCrash--; // will crash later
+			#endif
+
 			if ( ! __eeprom_write_and_verify(&l,lAddr_d) ) {
 				// when write error, go to next line... that's a problem
 				#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
@@ -754,21 +839,46 @@ bool __eeprom_move_page(int psrc, int pdst, int * q_src, int * q_dst) {
 			lAddr_d += sizeof(__eeprom_line_t);
 		} else {
 			lAddr_s += sizeof(__eeprom_line_t);
+			*q_src = *q_src+1;
 		}
 	}
 	// page is transfered
 	return ( moved == toMove );
 }
 
+/*
+ * Detect initialization to run a first garbage test
+ */
+static uint8_t __eeprom_state_verified = 0;
+
 /**
  * Garbage collection
- * 1 - terminate the existing move in any
+ * 1 - terminate the existing move if any ( this is when the mcu reset during garbaging )
+ *     if we have page in status move_in we can clear them and restart the process
+ *     if we have page in status move_out but no page in move_in status, it means the transfer has been made but these pages haven not been
+ *     reset. do it.
+ * 2 - get a free page as a destination page
+ * 3 - restart the previous garbage execution if failed by moving the move_out page into the destination page
+ * 4 - normal processing when looking for pages to move into the destination
+ *     search for 1 page where we have a maximum line we can free in one shot and iterate until the target page can't merge a full page
+ * 5 - then have a look if we can merge two pages into a single one, this could be interesting and executed as cherry on the cake
  *
+ * As a parameter, justCommit will execute garbage collection only if there are pending page_in or page_out, this is used on start to make
+ * sure the eeprom state is ok
+ *
+ * To test the garbage collection, we can inject errors and recall the garbage manually to ensure it restore
+ * it correctly
  */
-void __eeprom_garbage_collection() {
+void __eeprom_garbage_collection(bool justCommit) {
 	__eeprom_stat_t s;
+
+	log_info("** Garbage is running\r\n");
 	__eeprom_get_stat(&s);
 
+	__eeprom_state_verified = 1;
+	if ( justCommit && s.move_in_pages == 0 && s.move_out_pages == 0 ) return;
+
+	// -- 1 --
 	if ( s.move_in_pages > 0 ) {
 		// We have page in move_in state, meaning the garbage collection process failed
 		// this page can be cleared and restart the move (should never be > 1, but what to do ?!?
@@ -784,6 +894,7 @@ void __eeprom_garbage_collection() {
 		__eeprom_clear_moved_out_pages();
 	}
 
+	// -- 2 --
 
 	int freeLine_dst = EEPROM_LINE_PER_PAGE;
 	uint8_t p_dst = __eeprom_get_free_page();
@@ -792,8 +903,11 @@ void __eeprom_garbage_collection() {
 		#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
 		  log_error("EEPROM no page to init for garbaging\r\n");
 		#endif
+		__eeprom_onFlashErrorCallback(EEPROM_ERR_NO_FREE_PAGE);
 		goto garbage_failed;
 	} else {
+
+		// -- 3 --
 		if ( s.move_out_pages > 0 && s.move_in_pages > 0 ) {
 			// We have page with initiated transfer, so we need to replay the transfer and terminate it.
 			// loop on state move out pages
@@ -812,6 +926,7 @@ void __eeprom_garbage_collection() {
 							#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
 							  log_error("EEPROM error garbage copy failed\r\n");
 							#endif
+							__eeprom_onFlashErrorCallback(EEPROM_ERR_PAGE_MOVE_FAILED);
 							goto garbage_failed;
 						} else {
 							freeLine_dst -= q_dst;
@@ -823,8 +938,10 @@ void __eeprom_garbage_collection() {
 			}
 		}
 
+		// -- 4 --
+		// Here is the normal case where we just need to free pages.
 		bool _exit = false;
-		while ( _exit ) {
+		while ( ! _exit ) {
 
 			// see if we can add a page in the current page
 			int p_src = 0xFF;
@@ -854,6 +971,7 @@ void __eeprom_garbage_collection() {
 					#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
 					  log_error("EEPROM error garbage copy failed\r\n");
 					#endif
+					__eeprom_onFlashErrorCallback(EEPROM_ERR_PAGE_MOVE_FAILED);
 					goto garbage_failed;
 				} else {
 					freeLine_dst -= q_dst;
@@ -871,8 +989,11 @@ void __eeprom_garbage_collection() {
 						#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
 						  log_error("EEPROM error garbage commit failed\r\n");
 						#endif
+						__eeprom_onFlashErrorCallback(EEPROM_ERR_GARBAGE_COMMIT);
 						goto garbage_failed;
 					}
+
+					// -- 5 --
 					// do we need to continue ?
 					// this make sense if we can group 2 pages or more in a single one
 					__eeprom_get_stat(&s);
@@ -914,6 +1035,7 @@ void __eeprom_garbage_collection() {
 						#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
 						  log_error("EEPROM no page to init for garbaging\r\n");
 						#endif
+						__eeprom_onFlashErrorCallback(EEPROM_WARN_NO_FREE_PAGE);
 						goto garbage_warning;
 					}
 				} else {
@@ -924,25 +1046,24 @@ void __eeprom_garbage_collection() {
 		}
 	}
 
+	// in case user level needs to make some check
+	__eeprom_onGarbageCallback();
+
 	// @TODO
 	// have some next step to rebalance the pages when aging variability is high
 	// have some next step to group the non changing lines to decrease the average aging.
-
-	#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
-		_eeprom_info();
-	#endif
+	log_info("** Garbage done\r\n");
 	return;
 
 	garbage_failed:
-
-	// Need to have a user callback about EERPOM memory corrupted
-	// @TODO
+	// User callback about EERPOM memory corrupted
+	__eeprom_onFlashErrorCallback(EEPROM_ERR_GARBAGE_FAILED);
 	return;
 
 	garbage_warning:
-
-	// Need to have a user callback about EEPROM non critical problem for
+	// User callback about EEPROM non critical problem for
 	// taking preventive action on the device
+	__eeprom_onFlashErrorCallback(EEPROM_WARN_GARBAGE_FAILED);
 
 	return;
 
@@ -955,7 +1076,44 @@ void __eeprom_garbage_collection() {
 // ===============================================================================
 
 
+/**
+ * Called once the GarbageCollection has been executed
+ * Do nothing but user application can do some specific
+ * operations related to this.
+ */
+#ifndef __EEPROM_WITH_TEST
 
+__weak void __eeprom_onGarbageCallback() {}
+
+#else
+	static uint8_t __gc_counter = 0;
+	void __eeprom_onGarbageCallback(){
+		__gc_counter++;
+		#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
+			_eeprom_info();
+		#endif
+	}
+#endif
+
+/**
+ * Called when an error or warning from the eeprom flash driver is
+ * reported. This allows the main code to take action or to report it
+ * for device management
+ */
+#ifndef __EEPROM_WITH_TEST
+
+__weak void __eeprom_onFlashErrorCallback( __eeprom_error_t errCode ) { }
+
+#else
+	void __eeprom_onFlashErrorCallback( __eeprom_error_t errCode ) {
+		if ( errCode == EEPROM_ERR_GARBAGE_FAILED && injectCrash > 0 ) {
+			// simulate a restart
+			injectCrash = 0;
+			__eeprom_garbage_collection(true);
+		}
+	}
+
+#endif
 /**
  * Write in the eeprom the given data.
  * A bank is used as a entry index to manage multiple content.
@@ -965,6 +1123,8 @@ void __eeprom_garbage_collection() {
  * @TODO : manage bank
  */
 bool _eeprom_write(uint8_t bank, uint32_t offset, void * data, int len) {
+	if ( __eeprom_state_verified == 0 ) __eeprom_garbage_collection(true);
+
 	uint8_t *  _data = (uint8_t *)data;
 
 	// check address
@@ -993,10 +1153,11 @@ bool _eeprom_write(uint8_t bank, uint32_t offset, void * data, int len) {
 		int shift = 0;
 		bool failure = false;
 
+		//if (1 || _offset > 0x6C4) log_info("** Wr off(%08X) lAddr(%08X) tAddr(%08X)",_offset,lAddr,target.addr);
 
 
 		// We need a target to store the result, new or existing, whatever, result will be in a new line
-		uint32_t tAddr;
+		uint32_t tAddr=0;
 		int page;
 		if ( lAddr < EEPROM_START_ADDR ) {
 			// find a line in the proposed page, already scanned during the line search
@@ -1007,17 +1168,20 @@ bool _eeprom_write(uint8_t bank, uint32_t offset, void * data, int len) {
 			// when the line has been found, search globally a target page & line
 			tAddr = __eeprom_find_empty_line(0xFF);
 		}
+		//if (1 || _offset > 0x6C4) log_info("** tAddr (%08X)\r\n",tAddr);
 		if ( tAddr == 0xFF ) {
 			// in this situation we need to garbage collect the flash
-			__eeprom_garbage_collection();
-			// then search a new line
+			__eeprom_garbage_collection(false);
+			// refresh the source address if moved
+			lAddr = __eeprom_find_virtual_line(_offset);
+			// then search a new target line
 			tAddr = __eeprom_find_empty_line(0xFF);
 			if (tAddr < EEPROM_START_ADDR ) {
 				page = (uint8_t)tAddr;
 				if ( page == 0xFF ) {
 					// problem ... no page available after garbage
 					#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
-						log_error("Failed get a free page even after garbage");
+						log_error("Failed get a free page even after garbage\r\n");
 					#endif
 					goto write_failed;
 				}
@@ -1120,6 +1284,7 @@ bool _eeprom_write(uint8_t bank, uint32_t offset, void * data, int len) {
 			#endif
 			return false;
 		}
+		// log_info("** _off(%08X) off(%08X) len(%d) shift(%d)\r\n",_offset,offset,len,shift);
 	} while ( _offset < offset+len );
 
 	return true;
@@ -1135,6 +1300,8 @@ write_failed:
  * Offset is to add an offset to bank start - Offset is aligned don 32b word
  */
 bool _eeprom_read(uint8_t bank, uint32_t offset, void * data, int len) {
+	if ( __eeprom_state_verified == 0 ) __eeprom_garbage_collection(true);
+
 	uint8_t  * _data = (uint8_t *)data;
 
 	if ( bank != 0 || (offset + len) > EEPROM_SIZE) {
@@ -1174,6 +1341,7 @@ bool _eeprom_read(uint8_t bank, uint32_t offset, void * data, int len) {
 }
 
 
+#ifdef __EEPROM_WITH_TEST
 
 // ======================================================================
 // Test Function
@@ -1184,24 +1352,25 @@ bool _eeprom_read(uint8_t bank, uint32_t offset, void * data, int len) {
 // structure verification with sum field, making a sum of the other field
 // fields not aligned on lines
 typedef struct {
-	uint8_t		u8_1;	// 64b
+	uint8_t		u8_1;	// 64b								8B
 	uint16_t 	u16_1;
 	uint32_t	u32_1;
 	uint8_t		u8_2;
 
-	uint8_t		u8_3[6];	// end of line 1
+	uint8_t		u8_3[6];	// end of line 1			//  6B
 
-	uint32_t	u32_2[10];
-	uint16_t	u16_2;		// end of line 2,3,4,5
+	uint32_t	u32_2[10];								// 40B
+	uint16_t	u16_2;		// end of line 2,3,4,5		//  2B
 
-	uint16_t 	u16_3;
-	uint32_t	u32_3[10];	// end of line 6,7,8,9
+	uint16_t 	u16_3;									//  2B
+	uint32_t	u32_3[10];	// end of line 6,7,8,9		// 40B
 
-	uint32_t	u32_4[4];	// end of line 10 + 4Bytes
+	uint32_t	u32_4[4];	// end of line 10 + 4Bytes	// 16B
 
-	uint32_t	sum;		// in line 11
+	uint32_t	sum;		// in line 11				//  4B
+	uint16_t	u16_4;		// 32Bits alignment			//  2B
 
-} __test_struct;
+} __test_struct;										// 120B
 
 // create a content driven by a single value
 void ___init_test(__test_struct * s, uint8_t v) {
@@ -1217,6 +1386,7 @@ void ___init_test(__test_struct * s, uint8_t v) {
 	for ( int i = 0 ; i < 10 ; i++ ) s->u32_3[i] = s->u32_1;
 	for ( int i = 0 ; i < 4 ; i++ ) s->u32_4[i] = s->u32_1;
 	s->sum = 8*v + 3*s->u16_1 + 25*s->u32_1;
+	s->u16_4 = 0xFFFF;
 }
 
 // calculate the structure checksum for verification
@@ -1274,6 +1444,7 @@ void _eeprom_test() {
 	//        R  Aging          Magic R	 R  R  Ver  R    Ready  R
 	//
 	// Line : FF FF 1101 00 00.0000.0001 | FF A5 FF FF | FF FF FF FF | FF FF FF FF
+	//              D    0     0    1
 	//        D1 D0 Chk  U  Address      | D5 D4 D3 D2 | D9 D8 D7 D6 | DD DC DB DA
 
 	uint8_t data[1] = { 0xA5 };
@@ -1314,6 +1485,10 @@ void _eeprom_test() {
 
 	// ---- TEST 3
 	// create a full line, aligned address @ 4*_EEPROM_BYTE_PER_LINE ( for alignment )
+	// Line : 01 00 1011 00 00.0000.0101 | 05 04 03 02 | 09 08 07 06 | 0D 0C 0B 0A
+	//              B    0     0    5
+	//        D1 D0 Chk  U  Address      | D5 D4 D3 D2 | D9 D8 D7 D6 | DD DC DB DA
+
 	uint8_t data2[_EEPROM_BYTE_PER_LINE];
 	for ( int i = 0 ; i < _EEPROM_BYTE_PER_LINE ; i++ ) {
 		data2[i] = i;
@@ -1326,7 +1501,7 @@ void _eeprom_test() {
 	// should be at the second line in eeprom
 	l = (*(volatile __eeprom_line_t*)(EEPROM_START_ADDR + sizeof(__eeprom_page_header_t) + sizeof(__eeprom_line_t) ));
 	if (   EEPROM_LINE_ADDR_TO_ADDR(l.addr) != addr
-		|| l.addr != 0x01D
+		|| l.addr != 0x05
 	    || l.updates != 0x00
 		|| __eeprom_compute_check(&l) != l.check
 	) {
@@ -1353,6 +1528,9 @@ void _eeprom_test() {
 
 	// --- TEST 5
 	// create a full line, not aligned address @ 2*_EEPROM_BYTE_PER_LINE+4 (aligned)
+	// Line : FF FF 1010 00 00.0000.0011 | 81 80 FF FF | 85 84 83 82 | 89 88 87 86
+	//              A    0     0    3
+	//        D1 D0 Chk  U  Address      | D5 D4 D3 D2 | D9 D8 D7 D6 | DD DC DB DA
 	for ( int i = 0 ; i < _EEPROM_BYTE_PER_LINE ; i++ ) {
 		data2[i] = 0x80+i;
 	}
@@ -1364,7 +1542,7 @@ void _eeprom_test() {
 	// this should create two lines
 	l = (*(volatile __eeprom_line_t*)(EEPROM_START_ADDR + sizeof(__eeprom_page_header_t) + 2*sizeof(__eeprom_line_t) ));
 	if (   EEPROM_LINE_ADDR_TO_ADDR(l.addr) != (addr-4)
-		|| l.addr != 0x00F
+		|| l.addr != 0x003
 	    || l.updates != 0x00
 		|| __eeprom_compute_check(&l) != l.check
 	) {
@@ -1388,7 +1566,7 @@ void _eeprom_test() {
 	}
 	l = (*(volatile __eeprom_line_t*)(EEPROM_START_ADDR + sizeof(__eeprom_page_header_t) + 3*sizeof(__eeprom_line_t) ));
 	if (   EEPROM_LINE_ADDR_TO_ADDR(l.addr) != (addr-4)+_EEPROM_BYTE_PER_LINE
-		|| l.addr != 0x016
+		|| l.addr != 0x004
 	    || l.updates != 0x00
 		|| __eeprom_compute_check(&l) != l.check
 	) {
@@ -1489,6 +1667,7 @@ void _eeprom_test() {
 	for ( int i = 0 ; i < EEPROM_LINE_PER_PAGE - 8 ; i++ ) {
 		addr = ((5+i) * _EEPROM_BYTE_PER_LINE + 8) & 0xFFFFFFFC; // make sure we have alignment
 		data[0] = 0x5A;
+		wdg_refresh();
 		if( ! _eeprom_write(0, addr, data, sizeof(data) ) ) {
 			log_error("EE-TEST-9 - Failed to fill the first page at %d\r\n",addr);
 			goto failed;
@@ -1560,10 +1739,156 @@ void _eeprom_test() {
 		log_error("EE-TEST-11 - eeprom stats are not coherent\r\n");
 		goto failed;
 	}
-	log_info("EE-TEST-11 - number of trashed lines & allocate page is coherent\r\n",addr);
+	log_info("EE-TEST-11 - number of trashed lines & allocate page is coherent\r\n");
 
 
+	// --- TEST 12
+	// Create a large set of structure, make then updating to generate garbage collection and verify each of them
+	__test_struct multTest[10]; // about 1+ full page of data
+	__test_struct multTestR[10]; // to read
 
+	uint32_t baseAddr = ( addr + sizeof(__test_struct) + 14 ) & 0xFFFFFFFC;
+	for ( int i = 0 ; i < 10 ; i++ ) {
+		wdg_refresh();
+		___init_test(&multTest[i],i*16+i);
+		if( ! _eeprom_write(0, baseAddr + i*sizeof(__test_struct), &multTest[i], sizeof(__test_struct) ) ) {
+			log_error("EE-TEST-12 - Failed to write test struct %d at %d\r\n",i,addr);
+			goto failed;
+		}
+		if ( !_eeprom_read(0,baseAddr + i*sizeof(__test_struct), &multTestR[i],sizeof(__test_struct)) ) {
+			log_error("EE-TEST-12 - read return an error %d\r\n",i);
+			goto failed;
+		}
+		if ( multTestR[i].sum != multTest[i].sum || multTest[i].sum != ___sum_test(&multTestR[i]) ) {
+			log_error("EE-TEST-12 - failed to verify struct integrity %d\r\n",i);
+			goto failed;
+		}
+		log_info("EE-TEST-12 - created and verified structure at address %d sz %d\r\n",baseAddr + i*sizeof(__test_struct), sizeof(__test_struct));
+	}
+
+
+	bool tested = false;
+	for ( int k = 0 ; k < 20 ; k ++ ) {
+		// update the structure content and verify it
+		for ( int i = 0 ; i < 10 ; i++ ) {
+			wdg_refresh();
+			___alter_struct(&multTest[i],i*16+i+k);
+			if( ! _eeprom_write(0, baseAddr + i*sizeof(__test_struct), &multTest[i], sizeof(__test_struct) ) ) {
+				log_error("EE-TEST-12 - Failed to update test struct %d at %d\r\n",i,addr);
+				goto failed;
+			}
+			// wait for garbage collection
+			if ( __gc_counter == 1 && ! tested ) {
+				tested = true;
+				log_info("EE-TEST-12 - garbage collection detected\r\n");
+				// At this point we expect Page 1, 3 and 4 moved to 4, status should be init_empty
+				uint32_t pAddr = EEPROM_PAGE_ADDR(1);
+				__eeprom_page_header_t h = (*(volatile __eeprom_page_header_t*)pAddr);
+				if (    h.magic != EEPROM_MAGIC || h.version != EEPROM_VERSION
+					 || h.state_h != EEPROM_PAGE_STATE_INIT_EMPTY_H ||  h.state_l != EEPROM_PAGE_STATE_INIT_EMPTY_L
+					 || h.aging != 1
+				){
+					log_error("EE-TEST-12 - page 1 should be INIT_EMPTY with age 1\r\n");
+					goto failed;
+				}
+				pAddr = EEPROM_PAGE_ADDR(0);
+				h = (*(volatile __eeprom_page_header_t*)pAddr);
+				if (    h.magic != EEPROM_MAGIC || h.version != EEPROM_VERSION
+					 || h.state_h != EEPROM_PAGE_STATE_READY_H ||  h.state_l != EEPROM_PAGE_STATE_READY_L
+					 || h.aging != 0
+				){
+					log_error("EE-TEST-12 - page 0 should be READY with age 0\r\n");
+					goto failed;
+				}
+				pAddr = EEPROM_PAGE_ADDR(2);
+				h = (*(volatile __eeprom_page_header_t*)pAddr);
+				if (    h.magic != EEPROM_MAGIC || h.version != EEPROM_VERSION
+					 || h.state_h != EEPROM_PAGE_STATE_INIT_EMPTY_H ||  h.state_l != EEPROM_PAGE_STATE_INIT_EMPTY_L
+					 || h.aging != 1
+				){
+					log_error("EE-TEST-12 - page 2 should be INIT_EMPTY with age 1\r\n");
+					goto failed;
+				}
+				pAddr = EEPROM_PAGE_ADDR(3);
+				h = (*(volatile __eeprom_page_header_t*)pAddr);
+				if (    h.magic != EEPROM_MAGIC || h.version != EEPROM_VERSION
+					 || h.state_h != EEPROM_PAGE_STATE_INIT_EMPTY_H ||  h.state_l != EEPROM_PAGE_STATE_INIT_EMPTY_L
+					 || h.aging != 1
+				){
+					log_error("EE-TEST-12 - page 3 should be INIT_EMPTY with age 1\r\n");
+					goto failed;
+				}
+				pAddr = EEPROM_PAGE_ADDR(4);
+				h = (*(volatile __eeprom_page_header_t*)pAddr);
+				if (    h.magic != EEPROM_MAGIC || h.version != EEPROM_VERSION
+					 || h.state_h != EEPROM_PAGE_STATE_READY_H ||  h.state_l != EEPROM_PAGE_STATE_READY_L
+					 || h.aging != 0
+				){
+					log_error("EE-TEST-12 - page 4 should be READY with age 0\r\n");
+					goto failed;
+				}
+
+			}
+
+			if ( !_eeprom_read(0,baseAddr + i*sizeof(__test_struct),&multTestR[i],sizeof(__test_struct)) ) {
+				log_error("EE-TEST-12 - read return an error %d\r\n",i);
+				goto failed;
+			}
+			if ( multTestR[i].sum != multTest[i].sum || multTestR[i].sum != ___sum_test(&multTest[i]) ) {
+				log_error("EE-TEST-12 - failed to verify struct integrity %d\r\n",i);
+				goto failed;
+			}
+		}
+		log_info("EE-TEST-12 - multiple modification and garbaging success loop %d\r\n",k);
+	}
+	log_info("EE-TEST-12 - multiple modification and garbaging all success\r\n");
+
+	// --- TEST 13
+	// Test Garbage collection crash & restore based on the previous structures
+
+	injectCrash = 0;
+	int test = 0;
+	for ( int k = 0 ; k < 200 ; k ++ ) {
+
+		// wait until crash is executed
+		if ( injectCrash == 0 ) {
+			test++;
+			log_info("EE-TEST-13 - Executing test 13.%d\r\n",test);
+			switch(test) {
+			case 1:	injectCrash=1; break;
+			case 2: injectCrash=2; break;
+			case 3: injectCrash=3; break;
+			case 4: injectCrash=10; break;
+			case 5: injectCrash=25; break;
+			case 6: injectCrash=47; break;
+			case 7: injectCrash=78; break;
+			case 8: injectCrash=95; break;
+			case 9: injectCrash=100; break;
+			case 10: injectCrash=101; break;
+			default:
+			case 11: injectCrash=254; break;	// nothing
+			}
+		}
+
+		// update the structure content and verify it
+		for ( int i = 0 ; i < 10 ; i++ ) {
+			wdg_refresh();
+			___alter_struct(&multTest[i],i*16+i+k);
+			if( ! _eeprom_write(0, baseAddr + i*sizeof(__test_struct), &multTest[i], sizeof(__test_struct) ) ) {
+				log_error("EE-TEST-13 - Failed to update test struct %d at %d\r\n",i,addr);
+				goto failed;
+			}
+			if ( !_eeprom_read(0,baseAddr + i*sizeof(__test_struct),&multTestR[i],sizeof(__test_struct)) ) {
+				log_error("EE-TEST-13 - read return an error %d\r\n",i);
+				goto failed;
+			}
+			if ( multTestR[i].sum != multTest[i].sum || multTestR[i].sum != ___sum_test(&multTest[i]) ) {
+				log_error("EE-TEST-13 - failed to verify struct integrity %d\r\n",i);
+				goto failed;
+			}
+		}
+	}
+	log_info("EE-TEST-13 - multiple modification and garbaging with garbaging crashing all success\r\n");
 
 
 	log_info("EE-TEST - End success\r\n");
@@ -1571,8 +1896,9 @@ void _eeprom_test() {
 
 	failed:
 	 log_error("EE-TEST - End with failure\r\n");
+	 return;
 
 }
-
+#endif // __EEPROM_WITH_TEST
 
 #endif
