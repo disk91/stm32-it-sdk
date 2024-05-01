@@ -82,6 +82,7 @@ typedef enum {
 	EEPROM_ERR_PAGE_MOVE_FAILED,			// Impossible to move a page to another for garbaging
 	EEPROM_ERR_GARBAGE_COMMIT,				// Failed to commit the garbage collection, page not switched ready
 	EEPROM_ERR_GARBAGE_FAILED,				// Critical error during garbage collection, eventually see other error fired previously
+	EEPROM_ERR_GARBAGE_REPAIR_FAILED,		// Failed to repair eepom after garbage collection
 } __eeprom_error_t;
 
 void __eeprom_onFlashErrorCallback( __eeprom_error_t errCode );

@@ -567,8 +567,24 @@ void __eeprom_get_stat(__eeprom_stat_t * s) {
 		if ( h.magic == EEPROM_MAGIC && h.version == EEPROM_VERSION ) {
 			if ( h.state_h == EEPROM_PAGE_STATE_READY_H && h.state_l == EEPROM_PAGE_STATE_READY_L ) {
 				s->ready_pages++;
-				aging+=h.aging;
+			} else if ( h.state_h == EEPROM_PAGE_STATE_FREE_H && h.state_l == EEPROM_PAGE_STATE_FREE_L ) {
+				s->free_pages++;
+				s->free_lines += EEPROM_LINE_PER_PAGE;
+				s->free_lines_per_page[page] += EEPROM_LINE_PER_PAGE;
+			} else if ( h.state_h == EEPROM_PAGE_STATE_INIT_EMPTY_H && h.state_l == EEPROM_PAGE_STATE_INIT_EMPTY_L ) {
+				s->init_empty_pages++;
+				s->free_lines += EEPROM_LINE_PER_PAGE;
+				s->free_lines_per_page[page] += EEPROM_LINE_PER_PAGE;
+			} else if ( h.state_h == EEPROM_PAGE_STATE_MOVE_IN_H && h.state_l == EEPROM_PAGE_STATE_MOVE_IN_L ) {
+				s->move_in_pages++;
+			} else if ( h.state_h == EEPROM_PAGE_STATE_MOVE_OUT_H && h.state_l == EEPROM_PAGE_STATE_MOVE_OUT_L ) {
+				s->move_out_pages++;
+			}
+			aging+=h.aging;
 
+			if (    ( h.state_h == EEPROM_PAGE_STATE_READY_H && h.state_l == EEPROM_PAGE_STATE_READY_L )
+				 || ( h.state_h == EEPROM_PAGE_STATE_MOVE_OUT_H && h.state_l == EEPROM_PAGE_STATE_MOVE_OUT_L )
+			) {
 				// this is active data
 				uint32_t lAddr = EEPROM_FIRST_LINE_ADDR_IN_PAGE(page);
 				for ( int i = 0 ; i < EEPROM_LINE_PER_PAGE ; i++ ) {
@@ -590,22 +606,8 @@ void __eeprom_get_stat(__eeprom_stat_t * s) {
 					}
 					lAddr += sizeof(__eeprom_line_t);
 				}
-
-			} else if ( h.state_h == EEPROM_PAGE_STATE_FREE_H && h.state_l == EEPROM_PAGE_STATE_FREE_L ) {
-				s->free_pages++;
-				aging+=h.aging;
-				s->free_lines += EEPROM_LINE_PER_PAGE;
-				s->free_lines_per_page[page] += EEPROM_LINE_PER_PAGE;
-			} else if ( h.state_h == EEPROM_PAGE_STATE_INIT_EMPTY_H && h.state_l == EEPROM_PAGE_STATE_INIT_EMPTY_L ) {
-				s->init_empty_pages++;
-				aging+=h.aging;
-				s->free_lines += EEPROM_LINE_PER_PAGE;
-				s->free_lines_per_page[page] += EEPROM_LINE_PER_PAGE;
-			} else if ( h.state_h == EEPROM_PAGE_STATE_MOVE_IN_H && h.state_l == EEPROM_PAGE_STATE_MOVE_IN_L ) {
-				aging+=h.aging;
-			} else if ( h.state_h == EEPROM_PAGE_STATE_MOVE_OUT_H && h.state_l == EEPROM_PAGE_STATE_MOVE_OUT_L ) {
-				aging+=h.aging;
 			}
+
 		} else {
 			s->free_pages++;
 			s->free_lines += EEPROM_LINE_PER_PAGE;
@@ -872,7 +874,7 @@ static uint8_t __eeprom_state_verified = 0;
 void __eeprom_garbage_collection(bool justCommit) {
 	__eeprom_stat_t s;
 
-	log_info("** Garbage is running\r\n");
+	//log_info("** Garbage is running\r\n");
 	__eeprom_get_stat(&s);
 
 	__eeprom_state_verified = 1;
@@ -895,7 +897,6 @@ void __eeprom_garbage_collection(bool justCommit) {
 	}
 
 	// -- 2 --
-
 	int freeLine_dst = EEPROM_LINE_PER_PAGE;
 	uint8_t p_dst = __eeprom_get_free_page();
 	if ( p_dst == 0xFF ) {
@@ -919,7 +920,8 @@ void __eeprom_garbage_collection(bool justCommit) {
 				if (   h.magic == EEPROM_MAGIC && h.version == EEPROM_VERSION
 					&& h.state_h == EEPROM_PAGE_STATE_MOVE_OUT_H && h.state_l == EEPROM_PAGE_STATE_MOVE_OUT_L
 				){
-					if ( (EEPROM_LINE_PER_PAGE - s.trashed_lines_per_page[p_src] - s.free_lines_per_page[p_src]) <= freeLine_dst ) {
+					int toMove_src = (EEPROM_LINE_PER_PAGE - s.trashed_lines_per_page[p_src] - s.free_lines_per_page[p_src]);
+					if ( freeLine_dst >= toMove_src ) {
 						// else we may have a problem to copy this page as it is higher, try skip it
 						if ( ! __eeprom_move_page(p_src,p_dst,&q_src,&q_dst) ) {
 							// problem during page copy
@@ -933,6 +935,11 @@ void __eeprom_garbage_collection(bool justCommit) {
 							s.trashed_lines_per_page[p_src] = EEPROM_LINE_PER_PAGE;
 							s.free_lines_per_page[p_src] = 0;
 						}
+					} else {
+						#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
+						  log_error("EEPROM stopped repair moveout before end\r\n");
+						#endif
+						__eeprom_onFlashErrorCallback(EEPROM_ERR_GARBAGE_REPAIR_FAILED);
 					}
 				}
 			}
@@ -949,11 +956,11 @@ void __eeprom_garbage_collection(bool justCommit) {
 			for ( int i = 0 ; i < EEPROM_TOTAL_PAGES ; i++ ) {
 				uint32_t pAddr = EEPROM_PAGE_ADDR(i);
 				__eeprom_page_header_t h = (*(volatile __eeprom_page_header_t*)pAddr);
-
 				if (   h.magic == EEPROM_MAGIC && h.version == EEPROM_VERSION
 					&& h.state_h == EEPROM_PAGE_STATE_READY_H && h.state_l == EEPROM_PAGE_STATE_READY_L
 				){
-					if ( (EEPROM_LINE_PER_PAGE - s.trashed_lines_per_page[i] - s.free_lines_per_page[i]) < freeLine_dst ) {
+					int usedPage_src = (EEPROM_LINE_PER_PAGE - s.trashed_lines_per_page[i] - s.free_lines_per_page[i]);
+					if ( freeLine_dst >= usedPage_src ) {
 						// this page is candidate, search the one with more trashed as possible
 						if ( maxTrashed < s.trashed_lines_per_page[i] ){
 							maxTrashed = s.trashed_lines_per_page[i] ;
@@ -998,8 +1005,8 @@ void __eeprom_garbage_collection(bool justCommit) {
 					// this make sense if we can group 2 pages or more in a single one
 					__eeprom_get_stat(&s);
 					freeLine_dst = EEPROM_LINE_PER_PAGE;
-					for ( int j = 0 ; j < 2 ; j ++ ) {
-						int minUsedLine = EEPROM_LINE_PER_PAGE;
+					for ( int j = 0 ; j < 2 ; j++ ) {
+						int maxTrashed = 0;
 						p_src = 0xFF;
 						for ( int i = 0 ; i < EEPROM_TOTAL_PAGES ; i++ ) {
 							uint32_t pAddr = EEPROM_PAGE_ADDR(i);
@@ -1008,11 +1015,11 @@ void __eeprom_garbage_collection(bool justCommit) {
 							if (   h.magic == EEPROM_MAGIC && h.version == EEPROM_VERSION
 								&& h.state_h == EEPROM_PAGE_STATE_READY_H && h.state_l == EEPROM_PAGE_STATE_READY_L
 							){
-								int usedLine = EEPROM_LINE_PER_PAGE - s.trashed_lines_per_page[i] - s.free_lines_per_page[i];
-								if ( freeLine_dst >= usedLine ) {
+								int usedLine_src = EEPROM_LINE_PER_PAGE - s.trashed_lines_per_page[i] - s.free_lines_per_page[i];
+								if ( freeLine_dst >= usedLine_src ) {
 									// this page is candidate, search the one with more trashed as possible
-									if ( usedLine < minUsedLine ){
-										minUsedLine = usedLine ;
+									if ( maxTrashed < s.trashed_lines_per_page[i] ){
+										maxTrashed = s.trashed_lines_per_page[i] ;
 										p_src = i;
 									}
 								}
@@ -1026,20 +1033,31 @@ void __eeprom_garbage_collection(bool justCommit) {
 							break;
 						}
 					}
-					// when reaching this point, we have a potential of two pages we can fusion into a single one, let's do it.
-					// with a new loop
-					freeLine_dst = EEPROM_LINE_PER_PAGE;
-					p_dst = __eeprom_get_free_page();
-					if ( p_dst == 0xFF ) {
-						// we should not be in this situation but as we already fusioned page, it's not blocking
-						#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
-						  log_error("EEPROM no page to init for garbaging\r\n");
-						#endif
-						__eeprom_onFlashErrorCallback(EEPROM_WARN_NO_FREE_PAGE);
-						goto garbage_warning;
+					if ( freeLine_dst > 0 ) {
+						// when reaching this point, we have a potential of two pages we can fusion into a single one, let's do it.
+						// with a new loop
+						freeLine_dst = EEPROM_LINE_PER_PAGE;
+						p_dst = __eeprom_get_free_page();
+						if ( p_dst == 0xFF ) {
+							// we should not be in this situation but as we already fusioned page, it's not blocking
+							#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
+							  log_error("EEPROM no page to init for garbaging\r\n");
+							#endif
+							__eeprom_onFlashErrorCallback(EEPROM_WARN_NO_FREE_PAGE);
+							goto garbage_warning;
+						}
 					}
 				} else {
-					// nothing else to do
+					// nothing else to do, we did not had any transfer to that page, it is empty
+					// so we need to clear the pages
+					if ( ! __eeprom_transfer_to_terminate() ){
+					    // problem during page commit
+						#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
+						  log_error("EEPROM error garbage commit failed\r\n");
+						#endif
+						__eeprom_onFlashErrorCallback(EEPROM_ERR_GARBAGE_COMMIT);
+						goto garbage_failed;
+					}
 					_exit = true;
 				}
 			}
@@ -1052,7 +1070,7 @@ void __eeprom_garbage_collection(bool justCommit) {
 	// @TODO
 	// have some next step to rebalance the pages when aging variability is high
 	// have some next step to group the non changing lines to decrease the average aging.
-	log_info("** Garbage done\r\n");
+	//log_info("** Garbage done\r\n");
 	return;
 
 	garbage_failed:
@@ -1090,7 +1108,7 @@ __weak void __eeprom_onGarbageCallback() {}
 	void __eeprom_onGarbageCallback(){
 		__gc_counter++;
 		#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
-			_eeprom_info();
+		//	_eeprom_info();
 		#endif
 	}
 #endif
@@ -1855,16 +1873,16 @@ void _eeprom_test() {
 			test++;
 			log_info("EE-TEST-13 - Executing test 13.%d\r\n",test);
 			switch(test) {
-			case 1:	injectCrash=1; break;
-			case 2: injectCrash=2; break;
-			case 3: injectCrash=3; break;
-			case 4: injectCrash=10; break;
-			case 5: injectCrash=25; break;
-			case 6: injectCrash=47; break;
-			case 7: injectCrash=78; break;
-			case 8: injectCrash=95; break;
-			case 9: injectCrash=100; break;
-			case 10: injectCrash=101; break;
+			case 1:	injectCrash=1; break;			// crash right after move out switch
+			case 2: injectCrash=2; break;			// crash after first page switched in move_in
+			case 3: injectCrash=3; break;			// crash after second page switched in move_in
+			case 4: injectCrash=10; break;			// crash after 1st line transfered
+			case 5: injectCrash=25; break;			// crash after 15th line transfered
+			case 6: injectCrash=47; break;			// crash after 37th line transfered
+			case 7: injectCrash=78; break;			// crash after 68th line transfered
+			case 8: injectCrash=95; break;			// crash after 85th line transfered
+			case 9: injectCrash=100; break;			// crash before transfer terminate
+			case 10: injectCrash=101; break;		// crash in middle of transfer terminate
 			default:
 			case 11: injectCrash=254; break;	// nothing
 			}
@@ -1888,7 +1906,7 @@ void _eeprom_test() {
 			}
 		}
 	}
-	log_info("EE-TEST-13 - multiple modification and garbaging with garbaging crashing all success\r\n");
+	log_info("EE-TEST-13 - multiple modif & garb with garbaging crashing all success\r\n");
 
 
 	log_info("EE-TEST - End success\r\n");
