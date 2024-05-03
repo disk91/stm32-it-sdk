@@ -279,6 +279,11 @@
 	//#include "stm32l0xx.h"
 #endif
 
+#if ITSDK_PLATFORM == __PLATFORM_STM32WLE
+	#include <stm32l_sdk/config.h>
+	#include "stm32wlxx_hal.h"
+#endif
+
 #if ITSDK_WITH_SIGFOX_LIB == __ENABLE
 	#include <it_sdk/configSigfox.h>
 #endif
