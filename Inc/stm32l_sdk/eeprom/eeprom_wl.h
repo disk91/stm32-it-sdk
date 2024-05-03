@@ -30,7 +30,7 @@
 #include <stdbool.h>
 
 
-//	#define __EEPROM_WITH_TEST										// disable the test code, only uncomment if eeprom driver modifications are made
+//#define __EEPROM_WITH_TEST										// disable the test code, only uncomment if eeprom driver modifications are made
 
 #define EEPROM_PAGE_SIZE 		2048							// 2K pages - hardware related, not a parameter
 #define EEPROM_LINE_PER_PAGE	126								// Number of Lines (memory block per page)

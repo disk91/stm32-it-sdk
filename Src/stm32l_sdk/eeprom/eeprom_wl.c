@@ -1408,7 +1408,7 @@ void _eeprom_test() {
 	// Clear Flash area
 	log_info("EE-TEST-1 - eeprom start addr %08X\r\n",EEPROM_START_ADDR);
 	if ( ! _eeprom_clear(0) ) {
-		log_error("EE-TEST - Failed to clear page %d\r\n",p);
+		log_error("EE-TEST - Failed to clear pages \r\n");
 		goto failed;
 	}
 	log_info("EE-TEST-1 - pages cleared\r\n");

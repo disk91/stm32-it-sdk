@@ -34,6 +34,10 @@
   #include <it_sdk/wrappers.h>
 #endif
 
+#if ITSDK_PLATFORM == __PLATFORM_STM32WLE
+  #include <stm32l_sdk/eeprom/eeprom_wl.h>
+#endif
+
 #if ITSDK_WITH_SIGFOX_LIB == __ENABLE
 	#include <it_sdk/configSigfox.h>
 	#include <it_sdk/sigfox/sigfox.h>
@@ -523,6 +527,22 @@ static itsdk_console_return_e _itsdk_config_consolePriv(char * buffer, uint8_t s
   		  	  totSize += size;
 			  _itsdk_console_printf("ApplicationConfig: 0x%08X->0x%08X (%dB)\r\n",offset,offset+size,size);
 			  _itsdk_console_printf("UsedMemory: %dB on %dB\r\n",totSize,ITSDK_EPROM_SIZE);
+			  #if ( ITSDK_PLATFORM == __PLATFORM_STM32WLE )
+				__eeprom_stat_t s;
+				_eeprom_stats(&s);
+				_itsdk_console_printf("EEprom stats:\r\n");
+				_itsdk_console_printf(" - Pages Tot(%d) Rdy(%d) Free(%d)\r\n",s.pages,s.ready_pages,s.pages-s.ready_pages);
+				_itsdk_console_printf(" - Lines Tot(%d) Rdy(%d) Free(%d) Trash(%d)\r\n",
+						EEPROM_TOTAL_PAGES*EEPROM_LINE_PER_PAGE,
+						s.allocated_lines,s.free_lines, s.trashed_lines
+				);
+				for (int i = 0 ; i < s.pages ; i++ ) {
+					_itsdk_console_printf("P[%02d] Age(%04d) St(%c) Free(%03d) Trash(%03d) Untouched(%03d)\r\n",
+							i,s.age[i], s.state[i],
+							s.free_lines_per_page[i], s.trashed_lines_per_page[i], s.untouched_lines_per_page[i]
+					);
+				}
+			  #endif
 			  _itsdk_console_printf("OK\r\n");
 			 return ITSDK_CONSOLE_SUCCES;
 			}
