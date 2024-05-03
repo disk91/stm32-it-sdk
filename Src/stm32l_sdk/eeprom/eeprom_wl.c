@@ -30,6 +30,7 @@
 
 #include <it_sdk/wrappers.h>
 #include <stm32l_sdk/eeprom/eeprom.h>
+#include <stm32l_sdk/eeprom/eeprom_wl.h>
 #include <it_sdk/debug.h>
 #include <stdbool.h>
 #include <it_sdk/logger/error.h>
@@ -43,11 +44,6 @@
 // PAGE MANAGEMENT
 // ================================================================
 
-#if ( EEPROM_SIZE_WITH_OVERHEAD % EEPROM_PAGE_SIZE ) == 0
-   #define EEPROM_TOTAL_PAGES  (( EEPROM_SIZE_WITH_OVERHEAD / EEPROM_PAGE_SIZE ))
-#else
-   #define EEPROM_TOTAL_PAGES  (( EEPROM_SIZE_WITH_OVERHEAD / EEPROM_PAGE_SIZE ) + 1 )
-#endif
 #define EEPROM_START_PAGE  ( EEPROM_START_ADDR / EEPROM_PAGE_SIZE )
 
 // Get the starting address of a page
@@ -112,9 +108,7 @@ bool __eeprom_page_clear(int page) {
 	s_eraseinit.Page        = EEPROM_START_PAGE+page;
 	uint32_t r = HAL_FLASHEx_Erase(&s_eraseinit, &page_error);
 	if ( r != HAL_OK) {
-		#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
-			log_error("Failed to clear page %d eq %d \r\n",page,EEPROM_START_PAGE+page);
-		#endif
+		_LOG_EEPROM_ERROR(("[NVM] Failed to clear page %d eq %d \r\n",page,EEPROM_START_PAGE+page));
 		return false;
 	}
 	return true;
@@ -170,9 +164,8 @@ bool __eeprom_page_init(int page, ___eeprom_state_t targetState ) {
 	// this is a way to test a state also
 	if ( h.magic == EEPROM_MAGIC && h.version == EEPROM_VERSION &&  h.state_h == nh.state_h && h.state_l == nh.state_l ) return true;
 
-	#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
-		log_debug("EEprom init page %d from %04X:%04X to %04X:%04X\r\n",page,(uint16_t)h.state_h,(uint16_t)h.state_l,(uint16_t)nh.state_h,(uint16_t)nh.state_l);
-	#endif
+	_LOG_EEPROM_DEBUG(("[NVM] Init page %d from %04X:%04X to %04X:%04X\r\n",page,(uint16_t)h.state_h,(uint16_t)h.state_l,(uint16_t)nh.state_h,(uint16_t)nh.state_l));
+
 
 	// There are two transitions where we need to clear the page
 	// target is FREE_PAGE or INIT_EMPTY or Source is not initialized
@@ -184,9 +177,8 @@ bool __eeprom_page_init(int page, ___eeprom_state_t targetState ) {
 			// page have been init previsouly, keep aging and increase it
 			nh.aging = (h.aging == EEPROM_PAGE_MAX_AGE)?EEPROM_PAGE_MAX_AGE:h.aging+1;
 			if ( nh.aging == EEPROM_AGING_REPORT ) {
-				#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
-					log_warn("EEprom Page %d reach the aging limit\r\n",page);
-				#endif
+				_LOG_EEPROM_WARN(("[NVM] Page %d reach the aging limit\r\n",page));
+
 				// call a user callback function to inform the user level of this potential problem
 				__eeprom_onFlashErrorCallback( EEPROM_WARN_PAGE_AGE_IS_HIGH );
 
@@ -194,9 +186,7 @@ bool __eeprom_page_init(int page, ___eeprom_state_t targetState ) {
 		}
 		// clear the page
 		if ( ! __eeprom_page_clear(page) ) {
-			#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
-				log_error("EEprom Page %d failed to clear\r\n",page);
-			#endif
+			_LOG_EEPROM_ERROR(("[NVM] Page %d failed to clear\r\n",page));
 			__eeprom_onFlashErrorCallback( EEPROM_ERR_FAILED_TO_RESET_PAGE );
 			return false;
 		}
@@ -233,9 +223,7 @@ bool __eeprom_page_init(int page, ___eeprom_state_t targetState ) {
 	for ( int i = 0 ; i < sizeof(__eeprom_page_header_t) ; i+= sizeof(uint32_t) ) {
 		if ( *_t != *_r ) {
 			// failure
-			#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
-				log_error("EEprom Page init failure for page %d\r\n",page);
-			#endif
+			_LOG_EEPROM_ERROR(("[NVM] Page init failure for page %d\r\n",page));
 			return false;
 		}
 		_t++;
@@ -272,9 +260,7 @@ uint8_t __eeprom_get_free_page() {
 		if ( ( h.magic == 0xFFFF && h.version == 0xFF ) ) {
 			// init the page before return it
 			if ( ! __eeprom_page_init(page,STATE_INIT_EMPTY) ) {
-				#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
-				 log_error("EEPROM impossible to init a free page page %d\r\n",page);
-				#endif
+				_LOG_EEPROM_ERROR(("[NVM] Impossible to init a free page page %d\r\n",page));
 				continue; // try another one
 			}
 			return page;
@@ -452,9 +438,7 @@ void __eeprom_clear_line(uint32_t _lAddr) {
 		if ( HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, _lAddr, 0L) != HAL_OK ) {
 			// write failed, try again
 			if ( HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, _lAddr, 0L) != HAL_OK ) {
-				#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
-					log_warn("Clear Failure at address %08X with value (%X)\r\n",_lAddr,HAL_FLASH_GetError());
-				#endif
+				_LOG_EEPROM_WARN(("[NVM] Clear Failure at address %08X with value (%X)\r\n",_lAddr,HAL_FLASH_GetError()));
 			}
 		}
 		_lAddr+=sizeof(uint64_t);
@@ -476,9 +460,7 @@ bool __eeprom_write_and_verify(__eeprom_line_t * target, uint32_t lAddr) {
 				// write failed, try again
 				if ( HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, _lAddr, *_target) != HAL_OK ) {
 					// error will be reported on read verification
-					#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
-						log_warn("Write Failure at address %08X with value (%X)\r\n",_lAddr,HAL_FLASH_GetError());
-					#endif
+					_LOG_EEPROM_WARN(("[NVM] Write Failure at address %08X with value (%X)\r\n",_lAddr,HAL_FLASH_GetError()));
 					break;
 				}
 			}
@@ -496,9 +478,7 @@ bool __eeprom_write_and_verify(__eeprom_line_t * target, uint32_t lAddr) {
 		if ( *_t != *_r ) {
 			// failure
 			// ITSDK_ERROR_REPORT(ITSDK_ERROR_EERPOM_WRITEFAILED,0); dangerous, risk of loop
-			#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
-				log_warn("Verif Failure at address %08X for vAddress %08X\r\n",lAddr,target->addr);
-			#endif
+			_LOG_EEPROM_WARN(("[NVM] Verif Failure at address %08X for vAddress %08X\r\n",lAddr,target->addr));
 			failure = true;
 			break;
 		}
@@ -534,25 +514,6 @@ bool __eeprom_is_empty_page(int page) {
 // ===============================================================================
 
 
-typedef struct {
-	uint8_t 	pages;				// max number of pages
-	uint8_t		free_pages;			// pages with state FREE
-	uint8_t		init_empty_pages;	// pages with state INIT_EMPTY
-	uint8_t 	move_in_pages;		// pages with state MOVE_INT
-	uint8_t		ready_pages;		// pages with state READY
-	uint8_t		move_out_pages;		// pages with state MOVE_OUT
-	uint32_t 	avg_aging;			// average aging for init pages
-
-	uint16_t 	allocated_lines;	// total allocated (in use) lines
-	uint16_t 	free_lines;			// total line never allocated
-	uint16_t	trashed_lines;		// total lines cleared after being override somewhere else
-	uint8_t		untouched_lines;	// total lines never override
-	uint8_t		trashed_lines_per_page[EEPROM_TOTAL_PAGES];
-	uint8_t		free_lines_per_page[EEPROM_TOTAL_PAGES];
-	uint8_t		untouched_lines_per_page[EEPROM_TOTAL_PAGES];
-} __eeprom_stat_t;
-
-
 /**
  * Compute the EEPROM statistics, this is used for display info
  * but also to manage the garbage collection
@@ -565,20 +526,26 @@ void __eeprom_get_stat(__eeprom_stat_t * s) {
 		uint32_t pAddr = EEPROM_PAGE_ADDR(page);
 		__eeprom_page_header_t h = (*(volatile __eeprom_page_header_t*)pAddr);
 		if ( h.magic == EEPROM_MAGIC && h.version == EEPROM_VERSION ) {
+			s->age[page] = h.aging;
 			if ( h.state_h == EEPROM_PAGE_STATE_READY_H && h.state_l == EEPROM_PAGE_STATE_READY_L ) {
 				s->ready_pages++;
+				s->state[page] = 'R';
 			} else if ( h.state_h == EEPROM_PAGE_STATE_FREE_H && h.state_l == EEPROM_PAGE_STATE_FREE_L ) {
 				s->free_pages++;
 				s->free_lines += EEPROM_LINE_PER_PAGE;
 				s->free_lines_per_page[page] += EEPROM_LINE_PER_PAGE;
+				s->state[page] = 'F';
 			} else if ( h.state_h == EEPROM_PAGE_STATE_INIT_EMPTY_H && h.state_l == EEPROM_PAGE_STATE_INIT_EMPTY_L ) {
 				s->init_empty_pages++;
 				s->free_lines += EEPROM_LINE_PER_PAGE;
 				s->free_lines_per_page[page] += EEPROM_LINE_PER_PAGE;
+				s->state[page] = 'I';
 			} else if ( h.state_h == EEPROM_PAGE_STATE_MOVE_IN_H && h.state_l == EEPROM_PAGE_STATE_MOVE_IN_L ) {
 				s->move_in_pages++;
+				s->state[page] = 'M';
 			} else if ( h.state_h == EEPROM_PAGE_STATE_MOVE_OUT_H && h.state_l == EEPROM_PAGE_STATE_MOVE_OUT_L ) {
 				s->move_out_pages++;
+				s->state[page] = 'T';
 			}
 			aging+=h.aging;
 
@@ -612,6 +579,8 @@ void __eeprom_get_stat(__eeprom_stat_t * s) {
 			s->free_pages++;
 			s->free_lines += EEPROM_LINE_PER_PAGE;
 			s->free_lines_per_page[page] += EEPROM_LINE_PER_PAGE;
+			s->age[page] = 0;
+			s->state[page] = 'T';
 		}
 	}
 }
@@ -631,15 +600,16 @@ void _eeprom_info() {
 			s.allocated_lines,s.free_lines, s.trashed_lines
 	);
 	for (int i = 0 ; i < EEPROM_TOTAL_PAGES ; i++ ) {
-		uint32_t pAddr = EEPROM_PAGE_ADDR(i);
-		__eeprom_page_header_t h = (*(volatile __eeprom_page_header_t*)pAddr);
-
-		log_info("P[%02d] Age(%04d) St(%01X:%01X) Free(%03d) Trash(%03d) Untouched(%03d)\r\n",
-				i,h.aging, (int8_t)h.state_h & 0xF, (int8_t)h.state_l & 0xF,
+		log_info("P[%02d] Age(%04d) St(%c) Free(%03d) Trash(%03d) Untouched(%03d)\r\n",
+				i,s.age[i], s.state[i],
 				s.free_lines_per_page[i], s.trashed_lines_per_page[i], s.untouched_lines_per_page[i]
 		);
 	}
+}
 
+bool _eeprom_stats(__eeprom_stat_t * s) {
+	__eeprom_get_stat(s);
+	return true;
 }
 
 // ===============================================================================
@@ -673,9 +643,7 @@ bool __eeprom_transfer_to_terminate() {
 		if ( h.magic == EEPROM_MAGIC && h.version == EEPROM_VERSION ) {
 			if ( h.state_h == EEPROM_PAGE_STATE_MOVE_IN_H && h.state_l == EEPROM_PAGE_STATE_MOVE_IN_L  ) {
 				if ( ! __eeprom_page_init(page,STATE_READY) ) {
-					#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
-					 log_error("EEPROM impossible to clear move_in page %d\r\n",page);
-					#endif
+					_LOG_EEPROM_ERROR(("[NVM] Impossible to clear move_in page %d\r\n",page));
 					return false;
 				}
 			}
@@ -693,9 +661,7 @@ bool __eeprom_transfer_to_terminate() {
 		if ( h.magic == EEPROM_MAGIC && h.version == EEPROM_VERSION ) {
 			if ( h.state_h == EEPROM_PAGE_STATE_MOVE_OUT_H && h.state_l == EEPROM_PAGE_STATE_MOVE_OUT_L  ) {
 				if ( ! __eeprom_page_init(page,STATE_INIT_EMPTY) ) {
-					#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
-					 log_error("EEPROM impossible to clear move_out page %d\r\n",page);
-					#endif
+					_LOG_EEPROM_ERROR(("[NVM] Impossible to clear move_out page %d\r\n",page));
 					return false;
 				}
 			}
@@ -719,9 +685,7 @@ void __eeprom_clear_move_in_pages() {
 			if ( h.state_h == EEPROM_PAGE_STATE_MOVE_IN_H && h.state_l == EEPROM_PAGE_STATE_MOVE_IN_L ) {
 				// this page is to be cleared and restored as state init if not empty
 				if ( ! __eeprom_page_init(page,STATE_INIT_EMPTY) ) {
-					#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
-					 log_error("EEPROM impossible to clear move_in page %d\r\n",page);
-					#endif
+					_LOG_EEPROM_ERROR(("[NVM] Impossible to clear move_in page %d\r\n",page));
 				}
 			}
 		}
@@ -741,9 +705,7 @@ void __eeprom_clear_moved_out_pages() {
 			if ( h.state_h == EEPROM_PAGE_STATE_MOVE_OUT_H && h.state_l == EEPROM_PAGE_STATE_MOVE_OUT_L ) {
 				// this page is to be cleared, need to call page init to preserve the aging
 				if ( ! __eeprom_page_init(page,STATE_INIT_EMPTY) ) {
-					#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
-					 log_error("EEPROM impossible to clear moved page %d\r\n",page);
-					#endif
+					_LOG_EEPROM_ERROR(("[NVM] Impossible to clear moved page %d\r\n",page));
 				}
 			}
 		}
@@ -766,9 +728,7 @@ bool __eeprom_move_page(int psrc, int pdst, int * q_src, int * q_dst) {
 
 	// First step is to make sure the page status is EEPROM_PAGE_STATE_MOVE_OUT
 	if ( ! __eeprom_page_init(psrc,STATE_MOVE_OUT) ) {
-		#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
-		  log_error("EEPROM impossible to switch page to move_out\r\n");
-		#endif
+		_LOG_EEPROM_ERROR(("[NVM] Impossible to switch page to move_out\r\n"));
 		return false;
 	}
 
@@ -778,9 +738,7 @@ bool __eeprom_move_page(int psrc, int pdst, int * q_src, int * q_dst) {
 
 	// Then make sure the destination state is EEPROM_PAGE_STATE_MOVE_IN or switch it from INIT only
 	if ( ! __eeprom_page_init(pdst,STATE_MOVE_IN) ) {
-		#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
-		  log_error("EEPROM impossible to switch page to move_in\r\n");
-		#endif
+		_LOG_EEPROM_ERROR(("[NVM] Impossible to switch page to move_in\r\n"));
 		return false;
 	}
 
@@ -829,9 +787,7 @@ bool __eeprom_move_page(int psrc, int pdst, int * q_src, int * q_dst) {
 
 			if ( ! __eeprom_write_and_verify(&l,lAddr_d) ) {
 				// when write error, go to next line... that's a problem
-				#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
-				  log_error("EEPROM garbage line transfer failed\r\n");
-				#endif
+				_LOG_EEPROM_ERROR(("[NVM] Garbage line transfer failed\r\n"));
 			} else {
 				lAddr_s += sizeof(__eeprom_line_t);
 				moved++;
@@ -884,9 +840,9 @@ void __eeprom_garbage_collection(bool justCommit) {
 	if ( s.move_in_pages > 0 ) {
 		// We have page in move_in state, meaning the garbage collection process failed
 		// this page can be cleared and restart the move (should never be > 1, but what to do ?!?
-		#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
-		  if ( s.move_in_pages > 1 ) log_error("EEPROM multiple move_in page\r\n");
-		#endif
+  	    if ( s.move_in_pages > 1 ) {
+  	    	_LOG_EEPROM_ERROR(("[NVM] Multiple move_in page\r\n"));
+		}
 		__eeprom_clear_move_in_pages();
 	}
 
@@ -901,9 +857,7 @@ void __eeprom_garbage_collection(bool justCommit) {
 	uint8_t p_dst = __eeprom_get_free_page();
 	if ( p_dst == 0xFF ) {
 		// we should not be in this situation
-		#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
-		  log_error("EEPROM no page to init for garbaging\r\n");
-		#endif
+	    _LOG_EEPROM_ERROR(("[NVM] No page to init for garbaging\r\n"));
 		__eeprom_onFlashErrorCallback(EEPROM_ERR_NO_FREE_PAGE);
 		goto garbage_failed;
 	} else {
@@ -925,9 +879,7 @@ void __eeprom_garbage_collection(bool justCommit) {
 						// else we may have a problem to copy this page as it is higher, try skip it
 						if ( ! __eeprom_move_page(p_src,p_dst,&q_src,&q_dst) ) {
 							// problem during page copy
-							#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
-							  log_error("EEPROM error garbage copy failed\r\n");
-							#endif
+						    _LOG_EEPROM_ERROR(("[NVM] Error garbage copy failed\r\n"));
 							__eeprom_onFlashErrorCallback(EEPROM_ERR_PAGE_MOVE_FAILED);
 							goto garbage_failed;
 						} else {
@@ -936,9 +888,7 @@ void __eeprom_garbage_collection(bool justCommit) {
 							s.free_lines_per_page[p_src] = 0;
 						}
 					} else {
-						#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
-						  log_error("EEPROM stopped repair moveout before end\r\n");
-						#endif
+					    _LOG_EEPROM_ERROR(("[NVM] Stopped repair moveout before end\r\n"));
 						__eeprom_onFlashErrorCallback(EEPROM_ERR_GARBAGE_REPAIR_FAILED);
 					}
 				}
@@ -975,9 +925,7 @@ void __eeprom_garbage_collection(bool justCommit) {
 				int q_dst;
 				if ( ! __eeprom_move_page(p_src,p_dst,&q_src,&q_dst) ) {
 					// problem during page copy
-					#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
-					  log_error("EEPROM error garbage copy failed\r\n");
-					#endif
+				    _LOG_EEPROM_ERROR(("[NVM] Error garbage copy failed\r\n"));
 					__eeprom_onFlashErrorCallback(EEPROM_ERR_PAGE_MOVE_FAILED);
 					goto garbage_failed;
 				} else {
@@ -993,9 +941,7 @@ void __eeprom_garbage_collection(bool justCommit) {
 					// switch MOVE_IN page to READY
 					if ( ! __eeprom_transfer_to_terminate() ){
 						// problem during page commit
-						#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
-						  log_error("EEPROM error garbage commit failed\r\n");
-						#endif
+					    _LOG_EEPROM_ERROR(("[NVM] Error garbage commit failed\r\n"));
 						__eeprom_onFlashErrorCallback(EEPROM_ERR_GARBAGE_COMMIT);
 						goto garbage_failed;
 					}
@@ -1040,9 +986,7 @@ void __eeprom_garbage_collection(bool justCommit) {
 						p_dst = __eeprom_get_free_page();
 						if ( p_dst == 0xFF ) {
 							// we should not be in this situation but as we already fusioned page, it's not blocking
-							#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
-							  log_error("EEPROM no page to init for garbaging\r\n");
-							#endif
+						    _LOG_EEPROM_ERROR(("[NVM] No page to init for garbaging\r\n"));
 							__eeprom_onFlashErrorCallback(EEPROM_WARN_NO_FREE_PAGE);
 							goto garbage_warning;
 						}
@@ -1052,9 +996,7 @@ void __eeprom_garbage_collection(bool justCommit) {
 					// so we need to clear the pages
 					if ( ! __eeprom_transfer_to_terminate() ){
 					    // problem during page commit
-						#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
-						  log_error("EEPROM error garbage commit failed\r\n");
-						#endif
+					    _LOG_EEPROM_ERROR(("[NVM] Error garbage commit failed\r\n"));
 						__eeprom_onFlashErrorCallback(EEPROM_ERR_GARBAGE_COMMIT);
 						goto garbage_failed;
 					}
@@ -1141,24 +1083,21 @@ __weak void __eeprom_onFlashErrorCallback( __eeprom_error_t errCode ) { }
  * @TODO : manage bank
  */
 bool _eeprom_write(uint8_t bank, uint32_t offset, void * data, int len) {
+	HAL_FLASH_Unlock();
 	if ( __eeprom_state_verified == 0 ) __eeprom_garbage_collection(true);
 
 	uint8_t *  _data = (uint8_t *)data;
 
 	// check address
 	if ( bank != 0 || (offset+len) > ITSDK_EPROM_SIZE ) {
-		#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
-			log_error("EEPROM out of bounds 0x%08X\r\n",offset);
-		#endif
+	    _LOG_EEPROM_ERROR(("[NVM] Out of bounds 0x%08X\r\n",offset));
 		ITSDK_ERROR_REPORT(ITSDK_ERROR_EEPROM_OUTOFBOUNDS,len);
-		return false;
+		goto write_failed;
 	}
 	if ( (offset & 0x3) != 0 ) {
-		#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
-			log_error("EEPROM not aligned 0x%08X\r\n",offset);
-		#endif
+	    _LOG_EEPROM_ERROR(("[NVM] Not aligned 0x%08X\r\n",offset));
 		ITSDK_ERROR_REPORT(ITSDK_ERROR_EEPROM_NOTALIGNED,1);
-		return false;
+		goto write_failed;
 	}
 
 	uint32_t _offset = offset;
@@ -1198,9 +1137,7 @@ bool _eeprom_write(uint8_t bank, uint32_t offset, void * data, int len) {
 				page = (uint8_t)tAddr;
 				if ( page == 0xFF ) {
 					// problem ... no page available after garbage
-					#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
-						log_error("Failed get a free page even after garbage\r\n");
-					#endif
+				    _LOG_EEPROM_ERROR(("[NVM] Failed get a free page even after garbage\r\n"));
 					goto write_failed;
 				}
 			}
@@ -1297,18 +1234,18 @@ bool _eeprom_write(uint8_t bank, uint32_t offset, void * data, int len) {
 			// retry to write this line into a different block of data
 			retry++;
 		} else {
-			#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
-				log_error("Failed to complete EEPROM Write for offset %08X and len %d\r\n",offset,len);
-			#endif
-			return false;
+		    _LOG_EEPROM_ERROR(("[NVM] Failed to complete EEPROM Write for offset %08X and len %d\r\n",offset,len));
+			goto write_failed;
 		}
 		// log_info("** _off(%08X) off(%08X) len(%d) shift(%d)\r\n",_offset,offset,len,shift);
 	} while ( _offset < offset+len );
 
+write_success:
+	HAL_FLASH_Lock();
 	return true;
 
 write_failed:
-
+	HAL_FLASH_Lock();
 	return false;
 
 }
@@ -1318,7 +1255,11 @@ write_failed:
  * Offset is to add an offset to bank start - Offset is aligned don 32b word
  */
 bool _eeprom_read(uint8_t bank, uint32_t offset, void * data, int len) {
-	if ( __eeprom_state_verified == 0 ) __eeprom_garbage_collection(true);
+	if ( __eeprom_state_verified == 0 ){
+		HAL_FLASH_Unlock();
+		__eeprom_garbage_collection(true);
+		HAL_FLASH_Lock();
+	}
 
 	uint8_t  * _data = (uint8_t *)data;
 
@@ -1348,14 +1289,36 @@ bool _eeprom_read(uint8_t bank, uint32_t offset, void * data, int len) {
 			}
 		} else {
 			// this address does not exists
-			#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
-				log_error("Failed to read EEPROM invalid offset %08X\r\n",_offset);
-			#endif
+			_LOG_EEPROM_ERROR(("[NVM] Failed to read EEPROM invalid offset %08X\r\n",_offset));
 			ITSDK_ERROR_REPORT(ITSDK_ERROR_EEPROM_NOTEXISTING,0);
 			return false;
 		}
 	}
 	return true;
+}
+
+/**
+ * Clear eeprom content from begining to given size
+ */
+bool _eeprom_clear(uint8_t bank) {
+	if ( bank != 0 ) {
+	    ITSDK_ERROR_REPORT(ITSDK_ERROR_EEPROM_OUTOFBOUNDS,0);
+	}
+
+	bool failure = false;
+	HAL_FLASH_Unlock();
+	// clear all the pages to get started
+	for ( int p = 0 ; p < EEPROM_TOTAL_PAGES ; p++ ){
+		if ( !__eeprom_page_clear(p) ) {
+			failure = true;
+		}
+	}
+	HAL_FLASH_Lock();
+	if (failure) {
+		ITSDK_ERROR_REPORT(ITSDK_ERROR_EERPOM_CLEARFAILED,0);
+		__eeprom_onFlashErrorCallback(EEPROM_ERR_FAILED_TO_RESET_PAGE);
+	}
+	return !failure;
 }
 
 
@@ -1444,13 +1407,9 @@ void _eeprom_test() {
 	// TEST-1
 	// Clear Flash area
 	log_info("EE-TEST-1 - eeprom start addr %08X\r\n",EEPROM_START_ADDR);
-
-	// clear all the pages to get started
-	for ( int p = 0 ; p < EEPROM_TOTAL_PAGES ; p++ ){
-		if ( !__eeprom_page_clear(p) ) {
-			log_error("EE-TEST - Failed to clear page %d\r\n",p);
-			goto failed;
-		}
+	if ( ! _eeprom_clear(0) ) {
+		log_error("EE-TEST - Failed to clear page %d\r\n",p);
+		goto failed;
 	}
 	log_info("EE-TEST-1 - pages cleared\r\n");
 

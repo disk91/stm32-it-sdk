@@ -198,9 +198,35 @@ Process:
 - free the pages
 - look for pages to swap when we have aging < avg_aging && max_aging > 2*avg_aging && max_aging > 100
 
+### Callback
 
+As the Flash based EEPROM driver can report different error and warning the end user would have to report for device management and maintenance
+a specific callback can be added at end-user application level
+```
+#include <stm32l_sdk/eeprom/eeprom.h>
 
+typedef enum {
+	EEPROM_WARN_UNKNOWN,
+	EEPROM_WARN_PAGE_AGE_IS_HIGH,			// When the page age is passing EEPROM_AGING_REPORT, risk of flash hw failure soon
+	EEPROM_WARN_NO_FREE_PAGE,				// Impossible to get a free page but this is not blocking
+	EEPROM_WARN_GARBAGE_FAILED,				// Problem during garbage collection, not critical, eventually see other error fired previously
 
+	EEPROM_ERR,								// used to have a ERR vs WARN easy test (never used)
+	EEPROM_ERR_FAILED_TO_RESET_PAGE,		// Impossible to reset the flash page
+	EEPROM_ERR_NO_FREE_PAGE,				// Impossible to get a free page for garbaging
+	EEPROM_ERR_PAGE_MOVE_FAILED,			// Impossible to move a page to another for garbaging
+	EEPROM_ERR_GARBAGE_COMMIT,				// Failed to commit the garbage collection, page not switched ready
+	EEPROM_ERR_GARBAGE_FAILED,				// Critical error during garbage collection, eventually see other error fired previously
+	EEPROM_ERR_GARBAGE_REPAIR_FAILED,		// Failed to repair eepom after garbage collection
+} __eeprom_error_t;
+
+void __eeprom_onFlashErrorCallback( __eeprom_error_t errCode );
+``` 
+
+Also, the end-user level can trigger a specific function on garbage collection execution
+```
+void __eeprom_onGarbageCallback();
+```
 
 
 
