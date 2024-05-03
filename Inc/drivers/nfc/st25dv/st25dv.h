@@ -2,7 +2,7 @@
  * st25dv.h - ST NFC 25 DV chip
  * Project : Disk91 SDK
  * ----------------------------------------------------------
- * Created on: 24 févr. 2019
+ * Created on: 24 fï¿½vr. 2019
  *     Author: Paul Pinault aka Disk91
  * ----------------------------------------------------------
  * Copyright (C) 2019 Disk91
@@ -160,6 +160,7 @@ typedef enum {
 
 
 drivers_st25dv_ret_e drivers_st25dv_setup(drivers_st25dv_mode_e mode);
+drivers_st25dv_ret_e drivers_st25dv_RfWriteCB();		// This function need to be override to manage RF write
 void st25dv_process();
 drivers_st25dv_ret_e drivers_st25dv_ftmAvailableToRead(uint16_t * len);
 drivers_st25dv_ret_e drivers_st25dv_ftmFreeForWriting();

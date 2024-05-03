@@ -48,7 +48,8 @@ Most is done to preserve code size, the SDK can target small flash MCU from 16KB
   * STM32L053
   * STM32L072
   * STM32L052
-  * MURATA CMWX1ZZABZ
+  * MURATA CMWX1ZZABZ-078 (STM32L082)
+  * MURATA CMWX1ZZABZ-091 (STM32L072)
 
 * Supported drivers
   * eeprom
