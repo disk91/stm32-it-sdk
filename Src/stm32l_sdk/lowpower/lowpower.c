@@ -122,8 +122,16 @@ stm32l_lowPowerReturn_e __attribute__((optimize("O3"))) stm32l_lowPowerSetup(uin
 
 				wakeup.WakeUpEvent=UART_WAKEUP_ON_READDATA_NONEMPTY; // UART_WAKEUP_ON_STARTBIT
 				HAL_UARTEx_StopModeWakeUpSourceConfig(&hlpuart1,wakeup);
-				__HAL_UART_ENABLE_IT(&hlpuart1, UART_IT_WUF);
+
+				#if ITSDK_PLATFORM == __PLATFORM_STM32L0
+					__HAL_UART_ENABLE_IT(&hlpuart1, UART_IT_WUF);			// This is not existing on STM32WL HAL
+				#elif ITSDK_PLATFORM == __PLATFORM_STM32WLE
+					__HAL_UART_CLEAR_IT(&hlpuart1,UART_CLEAR_WUF);
+					__HAL_UART_ENABLE_IT(&hlpuart1,UART_CLEAR_WUF);
+					LL_EXTI_EnableIT_0_31(LL_EXTI_LINE_28);
+				#endif
 				HAL_UARTEx_EnableStopMode(&hlpuart1);
+
 			#else
 			  #if (ITSDK_WITH_UART & __UART_LPUART1) > 0
 				__HAL_RCC_LPUART1_CLK_DISABLE();
