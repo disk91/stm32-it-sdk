@@ -104,6 +104,21 @@ bool _eeprom_read(uint8_t bank, uint32_t offset, void * data, int len) {
 	return true;
 }
 
+/**
+ * Clear eeprom content from begining to given size
+ */
+bool _eeprom_clear(uint8_t bank) {
+	if ( bank != 0 ) {
+	    ITSDK_ERROR_REPORT(ITSDK_ERROR_EEPROM_OUTOFBOUNDS,0);
+	    return false;
+	}
+
+	uint32_t v  = 0;
+	for ( int i = 0 ; i < EEPROM_SIZE ; i+=sizeof(v) ) {
+		_eeprom_write(bank, i, (void *) &v, sizeof(v));
+	}
+	return true;
+}
 
 /**
  * Read a word in EEPROM area
@@ -132,7 +147,6 @@ bool __eepromWrite(uint32_t addr, uint32_t v) {
 
 	return true;
 }
-
 
 
 #endif

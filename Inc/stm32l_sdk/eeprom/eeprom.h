@@ -48,11 +48,28 @@
 	#define EEPROM_SIZE				6144
 #elif ITSDK_DEVICE == __DEVICE_STM32L052T8
 	#define EEPROM_SIZE				2048
+#elif ITSDK_DEVICE == __DEVICE_STM32WLE5JC
+	#define EEPROM_END_ADDR 		0x0803F800						// Max memory to store eeprom at the end of the memory zone (0x803F8 to 0x803E0 seems potentially used)
 #endif
-#define EEPROM_END_ADDR 	   (DATA_EEPROM_START_ADDR + EEPROM_SIZE)
+
+#ifndef EEPROM_END_ADDR
+   #define EEPROM_END_ADDR 	   (DATA_EEPROM_START_ADDR + EEPROM_SIZE)
+#endif
 
 
 uint32_t __eepromRead(uint32_t addr);
 bool __eepromWrite(uint32_t addr, uint32_t v);
+
+#if ( ITSDK_LOGGER_MODULE & __LOG_MOD_EEPROM ) > 0
+	#define _LOG_EEPROM_DEBUG(x)	log_debug x
+	#define _LOG_EEPROM_INFO(x)		log_info x
+	#define _LOG_EEPROM_WARN(x)		log_warn x
+	#define _LOG_EEPROM_ERROR(x)	log_error x
+#else
+	#define _LOG_EEPROM_DEBUG(x)
+	#define _LOG_EEPROM_INFO(x)
+	#define _LOG_EEPROM_WARN(x)
+	#define _LOG_EEPROM_ERROR(x)
+#endif
 
 #endif /* STM32L_SDK_EEPROM_EEPROM_H_ */

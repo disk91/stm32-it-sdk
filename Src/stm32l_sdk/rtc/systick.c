@@ -31,7 +31,12 @@
 #include <it_sdk/lowpower/lowpower.h>
 #include <it_sdk/logger/logger.h>
 #include <it_sdk/logger/error.h>
-#include <stm32l0xx_hal.h>
+#if ITSDK_PLATFORM == __PLATFORM_STM32L0
+	#include "stm32l0xx_hal.h"
+#elif ITSDK_PLATFORM == __PLATFORM_STM32WLE
+	#include "stm32wlxx_hal.h"
+#endif
+
 #if ITSDK_CLK_BEST_SOURCE == __CLK_BEST_SRC_RTC
 	#include <stm32l_sdk/rtc/rtc.h>
 #endif

@@ -99,6 +99,7 @@ void wdg_refresh();
 // eeprom
 bool _eeprom_write(uint8_t bank, uint32_t offset, void * data, int len);
 bool _eeprom_read(uint8_t bank, uint32_t offset, void * data, int len);
+bool _eeprom_clear(uint8_t bank);
 
 // ================================================
 // adc

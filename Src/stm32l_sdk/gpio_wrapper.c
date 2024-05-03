@@ -29,13 +29,17 @@
 #include <string.h>
 #include <stdbool.h>
 #include <it_sdk/config.h>
-#if ITSDK_PLATFORM == __PLATFORM_STM32L0
+#if ITSDK_PLATFORM == __PLATFORM_STM32L0 || ITSDK_PLATFORM == __PLATFORM_STM32WLE
 
 #include <it_sdk/itsdk.h>
 #include <it_sdk/wrappers.h>
 #include <it_sdk/logger/error.h>
 #include <it_sdk/logger/logger.h>
-#include "stm32l0xx_hal.h"
+#if ITSDK_PLATFORM == __PLATFORM_STM32L0
+	#include "stm32l0xx_hal.h"
+#elif ITSDK_PLATFORM == __PLATFORM_STM32WLE
+	#include "stm32wlxx_hal.h"
+#endif
 
 #ifndef ITSDK_DEVICE
 #error ITSDK_DEVICE is not defined
@@ -55,7 +59,7 @@ GPIO_TypeDef * getPortFromBankId(uint8_t bankId) {
 #if ITSDK_DEVICE == __DEVICE_STM32L072XX
 	case __BANK_E: return GPIOE;
 #endif
-#if ITSDK_DEVICE == __DEVICE_STM32L072XX || ITSDK_DEVICE == __DEVICE_STM32L082XX
+#if ITSDK_DEVICE == __DEVICE_STM32L072XX || ITSDK_DEVICE == __DEVICE_STM32L082XX || ITSDK_DEVICE == __DEVICE_STM32WLE5JC
 	case __BANK_H: return GPIOH;
 #endif
 	default:
@@ -83,13 +87,31 @@ uint8_t getPinNumFromPinVector(uint16_t pinId) {
 IRQn_Type getIrqFromBankPin(uint8_t bankId, uint16_t id) {
 
 	uint8_t pinPos = getPinNumFromPinVector(id);
-	if ( pinPos <= 1 ) {
-		return EXTI0_1_IRQn;
-	} else if ( pinPos <= 3 ) {
-		return EXTI2_3_IRQn;
-	} else {
-		return EXTI4_15_IRQn;
-	}
+	#if ITSDK_PLATFORM == __PLATFORM_STM32L0
+		if ( pinPos <= 1 ) {
+			return EXTI0_1_IRQn;
+		} else if ( pinPos <= 3 ) {
+			return EXTI2_3_IRQn;
+		} else {
+			return EXTI4_15_IRQn;
+		}
+	#elif ITSDK_PLATFORM == __PLATFORM_STM32WLE
+		if ( pinPos == 0 ) {
+			return EXTI0_IRQn;
+		} else if ( pinPos == 1 ) {
+			return EXTI1_IRQn;
+		} else if ( pinPos == 2 ) {
+			return EXTI2_IRQn;
+		} else if ( pinPos == 3 ) {
+			return EXTI3_IRQn;
+		} else if ( pinPos == 4 ) {
+			return EXTI4_IRQn;
+		} else if ( pinPos <= 9 ) {
+			return EXTI9_5_IRQn;
+		} else {
+			return EXTI15_10_IRQn;
+		}
+	#endif
 }
 
 
@@ -121,8 +143,8 @@ void gpio_configure_ext(uint8_t bank, uint16_t id, itsdk_gpio_type_t type, itsdk
 	case __BANK_E:
 		  __GPIOE_CLK_ENABLE();
 		  break;
-    #endif
-	#if ITSDK_DEVICE == __DEVICE_STM32L072XX || ITSDK_DEVICE == __DEVICE_STM32L082XX
+  #endif
+	#if ITSDK_DEVICE == __DEVICE_STM32L072XX || ITSDK_DEVICE == __DEVICE_STM32L082XX || ITSDK_DEVICE == __DEVICE_STM32WLE5JC
 	case __BANK_H:
 		  __GPIOH_CLK_ENABLE();
 		  break;
@@ -355,8 +377,18 @@ void gpio_interruptDisable(uint8_t bank, uint16_t id) {
 }
 
 void gpio_interruptDisableAll() {
+	#if ITSDK_PLATFORM == __PLATFORM_STM32L0
 	  HAL_NVIC_DisableIRQ(EXTI0_1_IRQn);
 	  HAL_NVIC_DisableIRQ(EXTI4_15_IRQn);
+	#elif ITSDK_PLATFORM == __PLATFORM_STM32WLE
+	  HAL_NVIC_DisableIRQ(EXTI0_IRQn);
+	  HAL_NVIC_DisableIRQ(EXTI1_IRQn);
+	  HAL_NVIC_DisableIRQ(EXTI2_IRQn);
+	  HAL_NVIC_DisableIRQ(EXTI3_IRQn);
+	  HAL_NVIC_DisableIRQ(EXTI4_IRQn);
+	  HAL_NVIC_DisableIRQ(EXTI9_5_IRQn);
+	  HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);
+	#endif
 }
 
 void gpio_interruptPriority(uint8_t bank, uint16_t id, uint8_t nPreemption, uint8_t nSubpriority) {

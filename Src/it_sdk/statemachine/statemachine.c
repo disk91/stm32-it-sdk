@@ -24,6 +24,7 @@
  *
  * ==========================================================
  */
+#include <stdlib.h>
 #include <it_sdk/statemachine/statemachine.h>
 #include <it_sdk/debug.h>
 #include <it_sdk/wrappers.h>

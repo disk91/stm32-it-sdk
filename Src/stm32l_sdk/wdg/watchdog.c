@@ -32,7 +32,7 @@
  * ==========================================================
  */
 #include <it_sdk/config.h>
-#if ITSDK_PLATFORM == __PLATFORM_STM32L0
+#if ITSDK_PLATFORM == __PLATFORM_STM32L0 || ITSDK_PLATFORM == __PLATFORM_STM32WLE
 #if ITSDK_WITH_WDG != __WDG_NONE
 #include <it_sdk/wrappers.h>
 #include <it_sdk/debug.h>

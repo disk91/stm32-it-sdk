@@ -33,6 +33,7 @@
  */
 #define __CUBEMX_VERSIONXXX			499
 #define __CUBEMX_VERSION500			500
+#define __CUBEMX_VERSION6XX			600
 
 /**
  * Supported Hardware Platform
@@ -40,6 +41,7 @@
 #define __PLATFORM_EFM32_TD			0
 #define __PLATFORM_STM32L0			1
 #define __PLAFTORM_ESP8266			2
+#define __PLATFORM_STM32WLE			3
 
 /**
  * Devices
@@ -50,6 +52,8 @@
 #define __DEVICE_STM32L053R8		4
 #define __DEVICE_STM32L031K6		5
 #define __DEVICE_STM32L052T8		6
+
+#define __DEVICE_STM32WLE5JC		21				// 256K Flash & 64K Ram
 
 /**
  * Supported Low Power Mode
@@ -212,6 +216,7 @@
 #define __LOG_MOD_GNSS			0x00000100			// Gnss & underlaying drivers
 #define __LOG_MOD_ACCEL			0x00000200			// Accelerometer & underlaying drivers
 #define __LOG_MOD_LOWPOWER		0x00000400			// Print the wakeup reason - see lowpower.c
+#define __LOG_MOD_EEPROM		0x00000800			// Trace the EEprom (for virtual EEPROM) critical operations
 
 #define __LOG_MOD_CUSTOM1		0x00010000			// User level logging
 #define __LOG_MOD_CUSTOM2		0x00020000			// User level logging
