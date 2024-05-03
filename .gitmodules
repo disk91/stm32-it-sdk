@@ -1,0 +1,6 @@
+[submodule "Src/drivers/sigfox/sigfox-ep-lib"]
+	path = Src/drivers/sigfox/sigfox-ep-lib
+	url = https://github.com/sigfox-tech-radio/sigfox-ep-lib
+[submodule "Src/drivers/sigfox/sigfox-ep-rf-api-semtech-sx126x"]
+	path = Src/drivers/sigfox/sigfox-ep-rf-api-semtech-sx126x
+	url = https://github.com/sigfox-tech-radio/sigfox-ep-rf-api-semtech-sx126x
