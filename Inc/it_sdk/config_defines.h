@@ -255,6 +255,7 @@
 #define	__SIGFOX_S2LP			1
 #define __SIGFOX_WISOL10		2
 #define __SIGFOX_SX1276		   10
+#define __SIGFOX_SX126X		   11
 
 /**
  * Supported zones (bit field)

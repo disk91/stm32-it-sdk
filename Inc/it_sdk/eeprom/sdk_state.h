@@ -43,6 +43,7 @@ typedef struct {
 		uint8_t					rcz;
 		int8_t					current_power;
 		uint16_t				current_speed;
+		int16_t					lastRssi;		// Store the last received rssi in dBm
 	} sigfox;
 	#endif
 } itsdk_state_t;

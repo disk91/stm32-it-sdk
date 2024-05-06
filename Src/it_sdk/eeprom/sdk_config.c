@@ -118,6 +118,10 @@
 		  itsdk_config.sdk.sigfox.deviceId = ITSDK_SIGFOX_ID;
 		#endif
 
+		#if ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
+		  itsdk_config.sdk.sigfox.repeat = ITSDK_SIGFOX_N;
+		#endif
+
 		#endif
 		return CONFIG_RESTORED_FROM_FACTORY;
 	}
@@ -431,6 +435,7 @@ static bool __checkAndConvert(char * str,uint8_t start,uint8_t stop,uint8_t sz,u
 						     _itsdk_console_printf("sdk.sigfox.freqOffset : %d\r\n",s2lp_driver_config.freqOffset);
 						#endif
 					 #endif
+#warning Add the SX126X specific confirgurations like repeat
 					#endif
 					#if ITSDK_WITH_CONFIGURATION_APP == __ENABLE
 					   itsdk_config_app_printConfig(_c);

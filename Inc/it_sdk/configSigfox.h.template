@@ -38,6 +38,11 @@
 	#include <it_sdk/sigfox/sigfox.h>
 #endif
 
+#if ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
+	#include "subghz.h"
+	#include <it_sdk/sigfox/sigfox.h>
+#endif
+
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // | SDK SETTING                   | USER SELECTED VALUE                  | SETTING DESCRIPTION                   |
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -67,6 +72,7 @@
 #define ITSDK_SIGFOX_RSSICAL		0										// Rssi calibration Offset
 #define ITSDK_SIGFOX_FREQOFFSET		0										// Frequency Offset
 #define ITSDK_SIGFOX_LBTOFFSET		0										// Listen Before Talk Offset
+#define ITSDK_SIGFOX_N				3										// Frame repeat (only applicable to SX126X driver currently)
 
 #define ITSDK_SIGFOX_IF_TX_RCZ1	 	500										// Interframe time for TX Frame
 #define ITSDK_SIGFOX_IF_TX_RCZ3	 	50										// Interframe time for TX Frame
@@ -80,9 +86,9 @@
 									  0x00, 0x00, 0x00, 0x00, \
 									  0x00, 0x00, 0x00, 0x00 }				// The device KEY when NVM_SOURCE is HEADERS
 																			// The Key is in clear here
-#define ITSDK_SIGFOX_KEY_PUBLIC		{ 0x00, 0x11, 0x22, 0x33, \		
-	                                  0x44, 0x55, 0x66, 0x77, \		
-                                      0x88, 0x99, 0xAA, 0xBB, \		
+#define ITSDK_SIGFOX_KEY_PUBLIC		{ 0x00, 0x11, 0x22, 0x33, \
+	                                  0x44, 0x55, 0x66, 0x77, \
+                                      0x88, 0x99, 0xAA, 0xBB, \
 									  0xCC, 0xDD, 0xEE, 0xFF }				// The sigfox PUBLIC key (do not change this)		
 	
 #endif
@@ -175,6 +181,16 @@
 																		   // And corresponding PIN add in the Low level Handler (stm32L...it.c)
 
 #endif // __SIGFOX_SX1276
+// +-------------SX126X------------|--------------------------------------|---------------------------------------|
+#if ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
+#define ITSDK_SX126X_SPI			hsubghz								   // SPI To BE USED
+#define ITSDK_SFX_SX126X_TMBASE		0									   // on Timer identification, add a base to avoid potential conflicts
+#define ITSDK_SFX_SX126X_LATENCYMS	0									   // Latency to be compensated due to MCU wake up time & timer implementation
+
+
+
+
+#endif // __SIGFOX_SX126X
 // +-------------OTHERS------------|--------------------------------------|---------------------------------------|
 
 #endif /* IT_SDK_CONFIG_SIGFOX_H_ */

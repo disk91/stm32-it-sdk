@@ -65,6 +65,10 @@ typedef struct {
 		int32_t  		freqOffset;						// Frequencty offset (unit not yet determined)
 		int32_t  		lbtOffset;						// Listen Before talk Offset (don't know yet how to use it)
 	 #endif
+	 #if ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
+		uint8_t			repeat;							// Sigfox N (frame repetition from 1 to 3)
+		uint8_t			align32b_1[3];
+	 #endif
 	#endif
 		uint8_t         align32b[1];		// 32b alignement
 	} sigfox;

@@ -36,9 +36,6 @@
 
 #if ITSDK_WITH_SIGFOX_LIB > 0
 
-#include <drivers/sigfox/sigfox_api.h>
-#include <drivers/sigfox/se_nvm.h>
-
 #if ITSDK_WITH_SECURESTORE == __ENABLE
   #include <it_sdk/eeprom/securestore.h>
 #endif
@@ -47,15 +44,23 @@
 #include <it_sdk/eeprom/sdk_config.h>
 
 #if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
+	#include <drivers/sigfox/sigfox_api.h>
+	#include <drivers/sigfox/se_nvm.h>
 	#include <drivers/s2lp/s2lp.h>
 	#include <drivers/s2lp/sigfox_helper.h>
 	#include <drivers/s2lp/st_rf_api.h>
 	#include <drivers/eeprom/m95640/m95640.h>
 	#include <drivers/sigfox/sigfox_api.h>
+	#include <drivers/sigfox/mcu_api.h>
 #elif ITSDK_SIGFOX_LIB == __SIGFOX_SX1276
+	#include <drivers/sigfox/sigfox_api.h>
+	#include <drivers/sigfox/se_nvm.h>
 	#include <drivers/sx1276/sigfox_sx1276.h>
+	#include <drivers/sigfox/mcu_api.h>
+#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
+	#include "sigfox_ep_flags.h"// 3rdParties/sigfox/sigfox-ep-lib/inc/sigfox_ep_flags.h
+	#include "sigfox_ep_api.h"	// 3rdParties/sigfox/sigfox-ep-lib/inc/sigfox_ep_api.h
 #endif
-#include <drivers/sigfox/mcu_api.h>
 
 #if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_LOCALEPROM
 	#include <it_sdk/eeprom/eeprom.h>
@@ -81,6 +86,8 @@ itsdk_sigfox_init_t itsdk_sigfox_setup() {
 	ret = s2lp_sigfox_init();
 #elif ITSDK_SIGFOX_LIB == __SIGFOX_SX1276
 	ret = sx1276_sigfox_init();
+#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
+
 #endif
 	if (
 #if ITSDK_CONFIGURATION_MODE != __CONFIG_STATIC
@@ -132,6 +139,9 @@ itsdk_sigfox_init_t itsdk_sigfox_setup() {
 		}
 	}
 
+	// Set default Rx Rssi
+	itsdk_state.sigfox.lastRssi = 99;
+
 	// Set the default power
 	itsdk_sigfox_setTxPower_ext(itsdk_state.sigfox.current_power,true);
 
@@ -161,11 +171,59 @@ itsdk_sigfox_init_t itsdk_sigfox_deinit() {
 	    s2lp_sigfox_deinit();
 	#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX1276
 		sx1276_sigfox_deinit();
+	#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
+		SIGFOX_EP_API_close();
 	#endif
 	itsdk_state.sigfox.initialized = false;
 	return SIGFOX_INIT_SUCESS;
 }
 
+#if ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
+/**
+ * Build the configuration for a message to be transmitted
+ */
+itsdk_sigfox_init_t __itsdk_sigfox_tx_config(SIGFOX_EP_API_application_message_t * m) {
+  #if !(defined SINGLE_FRAME) || !(defined UL_BIT_RATE_BPS) || !(defined TX_POWER_DBM_EIRP) || (defined PUBLIC_KEY_CAPABLE)
+	#ifndef UL_BIT_RATE_BPS
+		switch (itsdk_state.sigfox.current_speed) {
+		case SIGFOX_SPEED_100: m->common_parameters.ul_bit_rate = SIGFOX_UL_BIT_RATE_100BPS; break;
+		default: // now 600 works everywhere
+		case SIGFOX_SPEED_600: m->common_parameters.ul_bit_rate = SIGFOX_UL_BIT_RATE_600BPS; break;
+		}
+	#endif
+	#ifndef TX_POWER_DBM_EIRP
+	 m->common_parameters.tx_power_dbm_eirp = itsdk_state.sigfox.current_power;
+	#endif
+	#ifndef SINGLE_FRAME
+	 m->common_parameters.number_of_frames = itsdk_config.sdk.sigfox.repeat;
+ 	 #ifndef T_IFU_MS
+	  # warning TODO
+	  m->common_parameters.t_ifu_ms = 500;	// Interframe delay, default 500ms
+	 #endif
+	#endif
+	#ifdef PUBLIC_KEY_CAPABLE
+	  switch ( itsdk_config.sdk.sigfox.sgfxKey ) {
+	  default:
+	  case SIGFOX_KEY_PRIVATE: m->common_parameters.ep_key_type = SIGFOX_EP_KEY_PRIVATE; break;
+	  case SIGFOX_KEY_PUBLIC: m->common_parameters.ep_key_type = SIGFOX_EP_KEY_PUBLIC; break;
+	  }
+	#endif
+  #endif
+  #ifdef ASYNCHRONOUS
+    #warning TODO
+	m->uplink_cplt_cb = NULL;
+	#ifdef BIDIRECTIONAL
+	m->downlink_cplt_cb = NULL;
+	#endif
+	m->message_cplt_cb = NULL;
+  #endif
+  #ifndef T_CONF_MS
+	m->t_conf_ms = 2000;	// Delay between downlink frame reception and uplink confirmation (OOB message)
+  #endif
+  return SIGFOX_INIT_SUCESS;
+}
+
+#endif
 
 /**
  * Send a frame on sigfox network
@@ -272,10 +330,37 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendFrame(
 		result = SIGFOX_TXRX_ERROR;
 		break;
 	}
+#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
+	SIGFOX_EP_API_application_message_t m;
+	__itsdk_sigfox_tx_config(&m);
+	if ( len == 0 ) {
+		m.type = SIGFOX_APPLICATION_MESSAGE_TYPE_EMPTY;
+	} else m.type = SIGFOX_APPLICATION_MESSAGE_TYPE_BYTE_ARRAY;
 
+	#if !(defined UL_PAYLOAD_SIZE) || (UL_PAYLOAD_SIZE > 0)
+	  m.ul_payload = buf;
+	#endif
+	#ifndef UL_PAYLOAD_SIZE
+	  m.ul_payload_size_bytes = len;
+	#endif
+	#ifdef BIDIRECTIONAL
+	  m.bidirectional_flag = (ack)?SFX_TRUE:SFX_FALSE;
+	#endif
+	SIGFOX_EP_API_status_t ret = SIGFOX_EP_API_send_application_message(&m);
+	switch (ret) {
+	case SIGFOX_EP_API_SUCCESS:
+		SIGFOX_EP_API_message_status_t message_status = SIGFOX_EP_API_get_message_status();
+		if ( message_status.field.dl_frame != 0 ) {
+			// downlink received
+			SIGFOX_EP_API_get_dl_payload(dwn,SIGFOX_DL_PAYLOAD_SIZE_BYTES,&itsdk_state.sigfox.lastRssi);
+			result = SIGFOX_TXRX_DOWLINK_RECEIVED;
+		} else result = (ack)?SIGFOX_TXRX_NO_DOWNLINK:SIGFOX_TRANSMIT_SUCESS;
+		break;
+	default:
+		LOG_ERROR_SIGFOXSTK(("itsdk_sigfox_sendFrame failed(%d)\r\n",ret));
+		result = SIGFOX_TXRX_ERROR; break;
+	}
 #endif
-
-
 	return result;
 }
 
@@ -335,7 +420,7 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendBit(
 		}
 
 	#endif
-
+#warning TODO
 	return result;
 }
 
@@ -380,7 +465,7 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendOob(
 		}
 
 	#endif
-
+#warning TODO
 	return result;
 }
 
@@ -668,10 +753,18 @@ itsdk_sigfox_init_t itsdk_sigfox_getSigfoxLibVersion(uint8_t ** version){
  * Return the size of the sigfox Nvm memory to reserve
  */
 itsdk_sigfox_init_t itsdk_sigfox_getNvmSize(uint32_t * sz) {
+  #if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP || ITSDK_SIGFOX_LIB == __SIGFOX_SX1276
 	*sz = (   sizeof(itsdk_sigfox_nvm_header_t)
 			+ itdt_align_32b(SFX_NVMEM_BLOCK_SIZE)
 			+ itdt_align_32b(SFX_SE_NVMEM_BLOCK_SIZE)
 		  );
+  #elif ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
+	*sz = (   sizeof(itsdk_sigfox_nvm_header_t)
+				+ itdt_align_32b(SIGFOX_NVM_DATA_SIZE_BYTES)
+		  );
+  #else
+    #error Unsupported ITSDK_SIGFOX_LIB
+  #endif
 	return SIGFOX_INIT_SUCESS;
 }
 
@@ -688,10 +781,18 @@ itsdk_sigfox_init_t itsdk_sigfox_getNvmOffset(uint32_t * offset) {
  * Return the offset of the NVM area for Sigfox Secure Element
  */
 itsdk_sigfox_init_t itsdk_sigfox_getSeNvmOffset(uint32_t * offset) {
+#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP || ITSDK_SIGFOX_LIB == __SIGFOX_SX1276
 	itsdk_sigfox_getNvmOffset(offset);
 	int size = itdt_align_32b(SFX_NVMEM_BLOCK_SIZE);
 	*offset += size;
 	return SIGFOX_INIT_SUCESS;
+#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
+	*offset = 0xFFFFFFFF;
+	return SIGFOX_INIT_FAILED;
+#else
+  #error Unsupported ITSDK_SIGFOX_LIB
+#endif
+
 }
 
 /**
@@ -733,11 +834,18 @@ itsdk_sigfox_init_t __itsdk_sigfox_resetNvmToFactory(bool force) {
 		header.reserved = 0;
 		_eeprom_write(ITDT_EEPROM_BANK0, offset, (void *) &header, sizeof(itsdk_sigfox_nvm_header_t));
 		// force to reset the Sigfox NVM structure
-		uint8_t se_nvm_default[SFX_SE_NVMEM_BLOCK_SIZE] = { 0, 0, 0, 0x0F, 0xFF };
-		SE_NVM_set(se_nvm_default);
-		uint8_t se_mcu_default[SFX_NVMEM_BLOCK_SIZE];
-		bzero(se_mcu_default,SFX_NVMEM_BLOCK_SIZE);
-		MCU_API_set_nv_mem(se_mcu_default);
+		#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP || ITSDK_SIGFOX_LIB == __SIGFOX_SX1276
+			uint8_t se_nvm_default[SFX_SE_NVMEM_BLOCK_SIZE] = { 0, 0, 0, 0x0F, 0xFF };
+			SE_NVM_set(se_nvm_default);
+			uint8_t se_mcu_default[SFX_NVMEM_BLOCK_SIZE];
+			bzero(se_mcu_default,SFX_NVMEM_BLOCK_SIZE);
+			MCU_API_set_nv_mem(se_mcu_default);
+		#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
+			#warning TODO
+		#else
+		  #error Unsupported ITSDK_SIGFOX_LIB
+		#endif
+
 	} else {
 		LOG_INFO_SIGFOXSTK((".. Skiped\r\n"));
 	}
