@@ -62,7 +62,7 @@
 #define ITSDK_VBAT_MIN				2000									// MIN value for VBAT in mv
 #define ITSDK_VBAT_MAX				3300									// MAX value for VBAT in mv
 #define ITSDK_VBAT_ADC_PIN			-1										// ADC pin used to measure VBAT (if -1 assume VBAT = VCC)
-#define ITSDK_WITH_SPI				__SPI_ENABLED							// Use SPI (inludes the strutures)
+#define ITSDK_WITH_SPI				(__SPI_ENABLED)							// Use SPI (includes the structures, bit field for the different type of SPI)
 #define ITSDK_SPI_HANDLER_TYPE		SPI_HandleTypeDef						// The name of the Spi structure to be used for the targeted MCU
 #define ITSDK_SPI_TIMEOUT			100										// SPI transaction timeout in ms
 #define ITSDK_WITH_I2C				__I2C_ENABLED							// I2C is enabled (__I2C_NONE / __I2C_ENABLED )

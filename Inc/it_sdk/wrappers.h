@@ -181,7 +181,7 @@ void gpio_Callback(uint16_t GPIO_Pin);
 
 // ================================================
 // spi
-#if ITSDK_WITH_SPI == __SPI_ENABLED
+#if ITSDK_WITH_SPI != __SPI_NONE
 typedef enum
 {
   __SPI_OK       = 0x00U,
@@ -190,6 +190,7 @@ typedef enum
   __SPI_TIMEOUT  = 0x03U
 } _SPI_Status;
 
+#if ((ITSDK_WITH_SPI) & __SPI_ENABLED) > 0
 _SPI_Status spi_rwRegister(
 		ITSDK_SPI_HANDLER_TYPE * spi,
 		uint8_t	* toTransmit,
@@ -207,6 +208,11 @@ _SPI_Status spi_readRegister(
 _SPI_Status spi_write_byte(
 		ITSDK_SPI_HANDLER_TYPE * spi,
 		uint8_t Value
+);
+
+_SPI_Status spi_read_byte(
+		SPI_HandleTypeDef * spi,
+		uint8_t * Value
 );
 
 _SPI_Status spi_transmit_dma_start(
@@ -228,7 +234,9 @@ void spi_wait4TransactionEnd(
 void spi_reset(
 		ITSDK_SPI_HANDLER_TYPE * spi
 );
-#endif
+#endif // __SPI_ENABLED
+#endif // ITSDK_WITH_SPI
+
 // ================================================
 // I2C
 #if ITSDK_WITH_I2C == __I2C_ENABLED

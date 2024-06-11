@@ -121,7 +121,8 @@
  * SPI configuration
  */
 #define __SPI_NONE					0x00			// No SPI
-#define __SPI_ENABLED				0x01			// with SPI
+#define __SPI_ENABLED				0x01			// with SPI standard
+#define __SPI_SUBGHZ				0x02			// with SPI SUBGZ ( bit field )
 
 /**
  * I2C configuration
@@ -432,6 +433,12 @@
 #define __GNSS_WITH_SAT_DETAILS	0x0040
 #define __GNSS_WITH_SPEED		0x0080
 #define __GNSS_WITH_COG			0x0100		// Direction
+
+/**
+ * List of possible power regulator
+ */
+#define __POWER_LDO				0x00
+#define __POWER_DCDC			0x01
 
 
 #endif /* IT_SDK_CONFIG_DEFINES_H_ */
