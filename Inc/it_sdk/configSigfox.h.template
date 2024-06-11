@@ -183,9 +183,16 @@
 #endif // __SIGFOX_SX1276
 // +-------------SX126X------------|--------------------------------------|---------------------------------------|
 #if ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
-#define ITSDK_SX126X_SPI			hsubghz								   // SPI To BE USED
-#define ITSDK_SFX_SX126X_TMBASE		0									   // on Timer identification, add a base to avoid potential conflicts
+#define ITSDK_SFX_SX126X_CHIP		1262								   // version of the semtech core chip 1261 or 1262
+#define ITSDK_SFX_SX1262_REGULOR    __POWER_DCDC						   // type of power regulator used
+#define ITSDK_SFX_SX126X_TMBASE		11									   // on Timer identification, add a base to avoid potential conflicts
 #define ITSDK_SFX_SX126X_LATENCYMS	0									   // Latency to be compensated due to MCU wake up time & timer implementation
+
+#define ITSDK_SX126X_SPI			hsubghz								   // SPI To BE USED
+#define ITSDK_SFX_SX126X_CS_BANK	__BANK_A							   // SPI Chip Select when active HIGH
+#define ITSDK_SFX_SX126X_CS_PIN		__LP_GPIO_NONE						   //     Use __LP_GPIO_NONE if not used
+#define ITSDK_SFX_SX126X_CSDN_BANK	__BANK_A							   // SPI Chip Select when active LOW
+#define ITSDK_SFX_SX126X_CSDN_PIN	__LP_GPIO_NONE						   //     Use __LP_GPIO_NONE if not used
 
 
 

@@ -412,6 +412,15 @@ MCU_API_status_t MCU_API_get_nvm(sfx_u8 *nvm_data, sfx_u8 nvm_data_size_bytes) {
 // 2 bytes for random value (LSB then MSB)
 // 2 bytes for SeqId value (LSB then MSB)
 //
+// On Init, the library does not init the NVM, the upper layer
+// Needs to setup SeqId to 0 (by the way, any value is ok) and
+// the random value to a random value.
+//
+// Currently in the lib, the MCU_API_set_nvm is a full refresh of the
+// data on every frame. The Random value is used for selecting a frequency
+// and the random Value is changed on every uplink frame with a new random
+// value.
+//
 // TODO
 // As the SeqId write can impact the Flash life duration
 // we will hack it by reducing the write cycle commiting the SeqId
@@ -629,27 +638,24 @@ MCU_API_status_t MCU_API_get_voltage_temperature(sfx_u16 *voltage_idle_mv, sfx_u
 
 
 
-#ifdef CERTIFICATION
+#if ITSDK_RADIO_CERTIF == __ENABLE
+
 MCU_API_status_t MCU_API_print_dl_payload(sfx_u8 *dl_payload, sfx_u8 dl_payload_size, sfx_s16 rssi_dbm)
 {
-#warning tobedone
-#ifdef ERROR_CODES
-    MCU_API_status_t status = MCU_API_SUCCESS;
-#endif
-#ifdef MCU_RSSI_PRINT_ON_UART
-    uint8_t str[64]= {0x00};
-
-    snprintf(str, sizeof(str), "%02x%02x%02x%02x%02x%02x%02x%02x,%d",
-            dl_payload[0],dl_payload[1],dl_payload[2],dl_payload[3],
-            dl_payload[4],dl_payload[5],dl_payload[6],dl_payload[7],
-            rssi_dbm);
-    ATcom_WriteResponse(NULL, str);
-#else
-    tn_printf("data:%02X%02X%02X%02X%02X%02X%02X%02X rssi:%d",
-    dl_payload[0],dl_payload[1],dl_payload[2],dl_payload[3],
-    dl_payload[4],dl_payload[5],dl_payload[6],dl_payload[7],
-    rssi_dbm);
-#endif
+	#ifdef ERROR_CODES
+     MCU_API_status_t status = MCU_API_SUCCESS;
+	#endif
+    _itsdk_console_printf("data:%02X%02X%02X%02X%02X%02X%02X%02X rssi:%d",
+		dl_payload[0],dl_payload[1],dl_payload[2],dl_payload[3],
+		dl_payload[4],dl_payload[5],dl_payload[6],dl_payload[7],
+		rssi_dbm);
+    RETURN();
+}
+#elif defined CERTIFICATION
+MCU_API_status_t MCU_API_print_dl_payload(sfx_u8 *dl_payload, sfx_u8 dl_payload_size, sfx_s16 rssi_dbm) {
+	#ifdef ERROR_CODES
+     MCU_API_status_t status = MCU_API_SUCCESS;
+	#endif
     RETURN();
 }
 #endif
