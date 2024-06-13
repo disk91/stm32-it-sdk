@@ -40,6 +40,22 @@
 #define LOG_DEBUG_SFXSX126X(x)
 #endif
 
+#define __SX126X_RXTX_OFF		0x00
+#define __SX126X_RX 			0x01
+#define __SX126X_TX 			0x02
+
+#define __SX126X_SMPS_DRV_20  	((uint8_t) ((0x0)<<1))
+#define __SX126X_SMPS_DRV_40  	((uint8_t) ((0x1)<<1))
+#define __SX126X_SMPS_DRV_60  	((uint8_t) ((0x2)<<1))
+#define __SX126X_SMPS_DRV_100 	((uint8_t) ((0x3)<<1))
+#define __SX126X_SMPS_DRV_MASK 	((uint8_t) ((0x3)<<1))
+
+#define __SX126X_REG_SMPSC2R	0x0923
+#define __SX126X_REG_OCP 		0x08E7
+#define __SX126X_REG_TX_CLAMP 	0x08D8
+
+void _sx126x_rfSwitchSet(uint8_t paSelected, uint8_t rxTx);
+
 #endif
 
 #endif // IT_SDK_DRIVERS_SX126X_SIGFOX_H_

@@ -16,7 +16,8 @@
 	```
 	USE_SIGFOX_EP_FLAGS_H
 	```	
-- in the project properties >> C/C++ General >> Path & Symbol >> Source location add `stm32-it-sdk/3rdParties` folder
+	you need to do it for release **and** debug to have the IDE taking it into account.
+- in the project properties >> C/C++ General >> Path & Symbol >> Source location add `stm32-it-sdk/3rdParties` folder.
 	
 #### Sigfox Tunning
 The sigfox library can be setup for a lower memory & flash footprint, edit file in 3rdParties/sigfox-ep-lib/sigfox_ep_flags.h

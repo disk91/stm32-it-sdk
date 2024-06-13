@@ -142,6 +142,7 @@
  */
 #define __DISABLE					0x00
 #define __ENABLE					0x01
+#define __AVOID						0xFF
 
 /**
  * Polarity
@@ -439,6 +440,27 @@
  */
 #define __POWER_LDO				0x00
 #define __POWER_DCDC			0x01
+
+/**
+ * List of possible ITSDK_SFX_SX126X_CHIP
+ */
+#define __SX1261				0x00
+#define __SX1262				0x01
+#define __E5WL					0x02
+
+/**
+ * List of possible Power Amplifier
+ */
+#define __SX126X_PA_NONE		0x00	// no selection
+#define __SX126X_PA_LPHP		0x03	// use both
+#define __SX126X_PA_LP			0x01	// use LP only
+#define __SX126X_PA_HP			0x02	// use HP only
+
+/**
+ * List of Sx126x module
+ */
+#define __SX126X_MOD_NONE		0x00	// no specific module, potentially some customization is required
+#define __SX126X_MOD_LORAE5		0x01	// Seeed LoRa E5 Module
 
 
 #endif /* IT_SDK_CONFIG_DEFINES_H_ */
