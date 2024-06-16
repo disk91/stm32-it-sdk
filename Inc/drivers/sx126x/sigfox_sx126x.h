@@ -27,6 +27,8 @@
 #include <it_sdk/config.h>
 #include <it_sdk/logger/logger.h>
 #if ( ITSDK_WITH_SIGFOX_LIB == __ENABLE ) && (ITSDK_SIGFOX_LIB == __SIGFOX_SX126X)
+#include "sigfox_types.h"
+#include "sigfox_ep_api.h"
 
 #if (ITSDK_LOGGER_MODULE & __LOG_MOD_LOWSIGFOX) > 0
 #define LOG_INFO_SFXSX126X(x)		log_info x
@@ -54,7 +56,36 @@
 #define __SX126X_REG_OCP 		0x08E7
 #define __SX126X_REG_TX_CLAMP 	0x08D8
 
+#define __SX126X_RSSI_NONE		-16000
+
 void _sx126x_rfSwitchSet(uint8_t paSelected, uint8_t rxTx);
+itsdk_sigfox_init_t sx126x_sigfox_init( void );
+itsdk_sigfox_init_t sx126x_sigfox_getRssi(int16_t * rssi);
+itsdk_sigfox_init_t sx126x_sigfox_tx_common_config(
+		SIGFOX_EP_API_common_t * common_parameters,
+		uint8_t repeat,
+		itdsk_sigfox_speed_t speed,
+		int8_t power,
+		bool ack,
+		uint8_t rcz,
+		uint8_t sfxKey
+);
+itsdk_sigfox_init_t sx126x_sigfox_tx_config(
+		SIGFOX_EP_API_application_message_t * m,
+		uint8_t * buf, 		// null for bit frame
+		bool value,			// for bit frame
+		uint8_t len,		// 0 / 1 for bit frame / 2 for OOB frame with buf == NULL
+		uint8_t repeat,
+		itdsk_sigfox_speed_t speed,
+		int8_t power,
+		bool ack,
+		uint8_t rcz,
+		uint8_t sfxKey
+);
+// conditional presence ( (ITSDK_WITH_SPI) & __SPI_SUBGHZ ) > 0 && defined BIDIRECTIONAL && !defined ASYNCHRONOUS
+itsdk_bool_e sx126x_hasDataReceived();
+void sx126x_resetDataReceived();
+
 
 #endif
 

@@ -215,13 +215,13 @@ MCU_API_status_t MCU_API_timer_start(MCU_API_timer_t *timer) {
                 EXIT_ERROR(MCU_API_ERROR);
             break;
         default:
-        	_LOG_SFXEPLIB_ERROR(("[SFX] MCU_API_timer_start unexpected Timer(%d)\r\n",timer->instance));
+        	_LOG_SFXEPLIB_ERROR(("[ERROR] MCU_API_timer_start unexpected Timer(%d)\r\n",timer->instance));
             EXIT_ERROR(MCU_API_ERROR);
     }
 
     RETURN();
 errors:
-	_LOG_SFXEPLIB_ERROR(("[SFX] MCU_API_timer_start failed for timer (%d): %d\r\n",timer->instance, timerStatus));
+	_LOG_SFXEPLIB_ERROR(("[ERROR] MCU_API_timer_start failed for timer (%d): %d\r\n",timer->instance, timerStatus));
     RETURN();
 }
 #endif
@@ -260,7 +260,7 @@ MCU_API_status_t MCU_API_timer_stop(MCU_API_timer_instance_t timer_instance) {
 
     RETURN();
 errors:
-	_LOG_SFXEPLIB_ERROR(("[SFX] MCU_API_timer_stop failed for timer (%d): %d\r\n",timer_instance, timerStatus));
+	_LOG_SFXEPLIB_ERROR(("[ERROR] MCU_API_timer_stop failed for timer (%d): %d\r\n",timer_instance, timerStatus));
 	RETURN();
 }
 #endif
@@ -293,7 +293,7 @@ MCU_API_status_t MCU_API_timer_status(MCU_API_timer_instance_t timer_instance, s
 
     return MCU_API_SUCCESS;
 errors:
-	_LOG_SFXEPLIB_ERROR(("[SFX] MCU_API_timer_status unknown timer (%d)\r\n",timer_instance));
+	_LOG_SFXEPLIB_ERROR(("[ERROR] MCU_API_timer_status unknown timer (%d)\r\n",timer_instance));
     RETURN();
 }
 #endif

@@ -69,6 +69,7 @@ typedef enum
 #define SIGFOX_RCZ1		1
 #define SIGFOX_RCZ2 	2
 #define SIGFOX_RCZ3C 	3
+#define SIGFOX_RCZ3D	8
 #define SIGFOX_RCZ4		4
 #define SIGFOX_RCZ5		5
 #define SIGFOX_RCZ6		6

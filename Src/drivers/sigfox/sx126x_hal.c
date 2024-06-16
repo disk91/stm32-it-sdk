@@ -22,14 +22,15 @@
  * ==========================================================
  */
 #include <it_sdk/config.h>
-
 #if ITSDK_WITH_SIGFOX_LIB == __ENABLE && ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
+
 #include <drivers/sx126x/sigfox_sx126x.h>
 #include "sigfox_ep_flags.h"
 #include "sx126x_hal.h"
 #include "sigfox_types.h"
 #include "board/sx126x_hw_api.h"
 #include "sigfox_error.h"
+#include "sx126x.h"
 
 #if ( (ITSDK_WITH_SPI) & __SPI_SUBGHZ ) > 0
   #include "stm32wlxx_hal_subghz.h"
@@ -103,21 +104,21 @@ sx126x_hal_status_t sx126x_hal_write( const void* context, const uint8_t* comman
     LOG_DEBUG_SFXSX126X(("sx126x_hal_write %d %d\r\n",command_length,data_length));
 	#if ( (ITSDK_WITH_SPI) & __SPI_SUBGHZ ) > 0
 
-		(void)SUBGHZ_CheckDeviceReady(&ITSDK_SX126X_SPI);
+		(void)SUBGHZ_CheckDeviceReady(&ITSDK_SFX_SX126X_SPI);
 		LL_PWR_SelectSUBGHZSPI_NSS();
 
 		_SPI_Status r = __SPI_OK;
 		for ( int i = 0 ; i < command_length && r == __SPI_OK; i++) {
-			r =	(_SPI_Status)SUBGHZSPI_Transmit(&ITSDK_SX126X_SPI, command[i]);
+			r =	(_SPI_Status)SUBGHZSPI_Transmit(&ITSDK_SFX_SX126X_SPI, command[i]);
 		}
 		if ( r != __SPI_OK ) goto failed;
 
 		for ( int i = 0 ; i < data_length && r == __SPI_OK; i++) {
-			r =	(_SPI_Status)SUBGHZSPI_Transmit(&ITSDK_SX126X_SPI, data[i]);
+			r =	(_SPI_Status)SUBGHZSPI_Transmit(&ITSDK_SFX_SX126X_SPI, data[i]);
 		}
 		if ( r != __SPI_OK ) goto failed;
 		LL_PWR_UnselectSUBGHZSPI_NSS();
-		SUBGHZ_WaitOnBusy(&ITSDK_SX126X_SPI);
+		SUBGHZ_WaitOnBusy(&ITSDK_SFX_SX126X_SPI);
 
 	#else
 		#warning "Use of standard SPI driver, never been tested"
@@ -125,12 +126,12 @@ sx126x_hal_status_t sx126x_hal_write( const void* context, const uint8_t* comman
 		__sx126x_spi_nss_select();
 		_SPI_Status r = __SPI_OK;
 		for ( int i = 0 ; i < command_length && r == __SPI_OK; i++) {
-			r = spi_write_byte(ITSDK_SX126X_SPI, command[i]);
+			r = spi_write_byte(ITSDK_SFX_SX126X_SPI, command[i]);
 		}
 		if ( r != __SPI_OK ) goto failed;
 
 		for ( int i = 0 ; i < data_length && r == __SPI_OK; i++) {
-			r =	spi_write_byte(ITSDK_SX126X_SPI, data[i]);
+			r =	spi_write_byte(ITSDK_SFX_SX126X_SPI, data[i]);
 		}
 		if ( r != __SPI_OK ) goto failed;
 		__sx126x_spi_nss_unselect();
@@ -157,26 +158,26 @@ sx126x_hal_status_t sx126x_hal_read( const void* context, const uint8_t* command
     LOG_DEBUG_SFXSX126X(("sx126x_hal_read %d %d\r\n",command_length,data_length));
 	#if ( (ITSDK_WITH_SPI) & __SPI_SUBGHZ ) > 0
 
-		(void)SUBGHZ_CheckDeviceReady(&ITSDK_SX126X_SPI);
+		(void)SUBGHZ_CheckDeviceReady(&ITSDK_SFX_SX126X_SPI);
 		LL_PWR_SelectSUBGHZSPI_NSS();
 
 		_SPI_Status r = __SPI_OK;
 		for ( int i = 0 ; i < command_length && r == __SPI_OK; i++) {
-			r =	(_SPI_Status)SUBGHZSPI_Transmit(&ITSDK_SX126X_SPI, command[i]);
+			r =	(_SPI_Status)SUBGHZSPI_Transmit(&ITSDK_SFX_SX126X_SPI, command[i]);
 		}
 		if ( r != __SPI_OK ) goto failed;
 
 		// Transmit dummy byte
-		r = (_SPI_Status)SUBGHZSPI_Transmit(&ITSDK_SX126X_SPI, 0U);
+		r = (_SPI_Status)SUBGHZSPI_Transmit(&ITSDK_SFX_SX126X_SPI, 0U);
 		if ( r != __SPI_OK ) goto failed;
 
 		// Read data
 		for ( int i = 0 ; i < data_length && r == __SPI_OK; i++) {
-			r =	(_SPI_Status)SUBGHZSPI_Receive(&ITSDK_SX126X_SPI, &data[i]);
+			r =	(_SPI_Status)SUBGHZSPI_Receive(&ITSDK_SFX_SX126X_SPI, &data[i]);
 		}
 		if ( r != __SPI_OK ) goto failed;
 		LL_PWR_UnselectSUBGHZSPI_NSS();
-		SUBGHZ_WaitOnBusy(&ITSDK_SX126X_SPI);
+		SUBGHZ_WaitOnBusy(&ITSDK_SFX_SX126X_SPI);
 
 	#else
 		#warning "Use of standard SPI driver, never been tested"
@@ -184,15 +185,15 @@ sx126x_hal_status_t sx126x_hal_read( const void* context, const uint8_t* command
 		__sx126x_spi_nss_select();
 		_SPI_Status r = __SPI_OK;
 		for ( int i = 0 ; i < command_length && r == __SPI_OK; i++) {
-			r = spi_write_byte(ITSDK_SX126X_SPI, command[i]);
+			r = spi_write_byte(ITSDK_SFX_SX126X_SPI, command[i]);
 		}
 		if ( r != __SPI_OK ) goto failed;
 		// Transmit dummy byte
-		r = spi_write_byte(ITSDK_SX126X_SPI, 0U);
+		r = spi_write_byte(ITSDK_SFX_SX126X_SPI, 0U);
 		if ( r != __SPI_OK ) goto failed;
 
 		for ( int i = 0 ; i < data_length && r == __SPI_OK; i++) {
-			r =	spi_read_byte(ITSDK_SX126X_SPI, &data[i]);
+			r =	spi_read_byte(ITSDK_SFX_SX126X_SPI, &data[i]);
 		}
 		if ( r != __SPI_OK ) goto failed;
 		__sx126x_spi_nss_unselect();
@@ -212,9 +213,156 @@ failed:
 // sx126x_hal.c
 // ============================================================
 
+// ============================================================
+// Override the IRQ handlers
+// As Subghz driver already decode and split the different
+// interruption we need to regroup them for the sigfox handler
+// this avoid to modify the global irq handler and makes integration
+// easier
+// ============================================================
+
+#if ( (ITSDK_WITH_SPI) & __SPI_SUBGHZ ) > 0
+
+// the SX126X_RF_API_process callback function is bypassed as the subghz handler already
+// split / clear and route the irq to the dedicated handler.
+// the other way is to remove the hal sughz handler but it will be override by the cube mx
+// regeneration and more complex to explain. Make sure this function is updated if SX126X_RF_API_process callback
+// is updated in the future
+
+
+// Approach #1 - Not working
+// The function passed to SX126X_RF_API_open is SX126X_irq
+// static void SX126X_irq(void) {
+//    if (sx126x_ctx.irq_en == 1) {
+//    	sx126x_ctx.irq_flag = 1;
+//#ifdef ASYNCHRONOUS
+//        if (sx126x_ctx.callbacks.process_cb != SFX_NULL)
+//        	sx126x_ctx.callbacks.process_cb();
+//#endif
+//    }
+//}
+// In async mode the following code from SX126X_RF_API_send is not
+// processed and need to be implemented elsewhere
+// if(sx126x_ctx.error_flag == 1) {
+//   EXIT_ERROR((RF_API_status_t) RF_API_ERROR);
+// }
+// But in fact in this step there is no errors generated, as the error coming
+// from HAL_SUBGHZ_TxCpltCallback does not exist with this implementation.
+//
+// Rx requires a change in the sx126x_rf_api - pull request pending for SX126X_RF_API_receive
+// while (1) becomes while(sx126x_ctx.error_flag != 1)
+// In sync mode, the data are not reported as the following code will
+// never be reached in SX126X_RF_API_receive
+// if(sx126x_ctx.rx_done_flag == 1) {
+//   rx_data->data_received = SFX_TRUE;
+//   break;
+// }
+// The upper layer function will have to verify the Rx complete status calling the added function above
+// Problem, the sigfox context is static :(
+//
+// Approach #2 - should work
+// Override the sx126x_get_and_clear_irq_status to fake the sx registers and return the right status
+// function of the previous IRQ handler seen, so internal process function may work normally
+
+#define __SX126X_IRQ_CLEARED    0
+#define __SX126X_IRQ_TXCOMPLETE	1
+#define __SX126X_IRQ_RXCOMPLETE 2
+static uint8_t __sx126x_irq_status = __SX126X_IRQ_CLEARED;
+static SX126X_HW_irq_cb_t * __sx1262_irq_cb = NULL;
+sx126x_status_t SX126X_RF_API_get_and_clear_irq_status( const void* context, sx126x_irq_mask_t* irq ) {
+	// override the default function
+	if ( __sx126x_irq_status & __SX126X_IRQ_TXCOMPLETE ) *irq |= SX126X_IRQ_TX_DONE;
+	if ( __sx126x_irq_status & __SX126X_IRQ_RXCOMPLETE ) *irq |= SX126X_IRQ_RX_DONE;
+	__sx126x_irq_status = __SX126X_IRQ_CLEARED;
+
+	return SX126X_STATUS_OK;
+}
+
+
+void HAL_SUBGHZ_TxCpltCallback(SUBGHZ_HandleTypeDef *hsubghz) {
+	LOG_DEBUG_SFXSX126X(("HAL_SUBGHZ_TxCpltCallback\r\n"));
+	__sx126x_irq_status |= __SX126X_IRQ_TXCOMPLETE;
+	if ( __sx1262_irq_cb != NULL ) __sx1262_irq_cb();
+
+	/* -- approach #1 not compiling
+	if (sx126x_ctx.irq_en == 1) {
+		sx126x_ctx.irq_flag = 0;
+		SX126X_HW_API_tx_off();
+		sx126x_ctx.tx_done_flag = 1;
+	    #ifdef ASYNCHRONOUS
+  	     if (sx126x_ctx.callbacks.tx_cplt_cb != SFX_NULL)
+			sx126x_ctx.callbacks.tx_cplt_cb();
+		#endif
+	}
+	*/
+
+}
+
+#ifdef BIDIRECTIONAL
+
+ static volatile itsdk_bool_e __sx126x_dataReceived = BOOL_FALSE;
+ void HAL_SUBGHZ_RxCpltCallback(SUBGHZ_HandleTypeDef *hsubghz) {
+	LOG_DEBUG_SFXSX126X(("HAL_SUBGHZ_RxCpltCallback\r\n"));
+	__sx126x_irq_status |= __SX126X_IRQ_RXCOMPLETE;
+	if ( __sx1262_irq_cb != NULL ) __sx1262_irq_cb();
+
+	/* -- approach #1 not compiling
+	if (sx126x_ctx.irq_en == 1) {
+		sx126x_ctx.irq_flag = 0;
+
+		SX126X_HW_API_rx_off();
+		sx126x_ctx.rx_done_flag = 1;
+		#ifdef ASYNCHRONOUS
+		 if (sx126x_ctx.callbacks.rx_data_received_cb != SFX_NULL)
+			sx126x_ctx.callbacks.rx_data_received_cb();
+		#else
+			__sx126x_dataReceived = BOOL_TRUE;
+		#endif
+	}
+	*/
+ }
+
+ #ifndef ASYNCHRONOUS
+  itsdk_bool_e sx126x_hasDataReceived() {
+	return __sx126x_dataReceived;
+  }
+
+  void sx126x_resetDataReceived() {
+	__sx126x_dataReceived = BOOL_FALSE;
+  }
+ #endif // ASYNCHRONOUS
+
+#endif	// BIDIRECTIONAL
+
+// Unused irq handlers
+// void HAL_SUBGHZ_PreambleDetectedCallback(SUBGHZ_HandleTypeDef *hsubghz){}
+// void HAL_SUBGHZ_SyncWordValidCallback(SUBGHZ_HandleTypeDef *hsubghz) {}
+// void HAL_SUBGHZ_HeaderValidCallback(SUBGHZ_HandleTypeDef *hsubghz) {}
+// void HAL_SUBGHZ_HeaderErrorCallback(SUBGHZ_HandleTypeDef *hsubghz) {}
+// void HAL_SUBGHZ_CRCErrorCallback(SUBGHZ_HandleTypeDef *hsubghz){}
+// void HAL_SUBGHZ_CADStatusCallback(SUBGHZ_HandleTypeDef *hsubghz,HAL_SUBGHZ_CadStatusTypeDef cadstatus){}
+// void HAL_SUBGHZ_RxTxTimeoutCallback(SUBGHZ_HandleTypeDef *hsubghz){}
+// void HAL_SUBGHZ_LrFhssHopCallback(SUBGHZ_HandleTypeDef *hsubghz) {}
+#else
+  // integration with external irq
+  static gpio_irq_chain_t __sx1262_irq;
+#endif // (ITSDK_WITH_SPI) & __SPI_SUBGHZ ) > 0
+
+
+
+// ============================================================
+// Call when sigfox lib is initialized; prepare the hardware
+// and set the DIO3 irq to call the given callback function when
+// rising.
+// ============================================================
 SX126X_HW_API_status_t SX126X_HW_API_open(SX126X_HW_irq_cb_t callback)
 {
 	LOG_DEBUG_SFXSX126X(("SX126X_HW_API_open\r\n"));
+
+	#ifdef ERROR_CODES
+	 SX126X_HW_API_status_t status = SX126X_HW_API_SUCCESS;
+	#endif
+
 
 	// Configure the pin for Chip Select
 	#if ( (ITSDK_WITH_SPI) & __SPI_SUBGHZ ) == 0
@@ -230,23 +378,43 @@ SX126X_HW_API_status_t SX126X_HW_API_open(SX126X_HW_irq_cb_t callback)
 	#endif
 
 	// Configure the pin used for RFSwitch
-	if ( ITSDK_SDK_SX126X_RFSW1_PIN != __LP_GPIO_NONE ) {
-		gpio_configure_ext(ITSDK_SDK_SX126X_RFSW1_BANK,ITSDK_SDK_SX126X_RFSW1_PIN,GPIO_OUTPUT_PP, ITSDK_GPIO_SPEED_HIGH, ITSDK_GPIO_ALT_NONE);
-		gpio_reset(ITSDK_SDK_SX126X_RFSW1_BANK,ITSDK_SDK_SX126X_RFSW1_PIN);
+	if ( ITSDK_SFX_SX126X_RFSW1_PIN != __LP_GPIO_NONE ) {
+		gpio_configure_ext(ITSDK_SFX_SX126X_RFSW1_BANK,ITSDK_SFX_SX126X_RFSW1_PIN,GPIO_OUTPUT_PP, ITSDK_GPIO_SPEED_HIGH, ITSDK_GPIO_ALT_NONE);
+		gpio_reset(ITSDK_SFX_SX126X_RFSW1_BANK,ITSDK_SFX_SX126X_RFSW1_PIN);
 	}
-	if ( ITSDK_SDK_SX126X_RFSW2_PIN != __LP_GPIO_NONE ) {
-		gpio_configure_ext(ITSDK_SDK_SX126X_RFSW2_BANK,ITSDK_SDK_SX126X_RFSW2_PIN,GPIO_OUTPUT_PP, ITSDK_GPIO_SPEED_HIGH, ITSDK_GPIO_ALT_NONE);
-		gpio_reset(ITSDK_SDK_SX126X_RFSW2_BANK,ITSDK_SDK_SX126X_RFSW2_PIN);
+	if ( ITSDK_SFX_SX126X_RFSW2_PIN != __LP_GPIO_NONE ) {
+		gpio_configure_ext(ITSDK_SFX_SX126X_RFSW2_BANK,ITSDK_SFX_SX126X_RFSW2_PIN,GPIO_OUTPUT_PP, ITSDK_GPIO_SPEED_HIGH, ITSDK_GPIO_ALT_NONE);
+		gpio_reset(ITSDK_SFX_SX126X_RFSW2_BANK,ITSDK_SFX_SX126X_RFSW2_PIN);
 	}
 
-	#ifdef ERROR_CODES
-     SX126X_HW_API_status_t status = SX126X_HW_API_SUCCESS;
+	// Configure the interruption handler and SPI
+	#if ( (ITSDK_WITH_SPI) & __SPI_SUBGHZ ) > 0
+
+		ITSDK_SFX_SX126X_SPI.Init.BaudratePrescaler = SUBGHZSPI_BAUDRATEPRESCALER_8;
+	    if (HAL_SUBGHZ_Init(&ITSDK_SFX_SX126X_SPI) != HAL_OK) {
+		  #ifdef ERROR_CODES
+	    	status = SX126X_HW_API_ERROR;
+		  #endif
+	      RETURN();
+	    }
+
+	    __sx1262_irq_cb = callback;
+		__HAL_RCC_SUBGHZSPI_CLK_ENABLE();
+		HAL_NVIC_SetPriority(SUBGHZ_Radio_IRQn, 0, 0);
+		HAL_NVIC_EnableIRQ(SUBGHZ_Radio_IRQn);
+
+	#else
+		if ( ITSDK_SFX_IRQ_PIN != __LP_GPIO_NONE ) {
+			gpio_interruptClear(ITSDK_SFX_IRQ_BANK, ITSDK_SFX_IRQ_PIN);
+			gpio_configure(ITSDK_SFX_IRQ_BANK, ITSDK_SFX_IRQ_PIN, GPIO_INTERRUPT_RISING );
+			gpio_interruptPriority(ITSDK_SFX_IRQ_BANK,ITSDK_SFX_IRQ_PIN,0,0);
+			__sx1262_irq.irq_func = callback;
+			__sx1262_irq.pinMask = ITSDK_SFX_IRQ_PIN;
+			gpio_registerIrqAction(&__sx1262_irq);
+			gpio_interruptEnable(ITSDK_SFX_IRQ_BANK, ITSDK_SFX_IRQ_PIN);
+		}
 	#endif
-    SFX_UNUSED(callback);
-    // Configure all hardware pin of SX126X chipset.
-    // Configure SPI peripherial.
-    // Configure interrupt pin to handle radio interrupt.
-    // The callback function must be called when such event occurs.
+
     RETURN();
 }
 
@@ -266,15 +434,29 @@ SX126X_HW_API_status_t SX126X_HW_API_close(void)
 	#endif
 
 	// Unset pin used for RFSwitch
-	if ( ITSDK_SDK_SX126X_RFSW1_PIN != __LP_GPIO_NONE ) gpio_reset(ITSDK_SDK_SX126X_RFSW1_BANK,ITSDK_SDK_SX126X_RFSW1_PIN);
-	if ( ITSDK_SDK_SX126X_RFSW2_PIN != __LP_GPIO_NONE ) gpio_reset(ITSDK_SDK_SX126X_RFSW2_BANK,ITSDK_SDK_SX126X_RFSW2_PIN);
-	if ( ITSDK_SDK_SX126X_RFSW1_PIN != __LP_GPIO_NONE ) gpio_configure(ITSDK_SDK_SX126X_RFSW1_BANK,ITSDK_SDK_SX126X_RFSW1_PIN,GPIO_OFF);
-	if ( ITSDK_SDK_SX126X_RFSW2_PIN != __LP_GPIO_NONE ) gpio_configure(ITSDK_SDK_SX126X_RFSW2_BANK,ITSDK_SDK_SX126X_RFSW2_PIN,GPIO_OFF);
+	if ( ITSDK_SFX_SX126X_RFSW1_PIN != __LP_GPIO_NONE ) gpio_reset(ITSDK_SFX_SX126X_RFSW1_BANK,ITSDK_SFX_SX126X_RFSW1_PIN);
+	if ( ITSDK_SFX_SX126X_RFSW2_PIN != __LP_GPIO_NONE ) gpio_reset(ITSDK_SFX_SX126X_RFSW2_BANK,ITSDK_SFX_SX126X_RFSW2_PIN);
+	if ( ITSDK_SFX_SX126X_RFSW1_PIN != __LP_GPIO_NONE ) gpio_configure(ITSDK_SFX_SX126X_RFSW1_BANK,ITSDK_SFX_SX126X_RFSW1_PIN,GPIO_OFF);
+	if ( ITSDK_SFX_SX126X_RFSW2_PIN != __LP_GPIO_NONE ) gpio_configure(ITSDK_SFX_SX126X_RFSW2_BANK,ITSDK_SFX_SX126X_RFSW2_PIN,GPIO_OFF);
+
+	// disable interrupt
+	#if ( (ITSDK_WITH_SPI) & __SPI_SUBGHZ ) > 0
+
+		__HAL_RCC_SUBGHZSPI_CLK_DISABLE();
+		HAL_NVIC_DisableIRQ(SUBGHZ_Radio_IRQn);
+
+	#else
+		if ( ITSDK_SFX_IRQ_PIN != __LP_GPIO_NONE ) {
+			gpio_interruptClear(ITSDK_SFX_IRQ_BANK, ITSDK_SFX_IRQ_PIN);
+			gpio_configure(ITSDK_SFX_IRQ_BANK, ITSDK_SFX_IRQ_PIN, GPIO_STOP );
+			gpio_removeIrqAction(&__sx1262_irq);
+		}
+	#endif
 
 	#ifdef ERROR_CODES
      SX126X_HW_API_status_t status = SX126X_HW_API_SUCCESS;
 	#endif
-    //Release all pins and peripherial opened.
+
     RETURN();
 }
 
@@ -347,35 +529,35 @@ SX126X_HW_API_status_t SX126X_HW_API_get_reg_mode(SX126X_HW_API_reg_mod_t *reg_m
 SX126X_HW_API_status_t SX126X_HW_API_get_xosc_cfg(SX126X_HW_API_xosc_cfg_t *xosc_cfg)
 {
 	LOG_DEBUG_SFXSX126X(("SX126X_HW_API_get_xosc_cfg\r\n"));
-	#if !defined ITSDK_SDK_SX126X_TCXO_STIKS || !defined ITSDK_SDK_SX126X_TCXO_SXCTL
-	#error "The ITSDK_SDK_SX126X_TCXO_STIKS must be defined"
+	#if !defined ITSDK_SFX_SX126X_TCXO_STIKS || !defined ITSDK_SFX_SX126X_TCXO_SXCTL
+	  #error "The ITSDK_SFX_SX126X_TCXO_STIKS must be defined"
 	#endif
 
-	xosc_cfg->startup_time_in_tick = ITSDK_SDK_SX126X_TCXO_STIKS;
-	#if ITSDK_SDK_SX126X_TCXO_SXCTL == __DISABLE
+	xosc_cfg->startup_time_in_tick = ITSDK_SFX_SX126X_TCXO_STIKS;
+	#if ITSDK_SFX_SX126X_TCXO_SXCTL == __DISABLE
 	 xosc_cfg->tcxo_is_radio_controlled = 0;
 	#else
 	 xosc_cfg->tcxo_is_radio_controlled = 1;
 	#endif
 
-	#if ITSDK_SDK_SX126X_TCXO_PWR == 16
+	#if ITSDK_SFX_SX126X_TCXO_PWR == 16
 		xosc_cfg->supply_voltage = SX126X_HW_API_TCXO_CTRL_1_6V;
-	#elif ITSDK_SDK_SX126X_TCXO_PWR == 17
+	#elif ITSDK_SFX_SX126X_TCXO_PWR == 17
 		xosc_cfg->supply_voltage = SX126X_HW_API_TCXO_CTRL_1_7V;
-	#elif ITSDK_SDK_SX126X_TCXO_PWR == 18
+	#elif ITSDK_SFX_SX126X_TCXO_PWR == 18
 		xosc_cfg->supply_voltage = SX126X_HW_API_TCXO_CTRL_1_8V;
-	#elif ITSDK_SDK_SX126X_TCXO_PWR == 22
+	#elif ITSDK_SFX_SX126X_TCXO_PWR == 22
 		xosc_cfg->supply_voltage = SX126X_HW_API_TCXO_CTRL_2_2V;
-	#elif ITSDK_SDK_SX126X_TCXO_PWR == 24
+	#elif ITSDK_SFX_SX126X_TCXO_PWR == 24
 		xosc_cfg->supply_voltage = SX126X_HW_API_TCXO_CTRL_2_4V;
-	#elif ITSDK_SDK_SX126X_TCXO_PWR == 27
+	#elif ITSDK_SFX_SX126X_TCXO_PWR == 27
 		xosc_cfg->supply_voltage = SX126X_HW_API_TCXO_CTRL_2_7V;
-	#elif ITSDK_SDK_SX126X_TCXO_PWR == 30
+	#elif ITSDK_SFX_SX126X_TCXO_PWR == 30
 		xosc_cfg->supply_voltage = SX126X_HW_API_TCXO_CTRL_3_0V;
-	#elif ITSDK_SDK_SX126X_TCXO_PWR == 33
+	#elif ITSDK_SFX_SX126X_TCXO_PWR == 33
 		xosc_cfg->supply_voltage = SX126X_HW_API_TCXO_CTRL_3_3V;
 	#else
-		#error "The ITSDK_SDK_SX126X_TCXO_PWR must be defined"
+		#error "The ITSDK_SFX_SX126X_TCXO_PWR must be defined"
 	#endif
 
 	#ifdef ERROR_CODES
@@ -393,7 +575,7 @@ SX126X_HW_API_status_t SX126X_HW_API_get_xosc_cfg(SX126X_HW_API_xosc_cfg_t *xosc
 // paSelected: __SX1262_PA_LP / __SX126X_PA_HP
 // rxTx: __SX126X_RXTX_OFF, __SX126X_RX, __SX126X_TX
 // -----------------------------------------------------------------
-void __attribute__((weak)) _sx126x_rfSwitchSet(uint8_t paSelected, uint8_t rxTx){
+__weak void _sx126x_rfSwitchSet(uint8_t paSelected, uint8_t rxTx) {
 
 	if ( ( rxTx & __SX126X_TX ) > 0 ) {
 		// we are in transmission mode
@@ -401,9 +583,9 @@ void __attribute__((weak)) _sx126x_rfSwitchSet(uint8_t paSelected, uint8_t rxTx)
 		  #if ITSDK_SFX_SX1262_REGULOR  == __POWER_DCDC
 			// Optimize power source (SMPS)
 			uint8_t value;
-			HAL_SUBGHZ_ReadRegister(&ITSDK_SX126X_SPI,__SX126X_REG_SMPSC2R,(uint8_t*)&value);
+			HAL_SUBGHZ_ReadRegister(&ITSDK_SFX_SX126X_SPI,__SX126X_REG_SMPSC2R,(uint8_t*)&value);
 			value = (value & (~__SX126X_SMPS_DRV_MASK)) | __SX126X_SMPS_DRV_60;
-			HAL_SUBGHZ_WriteRegister(&ITSDK_SX126X_SPI,__SX126X_REG_SMPSC2R,value);
+			HAL_SUBGHZ_WriteRegister(&ITSDK_SFX_SX126X_SPI,__SX126X_REG_SMPSC2R,value);
 		  #endif
 		}
 	}
@@ -411,21 +593,21 @@ void __attribute__((weak)) _sx126x_rfSwitchSet(uint8_t paSelected, uint8_t rxTx)
 
 		if( rxTx == __SX126X_RXTX_OFF ) {
 			// Radio Off
-			gpio_reset(ITSDK_SDK_SX126X_RFSW1_BANK,ITSDK_SDK_SX126X_RFSW1_PIN);
-			gpio_reset(ITSDK_SDK_SX126X_RFSW2_BANK,ITSDK_SDK_SX126X_RFSW2_PIN);
+			gpio_reset(ITSDK_SFX_SX126X_RFSW1_BANK,ITSDK_SFX_SX126X_RFSW1_PIN);
+			gpio_reset(ITSDK_SFX_SX126X_RFSW2_BANK,ITSDK_SFX_SX126X_RFSW2_PIN);
 		} else if ( rxTx == __SX126X_RX ) {
 			// Rx mode
-			gpio_set(ITSDK_SDK_SX126X_RFSW1_BANK,ITSDK_SDK_SX126X_RFSW1_PIN);
-			gpio_reset(ITSDK_SDK_SX126X_RFSW2_BANK,ITSDK_SDK_SX126X_RFSW2_PIN);
+			gpio_set(ITSDK_SFX_SX126X_RFSW1_BANK,ITSDK_SFX_SX126X_RFSW1_PIN);
+			gpio_reset(ITSDK_SFX_SX126X_RFSW2_BANK,ITSDK_SFX_SX126X_RFSW2_PIN);
 		} else if ( rxTx == __SX126X_TX ) {
 			if ( paSelected == __SX126X_PA_LP ) {
 				// Low Power
-				gpio_set(ITSDK_SDK_SX126X_RFSW1_BANK,ITSDK_SDK_SX126X_RFSW1_PIN);
-				gpio_set(ITSDK_SDK_SX126X_RFSW2_BANK,ITSDK_SDK_SX126X_RFSW2_PIN);
+				gpio_set(ITSDK_SFX_SX126X_RFSW1_BANK,ITSDK_SFX_SX126X_RFSW1_PIN);
+				gpio_set(ITSDK_SFX_SX126X_RFSW2_BANK,ITSDK_SFX_SX126X_RFSW2_PIN);
 			} else if ( paSelected == __SX126X_PA_LP ) {
 				// High Power
-				gpio_reset(ITSDK_SDK_SX126X_RFSW1_BANK,ITSDK_SDK_SX126X_RFSW1_PIN);
-				gpio_set(ITSDK_SDK_SX126X_RFSW2_BANK,ITSDK_SDK_SX126X_RFSW2_PIN);
+				gpio_reset(ITSDK_SFX_SX126X_RFSW1_BANK,ITSDK_SFX_SX126X_RFSW1_PIN);
+				gpio_set(ITSDK_SFX_SX126X_RFSW2_BANK,ITSDK_SFX_SX126X_RFSW2_PIN);
 			} else {
 				// invalid situation where tx & rx are on
 				LOG_ERROR_SFXSX126X(("_sx126x_rfSwitchSet - LP & HP on or off %d\r\n",paSelected));
@@ -463,9 +645,9 @@ SX126X_HW_API_status_t SX126X_HW_API_get_pa_pwr_cfg(SX126X_HW_API_pa_pwr_cfg_t *
 
 	#if ITSDK_SFX_SX126X_CHIP == __E5WL
 	    uint8_t pa = __SX126X_PA_LP;
-		if ( ITSDK_SDK_SX126X_PA_SELECT ==  __SX126X_PA_LPHP ) {
+		if ( ITSDK_SFX_SX126X_PA_SELECT ==  __SX126X_PA_LPHP ) {
 			if ( expected_output_pwr_in_dbm  > 15 ) pa = __SX126X_PA_HP;
-		} else if ( ITSDK_SDK_SX126X_PA_SELECT ==  __SX126X_PA_HP ) pa = __SX126X_PA_HP;
+		} else if ( ITSDK_SFX_SX126X_PA_SELECT ==  __SX126X_PA_HP ) pa = __SX126X_PA_HP;
 
 		__sx126x_lastTxConfig = pa;
 		if ( pa == __SX126X_PA_LP ) {
@@ -483,13 +665,13 @@ SX126X_HW_API_status_t SX126X_HW_API_get_pa_pwr_cfg(SX126X_HW_API_pa_pwr_cfg_t *
 			if ( expected_output_pwr_in_dbm < -17 ) expected_output_pwr_in_dbm = -17;
 
 			uint8_t value = 0x18;
-			HAL_SUBGHZ_WriteRegister(&ITSDK_SX126X_SPI,__SX126X_REG_OCP,value); // current max 160mA for the whole device
+			HAL_SUBGHZ_WriteRegister(&ITSDK_SFX_SX126X_SPI,__SX126X_REG_OCP,value); // current max 160mA for the whole device
 		} else {
 			// High Power PA
 			uint8_t value;
-			HAL_SUBGHZ_ReadRegister(&ITSDK_SX126X_SPI,__SX126X_REG_TX_CLAMP,(uint8_t*)&value);
+			HAL_SUBGHZ_ReadRegister(&ITSDK_SFX_SX126X_SPI,__SX126X_REG_TX_CLAMP,(uint8_t*)&value);
 			value |= ( 0x0F << 1 );
-			HAL_SUBGHZ_WriteRegister(&ITSDK_SX126X_SPI,__SX126X_REG_TX_CLAMP,value); // Better Resistance of the SX1262 Tx to Antenna Mismatch see chap 15.2
+			HAL_SUBGHZ_WriteRegister(&ITSDK_SFX_SX126X_SPI,__SX126X_REG_TX_CLAMP,value); // Better Resistance of the SX1262 Tx to Antenna Mismatch see chap 15.2
 
 			pa_pwr_cfg->pa_config.pa_duty_cycle = 4;
 			pa_pwr_cfg->pa_config.hp_max = 7;
@@ -498,48 +680,48 @@ SX126X_HW_API_status_t SX126X_HW_API_get_pa_pwr_cfg(SX126X_HW_API_pa_pwr_cfg_t *
 			if ( expected_output_pwr_in_dbm < -9 ) expected_output_pwr_in_dbm = -9;
 
 			value = 0x38;
-			HAL_SUBGHZ_WriteRegister(&ITSDK_SX126X_SPI,__SX126X_REG_OCP,value); // current max 160mA for the whole device
+			HAL_SUBGHZ_WriteRegister(&ITSDK_SFX_SX126X_SPI,__SX126X_REG_OCP,value); // current max 160mA for the whole device
 		}
 	#elif ITSDK_SFX_SX126X_CHIP == __SX1261
 		pa_pwr_cfg->pa_config.device_sel = 1;
-		#if ITSDK_SDK_SX126X_MAX_PWR <= 10
+		#if ITSDK_SFX_SX126X_MAX_PWR <= 10
 		 pa_pwr_cfg->pa_config.pa_duty_cycle = 1;
 		 pa_pwr_cfg->pa_config.hp_max = 0;
-		#elif ITSDK_SDK_SX126X_MAX_PWR <= 14
+		#elif ITSDK_SFX_SX126X_MAX_PWR <= 14
 		 pa_pwr_cfg->pa_config.pa_duty_cycle = 4;
 		 pa_pwr_cfg->pa_config.hp_max = 0;
-		#elif ITSDK_SDK_SX126X_MAX_PWR <= 15
+		#elif ITSDK_SFX_SX126X_MAX_PWR <= 15
 		 pa_pwr_cfg->pa_config.pa_duty_cycle = 6;
 		 pa_pwr_cfg->pa_config.hp_max = 0;
 		#else
-		 #warning "ITSDK_SDK_SX126X_MAX_PWR is out of range"
+		 #warning "ITSDK_SFX_SX126X_MAX_PWR is out of range"
 		#endif
 	#elif ITSDK_SFX_SX126X_CHIP == __SX1262
 		pa_pwr_cfg->pa_config.device_sel = 0;
-		#if ITSDK_SDK_SX126X_MAX_PWR <= 14
+		#if ITSDK_SFX_SX126X_MAX_PWR <= 14
 		 pa_pwr_cfg->pa_config.pa_duty_cycle = 2;
  		 pa_pwr_cfg->pa_config.hp_max = 2;
-		#elif ITSDK_SDK_SX126X_MAX_PWR <= 17
+		#elif ITSDK_SFX_SX126X_MAX_PWR <= 17
 		 pa_pwr_cfg->pa_config.pa_duty_cycle = 2;
  		 pa_pwr_cfg->pa_config.hp_max = 3;
-		#elif ITSDK_SDK_SX126X_MAX_PWR <= 20
+		#elif ITSDK_SFX_SX126X_MAX_PWR <= 20
 		 pa_pwr_cfg->pa_config.pa_duty_cycle = 3;
  		 pa_pwr_cfg->pa_config.hp_max = 5;
-		#elif ITSDK_SDK_SX126X_MAX_PWR <= 22
+		#elif ITSDK_SFX_SX126X_MAX_PWR <= 22
 		 pa_pwr_cfg->pa_config.pa_duty_cycle = 4;
  		 pa_pwr_cfg->pa_config.hp_max = 7;
 		#else
-		 #warning "ITSDK_SDK_SX126X_MAX_PWR is out of range"
+		 #warning "ITSDK_SFX_SX126X_MAX_PWR is out of range"
 		#endif
 	#else
 		#error "You must define ITSDK_SFX_SX126X_CHIP with a valid value"
 	#endif
 
-	#if	ITSDK_SDK_SX126X_PA_DC_OVR != __AVOID
-		pa_pwr_cfg->pa_config.pa_duty_cycle = ITSDK_SDK_SX126X_PA_DC_OVR
+	#if	ITSDK_SFX_SX126X_PA_DC_OVR != __AVOID
+		pa_pwr_cfg->pa_config.pa_duty_cycle = ITSDK_SFX_SX126X_PA_DC_OVR
 	#endif
-	#if	ITSDK_SDK_SX126X_PA_HPM_OVR != __AVOID
-		pa_pwr_cfg->pa_config.hp_max = ITSDK_SDK_SX126X_PA_HPM_OVR
+	#if	ITSDK_SFX_SX126X_PA_HPM_OVR != __AVOID
+		pa_pwr_cfg->pa_config.hp_max = ITSDK_SFX_SX126X_PA_HPM_OVR
 	#endif
 
 	// Make sure the pa_duty_cycle doesnot exceed the max accepted value (cf Chap 13.1.14)
@@ -554,8 +736,8 @@ SX126X_HW_API_status_t SX126X_HW_API_get_pa_pwr_cfg(SX126X_HW_API_pa_pwr_cfg_t *
 	pa_pwr_cfg->pa_config.pa_lut = 1;
 
 	// power
-	if ( expected_output_pwr_in_dbm > ITSDK_SDK_SX126X_MAX_PWR ) {
-		pa_pwr_cfg->power = ITSDK_SDK_SX126X_MAX_PWR;
+	if ( expected_output_pwr_in_dbm > ITSDK_SFX_SX126X_MAX_PWR ) {
+		pa_pwr_cfg->power = ITSDK_SFX_SX126X_MAX_PWR;
 	} else {
 		pa_pwr_cfg->power = expected_output_pwr_in_dbm;
 	}
@@ -622,6 +804,7 @@ SX126X_HW_API_status_t SX126X_HW_API_rx_off(void)
 // LATENCY COMPENSATION
 // ...
 // ------------------------------------------------------------------
+
 #if (defined TIMER_REQUIRED) && (defined LATENCY_COMPENSATION)
 SX126X_HW_API_status_t SX126X_HW_API_get_latency(SX126X_HW_API_latency_t latency_type, sfx_u32 *latency_ms)
 {
@@ -642,7 +825,6 @@ SX126X_HW_API_status_t SX126X_HW_API_get_latency(SX126X_HW_API_latency_t latency
     RETURN();
 }
 #endif
-
 
 
 #endif // ITSDK_WITH_SIGFOX_LIB == __ENABLE && ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
