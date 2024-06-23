@@ -1289,9 +1289,12 @@ bool _eeprom_read(uint8_t bank, uint32_t offset, void * data, int len) {
 			}
 		} else {
 			// this address does not exists
-			_LOG_EEPROM_ERROR(("[NVM] Failed to read EEPROM invalid offset %08X\r\n",_offset));
-			ITSDK_ERROR_REPORT(ITSDK_ERROR_EEPROM_NOTEXISTING,0);
-			return false;
+			//_LOG_EEPROM_ERROR(("[NVM] Failed to read EEPROM invalid offset %08X\r\n",_offset));
+			//ITSDK_ERROR_REPORT(ITSDK_ERROR_EEPROM_NOTEXISTING,0);
+			// a standard eeprom will return 0xFF..
+			_data[read] = 0xFF;
+			read++;
+			_offset++;
 		}
 	}
 	return true;

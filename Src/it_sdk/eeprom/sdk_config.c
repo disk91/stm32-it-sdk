@@ -35,6 +35,7 @@
 #endif
 
 #if ITSDK_PLATFORM == __PLATFORM_STM32WLE
+  #include <stm32l_sdk/eeprom/eeprom.h>
   #include <stm32l_sdk/eeprom/eeprom_wl.h>
 #endif
 
@@ -533,6 +534,9 @@ static itsdk_console_return_e _itsdk_config_consolePriv(char * buffer, uint8_t s
 			  _itsdk_console_printf("ApplicationConfig: 0x%08X->0x%08X (%dB)\r\n",offset,offset+size,size);
 			  _itsdk_console_printf("UsedMemory: %dB on %dB\r\n",totSize,ITSDK_EPROM_SIZE);
 			  #if ( ITSDK_PLATFORM == __PLATFORM_STM32WLE )
+			    _itsdk_console_printf("EEprom start address: 0x%08X\r\n",EEPROM_END_ADDR -  (EEPROM_TOTAL_PAGES * EEPROM_PAGE_SIZE));
+			    _itsdk_console_printf("EEprom pages: %d\r\n",EEPROM_TOTAL_PAGES);
+
 				__eeprom_stat_t s;
 				_eeprom_stats(&s);
 				_itsdk_console_printf("EEprom stats:\r\n");
