@@ -25,7 +25,9 @@
 #if ITSDK_WITH_SIGFOX_LIB == __ENABLE && ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
 
 #include <drivers/sx126x/sigfox_sx126x.h>
-#include "sigfox_ep_flags.h"
+#ifdef USE_SIGFOX_EP_FLAGS_H
+  #include "sigfox_ep_flags.h" // 3rdParties/sigfox/sigfox-ep-lib/inc/sigfox_ep_flags.h
+#endif
 #include "sx126x_hal.h"
 #include "sigfox_types.h"
 #include "board/sx126x_hw_api.h"

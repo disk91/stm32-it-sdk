@@ -73,6 +73,7 @@
 #define ITSDK_SIGFOX_FREQOFFSET		0										// Frequency Offset
 #define ITSDK_SIGFOX_LBTOFFSET		0										// Listen Before Talk Offset
 #define ITSDK_SIGFOX_N				3										// Frame repeat (only applicable to SX126X driver currently)
+#define ITSDK_SIGFOX_ROLLOVER		4096									// SeqId roll-over counter (sx126x applicable)
 
 #define ITSDK_SIGFOX_IF_TX_RCZ1	 	500										// Interframe time for TX Frame
 #define ITSDK_SIGFOX_IF_TX_RCZ3	 	50										// Interframe time for TX Frame

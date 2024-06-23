@@ -38,7 +38,7 @@
 // ---------------------------------------------------------
 itsdk_sigfox_init_t sx126x_sigfox_init( void ) {
 
-	LOG_ERROR_SFXSX126X(("sx126x_sigfox_init\r\n"));
+	LOG_DEBUG_SFXSX126X(("sx126x_sigfox_init\r\n"));
 
 	SIGFOX_EP_API_config_t SIGFOX_EP_API_config;
 	switch (itsdk_state.sigfox.rcz) {
@@ -93,6 +93,28 @@ itsdk_sigfox_init_t sx126x_sigfox_init( void ) {
 			LOG_ERROR_SFXSX126X(("[ERROR] Unsupported Sigfox RCZ\r\n"));
 			return SIGFOX_INIT_PARAMSERR;
 	}
+
+	#ifdef ASYNCHRONOUS
+	#error TODO
+		SIGFOX_EP_API_config.process_cb = NULL;
+	#endif
+
+	#if ITSDK_SIGFOX_ROLLOVER <= 128
+		SIGFOX_EP_API_config.message_counter_rollover =  SIGFOX_MESSAGE_COUNTER_ROLLOVER_128;
+	#elif ITSDK_SIGFOX_ROLLOVER <= 256
+		SIGFOX_EP_API_config.message_counter_rollover =  SIGFOX_MESSAGE_COUNTER_ROLLOVER_256;
+	#elif ITSDK_SIGFOX_ROLLOVER <= 512
+		SIGFOX_EP_API_config.message_counter_rollover =  SIGFOX_MESSAGE_COUNTER_ROLLOVER_512;
+	#elif ITSDK_SIGFOX_ROLLOVER <= 1024
+		SIGFOX_EP_API_config.message_counter_rollover =  SIGFOX_MESSAGE_COUNTER_ROLLOVER_1024;
+	#elif ITSDK_SIGFOX_ROLLOVER <= 2048
+		SIGFOX_EP_API_config.message_counter_rollover =  SIGFOX_MESSAGE_COUNTER_ROLLOVER_2048;
+	#elif ITSDK_SIGFOX_ROLLOVER <= 4096
+		SIGFOX_EP_API_config.message_counter_rollover =  SIGFOX_MESSAGE_COUNTER_ROLLOVER_4096;
+	#else
+		#error "Invalid ITSDK_SIGFOX_ROLLOVER value, must be lower than 4096"
+	#endif
+
 
 	SIGFOX_EP_API_status_t r = SIGFOX_EP_API_open(&SIGFOX_EP_API_config);
 	if ( r != SIGFOX_EP_API_SUCCESS ) {
@@ -226,5 +248,9 @@ itsdk_sigfox_init_t sx126x_sigfox_tx_config(
 
   return SIGFOX_INIT_SUCESS;
 }
+
+
+
+
 
 #endif // ITSDK_WITH_SIGFOX_LIB == __ENABLE && ITSDK_SIGFOX_LIB == __SIGFOX_SX126X

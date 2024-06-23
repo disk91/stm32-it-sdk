@@ -58,8 +58,13 @@
 	#include <drivers/sx1276/sigfox_sx1276.h>
 	#include <drivers/sigfox/mcu_api.h>
 #elif ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
+  #ifdef USE_SIGFOX_EP_FLAGS_H
 	#include "sigfox_ep_flags.h"// 3rdParties/sigfox/sigfox-ep-lib/inc/sigfox_ep_flags.h
+  #endif
 	#include "sigfox_ep_api.h"	// 3rdParties/sigfox/sigfox-ep-lib/inc/sigfox_ep_api.h
+	#include "sigfox_types.h"	// 3rdParties/sigfox/sigfox-ep-lib/inc/sigfox_types.h
+	#include <manuf/mcu_api.h>	// 3rdParties/sigfox/sigfox-ep-lib/inc/manuf/mcu_api.h
+	#include <drivers/sx126x/sigfox_sx126x.h>
 #endif
 
 #if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_LOCALEPROM
@@ -460,7 +465,7 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendOob(
 		#endif
 		 SIGFOX_EP_API_status_t r = SIGFOX_EP_API_send_control_message(&m);
 		 if ( r != SIGFOX_EP_API_SUCCESS )	LOG_ERROR_SIGFOXSTK(("Oob send error(%d)\r\n",r));
-		 result ==  (r == SIGFOX_EP_API_SUCCESS )?SIGFOX_TRANSMIT_SUCESS:SIGFOX_TXRX_ERROR;
+		 result =  (r == SIGFOX_EP_API_SUCCESS )?SIGFOX_TRANSMIT_SUCESS:SIGFOX_TXRX_ERROR;
 
 	#endif
 
@@ -813,7 +818,7 @@ itsdk_sigfox_init_t itsdk_sigfox_getSeNvmOffset(uint32_t * offset) {
 #else
   #error Unsupported ITSDK_SIGFOX_LIB
 #endif
-
+#warning TODO - ceci n'existe pas en SX126X
 }
 
 /**
@@ -862,7 +867,16 @@ itsdk_sigfox_init_t __itsdk_sigfox_resetNvmToFactory(bool force) {
 			bzero(se_mcu_default,SFX_NVMEM_BLOCK_SIZE);
 			MCU_API_set_nv_mem(se_mcu_default);
 		#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
-			#warning TODO
+			if ( SIGFOX_NVM_DATA_SIZE_BYTES != 4 ) {
+			   LOG_ERROR_SIGFOXSTK(("SIGFOX_NVM_DATA_SIZE_BYTES has changed and this must be updated"));
+			}
+			uint8_t nvm[SIGFOX_NVM_DATA_SIZE_BYTES] = { 0x00, 0x00, 0x00, 0x00 };
+			nvm[0] = itsdk_randomByte();
+#error ^^ on plante ici
+			log_info("r %d\r\n",nvm[0]);
+			nvm[1] = itsdk_randomByte();
+			log_info("r %d\r\n",nvm[1]);
+			MCU_API_set_nvm(nvm,SIGFOX_NVM_DATA_SIZE_BYTES);
 		#else
 		  #error Unsupported ITSDK_SIGFOX_LIB
 		#endif

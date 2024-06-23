@@ -27,13 +27,11 @@
 //#include <3rdParties/sigfox/sigfox-ep-lib/inc/sigfox_ep_flags.h>
 //#include <3rdParties/sigfox/sigfox-ep-lib/inc/manuf/mcu_api.h>
 
-#include "sigfox_ep_flags.h"
 #include "sigfox_ep_lib_version.h"
 #include "manuf/mcu_api.h"
 
-
 #ifdef USE_SIGFOX_EP_FLAGS_H
-#include "sigfox_ep_flags.h"
+#include "sigfox_ep_flags.h" // 3rdParties/sigfox/sigfox-ep-lib/inc/sigfox_ep_flags.h
 #endif
 
 #include <string.h>
@@ -251,8 +249,10 @@ MCU_API_status_t MCU_API_timer_stop(MCU_API_timer_instance_t timer_instance) {
 				ITSDK_SFX_SX126X_TMBASE+(uint32_t)timer_instance,
 				false
         	);
-            if (timerStatus != TIMER_INIT_SUCCESS)
+	    	if ( timerStatus != TIMER_NOT_FOUND ) {		// call on init when the timer is not initialized, not a problem
+              if ( timerStatus != TIMER_INIT_SUCCESS)
                 EXIT_ERROR(MCU_API_ERROR);
+	    	}
             break;
         default:
             EXIT_ERROR(MCU_API_ERROR);
@@ -387,6 +387,8 @@ errors:
 // The NVM contains only 4 bytes and they are all read at once usually
 // 2 bytes for random value (LSB then MSB)
 // 2 bytes for SeqId value (LSB then MSB)
+// The eeprom is not initialized on start, need to be made
+// on eeprom init
 // -----------------------------------------------------------
 MCU_API_status_t MCU_API_get_nvm(sfx_u8 *nvm_data, sfx_u8 nvm_data_size_bytes) {
 
