@@ -79,7 +79,7 @@ void __sx126x_spi_nss_unselect() {
 sx126x_hal_status_t sx126x_hal_reset( const void* context )
 {
     SFX_UNUSED(context);
-    LOG_DEBUG_SFXSX126X(("sx126x_hal_reset\r\n"));
+    LOG_DEBUG_SFXSX126X(("[SX] sx126x_hal_reset\r\n"));
     return SX126X_HAL_STATUS_OK;
 }
 
@@ -90,7 +90,7 @@ sx126x_hal_status_t sx126x_hal_reset( const void* context )
 sx126x_hal_status_t sx126x_hal_wakeup( const void* context )
 {
 	SFX_UNUSED(context);
-    LOG_DEBUG_SFXSX126X(("sx126x_hal_wakeup\r\n"));
+    LOG_DEBUG_SFXSX126X(("[SX] sx126x_hal_wakeup\r\n"));
     return SX126X_HAL_STATUS_OK;
 }
 
@@ -103,7 +103,7 @@ sx126x_hal_status_t sx126x_hal_write( const void* context, const uint8_t* comman
                                       const uint8_t* data, const uint16_t data_length )
 {
 	SFX_UNUSED(context);
-    LOG_DEBUG_SFXSX126X(("sx126x_hal_write %d %d\r\n",command_length,data_length));
+    LOG_DEBUG_SFXSX126X(("[SX] sx126x_hal_write %d %d\r\n",command_length,data_length));
 	#if ( (ITSDK_WITH_SPI) & __SPI_SUBGHZ ) > 0
 
 		(void)SUBGHZ_CheckDeviceReady(&ITSDK_SFX_SX126X_SPI);
@@ -143,7 +143,7 @@ sx126x_hal_status_t sx126x_hal_write( const void* context, const uint8_t* comman
     return SX126X_HAL_STATUS_OK;
 
 failed:
-	LOG_ERROR_SFXSX126X(("sx126x_hal_write - failed %d\r\n",r));
+	LOG_ERROR_SFXSX126X(("[SX] sx126x_hal_write - failed %d\r\n",r));
 	return SX126X_HAL_STATUS_ERROR;
 }
 
@@ -157,7 +157,7 @@ sx126x_hal_status_t sx126x_hal_read( const void* context, const uint8_t* command
 
 {
 	SFX_UNUSED(context);
-    LOG_DEBUG_SFXSX126X(("sx126x_hal_read %d %d\r\n",command_length,data_length));
+    LOG_DEBUG_SFXSX126X(("[SX] sx126x_hal_read %d %d\r\n",command_length,data_length));
 	#if ( (ITSDK_WITH_SPI) & __SPI_SUBGHZ ) > 0
 
 		(void)SUBGHZ_CheckDeviceReady(&ITSDK_SFX_SX126X_SPI);
@@ -205,7 +205,7 @@ sx126x_hal_status_t sx126x_hal_read( const void* context, const uint8_t* command
     return SX126X_HAL_STATUS_OK;
 
 failed:
-	LOG_ERROR_SFXSX126X(("sx126x_hal_read - failed %d\r\n",r));
+	LOG_ERROR_SFXSX126X(("[SX] sx126x_hal_read - failed %d\r\n",r));
 	return SX126X_HAL_STATUS_ERROR;
 
 }
@@ -282,7 +282,7 @@ sx126x_status_t SX126X_RF_API_get_and_clear_irq_status( const void* context, sx1
 
 
 void HAL_SUBGHZ_TxCpltCallback(SUBGHZ_HandleTypeDef *hsubghz) {
-	LOG_DEBUG_SFXSX126X(("HAL_SUBGHZ_TxCpltCallback\r\n"));
+	LOG_DEBUG_SFXSX126X(("[SX] HAL_SUBGHZ_TxCpltCallback\r\n"));
 	__sx126x_irq_status |= __SX126X_IRQ_TXCOMPLETE;
 	if ( __sx1262_irq_cb != NULL ) __sx1262_irq_cb();
 
@@ -304,7 +304,7 @@ void HAL_SUBGHZ_TxCpltCallback(SUBGHZ_HandleTypeDef *hsubghz) {
 
  static volatile itsdk_bool_e __sx126x_dataReceived = BOOL_FALSE;
  void HAL_SUBGHZ_RxCpltCallback(SUBGHZ_HandleTypeDef *hsubghz) {
-	LOG_DEBUG_SFXSX126X(("HAL_SUBGHZ_RxCpltCallback\r\n"));
+	LOG_DEBUG_SFXSX126X(("[SX] HAL_SUBGHZ_RxCpltCallback\r\n"));
 	__sx126x_irq_status |= __SX126X_IRQ_RXCOMPLETE;
 	if ( __sx1262_irq_cb != NULL ) __sx1262_irq_cb();
 
@@ -359,7 +359,7 @@ void HAL_SUBGHZ_TxCpltCallback(SUBGHZ_HandleTypeDef *hsubghz) {
 // ============================================================
 SX126X_HW_API_status_t SX126X_HW_API_open(SX126X_HW_irq_cb_t callback)
 {
-	LOG_DEBUG_SFXSX126X(("SX126X_HW_API_open\r\n"));
+	LOG_DEBUG_SFXSX126X(("[SX] SX126X_HW_API_open\r\n"));
 
 	#ifdef ERROR_CODES
 	 SX126X_HW_API_status_t status = SX126X_HW_API_SUCCESS;
@@ -393,10 +393,12 @@ SX126X_HW_API_status_t SX126X_HW_API_open(SX126X_HW_irq_cb_t callback)
 	#if ( (ITSDK_WITH_SPI) & __SPI_SUBGHZ ) > 0
 
 		ITSDK_SFX_SX126X_SPI.Init.BaudratePrescaler = SUBGHZSPI_BAUDRATEPRESCALER_8;
-	    if (HAL_SUBGHZ_Init(&ITSDK_SFX_SX126X_SPI) != HAL_OK) {
+		HAL_StatusTypeDef r = HAL_SUBGHZ_Init(&ITSDK_SFX_SX126X_SPI);
+	    if (r != HAL_OK) {
 		  #ifdef ERROR_CODES
 	    	status = SX126X_HW_API_ERROR;
 		  #endif
+	      LOG_DEBUG_SFXSX126X(("[SX] Failed to init subghz %d\r\n",r));
 	      RETURN();
 	    }
 
@@ -422,7 +424,7 @@ SX126X_HW_API_status_t SX126X_HW_API_open(SX126X_HW_irq_cb_t callback)
 
 SX126X_HW_API_status_t SX126X_HW_API_close(void)
 {
-	LOG_DEBUG_SFXSX126X(("SX126X_HW_API_close\r\n"));
+	LOG_DEBUG_SFXSX126X(("[SX] SX126X_HW_API_close\r\n"));
 
 	// Unset the pin for Chip Select
 	#if ( (ITSDK_WITH_SPI) & __SPI_SUBGHZ ) == 0
@@ -467,7 +469,7 @@ SX126X_HW_API_status_t SX126X_HW_API_close(void)
 // ------------------------------------------------------------------
 SX126X_HW_API_status_t SX126X_HW_API_delayMs(unsigned short delay_ms)
 {
-	LOG_DEBUG_SFXSX126X(("SX126X_HW_API_delayMs\r\n"));
+	LOG_DEBUG_SFXSX126X(("[SX] SX126X_HW_API_delayMs\r\n"));
 	itsdk_delayMs(delay_ms);
 
 	#ifdef ERROR_CODES
@@ -482,7 +484,7 @@ SX126X_HW_API_status_t SX126X_HW_API_delayMs(unsigned short delay_ms)
 // ------------------------------------------------------------------
 SX126X_HW_API_status_t SX126X_HW_API_get_chip_name(SX126X_HW_API_chip_name_t *chipset)
 {
-	LOG_DEBUG_SFXSX126X(("SX126X_HW_API_get_chip_name\r\n"));
+	LOG_DEBUG_SFXSX126X(("[SX] SX126X_HW_API_get_chip_name\r\n"));
 	#if ITSDK_SFX_SX126X_CHIP == __SX1261
 	 *chipset = SX126X_HW_API_CHIP_NAME_SX1261;
 	#elif ITSDK_SFX_SX126X_CHIP == __SX1262 || ITSDK_SFX_SX126X_CHIP == __E5WL
@@ -502,7 +504,7 @@ SX126X_HW_API_status_t SX126X_HW_API_get_chip_name(SX126X_HW_API_chip_name_t *ch
 // ------------------------------------------------------------------
 SX126X_HW_API_status_t SX126X_HW_API_get_reg_mode(SX126X_HW_API_reg_mod_t *reg_mode)
 {
-	LOG_DEBUG_SFXSX126X(("SX126X_HW_API_get_reg_mode\r\n"));
+	LOG_DEBUG_SFXSX126X(("[SX] SX126X_HW_API_get_reg_mode\r\n"));
 
 	#if ITSDK_SFX_SX1262_REGULOR == __POWER_LDO
 	 *reg_mode = SX126X_HW_API_REG_MODE_LDO;
@@ -530,7 +532,7 @@ SX126X_HW_API_status_t SX126X_HW_API_get_reg_mode(SX126X_HW_API_reg_mod_t *reg_m
 // ------------------------------------------------------------------
 SX126X_HW_API_status_t SX126X_HW_API_get_xosc_cfg(SX126X_HW_API_xosc_cfg_t *xosc_cfg)
 {
-	LOG_DEBUG_SFXSX126X(("SX126X_HW_API_get_xosc_cfg\r\n"));
+	LOG_DEBUG_SFXSX126X(("[SX] SX126X_HW_API_get_xosc_cfg\r\n"));
 	#if !defined ITSDK_SFX_SX126X_TCXO_STIKS || !defined ITSDK_SFX_SX126X_TCXO_SXCTL
 	  #error "The ITSDK_SFX_SX126X_TCXO_STIKS must be defined"
 	#endif
@@ -612,11 +614,11 @@ __weak void _sx126x_rfSwitchSet(uint8_t paSelected, uint8_t rxTx) {
 				gpio_set(ITSDK_SFX_SX126X_RFSW2_BANK,ITSDK_SFX_SX126X_RFSW2_PIN);
 			} else {
 				// invalid situation where tx & rx are on
-				LOG_ERROR_SFXSX126X(("_sx126x_rfSwitchSet - LP & HP on or off %d\r\n",paSelected));
+				LOG_ERROR_SFXSX126X(("[SX] _sx126x_rfSwitchSet - LP & HP on or off %d\r\n",paSelected));
 			}
 		} else {
 			// invalid situation where tx & rx are on
-			LOG_ERROR_SFXSX126X(("_sx126x_rfSwitchSet - Tx & Rx on\r\n"));
+			LOG_ERROR_SFXSX126X(("[SX] _sx126x_rfSwitchSet - Tx & Rx on\r\n"));
 		}
 
 	#else
@@ -643,7 +645,7 @@ __weak void _sx126x_rfSwitchSet(uint8_t paSelected, uint8_t rxTx) {
 static uint8_t __sx126x_lastTxConfig = __SX126X_PA_NONE;	// store last PA for RF switch
 SX126X_HW_API_status_t SX126X_HW_API_get_pa_pwr_cfg(SX126X_HW_API_pa_pwr_cfg_t *pa_pwr_cfg, sfx_u32 rf_freq_in_hz, sfx_s8 expected_output_pwr_in_dbm)
 {
-	LOG_DEBUG_SFXSX126X(("SX126X_HW_API_get_pa_pwr_cfg\r\n"));
+	LOG_DEBUG_SFXSX126X(("[SX] SX126X_HW_API_get_pa_pwr_cfg\r\n"));
 
 	#if ITSDK_SFX_SX126X_CHIP == __E5WL
 	    uint8_t pa = __SX126X_PA_LP;
@@ -759,7 +761,7 @@ SX126X_HW_API_status_t SX126X_HW_API_get_pa_pwr_cfg(SX126X_HW_API_pa_pwr_cfg_t *
 // ------------------------------------------------------------------
 SX126X_HW_API_status_t SX126X_HW_API_tx_on(void)
 {
-	LOG_DEBUG_SFXSX126X(("SX126X_HW_API_tx_on\r\n"));
+	LOG_DEBUG_SFXSX126X(("[SX] SX126X_HW_API_tx_on\r\n"));
 	_sx126x_rfSwitchSet(__sx126x_lastTxConfig,__SX126X_TX);
 	#ifdef ERROR_CODES
      SX126X_HW_API_status_t status = SX126X_HW_API_SUCCESS;
@@ -769,7 +771,7 @@ SX126X_HW_API_status_t SX126X_HW_API_tx_on(void)
 
 SX126X_HW_API_status_t SX126X_HW_API_tx_off(void)
 {
-	LOG_DEBUG_SFXSX126X(("SX126X_HW_API_tx_off\r\n"));
+	LOG_DEBUG_SFXSX126X(("[SX] SX126X_HW_API_tx_off\r\n"));
 	_sx126x_rfSwitchSet(__sx126x_lastTxConfig,__SX126X_RXTX_OFF);
 	#ifdef ERROR_CODES
      SX126X_HW_API_status_t status = SX126X_HW_API_SUCCESS;
@@ -780,7 +782,7 @@ SX126X_HW_API_status_t SX126X_HW_API_tx_off(void)
 #ifdef BIDIRECTIONAL
 SX126X_HW_API_status_t SX126X_HW_API_rx_on(void)
 {
-	LOG_DEBUG_SFXSX126X(("SX126X_HW_API_rx_on\r\n"));
+	LOG_DEBUG_SFXSX126X(("[SX] SX126X_HW_API_rx_on\r\n"));
 	_sx126x_rfSwitchSet(__sx126x_lastTxConfig,__SX126X_RX);
 	#ifdef ERROR_CODES
      SX126X_HW_API_status_t status = SX126X_HW_API_SUCCESS;
@@ -792,7 +794,7 @@ SX126X_HW_API_status_t SX126X_HW_API_rx_on(void)
 #ifdef BIDIRECTIONAL
 SX126X_HW_API_status_t SX126X_HW_API_rx_off(void)
 {
-	LOG_DEBUG_SFXSX126X(("SX126X_HW_API_rx_off\r\n"));
+	LOG_DEBUG_SFXSX126X(("[SX] SX126X_HW_API_rx_off\r\n"));
 	_sx126x_rfSwitchSet(__sx126x_lastTxConfig,__SX126X_RXTX_OFF);
 	#ifdef ERROR_CODES
      SX126X_HW_API_status_t status = SX126X_HW_API_SUCCESS;
@@ -810,14 +812,14 @@ SX126X_HW_API_status_t SX126X_HW_API_rx_off(void)
 #if (defined TIMER_REQUIRED) && (defined LATENCY_COMPENSATION)
 SX126X_HW_API_status_t SX126X_HW_API_get_latency(SX126X_HW_API_latency_t latency_type, sfx_u32 *latency_ms)
 {
-	LOG_DEBUG_SFXSX126X(("SX126X_HW_API_get_latency\r\n"));
+	LOG_DEBUG_SFXSX126X(("[SX] SX126X_HW_API_get_latency\r\n"));
 	switch ( latency_type ) {
 	case SX126X_HW_API_LATENCY_RESET:
 	case SX126X_HW_API_LATENCY_WAKEUP:
 		*latency_ms = ITSDK_SFX_SX126X_LATENCYMS;
 		break;
 	default:
-		 LOG_ERROR_SFXSX126X(("SX126X_HW_API_get_latency - Invalid type %d\r\n",latency_type));
+		 LOG_ERROR_SFXSX126X(("[SX] SX126X_HW_API_get_latency - Invalid type %d\r\n",latency_type));
 		 break;
 	}
 
