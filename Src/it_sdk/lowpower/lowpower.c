@@ -124,6 +124,7 @@ uint32_t lowPower_delayMs(uint32_t duration) {
 		}
 	} else {
 		itsdk_delayMs(duration);
+		itsdk_stimer_run();
 	}
 
 	return pendingDur;
