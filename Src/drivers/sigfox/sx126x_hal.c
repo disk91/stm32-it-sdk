@@ -608,6 +608,7 @@ SX126X_HW_API_status_t SX126X_HW_API_get_xosc_cfg(SX126X_HW_API_xosc_cfg_t *xosc
 // -----------------------------------------------------------------
 __weak void _sx126x_rfSwitchSet(uint8_t paSelected, uint8_t rxTx) {
 
+	LOG_DEBUG_SFXSX126X(("[SX] _sx126x_rfSwitchSet (%d) (%d)\r\n",paSelected,rxTx));
 	if ( ( rxTx & __SX126X_TX ) > 0 ) {
 		// we are in transmission mode
 		if ( paSelected == __SX126X_PA_LP ) {
@@ -635,7 +636,7 @@ __weak void _sx126x_rfSwitchSet(uint8_t paSelected, uint8_t rxTx) {
 				// Low Power
 				gpio_set(ITSDK_SFX_SX126X_RFSW1_BANK,ITSDK_SFX_SX126X_RFSW1_PIN);
 				gpio_set(ITSDK_SFX_SX126X_RFSW2_BANK,ITSDK_SFX_SX126X_RFSW2_PIN);
-			} else if ( paSelected == __SX126X_PA_LP ) {
+			} else if ( paSelected == __SX126X_PA_HP ) {
 				// High Power
 				gpio_reset(ITSDK_SFX_SX126X_RFSW1_BANK,ITSDK_SFX_SX126X_RFSW1_PIN);
 				gpio_set(ITSDK_SFX_SX126X_RFSW2_BANK,ITSDK_SFX_SX126X_RFSW2_PIN);
