@@ -872,10 +872,7 @@ itsdk_sigfox_init_t __itsdk_sigfox_resetNvmToFactory(bool force) {
 			}
 			uint8_t nvm[SIGFOX_NVM_DATA_SIZE_BYTES] = { 0x00, 0x00, 0x00, 0x00 };
 			nvm[0] = itsdk_randomByte();
-#error ^^ on plante ici
-			log_info("r %d\r\n",nvm[0]);
 			nvm[1] = itsdk_randomByte();
-			log_info("r %d\r\n",nvm[1]);
 			MCU_API_set_nvm(nvm,SIGFOX_NVM_DATA_SIZE_BYTES);
 		#else
 		  #error Unsupported ITSDK_SIGFOX_LIB
