@@ -378,6 +378,12 @@ errors:
 
 }
 
+#if ITSDK_SFX_SX126X_NVMUPD > 1
+// store in memory the nvm content to reduce the eeprom access
+uint8_t __sx126x_sigfox_nvm[SIGFOX_NVM_DATA_SIZE_BYTES];
+uint8_t __sx126x_sigfox_nvm_acc = 0xFF;
+#endif
+
 // -----------------------------------------------------------
 // Read the NVM from sigfox NVM base and for the given number
 // of bytes. This is a byte NVM access.
@@ -393,12 +399,22 @@ errors:
 MCU_API_status_t MCU_API_get_nvm(sfx_u8 *nvm_data, sfx_u8 nvm_data_size_bytes) {
 
 	#ifdef ERROR_CODES
-    MCU_API_status_t status = MCU_API_SUCCESS;
+      MCU_API_status_t status = MCU_API_SUCCESS;
 	#endif
 
-    uint32_t offset;
-    itsdk_sigfox_getNvmOffset(&offset);
-    _eeprom_read(ITDT_EEPROM_BANK0, offset, (void *) nvm_data, nvm_data_size_bytes);
+	#if ITSDK_SFX_SX126X_NVMUPD > 1
+    	 if ( __sx126x_sigfox_nvm_acc == 0xFF ) {
+   			uint32_t offset;
+   			itsdk_sigfox_getNvmOffset(&offset);
+   			_eeprom_read(ITDT_EEPROM_BANK0, offset, (void *) __sx126x_sigfox_nvm, SIGFOX_NVM_DATA_SIZE_BYTES);
+   			__sx126x_sigfox_nvm_acc = ITSDK_SFX_SX126X_NVMUPD;
+    	 }
+    	 bcopy(__sx126x_sigfox_nvm,nvm_data,nvm_data_size_bytes);
+	#else
+		uint32_t offset;
+		itsdk_sigfox_getNvmOffset(&offset);
+		_eeprom_read(ITDT_EEPROM_BANK0, offset, (void *) nvm_data, nvm_data_size_bytes);
+	#endif
     _LOG_SFXEPLIB_DEBUG(("[SFX] MCU_API_get_nvm(%d) [%02X,%02X,%02X,%02X]\r\n", nvm_data_size_bytes,nvm_data[0],nvm_data[1],nvm_data[2],nvm_data[3]));
 
     RETURN();
@@ -425,7 +441,7 @@ MCU_API_status_t MCU_API_get_nvm(sfx_u8 *nvm_data, sfx_u8 nvm_data_size_bytes) {
 //
 // TODO
 // As the SeqId write can impact the Flash life duration
-// we will hack it by reducing the write cycle commiting the SeqId
+// we will hack it by reducing the write cycle committing the SeqId
 // only on a power of two. meaning Read & write are modified to
 // hide the real value of SeqId stored into NVM
 // -----------------------------------------------------------
@@ -436,11 +452,27 @@ MCU_API_status_t MCU_API_set_nvm(sfx_u8 *nvm_data, sfx_u8 nvm_data_size_bytes) {
 	#endif
 
     _LOG_SFXEPLIB_DEBUG(("[SFX] MCU_API_set_nvm(%d) [%02X,%02X,%02X,%02X]\r\n", nvm_data_size_bytes,nvm_data[0],nvm_data[1],nvm_data[2],nvm_data[3]));
-
-    uint32_t offset;
-    itsdk_sigfox_getNvmOffset(&offset);
-    _eeprom_write(ITDT_EEPROM_BANK0, offset, (void *) nvm_data, nvm_data_size_bytes);
-
+	#if ITSDK_SFX_SX126X_NVMUPD > 1
+    	// Update structure in ram
+    	bcopy(nvm_data,nvm_data,nvm_data_size_bytes);
+    	// Update structure in flash
+    	if ( __sx126x_sigfox_nvm_acc >=  ITSDK_SFX_SX126X_NVMUPD ) {
+    		__sx126x_sigfox_nvm_acc = 0;
+    		// anticipate the next seqId
+    		uint16_t sId = (((uint16_t)nvm_data[3]) << 8) + nvm_data[2];
+    		sId = (sId + ITSDK_SFX_SX126X_NVMUPD) % ITSDK_SIGFOX_ROLLOVER;
+    		nvm_data[2] = (sId & 0xFF);
+    		nvm_data[3] = (sId >> 8);
+    		// write the updated data in flash
+    		uint32_t offset;
+    		itsdk_sigfox_getNvmOffset(&offset);
+    		_eeprom_write(ITDT_EEPROM_BANK0, offset, (void *) nvm_data, nvm_data_size_bytes);
+    	} else __sx126x_sigfox_nvm_acc++;
+	#else
+		uint32_t offset;
+		itsdk_sigfox_getNvmOffset(&offset);
+		_eeprom_write(ITDT_EEPROM_BANK0, offset, (void *) nvm_data, nvm_data_size_bytes);
+	#endif
     RETURN();
 }
 

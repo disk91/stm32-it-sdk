@@ -192,6 +192,7 @@
 #define ITSDK_SFX_SX1262_REGULOR    __POWER_DCDC						   // type of power regulator used
 #define ITSDK_SFX_SX126X_TMBASE		11									   // on Timer identification, add a base to avoid potential conflicts
 #define ITSDK_SFX_SX126X_LATENCYMS	0									   // Latency to be compensated due to MCU wake up time & timer implementation
+#define ITSDK_SFX_SX126X_NVMUPD		16									   // The NVM flash will be updated on every ITSDK_SFX_SX126X_NVMUPD message to preserve the flash 1 to disable
 
 #define ITSDK_SFX_SX126X_SPI		hsubghz								   // SPI To BE USED
 #define ITSDK_SFX_SX126X_CS_BANK	__BANK_A							   // SPI Chip Select when active HIGH
