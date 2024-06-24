@@ -104,6 +104,20 @@ sx126x_hal_status_t sx126x_hal_write( const void* context, const uint8_t* comman
 {
 	SFX_UNUSED(context);
     LOG_DEBUG_SFXSX126X(("[SX] sx126x_hal_write %d %d\r\n",command_length,data_length));
+
+    #if (ITSDK_LOGGER_MODULE & __LOG_MOD_LOWSIGFOX) > 0
+    	LOG_DEBUG_SFXSX126X(("[SX]  cmd: "));
+		for ( int i = 0 ; i < command_length ; i++ ) {
+			LOG_DEBUG_SFXSX126X(("%02X ",command[i]));
+		}
+		LOG_DEBUG_SFXSX126X(("\r\n"));
+    	LOG_DEBUG_SFXSX126X(("[SX]  data: "));
+		for ( int i = 0 ; i < data_length ; i++ ) {
+			LOG_DEBUG_SFXSX126X(("%02X ",data[i]));
+		}
+		LOG_DEBUG_SFXSX126X(("\r\n"));
+	#endif
+
 	#if ( (ITSDK_WITH_SPI) & __SPI_SUBGHZ ) > 0
 
 		(void)SUBGHZ_CheckDeviceReady(&ITSDK_SFX_SX126X_SPI);
@@ -151,6 +165,7 @@ failed:
 // Read the data from the SPI driver
 // Context is unused, make a SPI transfer of the command
 // Send a byte stream composed by command & data field on the SPI
+// The command sent by the upper layer contains the NOP instruction when required
 // ----------------------------------------------------------------------
 sx126x_hal_status_t sx126x_hal_read( const void* context, const uint8_t* command, const uint16_t command_length,
                                      uint8_t* data, const uint16_t data_length )
@@ -158,6 +173,8 @@ sx126x_hal_status_t sx126x_hal_read( const void* context, const uint8_t* command
 {
 	SFX_UNUSED(context);
     LOG_DEBUG_SFXSX126X(("[SX] sx126x_hal_read %d %d\r\n",command_length,data_length));
+    LOG_DEBUG_SFXSX126X(("[SX] cmd[0] 0x%02X adr 0x%02X%02X\r\n",command[0],command[1],command[2]));
+
 	#if ( (ITSDK_WITH_SPI) & __SPI_SUBGHZ ) > 0
 
 		(void)SUBGHZ_CheckDeviceReady(&ITSDK_SFX_SX126X_SPI);
@@ -169,15 +186,15 @@ sx126x_hal_status_t sx126x_hal_read( const void* context, const uint8_t* command
 		}
 		if ( r != __SPI_OK ) goto failed;
 
-		// Transmit dummy byte
-		r = (_SPI_Status)SUBGHZSPI_Transmit(&ITSDK_SFX_SX126X_SPI, 0U);
-		if ( r != __SPI_OK ) goto failed;
-
 		// Read data
+		LOG_DEBUG_SFXSX126X(("[SX] resp : "));
 		for ( int i = 0 ; i < data_length && r == __SPI_OK; i++) {
 			r =	(_SPI_Status)SUBGHZSPI_Receive(&ITSDK_SFX_SX126X_SPI, &data[i]);
+			LOG_DEBUG_SFXSX126X(("%02X ",data[i]));
 		}
+		LOG_DEBUG_SFXSX126X(("\r\n"));
 		if ( r != __SPI_OK ) goto failed;
+
 		LL_PWR_UnselectSUBGHZSPI_NSS();
 		SUBGHZ_WaitOnBusy(&ITSDK_SFX_SX126X_SPI);
 
@@ -205,6 +222,11 @@ sx126x_hal_status_t sx126x_hal_read( const void* context, const uint8_t* command
     return SX126X_HAL_STATUS_OK;
 
 failed:
+	#if ( (ITSDK_WITH_SPI) & __SPI_SUBGHZ ) > 0
+		LL_PWR_UnselectSUBGHZSPI_NSS();
+	#else
+		__sx126x_spi_nss_unselect();
+	#endif
 	LOG_ERROR_SFXSX126X(("[SX] sx126x_hal_read - failed %d\r\n",r));
 	return SX126X_HAL_STATUS_ERROR;
 
@@ -272,10 +294,15 @@ failed:
 static uint8_t __sx126x_irq_status = __SX126X_IRQ_CLEARED;
 static SX126X_HW_irq_cb_t * __sx1262_irq_cb = NULL;
 sx126x_status_t SX126X_RF_API_get_and_clear_irq_status( const void* context, sx126x_irq_mask_t* irq ) {
+
 	// override the default function
 	if ( __sx126x_irq_status & __SX126X_IRQ_TXCOMPLETE ) *irq |= SX126X_IRQ_TX_DONE;
 	if ( __sx126x_irq_status & __SX126X_IRQ_RXCOMPLETE ) *irq |= SX126X_IRQ_RX_DONE;
 	__sx126x_irq_status = __SX126X_IRQ_CLEARED;
+
+	#if (ITSDK_LOGGER_MODULE & __LOG_MOD_LOWSIGFOX) > 0
+		if ( *irq != 0 ) LOG_DEBUG_SFXSX126X(("[SX] SX126X_RF_API_get_and_clear_irq_status\r\n"));
+	#endif
 
 	return SX126X_STATUS_OK;
 }
