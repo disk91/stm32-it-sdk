@@ -319,14 +319,10 @@ MCU_API_status_t MCU_API_timer_wait_cplt(MCU_API_timer_instance_t timer_instance
         case MCU_API_TIMER_3:
 	  #endif
         	while( itsdk_stimer_isRunning_1(NULL,ITSDK_SFX_SX126X_TMBASE+(uint32_t)timer_instance,false) ) {
-
-				#warning
-        		/* -- to see later why the low power timer never end ... and serial info not printed
-        		lowPower_delayMs(1000); // this is a maximum, the delayMs returns on next timer expiration
+        		lowPower_delayMs(100); // this is a maximum, the delayMs returns on next timer expiration
 				#if ITSDK_WITH_WDG != __WDG_NONE && ITSDK_WDG_MS > 0
         			wdg_refresh();
 				#endif
-				*/
         		itsdk_stimer_run();
         	}
             break;

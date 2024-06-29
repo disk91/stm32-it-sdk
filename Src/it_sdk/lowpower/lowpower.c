@@ -116,7 +116,12 @@ uint32_t lowPower_delayMs(uint32_t duration) {
 			// sleeping
 			if ( stm32l_lowPowerSetup(duration,STM32L_LOWPOWER_RTCONLY_STOP) == STM32L_LOWPOWER_SUCCESS ) {
 				// waking up
-				stm32l_lowPowerResume(STM32L_LOWPOWER_RTCONLY_STOP);
+				#if ITSDK_PLATFORM == __PLATFORM_STM32WLE
+				  // not sure why but, really prefered
+				  stm32l_lowPowerResume(STM32L_LOWPOWER_NORMAL_STOP);
+				#else
+				  stm32l_lowPowerResume(STM32L_LOWPOWER_RTCONLY_STOP);
+				#endif
 			}
 			#endif
 		} else {
