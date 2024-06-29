@@ -169,7 +169,7 @@ itsdk_sigfox_init_t sx126x_sigfox_tx_common_config(
 	 common_parameters->tx_power_dbm_eirp = power;
 	#endif
 	#ifndef SINGLE_FRAME
-	 common_parameters->number_of_frames = repeat;
+	 common_parameters->number_of_frames = repeat+1;
 	 #ifndef T_IFU_MS
 	  switch ( rcz ) {
 	  	  default:

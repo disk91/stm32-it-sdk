@@ -210,7 +210,6 @@
 #define ITSDK_SFX_SX126X_TCXO_BANK	__BANK_A							   // TCXO Power Pin, let sure it stays on when main clock
 #define ITSDK_SFX_SX126X_TCXO_PIN	__LP_GPIO_NONE						   // LoRa E5 module - GPIOB_0
 
-#define ITSDK_SFX_SX126X_MAX_PWR	22									   // Max radio power
 #define ITSDK_SFX_SX126X_PA_SELECT  __SX126X_PA_LPHP					   // Type of power amplifier to be selected
 #define ITSDK_SFX_SX126X_PA_DC_OVR	__AVOID								   // Force paDutyCycle value if != __AVOID
 #define ITSDK_SFX_SX126X_PA_HPM_OVR __AVOID								   // Force hpMax value if != __AVOID

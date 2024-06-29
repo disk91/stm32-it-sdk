@@ -71,6 +71,7 @@ void __sx126x_spi_nss_unselect() {
 // sx126x_eplib_api.c
 // ============================================================
 
+
 // ----------------------------------------------------------------------
 // This function is called to reconfigure the board after a wake-up event
 // The hal_wakeup is called right after, don't duplicate actions
@@ -154,6 +155,7 @@ sx126x_hal_status_t sx126x_hal_write( const void* context, const uint8_t* comman
 
 	#endif
 
+
     return SX126X_HAL_STATUS_OK;
 
 failed:
@@ -187,12 +189,18 @@ sx126x_hal_status_t sx126x_hal_read( const void* context, const uint8_t* command
 		if ( r != __SPI_OK ) goto failed;
 
 		// Read data
-		LOG_DEBUG_SFXSX126X(("[SX] resp : "));
 		for ( int i = 0 ; i < data_length && r == __SPI_OK; i++) {
 			r =	(_SPI_Status)SUBGHZSPI_Receive(&ITSDK_SFX_SX126X_SPI, &data[i]);
-			LOG_DEBUG_SFXSX126X(("%02X ",data[i]));
 		}
-		LOG_DEBUG_SFXSX126X(("\r\n"));
+
+		#if (ITSDK_LOGGER_MODULE & __LOG_MOD_LOWSIGFOX) > 0
+			LOG_DEBUG_SFXSX126X(("[SX] resp : "));
+			for ( int i = 0 ; i < data_length && r == __SPI_OK ; i++) {
+				LOG_DEBUG_SFXSX126X(("%02X ",data[i]));
+			}
+			LOG_DEBUG_SFXSX126X(("\r\n"));
+		#endif
+
 		if ( r != __SPI_OK ) goto failed;
 
 		LL_PWR_UnselectSUBGHZSPI_NSS();
@@ -254,39 +262,15 @@ failed:
 // is updated in the future
 
 
-// Approach #1 - Not working
-// The function passed to SX126X_RF_API_open is SX126X_irq
-// static void SX126X_irq(void) {
-//    if (sx126x_ctx.irq_en == 1) {
-//    	sx126x_ctx.irq_flag = 1;
-//#ifdef ASYNCHRONOUS
-//        if (sx126x_ctx.callbacks.process_cb != SFX_NULL)
-//        	sx126x_ctx.callbacks.process_cb();
-//#endif
-//    }
-//}
-// In async mode the following code from SX126X_RF_API_send is not
-// processed and need to be implemented elsewhere
-// if(sx126x_ctx.error_flag == 1) {
-//   EXIT_ERROR((RF_API_status_t) RF_API_ERROR);
-// }
-// But in fact in this step there is no errors generated, as the error coming
-// from HAL_SUBGHZ_TxCpltCallback does not exist with this implementation.
-//
-// Rx requires a change in the sx126x_rf_api - pull request pending for SX126X_RF_API_receive
-// while (1) becomes while(sx126x_ctx.error_flag != 1)
-// In sync mode, the data are not reported as the following code will
-// never be reached in SX126X_RF_API_receive
-// if(sx126x_ctx.rx_done_flag == 1) {
-//   rx_data->data_received = SFX_TRUE;
-//   break;
-// }
-// The upper layer function will have to verify the Rx complete status calling the added function above
-// Problem, the sigfox context is static :(
-//
 // Approach #2 - should work
 // Override the sx126x_get_and_clear_irq_status to fake the sx registers and return the right status
 // function of the previous IRQ handler seen, so internal process function may work normally
+// You need to add a function in the sx126x_rf_api.c file
+//
+//  __attribute__((weak)) sx126x_status_t SX126X_RF_API_get_and_clear_irq_status( const void* context, sx126x_irq_mask_t* irq ) {
+// 	  return sx126x_get_and_clear_irq_status(context,irq);
+//  }
+
 
 #define __SX126X_IRQ_CLEARED    0
 #define __SX126X_IRQ_TXCOMPLETE	1
@@ -312,19 +296,6 @@ void HAL_SUBGHZ_TxCpltCallback(SUBGHZ_HandleTypeDef *hsubghz) {
 	LOG_DEBUG_SFXSX126X(("[SX] HAL_SUBGHZ_TxCpltCallback\r\n"));
 	__sx126x_irq_status |= __SX126X_IRQ_TXCOMPLETE;
 	if ( __sx1262_irq_cb != NULL ) __sx1262_irq_cb();
-
-	/* -- approach #1 not compiling
-	if (sx126x_ctx.irq_en == 1) {
-		sx126x_ctx.irq_flag = 0;
-		SX126X_HW_API_tx_off();
-		sx126x_ctx.tx_done_flag = 1;
-	    #ifdef ASYNCHRONOUS
-  	     if (sx126x_ctx.callbacks.tx_cplt_cb != SFX_NULL)
-			sx126x_ctx.callbacks.tx_cplt_cb();
-		#endif
-	}
-	*/
-
 }
 
 #ifdef BIDIRECTIONAL
@@ -334,21 +305,6 @@ void HAL_SUBGHZ_TxCpltCallback(SUBGHZ_HandleTypeDef *hsubghz) {
 	LOG_DEBUG_SFXSX126X(("[SX] HAL_SUBGHZ_RxCpltCallback\r\n"));
 	__sx126x_irq_status |= __SX126X_IRQ_RXCOMPLETE;
 	if ( __sx1262_irq_cb != NULL ) __sx1262_irq_cb();
-
-	/* -- approach #1 not compiling
-	if (sx126x_ctx.irq_en == 1) {
-		sx126x_ctx.irq_flag = 0;
-
-		SX126X_HW_API_rx_off();
-		sx126x_ctx.rx_done_flag = 1;
-		#ifdef ASYNCHRONOUS
-		 if (sx126x_ctx.callbacks.rx_data_received_cb != SFX_NULL)
-			sx126x_ctx.callbacks.rx_data_received_cb();
-		#else
-			__sx126x_dataReceived = BOOL_TRUE;
-		#endif
-	}
-	*/
  }
 
  #ifndef ASYNCHRONOUS
@@ -391,7 +347,6 @@ SX126X_HW_API_status_t SX126X_HW_API_open(SX126X_HW_irq_cb_t callback)
 	#ifdef ERROR_CODES
 	 SX126X_HW_API_status_t status = SX126X_HW_API_SUCCESS;
 	#endif
-
 
 	// Configure the pin for Chip Select
 	#if ( (ITSDK_WITH_SPI) & __SPI_SUBGHZ ) == 0
@@ -446,12 +401,25 @@ SX126X_HW_API_status_t SX126X_HW_API_open(SX126X_HW_irq_cb_t callback)
 		}
 	#endif
 
+
+
+
+
     RETURN();
 }
 
 SX126X_HW_API_status_t SX126X_HW_API_close(void)
 {
 	LOG_DEBUG_SFXSX126X(("[SX] SX126X_HW_API_close\r\n"));
+
+	// Switch off what we can ...
+
+	// Reduce SMPSEN to 20mA
+	uint8_t value;
+	HAL_SUBGHZ_ReadRegister(&ITSDK_SFX_SX126X_SPI,__SX126X_REG_SMPSC2R,(uint8_t*)&value);
+	value = (value & (~__SX126X_SMPS_DRV_MASK)) | __SX126X_SMPS_DRV_20;
+	HAL_SUBGHZ_WriteRegister(&ITSDK_SFX_SX126X_SPI,__SX126X_REG_SMPSC2R,value);
+
 
 	// Unset the pin for Chip Select
 	#if ( (ITSDK_WITH_SPI) & __SPI_SUBGHZ ) == 0
@@ -675,17 +643,26 @@ SX126X_HW_API_status_t SX126X_HW_API_get_pa_pwr_cfg(SX126X_HW_API_pa_pwr_cfg_t *
 {
 	LOG_DEBUG_SFXSX126X(("[SX] SX126X_HW_API_get_pa_pwr_cfg\r\n"));
 
+	// add power base in setup for some adjustment eventually
+	expected_output_pwr_in_dbm += ITSDK_RADIO_POWER_OFFSET;
+	if ( expected_output_pwr_in_dbm > ITSDK_RADIO_MAX_OUTPUT_DBM ) {
+		expected_output_pwr_in_dbm = ITSDK_RADIO_MAX_OUTPUT_DBM;
+	}
+
 	#if ITSDK_SFX_SX126X_CHIP == __E5WL
 	    uint8_t pa = __SX126X_PA_LP;
 		if ( ITSDK_SFX_SX126X_PA_SELECT ==  __SX126X_PA_LPHP ) {
 			if ( expected_output_pwr_in_dbm  > 15 ) pa = __SX126X_PA_HP;
 		} else if ( ITSDK_SFX_SX126X_PA_SELECT ==  __SX126X_PA_HP ) pa = __SX126X_PA_HP;
 
+
+		// This can be optimized in terms of power settings see page 185 of user manual
+		// Set_PaConfig() command
 		__sx126x_lastTxConfig = pa;
 		if ( pa == __SX126X_PA_LP ) {
 			// Low Power PA
 			if ( expected_output_pwr_in_dbm == 15 ) {
-				 pa_pwr_cfg->pa_config.pa_duty_cycle = 6;
+				 pa_pwr_cfg->pa_config.pa_duty_cycle = 7;
 				 pa_pwr_cfg->pa_config.hp_max = 0;
 				 pa_pwr_cfg->pa_config.device_sel = 1;
 			} else {
@@ -697,7 +674,7 @@ SX126X_HW_API_status_t SX126X_HW_API_get_pa_pwr_cfg(SX126X_HW_API_pa_pwr_cfg_t *
 			if ( expected_output_pwr_in_dbm < -17 ) expected_output_pwr_in_dbm = -17;
 
 			uint8_t value = 0x18;
-			HAL_SUBGHZ_WriteRegister(&ITSDK_SFX_SX126X_SPI,__SX126X_REG_OCP,value); // current max 160mA for the whole device
+			HAL_SUBGHZ_WriteRegister(&ITSDK_SFX_SX126X_SPI,__SX126X_REG_OCP,value); // current max 60mA for the whole device
 		} else {
 			// High Power PA
 			uint8_t value;
@@ -705,45 +682,73 @@ SX126X_HW_API_status_t SX126X_HW_API_get_pa_pwr_cfg(SX126X_HW_API_pa_pwr_cfg_t *
 			value |= ( 0x0F << 1 );
 			HAL_SUBGHZ_WriteRegister(&ITSDK_SFX_SX126X_SPI,__SX126X_REG_TX_CLAMP,value); // Better Resistance of the SX1262 Tx to Antenna Mismatch see chap 15.2
 
-			pa_pwr_cfg->pa_config.pa_duty_cycle = 4;
-			pa_pwr_cfg->pa_config.hp_max = 7;
-			pa_pwr_cfg->pa_config.device_sel = 0;
 			if ( expected_output_pwr_in_dbm > 22 ) expected_output_pwr_in_dbm = 22;
 			if ( expected_output_pwr_in_dbm < -9 ) expected_output_pwr_in_dbm = -9;
 
+			if ( expected_output_pwr_in_dbm == 14 ) {
+				// optimal params
+				pa_pwr_cfg->pa_config.pa_duty_cycle = 2;
+				pa_pwr_cfg->pa_config.hp_max = 2;
+				pa_pwr_cfg->pa_config.device_sel = 0;
+				expected_output_pwr_in_dbm = 0x16;
+			} else if ( expected_output_pwr_in_dbm == 17 ) {
+				// optimal params
+				pa_pwr_cfg->pa_config.pa_duty_cycle = 2;
+				pa_pwr_cfg->pa_config.hp_max = 3;
+				pa_pwr_cfg->pa_config.device_sel = 0;
+				expected_output_pwr_in_dbm = 0x16;
+			} else if ( expected_output_pwr_in_dbm == 20 ) {
+				// optimal params
+				pa_pwr_cfg->pa_config.pa_duty_cycle = 3;
+				pa_pwr_cfg->pa_config.hp_max = 5;
+				pa_pwr_cfg->pa_config.device_sel = 0;
+				expected_output_pwr_in_dbm = 0x16;
+			} else {
+				// keep it standard for the rest (optimal of 22dBm)
+				pa_pwr_cfg->pa_config.pa_duty_cycle = 4;
+				pa_pwr_cfg->pa_config.hp_max = 7;
+				pa_pwr_cfg->pa_config.device_sel = 0;
+			}
+
 			value = 0x38;
-			HAL_SUBGHZ_WriteRegister(&ITSDK_SFX_SX126X_SPI,__SX126X_REG_OCP,value); // current max 160mA for the whole device
+			HAL_SUBGHZ_WriteRegister(&ITSDK_SFX_SX126X_SPI,__SX126X_REG_OCP,value); // current max 140mA for the whole device
 		}
 	#elif ITSDK_SFX_SX126X_CHIP == __SX1261
 		pa_pwr_cfg->pa_config.device_sel = 1;
-		#if ITSDK_SFX_SX126X_MAX_PWR <= 10
-		 pa_pwr_cfg->pa_config.pa_duty_cycle = 1;
-		 pa_pwr_cfg->pa_config.hp_max = 0;
-		#elif ITSDK_SFX_SX126X_MAX_PWR <= 14
-		 pa_pwr_cfg->pa_config.pa_duty_cycle = 4;
-		 pa_pwr_cfg->pa_config.hp_max = 0;
-		#elif ITSDK_SFX_SX126X_MAX_PWR <= 15
-		 pa_pwr_cfg->pa_config.pa_duty_cycle = 6;
-		 pa_pwr_cfg->pa_config.hp_max = 0;
-		#else
-		 #warning "ITSDK_SFX_SX126X_MAX_PWR is out of range"
+		if ( expected_output_pwr_in_dbm  <= 10 ) {
+			pa_pwr_cfg->pa_config.pa_duty_cycle = 1;
+			pa_pwr_cfg->pa_config.hp_max = 0;
+		} else if ( expected_output_pwr_in_dbm <= 14 ) {
+			pa_pwr_cfg->pa_config.pa_duty_cycle = 4;
+			pa_pwr_cfg->pa_config.hp_max = 0;
+		} else if ( expected_output_pwr_in_dbm <= 15 ) {
+			pa_pwr_cfg->pa_config.pa_duty_cycle = 6;
+			pa_pwr_cfg->pa_config.hp_max = 0;
+		} else {
+			LOG_DEBUG_SFXSX126X(("[SX] SX126X_HW_API_get_pa_pwr_cfg pwr is too high !\r\n"));
+		}
+		#if ITSDK_RADIO_MAX_OUTPUT_DBM > 15
+		 #error "ITSDK_SFX_SX126X_MAX_PWR is out of range"
 		#endif
 	#elif ITSDK_SFX_SX126X_CHIP == __SX1262
 		pa_pwr_cfg->pa_config.device_sel = 0;
-		#if ITSDK_SFX_SX126X_MAX_PWR <= 14
-		 pa_pwr_cfg->pa_config.pa_duty_cycle = 2;
- 		 pa_pwr_cfg->pa_config.hp_max = 2;
-		#elif ITSDK_SFX_SX126X_MAX_PWR <= 17
-		 pa_pwr_cfg->pa_config.pa_duty_cycle = 2;
- 		 pa_pwr_cfg->pa_config.hp_max = 3;
-		#elif ITSDK_SFX_SX126X_MAX_PWR <= 20
-		 pa_pwr_cfg->pa_config.pa_duty_cycle = 3;
- 		 pa_pwr_cfg->pa_config.hp_max = 5;
-		#elif ITSDK_SFX_SX126X_MAX_PWR <= 22
-		 pa_pwr_cfg->pa_config.pa_duty_cycle = 4;
- 		 pa_pwr_cfg->pa_config.hp_max = 7;
-		#else
-		 #warning "ITSDK_SFX_SX126X_MAX_PWR is out of range"
+		if ( expected_output_pwr_in_dbm  <= 14 ) {
+			pa_pwr_cfg->pa_config.pa_duty_cycle = 2;
+ 		 	 pa_pwr_cfg->pa_config.hp_max = 2;
+		} else if ( expected_output_pwr_in_dbm <= 17 ) {
+			pa_pwr_cfg->pa_config.pa_duty_cycle = 2;
+ 		 	 pa_pwr_cfg->pa_config.hp_max = 3;
+		} else if ( expected_output_pwr_in_dbm <= 20 ) {
+			pa_pwr_cfg->pa_config.pa_duty_cycle = 3;
+ 		 	 pa_pwr_cfg->pa_config.hp_max = 5;
+		} else if ( expected_output_pwr_in_dbm <= 22 ) {
+			pa_pwr_cfg->pa_config.pa_duty_cycle = 4;
+ 		 	 pa_pwr_cfg->pa_config.hp_max = 7;
+		} else {
+			LOG_DEBUG_SFXSX126X(("[SX] SX126X_HW_API_get_pa_pwr_cfg pwr is too high !\r\n"));
+		}
+		#if ITSDK_RADIO_MAX_OUTPUT_DBM > 12
+		 #warning "ITSDK_RADIO_MAX_OUTPUT_DBM is out of range"
 		#endif
 	#else
 		#error "You must define ITSDK_SFX_SX126X_CHIP with a valid value"
@@ -756,7 +761,7 @@ SX126X_HW_API_status_t SX126X_HW_API_get_pa_pwr_cfg(SX126X_HW_API_pa_pwr_cfg_t *
 		pa_pwr_cfg->pa_config.hp_max = ITSDK_SFX_SX126X_PA_HPM_OVR
 	#endif
 
-	// Make sure the pa_duty_cycle doesnot exceed the max accepted value (cf Chap 13.1.14)
+	// Make sure the pa_duty_cycle doesn't exceed the max accepted value (cf Chap 13.1.14)
 	#if ITSDK_SFX_SX126X_CHIP == __SX1261
 		if ( rf_freq_in_hz >= 400000000 && pa_pwr_cfg->pa_config.pa_duty_cycle > 7 ) pa_pwr_cfg->pa_config.pa_duty_cycle = 7;
 		if ( rf_freq_in_hz <= 400000000 && pa_pwr_cfg->pa_config.pa_duty_cycle > 4 ) pa_pwr_cfg->pa_config.pa_duty_cycle = 4;
@@ -768,11 +773,7 @@ SX126X_HW_API_status_t SX126X_HW_API_get_pa_pwr_cfg(SX126X_HW_API_pa_pwr_cfg_t *
 	pa_pwr_cfg->pa_config.pa_lut = 1;
 
 	// power
-	if ( expected_output_pwr_in_dbm > ITSDK_SFX_SX126X_MAX_PWR ) {
-		pa_pwr_cfg->power = ITSDK_SFX_SX126X_MAX_PWR;
-	} else {
-		pa_pwr_cfg->power = expected_output_pwr_in_dbm;
-	}
+	pa_pwr_cfg->power = expected_output_pwr_in_dbm;
 
 
 	#ifdef ERROR_CODES
@@ -789,6 +790,7 @@ SX126X_HW_API_status_t SX126X_HW_API_get_pa_pwr_cfg(SX126X_HW_API_pa_pwr_cfg_t *
 // ------------------------------------------------------------------
 SX126X_HW_API_status_t SX126X_HW_API_tx_on(void)
 {
+
 	LOG_DEBUG_SFXSX126X(("[SX] SX126X_HW_API_tx_on\r\n"));
 	_sx126x_rfSwitchSet(__sx126x_lastTxConfig,__SX126X_TX);
 	#ifdef ERROR_CODES
