@@ -76,12 +76,70 @@ void __sx126x_spi_nss_unselect() {
 // This function is called to reconfigure the board after a wake-up event
 // The hal_wakeup is called right after, don't duplicate actions
 // The context parameter is SFX_NULL
+// Concretly this function is call on every send message
 // ----------------------------------------------------------------------
 sx126x_hal_status_t sx126x_hal_reset( const void* context )
 {
     SFX_UNUSED(context);
     LOG_DEBUG_SFXSX126X(("[SX] sx126x_hal_reset\r\n"));
-    return SX126X_HAL_STATUS_OK;
+
+	#ifdef ERROR_CODES
+	 SX126X_HW_API_status_t status = SX126X_HAL_STATUS_OK;
+	#endif
+
+	// Configure the pin for Chip Select
+	#if ( (ITSDK_WITH_SPI) & __SPI_SUBGHZ ) == 0
+		#if ITSDK_SFX_SX126X_CS_PIN != __LP_GPIO_NONE
+	     gpio_configure(ITSDK_SFX_SX126X_CS_BANK, ITSDK_SFX_SX126X_CS_PIN, GPIO_OUTPUT_PP );
+	     gpio_reset(ITSDK_SFX_SX126X_CS_BANK,ITSDK_SFX_SX126X_CS_PIN);
+		#elif ITSDK_SFX_SX126X_CSDN_PIN != __LP_GPIO_NONE
+	     gpio_configure(ITSDK_SFX_SX126X_CSDN_BANK, ITSDK_SFX_SX126X_CSDN_PIN, GPIO_OUTPUT_PP );
+		 gpio_set(ITSDK_SFX_SX126X_CSDN_BANK,ITSDK_SFX_SX126X_CSDN_PIN);
+		#else
+		  #warning "You did not setup a CS pin for SX1262 SPI, are you sure ?"
+		#endif
+	#endif
+
+	// Configure the pin used for RFSwitch
+	if ( ITSDK_SFX_SX126X_RFSW1_PIN != __LP_GPIO_NONE ) {
+		gpio_configure_ext(ITSDK_SFX_SX126X_RFSW1_BANK,ITSDK_SFX_SX126X_RFSW1_PIN,GPIO_OUTPUT_PP, ITSDK_GPIO_SPEED_HIGH, ITSDK_GPIO_ALT_NONE);
+		gpio_reset(ITSDK_SFX_SX126X_RFSW1_BANK,ITSDK_SFX_SX126X_RFSW1_PIN);
+	}
+	if ( ITSDK_SFX_SX126X_RFSW2_PIN != __LP_GPIO_NONE ) {
+		gpio_configure_ext(ITSDK_SFX_SX126X_RFSW2_BANK,ITSDK_SFX_SX126X_RFSW2_PIN,GPIO_OUTPUT_PP, ITSDK_GPIO_SPEED_HIGH, ITSDK_GPIO_ALT_NONE);
+		gpio_reset(ITSDK_SFX_SX126X_RFSW2_BANK,ITSDK_SFX_SX126X_RFSW2_PIN);
+	}
+
+
+	// Configure the interruption handler and SPI
+	#if ( (ITSDK_WITH_SPI) & __SPI_SUBGHZ ) > 0
+
+		ITSDK_SFX_SX126X_SPI.Init.BaudratePrescaler = SUBGHZSPI_BAUDRATEPRESCALER_8;
+		HAL_StatusTypeDef r = HAL_SUBGHZ_Init(&ITSDK_SFX_SX126X_SPI);
+	    if (r != HAL_OK) {
+		  #ifdef ERROR_CODES
+	    	status = SX126X_HW_API_ERROR;
+		  #endif
+	      LOG_DEBUG_SFXSX126X(("[SX] Failed to init subghz %d\r\n",r));
+	      RETURN();
+	    }
+
+		__HAL_RCC_SUBGHZSPI_CLK_ENABLE();
+		HAL_NVIC_SetPriority(SUBGHZ_Radio_IRQn, 0, 0);
+		HAL_NVIC_EnableIRQ(SUBGHZ_Radio_IRQn);
+
+	#else
+		if ( ITSDK_SFX_IRQ_PIN != __LP_GPIO_NONE ) {
+			gpio_interruptClear(ITSDK_SFX_IRQ_BANK, ITSDK_SFX_IRQ_PIN);
+			gpio_configure(ITSDK_SFX_IRQ_BANK, ITSDK_SFX_IRQ_PIN, GPIO_INTERRUPT_RISING );
+			gpio_interruptPriority(ITSDK_SFX_IRQ_BANK,ITSDK_SFX_IRQ_PIN,0,0);
+			gpio_registerIrqAction(&__sx1262_irq);
+			gpio_interruptEnable(ITSDK_SFX_IRQ_BANK, ITSDK_SFX_IRQ_PIN);
+		}
+	#endif
+
+
+    return status;
 }
 
 // ----------------------------------------------------------------------
@@ -307,6 +365,15 @@ void HAL_SUBGHZ_TxCpltCallback(SUBGHZ_HandleTypeDef *hsubghz) {
 	if ( __sx1262_irq_cb != NULL ) __sx1262_irq_cb();
  }
 
+ /*
+  * Aparently not used, the timeout seems to be fixed at FFFF and
+  * managed with a timer.
+ void HAL_SUBGHZ_RxTxTimeoutCallback(SUBGHZ_HandleTypeDef *hsubghz) {
+	LOG_DEBUG_SFXSX126X(("[SX] HAL_SUBGHZ_RxTxTimeoutCallback\r\n"));
+	if ( __sx1262_irq_cb != NULL ) __sx1262_irq_cb();
+ }
+ */
+
  #ifndef ASYNCHRONOUS
   itsdk_bool_e sx126x_hasDataReceived() {
 	return __sx126x_dataReceived;
@@ -336,9 +403,9 @@ void HAL_SUBGHZ_TxCpltCallback(SUBGHZ_HandleTypeDef *hsubghz) {
 
 
 // ============================================================
-// Call when sigfox lib is initialized; prepare the hardware
-// and set the DIO3 irq to call the given callback function when
-// rising.
+// Call when sigfox lib is initialized
+// Once on lib setup ; hardware init prefered on hal_reset call
+// on every frame.
 // ============================================================
 SX126X_HW_API_status_t SX126X_HW_API_open(SX126X_HW_irq_cb_t callback)
 {
@@ -348,62 +415,15 @@ SX126X_HW_API_status_t SX126X_HW_API_open(SX126X_HW_irq_cb_t callback)
 	 SX126X_HW_API_status_t status = SX126X_HW_API_SUCCESS;
 	#endif
 
-	// Configure the pin for Chip Select
-	#if ( (ITSDK_WITH_SPI) & __SPI_SUBGHZ ) == 0
-		#if ITSDK_SFX_SX126X_CS_PIN != __LP_GPIO_NONE
-	     gpio_configure(ITSDK_SFX_SX126X_CS_BANK, ITSDK_SFX_SX126X_CS_PIN, GPIO_OUTPUT_PP );
-	     gpio_reset(ITSDK_SFX_SX126X_CS_BANK,ITSDK_SFX_SX126X_CS_PIN);
-		#elif ITSDK_SFX_SX126X_CSDN_PIN != __LP_GPIO_NONE
-	     gpio_configure(ITSDK_SFX_SX126X_CSDN_BANK, ITSDK_SFX_SX126X_CSDN_PIN, GPIO_OUTPUT_PP );
-		 gpio_set(ITSDK_SFX_SX126X_CSDN_BANK,ITSDK_SFX_SX126X_CSDN_PIN);
-		#else
-		  #warning "You did not setup a CS pin for SX1262 SPI, are you sure ?"
-		#endif
-	#endif
-
-	// Configure the pin used for RFSwitch
-	if ( ITSDK_SFX_SX126X_RFSW1_PIN != __LP_GPIO_NONE ) {
-		gpio_configure_ext(ITSDK_SFX_SX126X_RFSW1_BANK,ITSDK_SFX_SX126X_RFSW1_PIN,GPIO_OUTPUT_PP, ITSDK_GPIO_SPEED_HIGH, ITSDK_GPIO_ALT_NONE);
-		gpio_reset(ITSDK_SFX_SX126X_RFSW1_BANK,ITSDK_SFX_SX126X_RFSW1_PIN);
-	}
-	if ( ITSDK_SFX_SX126X_RFSW2_PIN != __LP_GPIO_NONE ) {
-		gpio_configure_ext(ITSDK_SFX_SX126X_RFSW2_BANK,ITSDK_SFX_SX126X_RFSW2_PIN,GPIO_OUTPUT_PP, ITSDK_GPIO_SPEED_HIGH, ITSDK_GPIO_ALT_NONE);
-		gpio_reset(ITSDK_SFX_SX126X_RFSW2_BANK,ITSDK_SFX_SX126X_RFSW2_PIN);
-	}
-
-	// Configure the interruption handler and SPI
 	#if ( (ITSDK_WITH_SPI) & __SPI_SUBGHZ ) > 0
-
-		ITSDK_SFX_SX126X_SPI.Init.BaudratePrescaler = SUBGHZSPI_BAUDRATEPRESCALER_8;
-		HAL_StatusTypeDef r = HAL_SUBGHZ_Init(&ITSDK_SFX_SX126X_SPI);
-	    if (r != HAL_OK) {
-		  #ifdef ERROR_CODES
-	    	status = SX126X_HW_API_ERROR;
-		  #endif
-	      LOG_DEBUG_SFXSX126X(("[SX] Failed to init subghz %d\r\n",r));
-	      RETURN();
-	    }
-
 	    __sx1262_irq_cb = callback;
-		__HAL_RCC_SUBGHZSPI_CLK_ENABLE();
-		HAL_NVIC_SetPriority(SUBGHZ_Radio_IRQn, 0, 0);
-		HAL_NVIC_EnableIRQ(SUBGHZ_Radio_IRQn);
-
 	#else
-		if ( ITSDK_SFX_IRQ_PIN != __LP_GPIO_NONE ) {
-			gpio_interruptClear(ITSDK_SFX_IRQ_BANK, ITSDK_SFX_IRQ_PIN);
-			gpio_configure(ITSDK_SFX_IRQ_BANK, ITSDK_SFX_IRQ_PIN, GPIO_INTERRUPT_RISING );
-			gpio_interruptPriority(ITSDK_SFX_IRQ_BANK,ITSDK_SFX_IRQ_PIN,0,0);
-			__sx1262_irq.irq_func = callback;
-			__sx1262_irq.pinMask = ITSDK_SFX_IRQ_PIN;
-			gpio_registerIrqAction(&__sx1262_irq);
-			gpio_interruptEnable(ITSDK_SFX_IRQ_BANK, ITSDK_SFX_IRQ_PIN);
-		}
+		__sx1262_irq.irq_func = callback;
+		__sx1262_irq.pinMask = ITSDK_SFX_IRQ_PIN;
 	#endif
 
-
-
-
+	// nothing bad calling hardware config before the first sigfox send
+	sx126x_hal_reset(NULL);
 
     RETURN();
 }

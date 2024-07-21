@@ -83,24 +83,24 @@ itsdk_sigfox_init_t itsdk_sigfox_setup() {
 	LOG_INFO_SIGFOXSTK(("itsdk_sigfox_setup\r\n"));
 
 	itsdk_sigfox_init_t ret = SIGFOX_INIT_SUCESS;
-#if ITSDK_WITH_SECURESTORE == __ENABLE
-	itsdk_sigfox_resetFactoryDefaults(false);	// store the default hardcoded key if not yet done
-#endif
+	#if ITSDK_WITH_SECURESTORE == __ENABLE
+		itsdk_sigfox_resetFactoryDefaults(false);	// store the default hardcoded key if not yet done
+	#endif
 
-#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
-	ret = s2lp_sigfox_init();
-#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX1276
-	ret = sx1276_sigfox_init();
-#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
-	ret = sx126x_sigfox_init();
-#endif
+	#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
+		ret = s2lp_sigfox_init();
+	#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX1276
+		ret = sx1276_sigfox_init();
+	#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
+		ret = sx126x_sigfox_init();
+	#endif
 
 	if (
-#if ITSDK_CONFIGURATION_MODE != __CONFIG_STATIC
+		#if ITSDK_CONFIGURATION_MODE != __CONFIG_STATIC
 		    itsdk_config.sdk.sigfox.txPower == SIGFOX_DEFAULT_POWER ||
-#endif
+		#endif
 		    itsdk_state.sigfox.current_power == SIGFOX_DEFAULT_POWER
-		) {
+	) {
 		switch (itsdk_state.sigfox.rcz) {
 		case SIGFOX_RCNOTYETDEFINED:
 			 itsdk_state.sigfox.current_power = __itsdk_sigfox_getRealTxPower(0);
@@ -123,10 +123,12 @@ itsdk_sigfox_init_t itsdk_sigfox_setup() {
 		}
 	}
 	if (
-#if ITSDK_CONFIGURATION_MODE != __CONFIG_STATIC
+		#if ITSDK_CONFIGURATION_MODE != __CONFIG_STATIC
 			itsdk_config.sdk.sigfox.speed == SIGFOX_DEFAULT_SPEED ||
-#endif
-			itsdk_state.sigfox.current_speed == SIGFOX_DEFAULT_SPEED ) {
+		#endif
+		itsdk_state.sigfox.current_speed == SIGFOX_DEFAULT_SPEED
+	) {
+
 		switch (itsdk_state.sigfox.rcz) {
 		case SIGFOX_RCNOTYETDEFINED:
 		case SIGFOX_RCZ1:

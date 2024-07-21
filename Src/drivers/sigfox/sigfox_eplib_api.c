@@ -180,11 +180,12 @@ MCU_API_status_t MCU_API_get_latency(MCU_API_latency_t latency_type, sfx_u32 *la
 // Start a timer, it can be synchronous or asynchronous
 // -----------------------------------------------------------
 #ifdef TIMER_REQUIRED
+
 #ifdef ASYNCHRONOUS
-	MCU_API_timer_cplt_cb_t __cplt_cb;
+	MCU_API_timer_cplt_cb_t __cplt_cb[MCU_API_TIMER_LAST];
 	void __timer_cb(uint32_t v) {
-	    _LOG_SFXEPLIB_DEBUG(("[SFX] timer callback %d!\r\n",v));
-	    __cplt_cb();
+	    _LOG_SFXEPLIB_DEBUG(("[SFX] timer callback (%d)\r\n",v));
+	    __cplt_cb[v-ITSDK_SFX_SX126X_TMBASE]();
 	}
 #endif
 MCU_API_status_t MCU_API_timer_start(MCU_API_timer_t *timer) {
@@ -203,11 +204,12 @@ MCU_API_status_t MCU_API_timer_start(MCU_API_timer_t *timer) {
         case MCU_API_TIMER_3:
 	  #endif
           #ifdef ASYNCHRONOUS
-        	__cplt_cb = timer->cplt_cb;
+        	_LOG_SFXEPLIB_DEBUG(("[SFX] MCU_API_timer_start(%d,0x%lX)\r\n",timer->instance, timer->cplt_cb));
+        	__cplt_cb[timer->instance] = timer->cplt_cb;
         	timerStatus = itsdk_stimer_register(
-        			timer->duration_ms,				// duration
-					__timer_cb,						// callback function on timer expire
-					ITSDK_SFX_SX126X_TMBASE+(uint32_t)timer->instance,	// identify timer
+        			timer->duration_ms,									// duration
+					__timer_cb,											// callback function on timer expire
+					ITSDK_SFX_SX126X_TMBASE+(uint32_t)timer->instance,	// timer instance for identification
 					TIMER_ACCEPT_LOWPOWER
         	);
 		  #else
@@ -276,6 +278,8 @@ errors:
 
 // -----------------------------------------------------------
 // Get Timer Status return SFX_TRUE when the timer elapsed
+// run the timer in background and refresh watchdog as it
+// is called in a loop
 // -----------------------------------------------------------
 #if (defined TIMER_REQUIRED) && !(defined ASYNCHRONOUS)
 MCU_API_status_t MCU_API_timer_status(MCU_API_timer_instance_t timer_instance, sfx_bool *timer_has_elapsed) {
@@ -292,13 +296,21 @@ MCU_API_status_t MCU_API_timer_status(MCU_API_timer_instance_t timer_instance, s
 	  #if defined CERTIFICATION
         case MCU_API_TIMER_3:
 	  #endif
+
         	if ( ! itsdk_stimer_isRunning_1(NULL,ITSDK_SFX_SX126X_TMBASE+(uint32_t)timer_instance,false) ) {
-                *timer_has_elapsed = SFX_TRUE;
-        	}
+				*timer_has_elapsed = SFX_TRUE;
+			}
+
             break;
         default:
             EXIT_ERROR(MCU_API_ERROR);
     }
+
+    #if ITSDK_WITH_WDG != __WDG_NONE && ITSDK_WDG_MS > 0
+		wdg_refresh();
+	#endif
+	itsdk_stimer_run();
+
 
     return MCU_API_SUCCESS;
 errors:
