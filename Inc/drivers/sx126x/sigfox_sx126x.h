@@ -58,6 +58,12 @@
 
 #define __SX126X_RSSI_NONE		-16000
 
+
+void sx126x_onTxComplete_cb(void);
+void sx126x_onRxComplete_cb(void);
+void sx126x_onMessageComplete_cb(void);
+void sx126x_onProcess_cb(void);
+
 void _sx126x_rfSwitchSet(uint8_t paSelected, uint8_t rxTx);
 itsdk_sigfox_init_t sx126x_sigfox_init( void );
 itsdk_sigfox_init_t sx126x_sigfox_getRssi(int16_t * rssi);
@@ -85,7 +91,8 @@ itsdk_sigfox_init_t sx126x_sigfox_tx_config(
 // conditional presence ( (ITSDK_WITH_SPI) & __SPI_SUBGHZ ) > 0 && defined BIDIRECTIONAL && !defined ASYNCHRONOUS
 itsdk_bool_e sx126x_hasDataReceived();
 void sx126x_resetDataReceived();
-
+itsdk_sigfox_init_t sx126x_sigfox_getSeqId(uint16_t * seq);
+SIGFOX_EP_API_status_t sx126x_sigfox_process_async();
 
 #endif
 

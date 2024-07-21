@@ -175,10 +175,18 @@ MCU_API_status_t MCU_API_get_latency(MCU_API_latency_t latency_type, sfx_u32 *la
 // ===========================================================
 
 
+
 // -----------------------------------------------------------
 // Start a timer, it can be synchronous or asynchronous
 // -----------------------------------------------------------
 #ifdef TIMER_REQUIRED
+#ifdef ASYNCHRONOUS
+	MCU_API_timer_cplt_cb_t __cplt_cb;
+	void __timer_cb(uint32_t v) {
+	    _LOG_SFXEPLIB_DEBUG(("[SFX] timer callback %d!\r\n",v));
+	    __cplt_cb();
+	}
+#endif
 MCU_API_status_t MCU_API_timer_start(MCU_API_timer_t *timer) {
 	#ifdef ERROR_CODES
     MCU_API_status_t status = MCU_API_SUCCESS;
@@ -195,9 +203,10 @@ MCU_API_status_t MCU_API_timer_start(MCU_API_timer_t *timer) {
         case MCU_API_TIMER_3:
 	  #endif
           #ifdef ASYNCHRONOUS
+        	__cplt_cb = timer->cplt_cb;
         	timerStatus = itsdk_stimer_register(
         			timer->duration_ms,				// duration
-					timer->cplt_cb,					// callback function on timer expire
+					__timer_cb,						// callback function on timer expire
 					ITSDK_SFX_SX126X_TMBASE+(uint32_t)timer->instance,	// identify timer
 					TIMER_ACCEPT_LOWPOWER
         	);

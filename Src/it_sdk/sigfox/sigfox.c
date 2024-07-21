@@ -298,6 +298,11 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendFrame(
 		if (ack) sx126x_resetDataReceived();
 	#endif
 	SIGFOX_EP_API_status_t ret = SIGFOX_EP_API_send_application_message(&m);
+
+	#ifdef ASYNCHRONOUS
+  	  if ( ret == SIGFOX_EP_API_SUCCESS ) ret = sx126x_sigfox_process_async();
+	#endif
+
 	switch (ret) {
 	case SIGFOX_EP_API_SUCCESS:
 		#if ( (ITSDK_WITH_SPI) & __SPI_SUBGHZ ) > 0 && defined BIDIRECTIONAL && !defined ASYNCHRONOUS
@@ -382,6 +387,10 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendBit(
 		if (ack) sx126x_resetDataReceived();
 	#endif
 	SIGFOX_EP_API_status_t ret = SIGFOX_EP_API_send_application_message(&m);
+	#ifdef ASYNCHRONOUS
+	  if ( ret == SIGFOX_EP_API_SUCCESS ) ret = sx126x_sigfox_process_async();
+	#endif
+
 	switch (ret) {
 	case SIGFOX_EP_API_SUCCESS:
 		#if ( (ITSDK_WITH_SPI) & __SPI_SUBGHZ ) > 0 && defined BIDIRECTIONAL && !defined ASYNCHRONOUS
@@ -459,11 +468,13 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendOob(
 				ITSDK_ERROR_REPORT(ITSDK_ERROR_SIGFOX_OOB_NOTSUPPORTED,(uint16_t)oobType);
 		}
 		#ifdef ASYNCHRONOUS
-		 #error "TODO !"
-		 m.uplink_cplt_cb = NULL;
-		 m.message_cplt_cb = NULL;
+		 m.uplink_cplt_cb = sx126x_onTxComplete_cb;
+		 m.message_cplt_cb = sx126x_onMessageComplete_cb;
 		#endif
 		 SIGFOX_EP_API_status_t r = SIGFOX_EP_API_send_control_message(&m);
+		#ifdef ASYNCHRONOUS
+		 if ( r == SIGFOX_EP_API_SUCCESS ) r = sx126x_sigfox_process_async();
+		#endif
 		 if ( r != SIGFOX_EP_API_SUCCESS )	LOG_ERROR_SIGFOXSTK(("Oob send error(%d)\r\n",r));
 		 result =  (r == SIGFOX_EP_API_SUCCESS )?SIGFOX_TRANSMIT_SUCESS:SIGFOX_TXRX_ERROR;
 
@@ -630,7 +641,8 @@ itsdk_sigfox_init_t itsdk_sigfox_getLastSeqId(uint16_t * seqId) {
     #elif ITSDK_SIGFOX_LIB == __SIGFOX_SX1276
 		sx1276_sigfox_getSeqId(seqId);
 	#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
-#warning TODO !
+		sx126x_sigfox_getSeqId(seqId);
+#warning "check if current or previous"
 	#endif
 
 	return SIGFOX_INIT_SUCESS;
@@ -647,7 +659,8 @@ itsdk_sigfox_init_t itsdk_sigfox_getNextSeqId(uint16_t * seqId) {
     #elif ITSDK_SIGFOX_LIB == __SIGFOX_SX1276
 		sx1276_sigfox_getSeqId(seqId);
 	#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
-#warning TODO !
+		sx126x_sigfox_getSeqId(seqId);
+#warning "check if current or previous"
 	#endif
 		*seqId = (*seqId+1) & 0x0FFF;
 
@@ -811,6 +824,7 @@ itsdk_sigfox_init_t itsdk_sigfox_getSeNvmOffset(uint32_t * offset) {
 	*offset += size;
 	return SIGFOX_INIT_SUCESS;
 #elif ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
+	// This does not exist in SX126X but can still report the same information, it should not be called
 	itsdk_sigfox_getNvmOffset(offset);
 	int size = itdt_align_32b(SIGFOX_NVM_DATA_SIZE_BYTES);
 	*offset += size;
@@ -818,7 +832,6 @@ itsdk_sigfox_init_t itsdk_sigfox_getSeNvmOffset(uint32_t * offset) {
 #else
   #error Unsupported ITSDK_SIGFOX_LIB
 #endif
-#warning TODO - ceci n'existe pas en SX126X
 }
 
 /**
