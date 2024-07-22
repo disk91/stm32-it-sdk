@@ -283,7 +283,7 @@ void gpio_configure_ext(uint8_t bank, uint16_t id, itsdk_gpio_type_t type, itsdk
 		#endif
 			break;
 		case ITSDK_GPIO_ALT_TIMER2_C1:
-		#if ITSDK_DEVICE == __DEVICE_STM32L072XX || ITSDK_DEVICE == __DEVICE_STM32L082XX ||  ITSDK_DEVICE == __DEVICE_STM32L052T8
+		#if ITSDK_DEVICE == __DEVICE_STM32L072XX || ITSDK_DEVICE == __DEVICE_STM32L082XX || ITSDK_DEVICE == __DEVICE_STM32L052T8
 			if ( bank == __BANK_A && id == __LP_GPIO_15 ) GPIO_InitStruct.Alternate = GPIO_AF5_TIM2;
 			else if ( bank == __BANK_A && id == __LP_GPIO_5 ) GPIO_InitStruct.Alternate = GPIO_AF5_TIM2;
 			else if ( bank == __BANK_A && id == __LP_GPIO_0 ) GPIO_InitStruct.Alternate = GPIO_AF2_TIM2;

@@ -52,7 +52,6 @@
 #define __DEVICE_STM32L053R8		4
 #define __DEVICE_STM32L031K6		5
 #define __DEVICE_STM32L052T8		6
-
 #define __DEVICE_STM32WLE5JC		21				// 256K Flash & 64K Ram
 
 /**
