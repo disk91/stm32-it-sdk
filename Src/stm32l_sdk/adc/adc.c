@@ -27,16 +27,20 @@
  * ==========================================================
  */
 #include <it_sdk/config.h>
-#if ITSDK_PLATFORM == __PLATFORM_STM32L0
+#if ITSDK_PLATFORM == __PLATFORM_STM32L0 || ITSDK_PLATFORM == __PLATFORM_STM32WLE
 #include <it_sdk/itsdk.h>
 #include <it_sdk/eeprom/sdk_state.h>
 #include <it_sdk/logger/error.h>
 #include <it_sdk/debug.h>
 #include <it_sdk/time/time.h>
-#include "stm32l0xx_hal.h"
+#if ITSDK_PLATFORM == __PLATFORM_STM32L0
+	#include "stm32l0xx_hal.h"
+#elif ITSDK_PLATFORM == __PLATFORM_STM32WLE
+	#include "stm32wlxx_hal.h"
+#endif
 
 #if ( ITSDK_WITH_ADC & __ADC_ENABLED ) > 0
-ADC_HandleTypeDef hadc;
+static ADC_HandleTypeDef hadc;
 
 // check the device datasheet for precised address
 #if ITSDK_DEVICE == __DEVICE_STM32L011D4
@@ -51,6 +55,14 @@ ADC_HandleTypeDef hadc;
 #define CAL1_TEMP			30
 #define CAL1_VALUE          ((uint16_t*)((uint32_t)0x1FF8007A))
 #define VREFINT_CAL         ((uint16_t*) ((uint32_t) 0x1FF80078))
+#elif ITSDK_DEVICE == __DEVICE_STM32WLE5JC
+#define CAL2_TEMP			TEMPSENSOR_CAL2_TEMP
+#define CAL2_VALUE          TEMPSENSOR_CAL2_ADDR
+#define CAL1_TEMP			TEMPSENSOR_CAL1_TEMP
+#define CAL1_VALUE          TEMPSENSOR_CAL1_ADDR
+#define VREFINT_CAL         VREFINT_CAL_ADDR
+#define TEMPSENSOR_TYP_AVGSLOPE ((int32_t) 2500)
+#define TEMPSENSOR_TYP_CAL1_V   ((int32_t)  760)
 #else
 #warning DEVICE IS NOT DEFINED FOR CALIBRATION
 #define CAL2_TEMP			130
@@ -163,6 +175,7 @@ uint32_t __getAdcValue(uint32_t channel, uint8_t oversampling) {
 #else
 
 uint32_t __getAdcValue(uint32_t channel, uint8_t oversampling) {
+  #if ITSDK_PLATFORM == __PLATFORM_STM32L0
 	  __HAL_RCC_ADC1_CLK_ENABLE();
 
 	  __HAL_RCC_ADC1_FORCE_RESET();			// without reset the values were not correct
@@ -220,6 +233,71 @@ uint32_t __getAdcValue(uint32_t channel, uint8_t oversampling) {
 	  HAL_ADC_Stop(&hadc);
 	  __HAL_RCC_ADC1_CLK_DISABLE();
 	  return v;
+  #elif ITSDK_PLATFORM == __PLATFORM_STM32WLE
+	  __HAL_RCC_ADC_CLK_ENABLE();
+
+	  __HAL_RCC_ADC_FORCE_RESET();			// without reset the values were not correct
+	  __NOP();
+	  __NOP();
+	  __HAL_RCC_ADC_RELEASE_RESET();
+
+	  ADC_ChannelConfTypeDef sConfig;
+
+	  // Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
+	  hadc.Instance = ADC;
+	  hadc.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
+	  hadc.Init.Resolution = ADC_RESOLUTION_12B;
+	  hadc.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+	  hadc.Init.ScanConvMode = ADC_SCAN_DISABLE;
+	  hadc.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+	  hadc.Init.LowPowerAutoWait = DISABLE;
+	  hadc.Init.LowPowerAutoPowerOff = DISABLE;
+	  hadc.Init.ContinuousConvMode = DISABLE;
+	  hadc.Init.NbrOfConversion = 1;
+	  hadc.Init.DiscontinuousConvMode = DISABLE;
+	  hadc.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+	  hadc.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+	  hadc.Init.DMAContinuousRequests = DISABLE;
+	  hadc.Init.Overrun = ADC_OVR_DATA_OVERWRITTEN;
+	  hadc.Init.SamplingTimeCommon1 = ADC_SAMPLETIME_160CYCLES_5;
+	  hadc.Init.SamplingTimeCommon2 = ADC_SAMPLETIME_160CYCLES_5;
+	  hadc.Init.OversamplingMode = DISABLE;
+	  hadc.Init.TriggerFrequencyMode = ADC_TRIGGER_FREQ_HIGH;
+
+	  if (HAL_ADC_Init(&hadc) != HAL_OK) {
+		  ITSDK_ERROR_REPORT(ITSDK_ERROR_ADC_INIT_FAILED,0);
+	  }
+
+	  if ( HAL_ADCEx_Calibration_Start(&hadc) != HAL_OK) {
+		  ITSDK_ERROR_REPORT(ITSDK_ERROR_ADC_CALIBRATION_FAILED,0);
+	  }
+
+	  // Configure for the selected ADC regular channel to be converted.
+	  sConfig.Channel = channel;
+	  sConfig.Rank = ADC_REGULAR_RANK_1;
+	  sConfig.SamplingTime = ADC_SAMPLINGTIME_COMMON_1;
+	  if (HAL_ADC_ConfigChannel(&hadc, &sConfig) != HAL_OK) {
+		  ITSDK_ERROR_REPORT(ITSDK_ERROR_ADC_CONFCHANNEL_FAILED,0);
+	  }
+	  uint32_t v = 0;
+	  for( int i = 0; i < oversampling ; i++ ) {
+		  HAL_ADC_Start(&hadc);
+		  if (HAL_ADC_PollForConversion(&hadc, 100) != HAL_OK) {
+			  HAL_ADC_Stop(&hadc);
+	  		  __HAL_RCC_ADC_CLK_DISABLE();
+	  		  return ADC_CONVERSION_ERROR;
+		  }
+		  HAL_ADC_Stop(&hadc);
+		  v += HAL_ADC_GetValue(&hadc);
+	  }
+	  v = v / oversampling;
+
+	  __HAL_RCC_ADC_CLK_DISABLE();
+	  return v;
+
+  #else
+   #error "Unknow plateform, need to be defined"
+  #endif
 }
 
 
@@ -235,23 +313,35 @@ int16_t adc_getTemperature() {
 	uint16_t vdd = adc_getVdd();
 	uint32_t v = __getAdcValue(ADC_CHANNEL_TEMPSENSOR,ITSDK_ADC_OVERSAMPLING);
 
+#if ITSDK_DEVICE != __DEVICE_STM32WLE5JC
+
 	// adapt the calibration values to the current VDD reference
-	uint16_t cal1_vdd = (*CAL1_VALUE * VDD_CALIB) / vdd;
-	uint16_t cal2_vdd = (*CAL2_VALUE * VDD_CALIB) / vdd;
+	int32_t cal1_vdd = (*CAL1_VALUE * VDD_CALIB) / vdd;
+	int32_t cal2_vdd = (*CAL2_VALUE * VDD_CALIB) / vdd;
 
 	// convert in 0.01�C according to the calibration ref
 	int32_t temperature = 100 * (CAL2_TEMP - CAL1_TEMP)*(v - cal1_vdd);
 	temperature /= (cal2_vdd - cal1_vdd);
     temperature = temperature + (100*CAL1_TEMP);
     return (int16_t)temperature;
-
+#else
+    int32_t temperature;
+    if (((int32_t)*CAL2_VALUE - (int32_t)*CAL1_VALUE) != 0) {
+    	// calibrated device
+    	temperature = __LL_ADC_CALC_TEMPERATURE(vdd, v, LL_ADC_RESOLUTION_12B);
+    } else  {
+    	// not calibrated
+    	temperature = __LL_ADC_CALC_TEMPERATURE_TYP_PARAMS(TEMPSENSOR_TYP_AVGSLOPE,TEMPSENSOR_TYP_CAL1_V,TEMPSENSOR_CAL1_TEMP,vdd,v, LL_ADC_RESOLUTION_12B);
+    }
+    return (int16_t)temperature*100;
+#endif
 }
 
 /**
  * Return VDD in mV ( internal VDD )
  * Be Careful -> right after wakeup from STOP the
  * value can be invalid (200mv error). The solution is to
- * sleep a bit (8ms recommanded) before sampling Vdd
+ * sleep a bit (8ms recommended) before sampling Vdd
  */
 uint16_t adc_getVdd() {
 	// The value measured is not good until we wait about 8ms after MCU wakeup from stop
@@ -280,6 +370,7 @@ uint16_t adc_getVBat() {
 /**
  * Return ADC Value for an external PIN or internal
  * Get the pin number (hardware one)...
+ * value return is mV value
  * Pin 0 = internal VDD
  */
 uint16_t adc_getValue(uint32_t pin) {
@@ -459,6 +550,74 @@ uint16_t adc_getValue(uint32_t pin) {
 	default:
   	    ITSDK_ERROR_REPORT(ITSDK_ERROR_ADC_INVALID_PIN,(uint16_t)pin);
 	}
+#elif ITSDK_DEVICE == __DEVICE_STM32WLE5JC
+	switch (pin) {
+		case 0:
+			channel = ADC_CHANNEL_VREFINT; 	// VDD
+			break;
+		case 41:
+			GPIO_InitStruct.Pin = GPIO_PIN_14;
+			GPIO_TypeDefStruct = GPIOA;
+			channel = ADC_CHANNEL_10;	// PA14
+			break;
+		case 91:
+			GPIO_InitStruct.Pin = GPIO_PIN_12;
+			GPIO_TypeDefStruct = GPIOA;
+			channel = ADC_CHANNEL_8;	// PA12
+			break;
+		case 32:
+			GPIO_InitStruct.Pin = GPIO_PIN_15;
+			GPIO_TypeDefStruct = GPIOA;
+			channel = ADC_CHANNEL_11;	// PA15
+			break;
+		case 82:
+			GPIO_InitStruct.Pin = GPIO_PIN_13;
+			GPIO_TypeDefStruct = GPIOA;
+			channel = ADC_CHANNEL_9;	// PA13
+			break;
+		case 92:
+			GPIO_InitStruct.Pin = GPIO_PIN_11;
+			GPIO_TypeDefStruct = GPIOA;
+			channel = ADC_CHANNEL_7;	// PA11
+			break;
+		case 13:
+			GPIO_InitStruct.Pin = GPIO_PIN_3;
+			GPIO_TypeDefStruct = GPIOB;
+			channel = ADC_CHANNEL_2;	// PB3
+			break;
+		case 23:
+			GPIO_InitStruct.Pin = GPIO_PIN_4;
+			GPIO_TypeDefStruct = GPIOB;
+			channel = ADC_CHANNEL_3;	// PB4
+			break;
+		case 63:
+			GPIO_InitStruct.Pin = GPIO_PIN_14;
+			GPIO_TypeDefStruct = GPIOB;
+			channel = ADC_CHANNEL_1;	// PB14
+			break;
+		case 83:
+			GPIO_InitStruct.Pin = GPIO_PIN_10;
+			GPIO_TypeDefStruct = GPIOA;
+			channel = ADC_CHANNEL_6;	// PA10
+			break;
+		case 74:
+			GPIO_InitStruct.Pin = GPIO_PIN_13;
+			GPIO_TypeDefStruct = GPIOB;
+			channel = ADC_CHANNEL_0;	// PB13
+			break;
+		case 84:
+			GPIO_InitStruct.Pin = GPIO_PIN_2;
+			GPIO_TypeDefStruct = GPIOB;
+			channel = ADC_CHANNEL_4;	// PB2
+			break;
+		case 75:
+			GPIO_InitStruct.Pin = GPIO_PIN_1;
+			GPIO_TypeDefStruct = GPIOB;
+			channel = ADC_CHANNEL_5;	// PB1
+			break;
+		default:
+	  	    ITSDK_ERROR_REPORT(ITSDK_ERROR_ADC_INVALID_PIN,(uint16_t)pin);
+		}
 #else
 	#error DEVICE NOT DEFINED
 #endif
@@ -467,12 +626,25 @@ uint16_t adc_getValue(uint32_t pin) {
 	}
 
 	uint32_t v = __getAdcValue(channel,ITSDK_ADC_OVERSAMPLING);
+	int32_t vdd;
 	if (pin == 0) {
+		// VDD case
 		if ( v == 0 ) return 0; // securing
-   	    int32_t vdd = ((int32_t)(*VREFINT_CAL) * VDD_CALIB) / v;
+		#if ITSDK_DEVICE == __DEVICE_STM32WLE5JC
+			if ( (uint32_t)*VREFINT_CAL != (uint32_t)0xFFFFU) {
+				// calibration exists
+				vdd = __LL_ADC_CALC_VREFANALOG_VOLTAGE(v,ADC_RESOLUTION_12B);
+			} else {
+				// no calibration
+				vdd = (VREFINT_CAL_VREF * 1510) / v;
+			}
+		#else
+   	    	int32_t vdd = ((int32_t)(*VREFINT_CAL) * VDD_CALIB) / v;
+		#endif
 	    return (uint16_t)vdd;
 	} else {
-		int32_t vdd = ((uint32_t)adc_getVdd() * v )/4096;
+		// Normal case, convert value into mV with 12 bits precision
+		vdd = ((uint32_t)adc_getVdd() * v )/4096;
 	    return (uint16_t)vdd;
 	}
 

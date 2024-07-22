@@ -24,6 +24,7 @@
  *
  * ==========================================================
  */
+#include <stdint.h>
 #include <it_sdk/config.h>
 
 #ifndef IT_SDK_STATEMACHINE_STATEMACHINE_H_

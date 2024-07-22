@@ -25,7 +25,7 @@
  */
 #include <it_sdk/config.h>
 
-#if ITSDK_WITH_I2C == __I2C_ENABLED
+#if ITSDK_WITH_I2C == __I2C_ENABLED && (ITSDK_PLATFORM == __PLATFORM_STM32L0 || ITSDK_PLATFORM == __PLATFORM_STM32WLE)
 #include <stm32l_sdk/i2c/i2c.h>
 #include <it_sdk/wrappers.h>
 

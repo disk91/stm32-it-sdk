@@ -91,7 +91,11 @@ int32_t rtc_getMsFromTicks(uint32_t ticks) {
  * Run the RTC for a given number of ticks
  */
 void rtc_runRtcUntilTicks(uint32_t ticks) {
-	HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, ticks, RTC_WAKEUPCLOCK_RTCCLK_DIV16);
+	#if ITSDK_PLATFORM == __PLATFORM_STM32L0
+  	  HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, ticks, RTC_WAKEUPCLOCK_RTCCLK_DIV16);
+	#elif ITSDK_PLATFORM == __PLATFORM_STM32WLE
+	  HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, ticks, RTC_WAKEUPCLOCK_RTCCLK_DIV16,0);
+	#endif
 }
 
 /**
@@ -99,7 +103,12 @@ void rtc_runRtcUntilTicks(uint32_t ticks) {
  */
 void rtc_runRtcUntilMs(uint32_t ms) {
 	// the scale is 1 second
-	HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, (ms / 1000), RTC_WAKEUPCLOCK_CK_SPRE_16BITS);
+	#if ITSDK_PLATFORM == __PLATFORM_STM32L0
+		HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, (ms / 1000), RTC_WAKEUPCLOCK_CK_SPRE_16BITS);
+	#elif ITSDK_PLATFORM == __PLATFORM_STM32WLE
+		HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, (ms / 1000), RTC_WAKEUPCLOCK_CK_SPRE_16BITS,0);
+	#endif
+
 }
 
 

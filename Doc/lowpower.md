@@ -4,10 +4,11 @@
 ### UART Wake Up
 
 #### STM32
-On STM32 UART wake up is possible for any of the UART. The most important thing is to have UART CLK source (UART Source MUX) in CubeMX set to HSI or LSE. Depends on the MCU the possible UART/LPUART to wake up the device are changing.
+On STM32 UART wake up is possible for any of the UART. The most important thing is to have UART CLK source (UART Source MUX) in CubeMX set to HSI or LSE. 
+Depends on the MCU the possible UART/LPUART to wake up the device are changing.
 - when HSI, the baudrate can be set to any rate
 - when LSE, the baudrate should be under 9600 bps
-The associated EXTI - Wakeup interrupt must be activated in CubeMx
+The associated EXTI - Wakeup interrupt must be activated in CubeMx, this is made by activating the USART IRQ
 
 To activate Uart wake up you need to have different settings in _config.h_ file:
  

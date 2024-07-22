@@ -80,9 +80,21 @@ itsdk_timer_return_t itsdk_stimer_register(
 		itsdk_timer_lpAccept allowLowPower				// when true the MCU can switch to low power during timer execution
 );
 
+itsdk_timer_return_t itsdk_stimer_stop_1(
+		void (*callback_func)(uint32_t value),
+		uint32_t value,
+		bool checkCbFunc
+);
+
 itsdk_timer_return_t itsdk_stimer_stop(
 		void (*callback_func)(uint32_t value),
 		uint32_t value
+);
+
+itsdk_stimer_slot_t * itsdk_stimer_get_1(
+		void (*callback_func)(uint32_t value),
+		uint32_t value,
+		bool checkCbFunc
 );
 
 itsdk_stimer_slot_t * itsdk_stimer_get(
@@ -93,6 +105,12 @@ itsdk_stimer_slot_t * itsdk_stimer_get(
 bool itsdk_stimer_isRunning(
 		void (*callback_func)(uint32_t value),
 		uint32_t value
+);
+
+bool itsdk_stimer_isRunning_1(
+		void (*callback_func)(uint32_t value),
+		uint32_t value,
+		bool checkCbFunc
 );
 
 void itsdk_stimer_run();								// run the stimer (need to be called as much as possible, on regular basis)

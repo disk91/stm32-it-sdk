@@ -200,6 +200,13 @@ S2LP_SPI_StatusBytes s2lp_spi_readRegisters(
 }
 
 
+/**
+ * Sounds like there is no call to set ... so not really needed... wait and see
+ */
+uint8_t S2LPGetSpiInUse(void) {
+  return 0;
+}
+
 
 #endif // ITSDK_SIGFOX_LIB test
 

@@ -99,6 +99,7 @@ void wdg_refresh();
 // eeprom
 bool _eeprom_write(uint8_t bank, uint32_t offset, void * data, int len);
 bool _eeprom_read(uint8_t bank, uint32_t offset, void * data, int len);
+bool _eeprom_clear(uint8_t bank);
 
 // ================================================
 // adc
@@ -180,7 +181,7 @@ void gpio_Callback(uint16_t GPIO_Pin);
 
 // ================================================
 // spi
-#if ITSDK_WITH_SPI == __SPI_ENABLED
+#if ITSDK_WITH_SPI != __SPI_NONE
 typedef enum
 {
   __SPI_OK       = 0x00U,
@@ -189,6 +190,7 @@ typedef enum
   __SPI_TIMEOUT  = 0x03U
 } _SPI_Status;
 
+#if ((ITSDK_WITH_SPI) & __SPI_ENABLED) > 0
 _SPI_Status spi_rwRegister(
 		ITSDK_SPI_HANDLER_TYPE * spi,
 		uint8_t	* toTransmit,
@@ -206,6 +208,11 @@ _SPI_Status spi_readRegister(
 _SPI_Status spi_write_byte(
 		ITSDK_SPI_HANDLER_TYPE * spi,
 		uint8_t Value
+);
+
+_SPI_Status spi_read_byte(
+		SPI_HandleTypeDef * spi,
+		uint8_t * Value
 );
 
 _SPI_Status spi_transmit_dma_start(
@@ -227,7 +234,9 @@ void spi_wait4TransactionEnd(
 void spi_reset(
 		ITSDK_SPI_HANDLER_TYPE * spi
 );
-#endif
+#endif // __SPI_ENABLED
+#endif // ITSDK_WITH_SPI
+
 // ================================================
 // I2C
 #if ITSDK_WITH_I2C == __I2C_ENABLED
@@ -257,18 +266,18 @@ _I2C_Status i2c_write(
 
 _I2C_Status i2c_write8BRegister(
 		ITSDK_I2C_HANDLER_TYPE * i2c,
-		uint16_t  devAdr,			// Non shifted device address
-		uint16_t  regAdr,			// Register address (8b or 16b�
-		uint8_t   value,			// 8B value to be written
-		uint16_t  regSize			// Register address size 1B or 2B
+		uint16_t  devAdr,							// Non shifted device address
+		uint16_t  regAdr,							// Register address (8b or 16b)
+		uint8_t   value,							// 8B value to be written
+		uint16_t  regSize							// Register address size 1B or 2B
 );
 
-_I2C_Status i2c_write16BRegister(		// 16B Word => LSB first on I2C
+_I2C_Status i2c_write16BRegister(					// 16B Word => LSB first on I2C
 		ITSDK_I2C_HANDLER_TYPE * i2c,
-		uint16_t  devAdr,			// Non shifted device address
-		uint16_t  regAdr,			// Register address (8b or 16b�
-		uint16_t  value,			// 16B value to be written
-		uint16_t  regSize			// Register address size 1B or 2B
+		uint16_t  devAdr,							// Non shifted device address
+		uint16_t  regAdr,							// Register address (8b or 16b)
+		uint16_t  value,							// 16B value to be written
+		uint16_t  regSize							// Register address size 1B or 2B
 );
 
 _I2C_Status i2c_memRead(
@@ -289,18 +298,18 @@ _I2C_Status i2c_read(
 
 _I2C_Status i2c_read8BRegister(
 		ITSDK_I2C_HANDLER_TYPE * i2c,
-		uint16_t  devAdr,			// Non shifted device address
-		uint16_t  regAdr,			// Register address (8b or 16b�
-		uint8_t * value,			// 8B value to be read
-		uint16_t  regSize			// Register address size 1B or 2B
+		uint16_t  devAdr,							// Non shifted device address
+		uint16_t  regAdr,							// Register address (8b or 16b)
+		uint8_t * value,							// 8B value to be read
+		uint16_t  regSize							// Register address size 1B or 2B
 );
 
-_I2C_Status i2c_read16BRegister(    // 16B Word => LSB first on I2C
+_I2C_Status i2c_read16BRegister(    				// 16B Word => LSB first on I2C
 		ITSDK_I2C_HANDLER_TYPE * i2c,
-		uint16_t  devAdr,			// Non shifted device address
-		uint16_t  regAdr,			// Register address (8b or 16b�
-		uint16_t * value,			// 8B value to be read
-		uint16_t  regSize			// Register address size 1B or 2B
+		uint16_t  devAdr,							// Non shifted device address
+		uint16_t  regAdr,							// Register address (8b or 16b)
+		uint16_t * value,							// 8B value to be read
+		uint16_t  regSize							// Register address size 1B or 2B
 );
 
 void i2c_reset(
@@ -311,15 +320,15 @@ void i2c_reset(
 // ================================================
 // Reset Cause
 typedef enum {
-	RESET_CAUSE_BOR = 0,		// under voltage			0
-	RESET_CAUSE_RESET_PIN,		// hardware reset pin		1
-	RESET_CAUSE_POWER_ON,		// power on					2
-	RESET_CAUSE_SOFTWARE,		// software reset			3
-	RESET_CAUSE_IWDG,			// Independent Watchdog		4
-	RESET_CAUSE_WWDG,			// Window Watchdog			5
-	RESET_CAUSE_LOWPOWER,		// Low-Power reset Flag		6
+	RESET_CAUSE_BOR 		= 0,		// under voltage			0
+	RESET_CAUSE_RESET_PIN 	= 1,		// hardware reset pin		1
+	RESET_CAUSE_POWER_ON 	= 2,		// power on					2
+	RESET_CAUSE_SOFTWARE	= 3,		// software reset			3
+	RESET_CAUSE_IWDG		= 4,		// Independent Watchdog		4
+	RESET_CAUSE_WWDG		= 5,		// Window Watchdog			5
+	RESET_CAUSE_LOWPOWER 	= 6,		// Low-Power reset Flag		6
 
-	RESET_CAUSE_UNKNONW
+	RESET_CAUSE_UNKNONW 	= 99
 } itsdk_reset_cause_t;
 
 void itsdk_cleanResetCause();

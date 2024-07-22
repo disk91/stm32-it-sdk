@@ -21,8 +21,8 @@
 
     Library implementing Sigfox protocol V1.
     The picture below describes the architecture of a Sigfox Device organized as software Layers.<br>
- 
-    \image html sw_architecture.png 
+
+    \image html sw_architecture.png
 */
 /*!
  * \file sigfox_api.h
@@ -53,9 +53,9 @@
  *  @{
  */
 
-/* ------------------------------------------------------------------------------------------------------------------------------------- 
-                                            IMPORTANT NOTE on ERROR CODES                             
-   ------------------------------------------------------------------------------------------------------------------------------------- 
+/* -------------------------------------------------------------------------------------------------------------------------------------
+                                            IMPORTANT NOTE on ERROR CODES
+   -------------------------------------------------------------------------------------------------------------------------------------
 
    ALL SIGFOX_API_xxx or SIGFOX_REPEATER_API_xxx functions returns an error type sfx_error_t
 
@@ -75,8 +75,8 @@
 
    SIGFOX_ERROR_CODE :
        - Represents the error codes of the SIGFOX API or internal functions
-       - All the error codes can be found in this file ( sigfox_api.h ) 
- 
+       - All the error codes can be found in this file ( sigfox_api.h )
+
    ------------------------------------------------------------------------------------------------------------------------------------- */
 #ifndef IT_SDK_DRIVERS_SIGFOX_API_H_
 #define IT_SDK_DRIVERS_SIGFOX_API_H_
@@ -126,8 +126,8 @@
 #define SFX_ERR_API_STOP_CONTINUOUS_TRANSMISSION                 (sfx_u8)(0x59) /*!< Error occurs during the stop continuous transmission : check the manuf error code to get the error */
 #define SFX_ERR_API_STOP_CONTINUOUS_TRANSMISSION_STATE           (sfx_u8)(0x5A) /*!< State is not TX, function SIGFOX_API_start_continuous_tranmission has to be called before */
 
-#define SFX_ERR_API_GET_INITIAL_PAC                              (sfx_u8)(0x5B) /*!< Error occurs when trying to retrieve the PAC : check the manuf error code to get the error */ 
-#define SFX_ERR_API_GET_VERSION                                  (sfx_u8)(0x5C) /*!< Error occurs when trying to retrieve the version : check the manuf error code to get the error */ 
+#define SFX_ERR_API_GET_INITIAL_PAC                              (sfx_u8)(0x5B) /*!< Error occurs when trying to retrieve the PAC : check the manuf error code to get the error */
+#define SFX_ERR_API_GET_VERSION                                  (sfx_u8)(0x5C) /*!< Error occurs when trying to retrieve the version : check the manuf error code to get the error */
 #define SFX_ERR_API_GET_VERSION_WRONG_TYPE                       (sfx_u8)(0x5D) /*!< Error occurs when trying to retrieve the version : wrong version type - see the enum sfx_version_type_t */
 #define SFX_ERR_API_SWITCH_PUBLIC_KEY                            (sfx_u8)(0x5E) /*!< Error occurs when switching device key: state is not READY - Should open the library */
 
@@ -157,9 +157,9 @@
 #define SFX_ERR_INT_BUILD_FRAME                                  (sfx_u8)(0x91) /*!< Error occurs when building the frame : check the manuf error code */
 #define SFX_ERR_INT_BUILD_FRAME_OOB_SERVICE                      (sfx_u8)(0x92) /*!< Error occurs when building the OOB Frame in MCU_API_get_voltage_temperature : check the manuf error code */
 #define SFX_ERR_INT_BUILD_FRAME_OOB_DOWNLINK_ACK                 (sfx_u8)(0x93) /*!< Error occurs when building the OOB downlink frame in MCU_API_get_voltage_temperature : check the manuf error code */
-#define SFX_ERR_INT_BUILD_FRAME_OOB_REPEATER_STATUS              (sfx_u8)(0x94) /*!< Error occurs when building the OOB REPEATER_FRAME in REPEATER_API_get_voltage : check the manuf error code */            
-#define SFX_ERR_INT_BUILD_FRAME_OOB_RC_SYNC                      (sfx_u8)(0x95) /*!< Error occurs when building the OOB RCSYNC frame : check the manuf error code */            
-#define SFX_ERR_INT_BUILD_FRAME_PAYLOAD_CRYPTED                  (sfx_u8)(0x96) /*!< Error occurs when building the encrypted frame : check the manuf error code */            
+#define SFX_ERR_INT_BUILD_FRAME_OOB_REPEATER_STATUS              (sfx_u8)(0x94) /*!< Error occurs when building the OOB REPEATER_FRAME in REPEATER_API_get_voltage : check the manuf error code */
+#define SFX_ERR_INT_BUILD_FRAME_OOB_RC_SYNC                      (sfx_u8)(0x95) /*!< Error occurs when building the OOB RCSYNC frame : check the manuf error code */
+#define SFX_ERR_INT_BUILD_FRAME_PAYLOAD_CRYPTED                  (sfx_u8)(0x96) /*!< Error occurs when building the encrypted frame : check the manuf error code */
 
 #define SFX_ERR_INT_SEND_SINGLE_FRAME                            (sfx_u8)(0x97)  /*!< Error when sending a frame : check the manuf error code */
 #define SFX_ERR_INT_PROCESS_DOWNLINK                             (sfx_u8)(0x98)  /*!< Error when starting the downlink : in MCU_API_timer_wait_for_end : check the manuf error code */
@@ -185,7 +185,7 @@
 #define SFX_ERR_CALLBACK_MONARCH_SCAN_TIMEOUT_CB_STATE                      (sfx_u8)(0xB7) /*!< The device is not currently in scan mode : there is no reason to call the timeout timer function */
 #define SFX_ERR_CALLBACK_MONARCH_SCAN_TIMEOUT                               (sfx_u8)(0xB8) /*!< Error when executing the callback of the timer expiration : check the manuf error code - call the stop_rc_scan to come back in IDLE state */
 #define SFX_ERR_CALLBACK_MONARCH_PATTERN_FREQUENCY_RESULT_STATE             (sfx_u8)(0xB9) /*!< The device is not currently in search pattern mode: there is no reason to call the pattern frequency result function */
-#define SFX_ERR_CALLBACK_MONARCH_PATTERN_FREQUENCY_RESULT                   (sfx_u8)(0xBA) /*!< Error when executing the callback function of the pattern frequency result : check the manuf error code - call the stop_rc_scan to come back in IDLE state */ 
+#define SFX_ERR_CALLBACK_MONARCH_PATTERN_FREQUENCY_RESULT                   (sfx_u8)(0xBA) /*!< Error when executing the callback function of the pattern frequency result : check the manuf error code - call the stop_rc_scan to come back in IDLE state */
 #define SFX_ERR_CALLBACK_MONARCH_PATTERN_FREQUENCY_RESULT_WRONG_PATTERN     (sfx_u8)(0xBB) /*!< The pattern is not one of the requested frequencies sent by the lib - call the stop_rc_scan to come back in IDLE state*/
 #define SFX_ERR_CALLBACK_MONARCH_PATTERN_FREQUENCY_RESULT_WRONG_FREQ        (sfx_u8)(0xBC)  /*!< The frequency is not one of the requested frequencies sent by the lib - call the stop_rc_scan to come back in IDLE state*/
 
@@ -194,7 +194,7 @@
 /* Bytes reserved for SIGFOX VERIFIED APP ERROR CODES : From 0xC0 to 0xCF        */
 /* ----------------------------------------------------------------------------- */
 
- 
+
 #define SFX_ERR_INT_DOWNLINK_CONFIGURATION                                  (sfx_u8)(0xE0)  /*!< Error occurs when trying to configure downlink : check the manuf error code */
 
 
@@ -213,14 +213,14 @@
 #define RC1_OPEN_UPLINK_CENTER_FREQUENCY      (sfx_u32)(868130000) /* Hz */
 #define RC1_OPEN_DOWNLINK_CENTER_FREQUENCY    (sfx_u32)(869525000) /* Hz */
 #define RC1_MACRO_CHANNEL_WIDTH               (sfx_u32)(192000)    /* Hz */
-#define RC1_UPLINK_MODULATION                 SFX_DBPSK_100BPS 
+#define RC1_UPLINK_MODULATION                 SFX_DBPSK_100BPS
 #define RC1_UPLINK_SPECTRUM_ACCESS            SFX_DC
 
 #define RC2_OPEN_UPLINK_START_OF_TABLE        (sfx_u32)(902200000) /* Hz, The center frequency of RC2 is defined by the activated channels in config words */
 #define RC2_OPEN_DOWNLINK_CENTER_FREQUENCY    (sfx_u32)(905200000) /* Hz */
 #define RC2_MACRO_CHANNEL_WIDTH               (sfx_u32)(192000)    /* Hz */
-#define RC2_UPLINK_MODULATION                 SFX_DBPSK_600BPS 
-#define RC2_UPLINK_SPECTRUM_ACCESS            SFX_FH 
+#define RC2_UPLINK_MODULATION                 SFX_DBPSK_600BPS
+#define RC2_UPLINK_SPECTRUM_ACCESS            SFX_FH
 #define RC2_SET_STD_CONFIG_LM_WORD_0          (sfx_u32)0x000001FF  /* LM = Long Message */
 #define RC2_SET_STD_CONFIG_LM_WORD_1          (sfx_u32)0x00000000
 #define RC2_SET_STD_CONFIG_LM_WORD_2          (sfx_u32)0x00000000
@@ -235,8 +235,8 @@
 #define RC3A_OPEN_UPLINK_CENTER_FREQUENCY     (sfx_u32)(923200000) /* Hz */
 #define RC3A_OPEN_DOWNLINK_CENTER_FREQUENCY   (sfx_u32)(922200000) /* Hz */
 #define RC3A_MACRO_CHANNEL_WIDTH              (sfx_u32)(36000)     /* Hz */
-#define RC3A_UPLINK_MODULATION                SFX_DBPSK_100BPS 
-#define RC3A_UPLINK_SPECTRUM_ACCESS           SFX_LBT 
+#define RC3A_UPLINK_MODULATION                SFX_DBPSK_100BPS
+#define RC3A_UPLINK_SPECTRUM_ACCESS           SFX_LBT
 #define RC3A_CS_THRESHOLD                     (sfx_s8)(-80) /* dBm */
 
 #define RC3C_OPEN_CS_CENTER_FREQUENCY         (sfx_u32)(923200000) /* Hz */
@@ -244,15 +244,15 @@
 #define RC3C_OPEN_UPLINK_CENTER_FREQUENCY     (sfx_u32)(923200000) /* Hz */
 #define RC3C_OPEN_DOWNLINK_CENTER_FREQUENCY   (sfx_u32)(922200000) /* Hz */
 #define RC3C_MACRO_CHANNEL_WIDTH              (sfx_u32)(192000)    /* Hz */
-#define RC3C_UPLINK_MODULATION                SFX_DBPSK_100BPS 
-#define RC3C_UPLINK_SPECTRUM_ACCESS           SFX_LBT 
+#define RC3C_UPLINK_MODULATION                SFX_DBPSK_100BPS
+#define RC3C_UPLINK_SPECTRUM_ACCESS           SFX_LBT
 #define RC3C_CS_THRESHOLD                     (sfx_s8)(-80) /* dBm */
 
 #define RC4_OPEN_UPLINK_START_OF_TABLE        (sfx_u32)(902200000) /* Hz, The center frequency of RC4 is defined by the activated channels in config words */
 #define RC4_OPEN_DOWNLINK_CENTER_FREQUENCY    (sfx_u32)(922300000) /* Hz */
 #define RC4_MACRO_CHANNEL_WIDTH               (sfx_u32)(192000)    /* Hz */
-#define RC4_UPLINK_MODULATION                 SFX_DBPSK_600BPS 
-#define RC4_UPLINK_SPECTRUM_ACCESS            SFX_FH 
+#define RC4_UPLINK_MODULATION                 SFX_DBPSK_600BPS
+#define RC4_UPLINK_SPECTRUM_ACCESS            SFX_FH
 #define RC4_SET_STD_CONFIG_LM_WORD_0          (sfx_u32)0x00000000  /* LM = Long Message */
 #define RC4_SET_STD_CONFIG_LM_WORD_1          (sfx_u32)0xF0000000
 #define RC4_SET_STD_CONFIG_LM_WORD_2          (sfx_u32)0x0000001F
@@ -263,25 +263,37 @@
 #define RC4_SET_STD_CONFIG_SM_WORD_2          (sfx_u32)0x00000000
 
 #define RC5_OPEN_CS_CENTER_FREQUENCY          (sfx_u32)(923300000) /* Hz */
-#define RC5_OPEN_CS_BANDWIDTH                 (sfx_u32)(200000)    /* Hz */
-#define RC5_OPEN_UPLINK_CENTER_FREQUENCY      (sfx_u32)(923250000) /* Hz */
-#define RC5_OPEN_DOWNLINK_CENTER_FREQUENCY    (sfx_u32)(922250000) /* Hz */
-#define RC5_MACRO_CHANNEL_WIDTH               (sfx_u32)(96000)     /* Hz */ 
-#define RC5_UPLINK_MODULATION                 SFX_DBPSK_100BPS 
-#define RC5_UPLINK_SPECTRUM_ACCESS            SFX_LBT 
+#define RC5_OPEN_CS_BANDWIDTH                 (sfx_u32)(200000) /* Hz */
+#define RC5_OPEN_UPLINK_CENTER_FREQUENCY      (sfx_u32)(923300000) /* Hz */
+#define RC5_OPEN_DOWNLINK_CENTER_FREQUENCY    (sfx_u32)(922300000) /* Hz */
+#define RC5_MACRO_CHANNEL_WIDTH               (sfx_u32)(192000) /* Hz */
+#define RC5_UPLINK_MODULATION                 SFX_DBPSK_100BPS
+#define RC5_UPLINK_SPECTRUM_ACCESS            SFX_LBT
 #define RC5_CS_THRESHOLD                      (sfx_s8)(-65) /* dBm */
+
+#define RC6_OPEN_UPLINK_CENTER_FREQUENCY      (sfx_u32)(865200000) /* Hz */
+#define RC6_OPEN_DOWNLINK_CENTER_FREQUENCY    (sfx_u32)(866300000) /* Hz */
+#define RC6_MACRO_CHANNEL_WIDTH               (sfx_u32)(192000) /* Hz */
+#define RC6_UPLINK_MODULATION                 SFX_DBPSK_100BPS
+#define RC6_UPLINK_SPECTRUM_ACCESS            SFX_DC
+
+#define RC7_OPEN_UPLINK_CENTER_FREQUENCY      (sfx_u32)(868800000) /* Hz */
+#define RC7_OPEN_DOWNLINK_CENTER_FREQUENCY    (sfx_u32)(869100000) /* Hz */
+#define RC7_MACRO_CHANNEL_WIDTH               (sfx_u32)(192000) /* Hz */
+#define RC7_UPLINK_MODULATION                 SFX_DBPSK_100BPS
+#define RC7_UPLINK_SPECTRUM_ACCESS            SFX_DC
 
 #define RC101_OPEN_UPLINK_CENTER_FREQUENCY    (sfx_u32)(68862500)  /* Hz */
 #define RC101_OPEN_DOWNLINK_CENTER_FREQUENCY  (sfx_u32)(72912500)  /* Hz */
 #define RC101_MACRO_CHANNEL_WIDTH             (sfx_u32)(12500)     /* Hz */
-#define RC101_UPLINK_MODULATION               SFX_DBPSK_100BPS 
-#define RC101_UPLINK_SPECTRUM_ACCESS          SFX_DC 
+#define RC101_UPLINK_MODULATION               SFX_DBPSK_100BPS
+#define RC101_UPLINK_SPECTRUM_ACCESS          SFX_DC
 
 
-/* ---------------------------------------------- 
+/* ----------------------------------------------
    IMPORTANT INFORMATION :
    ----------------------------------------------
-   The SIGFOX Library needs to be opened with 
+   The SIGFOX Library needs to be opened with
    one of the below configurations.
    ----------------------------------------------
 */
@@ -289,11 +301,11 @@
 #define RC2   { RC2_OPEN_UPLINK_START_OF_TABLE,     RC2_OPEN_DOWNLINK_CENTER_FREQUENCY,   RC2_MACRO_CHANNEL_WIDTH,   RC2_UPLINK_MODULATION,   RC2_UPLINK_SPECTRUM_ACCESS, {NA,NA,NA} }
 #define RC3A  { RC3A_OPEN_UPLINK_CENTER_FREQUENCY,  RC3A_OPEN_DOWNLINK_CENTER_FREQUENCY,  RC3A_MACRO_CHANNEL_WIDTH,  RC3A_UPLINK_MODULATION,  RC3A_UPLINK_SPECTRUM_ACCESS, {RC3A_OPEN_CS_CENTER_FREQUENCY,RC3A_OPEN_CS_BANDWIDTH, RC3A_CS_THRESHOLD} }
 #define RC3C  { RC3C_OPEN_UPLINK_CENTER_FREQUENCY,  RC3C_OPEN_DOWNLINK_CENTER_FREQUENCY,  RC3C_MACRO_CHANNEL_WIDTH,  RC3C_UPLINK_MODULATION,  RC3C_UPLINK_SPECTRUM_ACCESS, {RC3C_OPEN_CS_CENTER_FREQUENCY,RC3C_OPEN_CS_BANDWIDTH, RC3C_CS_THRESHOLD} }
-
-#define RC4   { RC4_OPEN_UPLINK_START_OF_TABLE,     RC4_OPEN_DOWNLINK_CENTER_FREQUENCY,   RC4_MACRO_CHANNEL_WIDTH,   RC4_UPLINK_MODULATION,   RC4_UPLINK_SPECTRUM_ACCESS, {NA,NA,NA} }
-#define RC5   { RC5_OPEN_UPLINK_CENTER_FREQUENCY,   RC5_OPEN_DOWNLINK_CENTER_FREQUENCY,   RC5_MACRO_CHANNEL_WIDTH,   RC5_UPLINK_MODULATION,   RC5_UPLINK_SPECTRUM_ACCESS, {RC5_OPEN_CS_CENTER_FREQUENCY,RC5_OPEN_CS_BANDWIDTH, RC5_CS_THRESHOLD} }
-
-#define RC101 { RC101_OPEN_UPLINK_CENTER_FREQUENCY, RC101_OPEN_DOWNLINK_CENTER_FREQUENCY, RC101_MACRO_CHANNEL_WIDTH, RC101_UPLINK_MODULATION, RC101_UPLINK_SPECTRUM_ACCESS, {NA,NA,NA} }
+#define RC4   { RC4_OPEN_UPLINK_START_OF_TABLE,     RC4_OPEN_DOWNLINK_CENTER_FREQUENCY,   RC4_MACRO_CHANNEL_WIDTH,   RC4_UPLINK_MODULATION,   RC4_UPLINK_SPECTRUM_ACCESS, {NA,NA,NA}}
+#define RC5   { RC5_OPEN_UPLINK_CENTER_FREQUENCY,   RC5_OPEN_DOWNLINK_CENTER_FREQUENCY,   RC5_MACRO_CHANNEL_WIDTH,   RC5_UPLINK_MODULATION,   RC5_UPLINK_SPECTRUM_ACCESS, {RC5_OPEN_CS_CENTER_FREQUENCY,RC5_OPEN_CS_BANDWIDTH, RC5_CS_THRESHOLD}}
+#define RC6   { RC6_OPEN_UPLINK_CENTER_FREQUENCY,   RC6_OPEN_DOWNLINK_CENTER_FREQUENCY,   RC6_MACRO_CHANNEL_WIDTH,   RC6_UPLINK_MODULATION,   RC6_UPLINK_SPECTRUM_ACCESS, {NA,NA,NA}}
+#define RC7   { RC7_OPEN_UPLINK_CENTER_FREQUENCY,   RC7_OPEN_DOWNLINK_CENTER_FREQUENCY,   RC7_MACRO_CHANNEL_WIDTH,   RC7_UPLINK_MODULATION,   RC7_UPLINK_SPECTRUM_ACCESS, {NA,NA,NA}}
+#define RC101 { RC101_OPEN_UPLINK_CENTER_FREQUENCY, RC101_OPEN_DOWNLINK_CENTER_FREQUENCY, RC101_MACRO_CHANNEL_WIDTH, RC101_UPLINK_MODULATION, RC101_UPLINK_SPECTRUM_ACCESS, {NA,NA,NA}}
 
 #define RC2_LM_CONFIG  { RC2_SET_STD_CONFIG_LM_WORD_0, RC2_SET_STD_CONFIG_LM_WORD_1, RC2_SET_STD_CONFIG_LM_WORD_2 }   /*!< Config for full RC2 hopping */
 #define RC4_LM_CONFIG  { RC4_SET_STD_CONFIG_LM_WORD_0, RC4_SET_STD_CONFIG_LM_WORD_1, RC4_SET_STD_CONFIG_LM_WORD_2 }   /*!< Config for full RC4 hopping */
@@ -317,14 +329,14 @@
  *******************************/
 typedef enum
 {
-    SFX_FH   = 1,                             /*!< Index of Frequency Hopping */ 
+    SFX_FH   = 1,                             /*!< Index of Frequency Hopping */
     SFX_LBT  = 2,                             /*!< Index of Listen Before Talk */
     SFX_DC   = 4,                             /*!< Index of Duty Cycle */
 } sfx_spectrum_access_t;
 
 /********************************
  * \enum sfx_version_type_t
- * \brief Enum to be used in SIGFOX_API_get_version 
+ * \brief Enum to be used in SIGFOX_API_get_version
  *******************************/
 typedef enum
 {
@@ -332,14 +344,14 @@ typedef enum
     VERSION_MCU       = 1,                    /*!< MCU Version */
     VERSION_RF        = 2,                    /*!< RF Version */
     VERSION_MONARCH   = 5,                    /*!< MONARCH Version */
-    VERSION_DEVICE_CONFIG = 6,                /*!< DEVICE CONFIG */
+    VERSION_DEVICE_CONFIG = 6,                /*!< DEVICE CONFIG */    /* Make sur we need this as it is not part of the Monarch header */
 
 } sfx_version_type_t;
 
 typedef enum
 {
-    AUTHENTICATION_OFF   = 0,                 /*!< No authentication of the Received frame, but check a specific pattern */ 
-    AUTHENTICATION_ON    = 1,                 /*!< Authentication of the Received frame */ 
+    AUTHENTICATION_OFF   = 0,                 /*!< No authentication of the Received frame, but check a specific pattern */
+    AUTHENTICATION_ON    = 1,                 /*!< Authentication of the Received frame */
 } sfx_authentication_mode_t;
 
 typedef enum
@@ -349,9 +361,9 @@ typedef enum
 } sfx_rx_state_enum_t;
 
 /********************************
- * \enum sfx_oob_enum_t 
+ * \enum sfx_oob_enum_t
  * \brief This enum contains all the OOB frame types
- * that can be send by the user application 
+ * that can be send by the user application
  *******************************/
 typedef enum
 {
@@ -381,7 +393,7 @@ typedef enum
 
 /********************************
  * \enum sfx_modulation_type_t
- * \brief Uplink Modulation type with baudrate 
+ * \brief Uplink Modulation type with baudrate
  *******************************/
 typedef enum
 {
@@ -425,7 +437,7 @@ typedef enum
     SFX_RF_MODE_RX = 1,                       /*!< Set RF chip as receiver */
     SFX_RF_MODE_CS200K_RX = 2,                /*!< Set RF chip as receiver for Carrier Sense on 200KHz */
     SFX_RF_MODE_CS300K_RX = 3,                /*!< Set RF chip as receiver for Carrier Sense on 300KHz */
-    SFX_RF_MODE_MONARCH   = 4,                /*!< Set RF chip as Monarch Configuration */              
+    SFX_RF_MODE_MONARCH   = 4,                /*!< Set RF chip as Monarch Configuration */
 } sfx_rf_mode_t;
 
 /********************************
@@ -446,8 +458,8 @@ typedef enum
  *******************************/
 typedef enum
 {
-    CREDENTIALS_PRIVATE_KEY = 0,
-    CREDENTIALS_KEY_IN_ARGUMENT,
+    CREDENTIALS_PRIVATE_KEY = 0,			  /*!< NAK (Network Access Key) */
+    CREDENTIALS_KEY_IN_ARGUMENT,			  /*!< Use the key in argument */
 } sfx_credentials_use_key_t;
 
 /********************************
@@ -494,7 +506,7 @@ typedef struct sfx_rc_t
  *  - Read the non volatile memory content
  *  - Set the global state to SFX_STATE_READY
  *
- * \param[in] sfx_rc_t *rc                      Pointer on the Radio Configuration Zone: it is mandatory 
+ * \param[in] sfx_rc_t *rc                      Pointer on the Radio Configuration Zone: it is mandatory
  *                                              to use already existing RCx define.
  *
  * \retval  The sfx_error_t is composed of the following :
@@ -524,7 +536,7 @@ sfx_error_t SIGFOX_API_open(sfx_rc_t *rc);
  *     |_______________________|______________________|
  *
  *  SIGFOX_ERROR_CODE for this function : SFX_ERR_NONE and SFX_ERR_API_CLOSE_xx
- * 
+ *
  *******************************************************************/
 sfx_error_t SIGFOX_API_close(void);
 
@@ -546,7 +558,7 @@ sfx_error_t SIGFOX_API_close(void);
  * \param[in] sfx_u8 *customer_data               Data to transmit
  * \param[in] sfx_u8 customer_data_length         Data length in Bytes
  * \param[out] sfx_u8 *customer_response          Returned 8 Bytes data in case of downlink
- * \param[in] sfx_u8 tx_repeat                    Number of repetition (value between 1 and 3 included - for downlink only)
+ * \param[in] sfx_u8 tx_mode                      Tx Mode = Number of repetition (value between 1 and 3 included - for downlink only)
  * \param[in] sfx_bool initiate_downlink_flag     Flag to initiate a downlink response
  *
  * \retval  The sfx_error_t is composed of the following :
@@ -558,12 +570,12 @@ sfx_error_t SIGFOX_API_close(void);
  *     |_______________________|______________________|
  *
  *  SIGFOX_ERROR_CODE for this function : SFX_ERR_NONE and SFX_ERR_API_SEND_FRAME_xx  or  SFX_ERR_INT_xx
- * 
+ *
  *******************************************************************/
 sfx_error_t SIGFOX_API_send_frame(sfx_u8 *customer_data,
                                   sfx_u8 customer_data_length,
                                   sfx_u8 *customer_response,
-                                  sfx_u8 tx_repeat,
+                                  sfx_u8 tx_mode,
                                   sfx_bool initiate_downlink_flag);
 
 /*!******************************************************************
@@ -586,7 +598,7 @@ sfx_error_t SIGFOX_API_send_frame(sfx_u8 *customer_data,
  *
  * \param[in] sfx_bool bit_value                Bit state (SFX_TRUE or SFX_FALSE)
  * \param[out] sfx_u8 *customer_response        Returned 8 Bytes data in case of downlink
- * \param[in] sfx_u8 tx_repeat                  Number of repetition (downlink only)
+ * \param[in] sfx_u8 tx_mode                     Number of repetition (downlink only)
  * \param[in] sfx_bool initiate_downlink_flag   Flag to initiate a downlink response
  *
  * \retval  The sfx_error_t is composed of the following :
@@ -602,7 +614,7 @@ sfx_error_t SIGFOX_API_send_frame(sfx_u8 *customer_data,
  *******************************************************************/
 sfx_error_t SIGFOX_API_send_bit(sfx_bool bit_value,
                                 sfx_u8 *customer_response,
-                                sfx_u8 tx_repeat,
+                                sfx_u8 tx_mode,
                                 sfx_bool initiate_downlink_flag);
 
 /*!******************************************************************
@@ -616,7 +628,7 @@ sfx_error_t SIGFOX_API_send_bit(sfx_bool bit_value,
  *      .
  *  .
  * This function must be called by application every 24 hours maximum
- * or never if application has some energy critical constraints with 
+ * or never if application has some energy critical constraints with
  * the SFX_OOB_SERVICE enum value
  *
  * If Payload encryption is supported and activated, the user can
@@ -628,7 +640,7 @@ sfx_error_t SIGFOX_API_send_bit(sfx_bool bit_value,
  * and the Sigfox Library.
  *.
  *
- * \param[in] sfx_oob_enum_t oob_type    Type of the OOB frame to send 
+ * \param[in] sfx_oob_enum_t oob_type    Type of the OOB frame to send
  *
  * \retval  The sfx_error_t is composed of the following :
  *
@@ -651,7 +663,7 @@ sfx_error_t SIGFOX_API_send_outofband(sfx_oob_enum_t oob_type);
  * <B> FH (Frequency Hopping )</B>: config words to enable/disable 192KHz macro channels authorized for
  * transmission.<BR>Each macro channel is separated from another of 300 kHz<BR>
  * At least 9 macro channel must be enabled to ensure the
- * minimum of 50 FCC channels (9*6 = 54).<BR> 
+ * minimum of 50 FCC channels (9*6 = 54).<BR>
  * <B>WARNING : This function should be called each time you open the library
  * or your FCC configuration will not be applied</B><BR>
  *
@@ -679,7 +691,7 @@ sfx_error_t SIGFOX_API_send_outofband(sfx_oob_enum_t oob_type);
    \endverbatim
  *
  * <B>DC (Duty Cycle)</B>: This function has no effect in DC spectrum access ( used for the ETSI standard ).</B><BR>
- * 
+ *
  * <B>LBT (Listen Before Talk)</B> : Carrier Sense feature for the First frame can be configured.
  *           - config_word[0] : number of attempts to send the first frame [ has to be greater or equal to 1]
  *           - config_word[1] : maximum carrier sense sliding window (in ms) [ has to be greater than 6 ms ( CS_MIN_DURATION_IN_MS + 1 ) ]
@@ -710,8 +722,8 @@ sfx_error_t SIGFOX_API_set_std_config(sfx_u32 config_words[3],
 
 /*!******************************************************************
  * \fn sfx_error_t SIGFOX_API_start_continuous_transmission(sfx_u32 frequency, sfx_modulation_type_t type);
- * \brief Executes a continuous wave or modulation depending on the parameter type 
- *        SIGFOX_API_stop_continuous_transmission has to be called to stop the continuous transmission.           
+ * \brief Executes a continuous wave or modulation depending on the parameter type
+ *        SIGFOX_API_stop_continuous_transmission has to be called to stop the continuous transmission.
  *
  * \param[in] sfx_u32 frequency                Frequency at which the signal has to be generated
  * \param[in] sfx_modulation_type_t type       Type of modulation to use in continuous mode.
@@ -748,7 +760,7 @@ sfx_error_t SIGFOX_API_stop_continuous_transmission (void);
  * \fn sfx_error_t SIGFOX_API_send_test_frame(sfx_u32 frequency, sfx_u8 * customer_data, sfx_u8 customer_data_length, sfx_bool initiate_downlink_flag )
  * Send only 1 repetition
  *
- * \brief This function builds a Sigfox Frame with the customer payload and send it at a specific frequency 
+ * \brief This function builds a Sigfox Frame with the customer payload and send it at a specific frequency
  *
  *
  * \param[in] sfx_u32 frequency                 Frequency at which the wave is generated
@@ -774,12 +786,12 @@ sfx_error_t SIGFOX_API_send_test_frame(sfx_u32 frequency, sfx_u8 *customer_data,
  *
  * \param[in] sfx_u32 frequency                 Frequency at which the wave is generated
  * \param[in] sfx_authentication_mode_t         Mode ( AUTHENTICATION_ON or AUTHENTICATION_OFF)
- * \param[in/out] buffer                        Depends of the Authentication mode : 
+ * \param[in/out] buffer                        Depends of the Authentication mode :
  *                                               - if AUTHENTICATION_OFF : buffer is used as input to check the bit stream of the received frame
  *                                               - if AUTHENTICATION_ON  : buffer is used as output to get the received Payload
  * \param[in] sfx_u8 timeout                    Timeout for the reception of a valid downlink frame
  * \param[in] sfx_s16 * rssi                    RSSI of the received frame ( only valid for AUTHENTICATION_ON as in AUTHENTICATION_OFF, the rssi of the frames received
- *                                              are returned through the MCU_API_report_test_result function) 
+ *                                              are returned through the MCU_API_report_test_result function)
  *
  *    MSB_____________________________________________LSB
  *    15                      8|7                     0
@@ -797,7 +809,7 @@ sfx_error_t SIGFOX_API_receive_test_frame( sfx_u32 frequency, sfx_authentication
  *
  * \param[out] sfx_u8 **version                 Pointer to Byte array (ASCII format) containing library version
  * \param[out] sfx_u8 *size                     Size of the byte array pointed by *version
- * \param[in]  sfx_version_type_t type          Type of the version ( MCU, RF, ... ) 
+ * \param[in]  sfx_version_type_t type          Type of the version ( MCU, RF, ... )
  *
  * \retval  The sfx_error_t is composed of the following :
  *
@@ -821,7 +833,7 @@ sfx_error_t SIGFOX_API_get_version(sfx_u8 **version, sfx_u8 *size, sfx_version_t
  * returned_info[bit 7 - 4] = number of free micro channel in current FCC
  * macro channel.<BR>
  * <B> In LBT :</B> returned_info = bit[7-3]: Carrier Sense attempts
- * and bit[2-0]: Number of frames sent 
+ * and bit[2-0]: Number of frames sent
  *
  * \param[out] sfx_u8* returned_info            Returned value by library
  *

@@ -32,110 +32,170 @@
 
 #include <it_sdk/itsdk.h>
 #include <it_sdk/sigfox/sigfox.h>
+#include <it_sdk/eeprom/sdk_state.h>
+#include <it_sdk/eeprom/sdk_config.h>
 #include <drivers/s2lp/s2lp_spi.h>
 #include <drivers/s2lp/s2lp.h>
 #include <it_sdk/logger/logger.h>
+#include <it_sdk/logger/error.h>
 #include <drivers/s2lp/st_rf_api.h>
 #include <drivers/s2lp/st_lib_api.h>
 #include <drivers/s2lp/sigfox_retriever.h>
 #include <drivers/s2lp/sigfox_helper.h>
 
+#if ITSDK_S2LP_CNF_RANGE ==	__SIGFOX_S2LP_PA_FEM
+  #include <drivers/s2lp/s2lp_aux_fem.h>
+#endif
+
 #if ITSDK_SIGFOX_NVM_SOURCE	== __SFX_NVM_M95640
 	#include <drivers/eeprom/m95640/m95640.h>
 #endif
 
+s2lp_drivers_config_t s2lp_driver_config;
+
 void s2lp_shutdown() {
+	LOG_DEBUG_S2LP((">> s2lp_shutdown\r\n"));
 	gpio_set(ITSDK_S2LP_SDN_BANK,ITSDK_S2LP_SDN_PIN);
 }
 
 void s2lp_wakeup() {
+	LOG_DEBUG_S2LP((">> s2lp_wakeup\r\n"));
 	gpio_reset(ITSDK_S2LP_SDN_BANK,ITSDK_S2LP_SDN_PIN);
+	itsdk_delayMs(1);
 }
 
-void s2lp_hwInit() {
+
+itsdk_sigfox_init_t s2lp_sigfox_init() {
+	LOG_DEBUG_S2LP((">> s2lp_sigfox_init\r\n"));
+	uint8_t tmp;
+
+ #if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_M95640
+	eeprom_m95640_hwInit();
+ #endif
+	gpio_configure_ext(ITSDK_S2LP_SDN_BANK,ITSDK_S2LP_SDN_PIN,GPIO_OUTPUT_PP,ITSDK_GPIO_SPEED_HIGH,ITSDK_GPIO_ALT_NONE);
 	s2lp_spi_setCsHigh();		// disable CS
 	s2lp_shutdown();			// The S2LP have a bug before V3 : when not shutdown it force value on SPI
 								// and jam the other devices even when CS is not activ
+	itsdk_delayMs(10);
+ #if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_M95640
+	eeprom_m95640_init(&ITSDK_DRIVERS_M95640_SPI);
+ #endif
 
-}
-
-
-void s2lp_init() {
 	S2LP_SPI_StatusBytes status;
-	uint8_t tmp;
 	s2lp_wakeup();
-	do {
-	    // Delay for state transition
-	    for(volatile uint8_t i=0; i!=0xFF; i++);
 
-	    // Reads the MC_STATUS register
-	    status = s2lp_spi_readRegisters(&ITSDK_S2LP_SPI,S2LP_REG_MC_STATE0, 1, &tmp);
+ 	#if ITSDK_S2LP_CNF_RANGE ==	__SIGFOX_S2LP_PA_FEM
+ 	 // Front End Module initialization
+	 // This is part of Ht32SX driver
+	 FEM_Init();
+	#endif
+
+	do {
+      // Delay for state transition
+      for(volatile uint8_t i=0; i!=0xFF; i++);
+
+      // Reads the MC_STATUS register
+      status = s2lp_spi_readRegisters(&ITSDK_S2LP_SPI,S2LP_REG_MC_STATE0, 1, &tmp);
 	} while(status.MC_STATE!=MC_STATE_READY);
 	// Return 0 when ready
 
 	// Get the version
     s2lp_spi_readRegisters(&ITSDK_S2LP_SPI,S2LP_REG_DEVICE_INFO0, 1, &tmp);
-    log_debug("S2LP version 0x%0X\r\n",tmp);
+    LOG_INFO_S2LP(("S2LP version 0x%0X\r\n",tmp));
     if(tmp==S2LP_VERSION_2_0 || tmp==S2LP_VERSION_2_1) {
     	// Sounds like a bug on the SPI ...
-    	// preventing conflict when accessing the eeprom
+    	// preventing conflict when accessing the eeprom or other I2C
     	s2lp_shutdown();
     }
+	s2lp_loadConfiguration();
 
+	ST_RF_API_set_freq_offset(__S2LP__ITSDK_S2LP_CNF_FREQ);
+	#if ITSDK_S2LP_TARGET == __S2LP_HT32SX
+	 ST_RF_API_set_xtal_freq(__S2LP__ITSDK_S2LP_CNF_FREQ);
+	 ST_RF_API_set_lbt_thr_offset(__S2LP__ITSDK_SIGFOX_LBTOFFSET);
+	#endif
+
+	ST_RF_API_set_tcxo(__S2LP__ITSDK_S2LP_CNF_TCX0);
+	#if ITSDK_S2LP_CNF_RANGE == __SIGFOX_S2LP_PA_SKYWORKS_868
+	  ST_RF_API_set_pa(1);
+	  ST_RF_API_gpio_tx_rx_pin(0);
+	  ST_RF_API_gpio_rx_pin(1);
+	  ST_RF_API_gpio_tx_pin(2);
+	  ST_RF_API_set_rssi_offset(ITSDK_SIGFOX_RSSICAL-16);
+	#elif ITSDK_S2LP_CNF_RANGE == __SIGFOX_S2LP_PA_NONE || ITSDK_S2LP_CNF_RANGE ==	__SIGFOX_S2LP_PA_FEM
+	  ST_RF_API_set_pa(0);
+	  ST_RF_API_set_rssi_offset(ITSDK_SIGFOX_RSSICAL);
+	#endif
+
+	sfx_error_t retSigfox=SFX_ERR_NONE;
+	switch ( itsdk_state.sigfox.rcz ) {
+		case 0:
+			// When we want to init but the rcz is still undefined.
+			break;
+	  	case 1:
+	  		retSigfox = SIGFOX_API_open(&(sfx_rc_t)RC1);
+	  		break;
+	  	case 2:
+	  		retSigfox = SIGFOX_API_open(&(sfx_rc_t)RC2);
+	  		// In FCC we can choose the macro channel to use by a 86 bits bitmask
+	  	    //  In this case we use the first 9 macro channels
+	  		if ( retSigfox == SFX_ERR_NONE ) {
+	  		  sfx_u32 config_words1[3]={1,0,0};
+	  		retSigfox = SIGFOX_API_set_std_config(config_words1,0);  // was 1 previously but I don't exactly what is the timer mode. more recent source code is 0
+	  		}
+	  		break;
+	  	case 3:
+	  		retSigfox = SIGFOX_API_open(&(sfx_rc_t)RC3C);
+	  		if ( retSigfox == SFX_ERR_NONE ) {
+				sfx_u32 config_words2[3]=RC3C_CONFIG;
+				retSigfox = SIGFOX_API_set_std_config(config_words2,0);
+	  		}
+	  		break;
+	  	case 4:
+	  		retSigfox = SIGFOX_API_open(&(sfx_rc_t)RC4);
+	  		if ( retSigfox == SFX_ERR_NONE ) {
+				sfx_u32 config_words3[3]={0,0x40000000,0};
+				retSigfox = SIGFOX_API_set_std_config(config_words3,1);
+	  		}
+	  		break;
+	#if ITSDK_S2LP_TARGET == __S2LP_HT32SX
+	  	case 5:
+	  		retSigfox=SIGFOX_API_open(&(sfx_rc_t)RC5);
+	  		if ( retSigfox == SFX_ERR_NONE ) {
+	  		   sfx_u32 config_words[3]=RC5_CONFIG;
+	  		 retSigfox = SIGFOX_API_set_std_config(config_words,0);
+	  		}
+	  		break;
+	  	case 6:
+	  		retSigfox=SIGFOX_API_open(&(sfx_rc_t)RC6);
+	  		break;
+	  	case 7:
+	  		retSigfox=SIGFOX_API_open(&(sfx_rc_t)RC7);
+	  		break;
+	#endif
+	  	default:
+	  		LOG_ERROR_S2LP(("RCZ%d implementation is actually supported\r\n",itsdk_state.sigfox.rcz));
+	  		ITSDK_ERROR_REPORT(ITSDK_ERROR_SIGFOX_RCZ_NOTSUPPORTED,(uint16_t)itsdk_state.sigfox.rcz);
+	  		retSigfox = SFX_ERR_API_OPEN;
+	  		break;
+	}
+	if ( retSigfox != SFX_ERR_NONE ) {
+		return SIGFOX_INIT_FAILED;
+	}
+	return SIGFOX_INIT_SUCESS;
 }
 
-void s2lp_loadConfigFromEeprom(
-		s2lp_eprom_config_t * eeprom_cnf,
-		s2lp_eprom_offset_t * eeprom_offset,
-		s2lp_config_t * cnf
-) {
 
-   switch(eeprom_cnf->xtalFreq) {
-   case 0: cnf->xtalFreq = 24000000;
-     break;
-   case 1: cnf->xtalFreq = 25000000;
-     break;
-   case 2: cnf->xtalFreq = 26000000;
-     break;
-   case 3: cnf->xtalFreq = 48000000;
-     break;
-   case 4: cnf->xtalFreq = 50000000;
-     break;
-   case 5: cnf->xtalFreq = 52000000;
-     break;
-   case 0xff:
-     // XTAL frequency is custom
-     for(uint8_t i=0;i<4;i++){
-       ((uint8_t*)&cnf->xtalFreq)[i]=((uint8_t*)&eeprom_cnf->customFreq)[3-i];
-     }
-     break;
-   default:
-	   log_warn("S2LP - Config - Freq not recognized\r\n");
-	   cnf->xtalFreq = 50000000;
-     break;
-   }
+itsdk_sigfox_init_t s2lp_sigfox_deinit( ) {
+	LOG_DEBUG_S2LP((">> s2lp_sigfox_deinit\r\n"));
 
-   cnf->tcxo = eeprom_cnf->tcxo;
-   cnf->band = eeprom_cnf->band;
-
-   cnf->range = S2LP_RANGE_EXT_NONE;
-   if (eeprom_cnf->range == 2 ) cnf->range = S2LP_RANGE_SKYWORKS_868;
-
-
-   if(*(uint32_t*)eeprom_offset->offset != 0xffffffff) {
-      for(uint8_t i=0;i<4;i++) {
-        ((uint8_t*)&cnf->offset)[i]=eeprom_offset->offset[3-i];
-      }
-
-      if(cnf->offset < -100000 || cnf->offset > 100000) {
-    	  cnf->offset=0;
-      }
-  } else {
-	  cnf->offset=0;
-  }
-
+	sfx_error_t err = SIGFOX_API_close();
+	if ( err == SFX_ERR_NONE ) {
+		return SIGFOX_INIT_SUCESS;
+	}
+	LOG_ERROR_S2LP(("Deinit failed with error 0x%04X\r\n",err));
+	return SIGFOX_INIT_FAILED;
 }
-
 
 
 /**
@@ -153,142 +213,85 @@ void s2lp_loadConfigFromEeprom(
  *  The function verify the checksum validity, the device ID compliance (not 0x00...0 | 0xFF...F)
  *
  */
-void s2lp_loadConfiguration(
-		s2lp_config_t * s2lpConf
-) {
-
+void s2lp_loadConfiguration() {
+	LOG_DEBUG_S2LP((">> s2lp_loadConfiguration\r\n"));
 	#if ITSDK_SIGFOX_NVM_SOURCE	== __SFX_NVM_M95640
-		s2lp_eprom_config_t eepromConf1;
-		eeprom_m95640_read(&ITSDK_DRIVERS_M95640_SPI,0x0000, 32, (uint8_t *)&eepromConf1);
+		s2lp_eprom_config_t eeprom_cnf;
+		eeprom_m95640_read(&ITSDK_DRIVERS_M95640_SPI,0x0000, 32, (uint8_t *)&eeprom_cnf);
 
-		s2lp_eprom_offset_t eepromConf2;
-		eeprom_m95640_read(&ITSDK_DRIVERS_M95640_SPI,0x0021, 4, (uint8_t *)&eepromConf2);
+		s2lp_eprom_offset_t eeprom_offset;
+		eeprom_m95640_read(&ITSDK_DRIVERS_M95640_SPI,0x0021, 4, (uint8_t *)&eeprom_offset);
 
 		// S2lp_hw config
-		s2lp_loadConfigFromEeprom(
-				&eepromConf1,
-				&eepromConf2,
-				s2lpConf
-		);
+		switch(eeprom_cnf->xtalFreq) {
+		   case 0: s2lp_driver_config.tcxoFreq = 24000000;
+		     break;
+		   case 1: s2lp_driver_config.tcxoFreq = 25000000;
+		     break;
+		   case 2: s2lp_driver_config.tcxoFreq = 26000000;
+		     break;
+		   case 3: s2lp_driver_config.tcxoFreq = 48000000;
+		     break;
+		   case 4: s2lp_driver_config.tcxoFreq = 50000000;
+		     break;
+		   case 5: s2lp_driver_config.tcxoFreq = 52000000;
+		     break;
+		   case 0xff:
+		     // XTAL frequency is custom
+		     for(uint8_t i=0;i<4;i++){
+		       ((uint8_t*)&s2lp_driver_config.tcxoFreq)[i]=((uint8_t*)&eeprom_cnf->customFreq)[3-i];
+		     }
+		     break;
+		   default:
+			   LOG_WARN_S2LP(("S2LP - Config - Freq not recognized\r\n"));
+			   s2lp_driver_config.tcxoFreq = 50000000;
+		     break;
+		}
+
+		// cnf->tcxo = eeprom_cnf->tcxo; // now static in the headers
+		// cnf->band = eeprom_cnf->band; // unclear what it is
+
+		// cnf->range = S2LP_RANGE_EXT_NONE; // static in conf
+		// if (eeprom_cnf->range == 2 ) cnf->range = S2LP_RANGE_SKYWORKS_868; // static in conf
+
+		if(*(uint32_t*)eeprom_offset->offset != 0xffffffff) {
+		   for(uint8_t i=0;i<4;i++) {
+		     ((uint8_t*)&s2lp_driver_config.freqOffset)[i]=eeprom_offset->offset[3-i];
+		   }
+		   if(s2lp_driver_config.freqOffset < -100000 || s2lp_driver_config.freqOffset > 100000) {
+			   s2lp_driver_config.freqOffset=0;
+		   }
+		} else {
+		  s2lp_driver_config.freqOffset=0;
+		}
 
 		// Not clear why => when passing &(s2lpConf->id) it crash...
 		// retrieve_data also extract the SigfoxID key and store it in RAM for internal use.
-		uint32_t id;
-		uint8_t rcz;
-		enc_utils_retrieve_data(&id, s2lpConf->pac, &rcz);
-		s2lpConf->id = id;
-		s2lpConf->rcz = rcz;
-
-		// Clean the key and aux not provided with this NVM source
-		for (int i= 0 ; i < 16 ; i++) {
-			s2lpConf->key[i]=0xFF;
-			s2lpConf->aux[i]=0xFF;
-		}
+		enc_utils_retrieve_data(&s2lp_driver_config.deviceId, s2lp_driver_config.initialPac, &itsdk_state.sigfox.rcz);
 
 		// Search for the private key in the memory to fill the structure
-		s2lp_sigfox_retreive_key(s2lpConf->id, s2lpConf->pac, s2lpConf->key);
-		s2lp_sigfox_cifferKey(s2lpConf);
-
-		s2lpConf->low_power_flag = ITSDK_SIGFOX_LOWPOWER;
-		s2lpConf->payload_encryption = (( ITSDK_SIGFOX_ENCRYPTION & __PAYLOAD_ENCRYPT_SIGFOX) > 0)?1:0;
+		s2lp_sigfox_retreive_key(s2lp_driver_config.deviceId, s2lp_driver_config.initialPac, s2lp_driver_config.key);
+		s2lp_sigfox_cifferKey();
 
 	#elif ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_LOCALEPROM
-		#error "__SFX_NVM_LOCALEPROM Not yet implemented"
+		itsdk_state.sigfox.rcz = itsdk_config.sdk.sigfox.rcz;
 	#elif ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_HEADERS
 		int i;
 		uint8_t pac[8] 		= ITSDK_SIGFOX_PAC;
 		uint8_t key[16] 	= IDTSK_SIGFOX_KEY;
-		uint8_t aux[16] 	= IDTSK_SIGFOX_AUX;
-
-		s2lpConf->band 		= ITSDK_S2LP_CNF_BAND;
-		s2lpConf->offset 	= ITSDK_S2LP_CNF_OFFSET;
-		s2lpConf->range 	= ITSDK_S2LP_CNF_RANGE;
-		s2lpConf->tcxo 		= ITSDK_S2LP_CNF_TCX0;
-		s2lpConf->xtalFreq 	= ITSDK_S2LP_CNF_FREQ;
-		s2lpConf->id		= ITSDK_SIGFOX_ID;
-		itsdk_sigfox_getRczFromRegion(ITSDK_DEFAULT_REGION, &s2lpConf->rcz);
-		for ( i =  0 ; i < 8 ; i++ ) s2lpConf->pac[i] = pac[i];
+		s2lp_driver_config.deviceId		= ITSDK_SIGFOX_ID;
+		itsdk_sigfox_getRczFromRegion(ITSDK_DEFAULT_REGION,&itsdk_state.sigfox.rcz);
+		for ( i =  0 ; i < 8 ; i++ ) itsdk_state.sigfox.initialPac[i] = pac[i];
 		for ( i =  0 ; i < 16 ; i++ ) {
-			s2lpConf->key[i] = key[i];
-			s2lpConf->aux[i] = aux[i];
+			s2lp_driver_config.key[i] = key[i];
 		}
-		sigfox_cifferKey(s2lpConf);
-		s2lpConf->low_power_flag = ITSDK_SIGFOX_LOWPOWER;
-		s2lpConf->payload_encryption = ITSDK_SIGFOX_ENCRYPTED;
-
+		s2lp_sigfox_cifferKey();
 		#warning "__SFX_NVM_HEADERS Not to be used in production"
 	#endif
 
-	// Init the seqId by reading the memory
-	uint8_t tmp[SFX_NVMEM_BLOCK_SIZE];
-	MCU_API_get_nv_mem(tmp);
-	s2lpConf->seqId = (uint16_t)tmp[SFX_NVMEM_SEQ_NUM] + (((uint16_t)tmp[SFX_NVMEM_SEQ_NUM+1]) << 8);
-	s2lpConf->lastReadRssi = S2LP_UNKNOWN_RSSI;
-	s2lpConf->lastReceptionRssi = S2LP_UNKNOWN_RSSI;
+	s2lp_driver_config.lastReadRssi = S2LP_UNKNOWN_RSSI;
+	s2lp_driver_config.lastReceptionRssi = S2LP_UNKNOWN_RSSI;
 
-	s2lp_applyConfig(s2lpConf);
-}
-
-void s2lp_printConfig(
-		s2lp_config_t * s2lpConf
-) {
-	int i;
-	log_info("------- Sigfox/S2LP configuration ----- \r\n");
-	log_info("band: %d\r\n",s2lpConf->band);
-	log_info("offset: %d\r\n",s2lpConf->offset);
-	log_info("rssiOffset: %d\r\n",s2lpConf->rssiOffset);
-	log_info("range: %d\r\n",s2lpConf->range);
-	log_info("tcxo: %d\r\n",s2lpConf->tcxo);
-	log_info("xtalFreq: %d\r\n",s2lpConf->xtalFreq);
-	log_info("id: 0x%X\r\n",s2lpConf->id);
-	log_info("rcz: %d\r\n",s2lpConf->rcz);
-	log_info("pac: [ ");
-	for ( i = 0 ; i < 8 ; i++ ) log_info("%02X",s2lpConf->pac[i]);
-	log_info(" ]\r\n");
-
-	s2lp_sigfox_unCifferKey(s2lpConf);
-	log_info("key: [ ");
-	for ( i = 0 ; i < 16 ; i++ ) log_info("%02X",s2lpConf->key[i]);
-	log_info(" ]\r\n");
-	s2lp_sigfox_cifferKey(s2lpConf);
-
-	log_info("aux: [ ");
-	for ( i = 0 ; i < 16 ; i++ ) log_info("%02X",s2lpConf->aux[i]);
-	log_info(" ]\r\n");
-	log_info("\r\n");
-
-	uint8_t * versionStr;
-	uint8_t sz;
-	SIGFOX_API_get_version(&versionStr,&sz,VERSION_SIGFOX);
-	log_info("Sigfox version : %s\r\n",versionStr);
-	SIGFOX_API_get_version(&versionStr,&sz,VERSION_MCU);
-	log_info("MCU version : %s\r\n",versionStr);
-	SIGFOX_API_get_version(&versionStr,&sz,VERSION_RF);
-	log_info("RF version : %s\r\n",versionStr);
-	SIGFOX_API_get_version(&versionStr,&sz,VERSION_MONARCH);
-	log_info("MONARCH version : %s\r\n",versionStr);
-	SIGFOX_API_get_version(&versionStr,&sz,VERSION_DEVICE_CONFIG);
-	log_info("Config version : %s\r\n",versionStr);
-
-}
-
-
-void s2lp_applyConfig(
-	s2lp_config_t * cnf
-){
-	itsdk_sigfox_configInit(cnf);
-	ST_RF_API_set_freq_offset(cnf->offset);
-	ST_RF_API_set_tcxo(cnf->tcxo);
-	if ( cnf->range ) {
-		ST_RF_API_set_pa(1);
-		ST_RF_API_gpio_tx_rx_pin(0);
-		ST_RF_API_gpio_rx_pin(1);
-		ST_RF_API_gpio_tx_pin(2);
-		ST_RF_API_set_rssi_offset(-16);
-	} else {
-		ST_RF_API_set_pa(0);
-		ST_RF_API_set_rssi_offset(0);
-	}
 }
 
 

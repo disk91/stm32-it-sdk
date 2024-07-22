@@ -1,0 +1,9 @@
+[submodule "3rdParties/semtech/sx126x_driver"]
+	path = 3rdParties/semtech/sx126x_driver
+	url = https://github.com/Lora-net/sx126x_driver
+[submodule "3rdParties/sigfox/sigfox-ep-rf-api-semtech-sx126x"]
+	path = 3rdParties/sigfox/sigfox-ep-rf-api-semtech-sx126x
+	url = https://github.com/sigfox-tech-radio/sigfox-ep-rf-api-semtech-sx126x
+[submodule "3rdParties/sigfox/sigfox-ep-lib"]
+	path = 3rdParties/sigfox/sigfox-ep-lib
+	url = https://github.com/sigfox-tech-radio/sigfox-ep-lib

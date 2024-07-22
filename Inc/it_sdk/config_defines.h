@@ -33,6 +33,7 @@
  */
 #define __CUBEMX_VERSIONXXX			499
 #define __CUBEMX_VERSION500			500
+#define __CUBEMX_VERSION6XX			600
 
 /**
  * Supported Hardware Platform
@@ -40,6 +41,7 @@
 #define __PLATFORM_EFM32_TD			0
 #define __PLATFORM_STM32L0			1
 #define __PLAFTORM_ESP8266			2
+#define __PLATFORM_STM32WLE			3
 
 /**
  * Devices
@@ -49,7 +51,8 @@
 #define __DEVICE_STM32L082XX    3
 #define __DEVICE_STM32L053R8		4
 #define __DEVICE_STM32L031K6		5
-#define __DEVICE_STM32L052T8    6
+#define __DEVICE_STM32L052T8		6
+#define __DEVICE_STM32WLE5JC		21				// 256K Flash & 64K Ram
 
 /**
  * Supported Low Power Mode
@@ -117,7 +120,8 @@
  * SPI configuration
  */
 #define __SPI_NONE					0x00			// No SPI
-#define __SPI_ENABLED				0x01			// with SPI
+#define __SPI_ENABLED				0x01			// with SPI standard
+#define __SPI_SUBGHZ				0x02			// with SPI SUBGZ ( bit field )
 
 /**
  * I2C configuration
@@ -137,6 +141,7 @@
  */
 #define __DISABLE					0x00
 #define __ENABLE					0x01
+#define __AVOID						0xFF
 
 /**
  * Polarity
@@ -212,6 +217,7 @@
 #define __LOG_MOD_GNSS			0x00000100			// Gnss & underlaying drivers
 #define __LOG_MOD_ACCEL			0x00000200			// Accelerometer & underlaying drivers
 #define __LOG_MOD_LOWPOWER		0x00000400			// Print the wakeup reason - see lowpower.c
+#define __LOG_MOD_EEPROM		0x00000800			// Trace the EEprom (for virtual EEPROM) critical operations
 
 #define __LOG_MOD_CUSTOM1		0x00010000			// User level logging
 #define __LOG_MOD_CUSTOM2		0x00020000			// User level logging
@@ -250,12 +256,29 @@
 #define	__SIGFOX_S2LP			1
 #define __SIGFOX_WISOL10		2
 #define __SIGFOX_SX1276		   10
+#define __SIGFOX_SX126X		   11
+
+/**
+ * Supported zones (bit field)
+ */
+#define __SIGFOX_ETSI	1
+#define __SIGFOX_FCC	2
+#define __SIGFOX_ARIB	4
+#define __SIGFOX_ALL	7
+
 
 /**
  * Sigfox Extension
  */
 #define __SIGFOX_NONE			0
 #define __SIGFOX_MONARCH		1
+
+/**
+ * S2LP PA configuration
+ */
+#define __SIGFOX_S2LP_PA_NONE 				0
+#define __SIGFOX_S2LP_PA_SKYWORKS_868		1
+#define __SIGFOX_S2LP_PA_FEM				2
 
 /**
  * NVM source for Sigfox lib
@@ -266,11 +289,32 @@
 #define __SFX_NVM_CONFIG_STATIC	3					// Configuration stored in the #define
 
 /**
+ * Type of S2LP chip (for specific code)
+ */
+#define __S2LP_GENERIC			0
+#define __S2LP_HT32SX			1
+
+
+/**
+ * RX filter
+ */
+#define __S2LP_3_3KHZ			0
+#define __S2LP_2_1KHZ 			1
+
+
+/**
  * Drivers S2LP Config
  */
 
 #define __S2LP_WITH_TCXO		1
 #define __S2LP_W_O_TCXO			0
+
+/**
+ * Driver MONARCH SAMPLING
+ */
+
+#define __S2LP_GPIO_SAMPLING	0
+#define __S2LP_FIFO_RX			1
 
 /**
  * Encryption type - Encryption are cumulative.
@@ -389,6 +433,33 @@
 #define __GNSS_WITH_SAT_DETAILS	0x0040
 #define __GNSS_WITH_SPEED		0x0080
 #define __GNSS_WITH_COG			0x0100		// Direction
+
+/**
+ * List of possible power regulator
+ */
+#define __POWER_LDO				0x00
+#define __POWER_DCDC			0x01
+
+/**
+ * List of possible ITSDK_SFX_SX126X_CHIP
+ */
+#define __SX1261				0x00
+#define __SX1262				0x01
+#define __E5WL					0x02
+
+/**
+ * List of possible Power Amplifier
+ */
+#define __SX126X_PA_NONE		0x00	// no selection
+#define __SX126X_PA_LPHP		0x03	// use both
+#define __SX126X_PA_LP			0x01	// use LP only
+#define __SX126X_PA_HP			0x02	// use HP only
+
+/**
+ * List of Sx126x module
+ */
+#define __SX126X_MOD_NONE		0x00	// no specific module, potentially some customization is required
+#define __SX126X_MOD_LORAE5		0x01	// Seeed LoRa E5 Module
 
 
 #endif /* IT_SDK_CONFIG_DEFINES_H_ */

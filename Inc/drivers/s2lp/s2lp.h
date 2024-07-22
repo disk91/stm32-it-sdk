@@ -29,14 +29,26 @@
 #define IT_SDK_DRIVERS_S2LP_H_
 
 #include <it_sdk/config.h>
-
+#include <it_sdk/sigfox/sigfox.h>
 
 void s2lp_hwInit();
-void s2lp_init();
+itsdk_sigfox_init_t s2lp_sigfox_init();
+itsdk_sigfox_init_t s2lp_sigfox_deinit();
 void s2lp_shutdown();
 void s2lp_wakeup();
 
+typedef enum {
+	S2LP_SIGFOX_ERR_NONE = 0,
+	S2LP_SIGFOX_ERR_BREAK,			// Force to break a wait loop
+	S2LP_SIGFOX_ERR_LIBINIT,		// Impossible to open Sigfox Lib
+	S2LP_SIGFOX_ERR_CONFIG,			// Error on Set Std Config
+	S2LP_SIGFOX_ERROR				// Error, no precision
 
+
+} s2lp_sigfox_ret_t;
+
+
+#if ITSDK_SIGFOX_NVM_SOURCE	== __SFX_NVM_M95640
 
 typedef struct s2lp_eprom_config_s {
 	uint8_t		magic;				// should not be 0 or 0xFF
@@ -54,6 +66,49 @@ typedef struct s2lp_eprom_offset_s {
 	uint8_t		offset[4];
 }  __attribute__ ((__packed__)) s2lp_eprom_offset_t;
 
+#endif
+
+#if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_LOCALEPROM
+  #define __S2LP__ITSDK_S2LP_CNF_FREQ 		ITSDK_S2LP_CNF_FREQ
+  #define __S2LP__ITSDK_S2LP_CNF_OFFSET 	ITSDK_S2LP_CNF_OFFSET
+  #define __S2LP__ITSDK_SIGFOX_LBTOFFSET	ITSDK_SIGFOX_LBTOFFSET
+  #define __S2LP__ITSDK_S2LP_CNF_TCX0 		ITSDK_S2LP_CNF_TCX0
+
+
+#elif ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_M95640
+  #define __S2LP__ITSDK_S2LP_CNF_FREQ 		s2lp_driver_config.tcxoFreq
+  #define __S2LP__ITSDK_S2LP_CNF_OFFSET 	s2lp_driver_config.freqOffset
+  #define __S2LP__ITSDK_SIGFOX_LBTOFFSET	ITSDK_SIGFOX_LBTOFFSET
+  #define __S2LP__ITSDK_S2LP_CNF_TCX0 		ITSDK_S2LP_CNF_TCX0
+
+#elif ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_HEADERS
+  #define __S2LP__ITSDK_S2LP_CNF_FREQ 		ITSDK_S2LP_CNF_FREQ
+  #define __S2LP__ITSDK_S2LP_CNF_OFFSET 	ITSDK_S2LP_CNF_OFFSET
+  #define __S2LP__ITSDK_SIGFOX_LBTOFFSET	ITSDK_SIGFOX_LBTOFFSET
+  #define __S2LP__ITSDK_S2LP_CNF_TCX0 		ITSDK_S2LP_CNF_TCX0
+
+#endif
+
+
+typedef struct {
+	uint8_t				lastReadRssi;		// Last RSSI read from S2LP (can be an invalid message) rssi = value -146
+	uint8_t				lastReceptionRssi;  // Last RSSI corresponding to a valid downlink rssi = value - 146
+
+	#if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_M95640 || ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_HEADERS
+	uint32_t			deviceId;						// DeviceId
+	uint8_t				initialPac[8];					// Initial PAC
+	uint8_t				key[16];						// Sigfox Key
+	#endif
+	#if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_M95640
+	int32_t  			freqOffset;						// Offset
+	uint32_t			tcxoFreq;						// Tcxo frequency
+ 	#endif
+
+} s2lp_drivers_config_t;
+
+extern s2lp_drivers_config_t s2lp_driver_config;
+
+/*
 typedef struct s2lp_config_s {
 	uint32_t	xtalFreq;			// freq int 32
 	uint8_t		tcxo;				// 1 when TCXO is present
@@ -75,24 +130,13 @@ typedef struct s2lp_config_s {
 	uint8_t		lastReceptionRssi;  // Last RSSI corresponding to a valid downlink rssi = value - 146
 
 }  s2lp_config_t;
+*/
 
-
-#define S2LP_RANGE_EXT_NONE 		0
-#define S2LP_RANGE_SKYWORKS_868		1
 
 
 
 // Config standardization
-void s2lp_loadConfiguration(
-		s2lp_config_t * s2lpConf
-);
-
-void s2lp_applyConfig(
-	s2lp_config_t * cnf
-);
-
-void s2lp_printConfig(
-		s2lp_config_t * s2lpConf
-);
+void s2lp_loadConfiguration();
+s2lp_sigfox_ret_t s2lp_sigfox_getSeqId( uint16_t * seqId );
 
 #endif /* IT_SDK_DRIVERS_S2LP_H_ */

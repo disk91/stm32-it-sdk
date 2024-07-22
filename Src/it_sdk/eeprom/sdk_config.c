@@ -34,10 +34,18 @@
   #include <it_sdk/wrappers.h>
 #endif
 
+#if ITSDK_PLATFORM == __PLATFORM_STM32WLE
+  #include <stm32l_sdk/eeprom/eeprom.h>
+  #include <stm32l_sdk/eeprom/eeprom_wl.h>
+#endif
+
 #if ITSDK_WITH_SIGFOX_LIB == __ENABLE
 	#include <it_sdk/configSigfox.h>
 	#include <it_sdk/sigfox/sigfox.h>
     #include <drivers/sigfox/se_nvm.h>
+  #if ITSDK_SIGFOX_LIB == __SIGFOX_S2LP
+	#include <drivers/s2lp/s2lp.h>
+  #endif
 #endif
 
 #if ITSDK_WITH_CONSOLE == __ENABLE
@@ -109,6 +117,10 @@
 		  uint8_t pac[8] = ITSDK_SIGFOX_PAC;
 		  bcopy(pac,itsdk_config.sdk.sigfox.initialPac,8);
 		  itsdk_config.sdk.sigfox.deviceId = ITSDK_SIGFOX_ID;
+		#endif
+
+		#if ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
+		  itsdk_config.sdk.sigfox.repeat = ITSDK_SIGFOX_N;
 		#endif
 
 		#endif
@@ -184,10 +196,9 @@ itsdk_config_ret_e itsdk_config_loadConfiguration(itsdk_config_load_mode_e mode)
 	__console_configMng.next = NULL;
 	itsdk_console_registerCommand(&__console_configMng);
 #endif
-
+    uint8_t requestFactoryReset = 0;
 #if ITSDK_CONFIGURATION_MODE == __CONFIG_EEPROM
   uint8_t v;
-  uint8_t requestFactoryReset = 0;
   uint8_t configUpdated = 0;
 
   if ( mode != CONFIG_FORCE_TO_FACTORY ) {
@@ -241,7 +252,9 @@ itsdk_config_ret_e itsdk_config_loadConfiguration(itsdk_config_load_mode_e mode)
 
    if ( requestFactoryReset == 1 ) {
 	  itsdk_config_sdk_resetToFactory();
+#if ITSDK_WITH_CONFIGURATION_APP == __ENABLE
 	  itsdk_config_app_resetToFactory();
+#endif
 	  configUpdated = 1;
 	  ITSDK_ERROR_REPORT(ITSDK_ERROR_CONFIG_FACTORY_DEFAULT,3);
    }
@@ -377,18 +390,18 @@ static bool __checkAndConvert(char * str,uint8_t start,uint8_t stop,uint8_t sz,u
 				    #endif
 
 					#if ITSDK_WITH_SIGFOX_LIB == __ENABLE
-					_itsdk_console_printf("sdk.sigfox.rcz : %d\r\n",_c->sdk.sigfox.rcz);
-					if ( _c->sdk.sigfox.txPower == SIGFOX_DEFAULT_POWER ) {
-						  _itsdk_console_printf("sdk.sigfox.txPower : rcz default\r\n");
-					} else {
-					  _itsdk_console_printf("sdk.sigfox.txPower : %ddB\r\n",_c->sdk.sigfox.txPower);
-					}
-					if ( _c->sdk.sigfox.speed == SIGFOX_DEFAULT_SPEED ) {
+					 _itsdk_console_printf("sdk.sigfox.rcz : %d\r\n",_c->sdk.sigfox.rcz);
+					 if ( _c->sdk.sigfox.txPower == SIGFOX_DEFAULT_POWER ) {
+					   _itsdk_console_printf("sdk.sigfox.txPower : rcz default\r\n");
+					 } else {
+					   _itsdk_console_printf("sdk.sigfox.txPower : %ddB\r\n",_c->sdk.sigfox.txPower);
+					 }
+					 if ( _c->sdk.sigfox.speed == SIGFOX_DEFAULT_SPEED ) {
 						_itsdk_console_printf("sdk.sigfox.speed : rcz default\r\n");
-					} else {
+					 } else {
 						_itsdk_console_printf("sdk.sigfox.speed : %dbps\r\n",_c->sdk.sigfox.speed);
-					}
-					_itsdk_console_printf("sdk.sigfox.sgfxKey : %d\r\n",_c->sdk.sigfox.sgfxKey);
+					 }
+					 _itsdk_console_printf("sdk.sigfox.sgfxKey : %d\r\n",_c->sdk.sigfox.sgfxKey);
 					 #if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_LOCALEPROM
 					 _itsdk_console_printf("sdk.sigfox.initialPac : [%02X%02X%02X%02X%02X%02X%02X%02X]\r\n",
 							_c->sdk.sigfox.initialPac[0],
@@ -403,8 +416,28 @@ static bool __checkAndConvert(char * str,uint8_t start,uint8_t stop,uint8_t sz,u
 					 _itsdk_console_printf("sdk.sigfox.deviceId : %08X \r\n",_c->sdk.sigfox.deviceId);
 					 _itsdk_console_printf("sdk.sigfox.rssiCal : %d\r\n",_c->sdk.sigfox.rssiCal);
 					 #endif
+					 #if ITSDK_SIGFOX_LIB == __SIGFOX_S2LP
+						#if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_LOCALEPROM
+					 	_itsdk_console_printf("sdk.sigfox.freqOffset : %d\r\n",_c->sdk.sigfox.freqOffset);
+					 	_itsdk_console_printf("sdk.sigfox.lbtOffset : %d\r\n",_c->sdk.sigfox.lbtOffset);
+						#endif
+ 	 	 	 	 	    #if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_M95640 || ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_HEADERS
+					 		_itsdk_console_printf("sdk.sigfox.deviceId : %08X\r\n",s2lp_driver_config.deviceId);
+							_itsdk_console_printf("sdk.sigfox.initialPac : [%02X%02X%02X%02X%02X%02X%02X%02X]\r\n",
+									 s2lp_driver_config.initialPac[0],
+									 s2lp_driver_config.initialPac[1],
+									 s2lp_driver_config.initialPac[2],
+									 s2lp_driver_config.initialPac[3],
+									 s2lp_driver_config.initialPac[4],
+									 s2lp_driver_config.initialPac[5],
+									 s2lp_driver_config.initialPac[6],
+									 s2lp_driver_config.initialPac[7]
+								);
+						     _itsdk_console_printf("sdk.sigfox.freqOffset : %d\r\n",s2lp_driver_config.freqOffset);
+						#endif
+					 #endif
+#warning Add the SX126X specific confirgurations like repeat
 					#endif
-
 					#if ITSDK_WITH_CONFIGURATION_APP == __ENABLE
 					   itsdk_config_app_printConfig(_c);
 					#endif
@@ -450,6 +483,13 @@ static itsdk_console_return_e _itsdk_config_consolePriv(char * buffer, uint8_t s
 			  _itsdk_console_printf("SC:C:8hex  : sigfox.initialPac 8B hex string\r\n");
 			  _itsdk_console_printf("SC:D:4hex  : sigfox.deviceId 4B hex string\r\n");
 			  _itsdk_console_printf("sc:d       : get sigfox.deviceId\r\n");
+			 #if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_LOCALEPROM
+			  _itsdk_console_printf("SC:I:xx    : sigfox.rssiCal 0(default) (decimal)\r\n");
+			   #if ITSDK_SIGFOX_LIB == __SIGFOX_S2LP
+			  _itsdk_console_printf("SC:F:xx    : sigfox.freqOffset 0(default) (decimal)\r\n");
+			  _itsdk_console_printf("SC:L:xx    : sigfox.lbtOffset 0(default) (decimal)\r\n");
+			   #endif
+			 #endif
 			#endif
 		  return ITSDK_CONSOLE_SUCCES;
 		  break;
@@ -493,6 +533,25 @@ static itsdk_console_return_e _itsdk_config_consolePriv(char * buffer, uint8_t s
   		  	  totSize += size;
 			  _itsdk_console_printf("ApplicationConfig: 0x%08X->0x%08X (%dB)\r\n",offset,offset+size,size);
 			  _itsdk_console_printf("UsedMemory: %dB on %dB\r\n",totSize,ITSDK_EPROM_SIZE);
+			  #if ( ITSDK_PLATFORM == __PLATFORM_STM32WLE )
+			    _itsdk_console_printf("EEprom start address: 0x%08X\r\n",EEPROM_END_ADDR -  (EEPROM_TOTAL_PAGES * EEPROM_PAGE_SIZE));
+			    _itsdk_console_printf("EEprom pages: %d\r\n",EEPROM_TOTAL_PAGES);
+
+				__eeprom_stat_t s;
+				_eeprom_stats(&s);
+				_itsdk_console_printf("EEprom stats:\r\n");
+				_itsdk_console_printf(" - Pages Tot(%d) Rdy(%d) Free(%d)\r\n",s.pages,s.ready_pages,s.pages-s.ready_pages);
+				_itsdk_console_printf(" - Lines Tot(%d) Rdy(%d) Free(%d) Trash(%d)\r\n",
+						EEPROM_TOTAL_PAGES*EEPROM_LINE_PER_PAGE,
+						s.allocated_lines,s.free_lines, s.trashed_lines
+				);
+				for (int i = 0 ; i < s.pages ; i++ ) {
+					_itsdk_console_printf("P[%02d] Age(%04d) St(%c) Free(%03d) Trash(%03d) Untouched(%03d)\r\n",
+							i,s.age[i], s.state[i],
+							s.free_lines_per_page[i], s.trashed_lines_per_page[i], s.untouched_lines_per_page[i]
+					);
+				}
+			  #endif
 			  _itsdk_console_printf("OK\r\n");
 			 return ITSDK_CONSOLE_SUCCES;
 			}
@@ -745,6 +804,51 @@ static itsdk_console_return_e _itsdk_config_consolePriv(char * buffer, uint8_t s
 					return ITSDK_CONSOLE_FAILED;
 				}
 				break;
+
+			#if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_LOCALEPROM
+			case 'I':
+				{
+					// rssI cal
+				    int32_t v = itdt_convertDecCharNInt(&buffer[5],sz-6);
+				    if ( v != ITSDK_INVALID_VALUE_32B ) {
+				    	itsdk_config_shadow.sdk.sigfox.rssiCal = (int16_t)v;
+				    	_itsdk_console_printf("OK\r\n");
+				    	return ITSDK_CONSOLE_SUCCES;
+				    }
+				    _itsdk_console_printf("KO\r\n");
+				    return ITSDK_CONSOLE_FAILED;
+				}
+				break;
+  		      #if ITSDK_SIGFOX_LIB == __SIGFOX_S2LP
+			case 'F':
+				{
+					// frequency offset
+				    int32_t v = itdt_convertDecCharNInt(&buffer[5],sz-6);
+				    if ( v != ITSDK_INVALID_VALUE_32B ) {
+				    	itsdk_config_shadow.sdk.sigfox.freqOffset = v;
+				    	_itsdk_console_printf("OK\r\n");
+				    	return ITSDK_CONSOLE_SUCCES;
+				    }
+				    _itsdk_console_printf("KO\r\n");
+				    return ITSDK_CONSOLE_FAILED;
+				}
+				break;
+			case 'L':
+				{
+					// LBT offset
+				    int32_t v = itdt_convertDecCharNInt(&buffer[5],sz-6);
+				    if ( v != ITSDK_INVALID_VALUE_32B ) {
+				    	itsdk_config_shadow.sdk.sigfox.lbtOffset = v;
+				    	_itsdk_console_printf("OK\r\n");
+				    	return ITSDK_CONSOLE_SUCCES;
+				    }
+				    _itsdk_console_printf("KO\r\n");
+				    return ITSDK_CONSOLE_FAILED;
+				}
+				break;
+			   #endif
+			#endif
+
 			#endif	// ITSDK_WITH_SIGFOX_LIB
 			default:
 				break;

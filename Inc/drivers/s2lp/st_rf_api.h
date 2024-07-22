@@ -22,6 +22,40 @@
 #define TIMER_STOP   1
 
 /*!******************************************************************
+ * \fn sfx_u8 ST_RF_API_set_xtal_freq(sfx_u32 xtal)
+ * \brief Sets the XTAL frequency of the S2-LP in Hertz (default is 50MHz).
+ * \param[in] sfx_u32 xtal: the xtal frequency of the S2-LP in Hz as an integer.
+ * \note If this function is not called, the default xtal frequency is 50MHz.
+ * \retval 0 if no error, 1 otherwise.
+ *******************************************************************/
+sfx_u8 ST_RF_API_set_xtal_freq(sfx_u32 xtal);
+
+/*!******************************************************************
+ * \fn sfx_u32 ST_RF_API_get_xtal_freq(sfx_u32 *xtal)
+ * \brief Gets the RF frequency offset of the  S2-LP XTAL in Hertz.
+ * \param[in] sfx_s32* xtal: a pointer to the integer representing the S2-LP XTAL frequency in Hertz.
+ * \retval 0 if no error, 1 otherwise.
+ *******************************************************************/
+sfx_u8 ST_RF_API_get_xtal_freq(sfx_u32 *xtal);
+
+/*!******************************************************************
+ * \fn sfx_u8 ST_RF_API_set_freq_offset(sfx_s32 offset)
+ * \brief Sets the RF frequency offset in Hertz (default is 0 Hz).
+ * \param[in] sfx_s32 offset: frequency offset in Hz as an integer.
+ * \note If this function is not called, the default frequency offset is 0 Hz.
+ * \retval 0 if no error, 1 otherwise.
+ *******************************************************************/
+sfx_u8 ST_RF_API_set_freq_offset(sfx_s32 offset);
+
+/*!******************************************************************
+ * \fn sfx_s32 ST_RF_API_get_freq_offset
+ * \brief Gets the RF frequency offset in Hertz (default is 0 Hz).
+ * \param[in] sfx_s32* offset: a pointer to the integer representing the frequency offset in Hz.
+ * \retval 0 if no error, 1 otherwise.
+ *******************************************************************/
+sfx_u8 ST_RF_API_get_freq_offset(sfx_s32 *offset);
+
+/*!******************************************************************
  * \fn sfx_u8 ST_RF_API_set_rssi_offset(sfx_s8 rssi_off)
  * \brief Set an RSSI offset for the RSSI.
  * \param[in] sfx_s8 rssi_off: an integer representing the offset in dB.
@@ -39,6 +73,26 @@ sfx_u8 ST_RF_API_set_rssi_offset(sfx_s8 rssi_off);
  * \retval 0 if no error, 1 otherwise.
  *******************************************************************/
 sfx_u8 ST_RF_API_get_rssi_offset(sfx_s8 *rssi_off);
+
+
+/*!******************************************************************
+ * \fn sfx_u8 ST_RF_API_set_lbt_thr_offset(sfx_s8 lbt_thr_off)
+ * \brief Set an offset (dB) for tuning the LBT mechanism.
+ * \param[in] sfx_s8 lbt_thr_off: an integer representing the offset in dB.
+ *                  Default value is 0.
+ * \retval 0 if no error, 1 otherwise.
+ *******************************************************************/
+sfx_u8 ST_RF_API_set_lbt_thr_offset(sfx_s8 lbt_thr_off);
+
+/*!******************************************************************
+ * \fn sfx_u8 ST_RF_API_get_lbt_thr_offset(sfx_s8 *lbt_thr_off)
+ * \brief Get the LBT offset (dB) for the LBT mechanism.
+ * \param[in] sfx_s8 *lbt_thr_off: a pointer to the integer representing the offset in dB.
+ *                  Default value is 0.
+ * \retval 0 if no error, 1 otherwise.
+ *******************************************************************/
+sfx_u8 ST_RF_API_get_lbt_thr_offset(sfx_s8 *lbt_thr_off);
+
 
 
 /*!******************************************************************
@@ -90,24 +144,6 @@ sfx_u8 ST_RF_API_gpio_tx_pin(sfx_u8 gpio_pin);
  * \retval 0 if no error, 1 otherwise.
  *******************************************************************/
 sfx_u8 ST_RF_API_reduce_output_power(sfx_s16 reduction);
-
-/*!******************************************************************
- * \fn sfx_u8 ST_RF_API_set_xtal_freq(sfx_u32 xtal)
- * \brief Sets the XTAL frequency of the S2-LP in Hertz (default is 50MHz).
- * \param[in] sfx_u32 xtal: the xtal frequency of the S2-LP in Hz as an integer.
- * \note If this function is not called, the default xtal frequency is 50MHz.
- * \retval 0 if no error, 1 otherwise.
- *******************************************************************/
-sfx_u8 ST_RF_API_set_xtal_freq(sfx_u32 xtal);
-
-/*!******************************************************************
- * \fn sfx_u8 ST_RF_API_set_freq_offset(sfx_s32 offset)
- * \brief Sets the RF frequency offset in Hertz (default is 0 Hz).
- * \param[in] sfx_s32 offset: frequency offset in Hz as an integer.
- * \note If this function is not called, the default frequency offset is 0 Hz.
- * \retval 0 if no error, 1 otherwise.
- *******************************************************************/
-sfx_u8 ST_RF_API_set_freq_offset(sfx_s32 offset);
 
 
 /*!******************************************************************
@@ -183,6 +219,9 @@ void ST_RF_API_Timer_Channel_Clear_CB(void);
  * \retval 0 IDLE state or TX send frame, 1 Continuos BPSK mode.
  *******************************************************************/
 sfx_u8 ST_RF_API_Get_Continuous_TX_Flag(void);
+sfx_u8 ST_RF_API_Get_Continuous_TX_or_MONARCH_Scan_Flag(void);
+
+
 
 /*!******************************************************************
  * \fn void ST_RF_API_StartTx(void)
@@ -223,5 +262,16 @@ sfx_u8 ST_RF_API_StopRxTx(void);
  *******************************************************************/
 
 sfx_s16 ST_RF_API_GetRSSI(void);
+
+/*!******************************************************************
+ * \fn void ST_RF_API_ReadFifos(uint8_t address, uint8_t n_bytes, uint8_t* buffer)
+ * \brief This is a function to Get the info containe into S2LP rx fifo
+ * \param[in] None.
+ * \retval RSSI level.
+ *******************************************************************/
+void ST_RF_API_ReadFifo(sfx_u8 n_bytes, sfx_u8* buffer, sfx_u8 flush);
+sfx_u8 ST_RF_API_ReadFifoStatus(void);
+void ST_RF_API_SetFifoLength(sfx_u8 n_bytes);
+
 
 #endif // IT_SDK_DRIVERS_S2LP_RF_H_

@@ -548,7 +548,11 @@ itsdk_lorawan_join_t lorawan_driver_LORA_Join(
     	    LoRaMacStatus_t r = LoRaMacMlmeRequest( &mlmeReq );
 			if ( r != LORAMAC_STATUS_OK ) {
 				LOG_WARN_LORAWAN(("LoRaMacMlmeRequest return error(%d)\r\n",r));
-				__loraWanState.joinState = LORAWAN_STATE_JOIN_FAILED;
+				if ( r == LORAMAC_STATUS_NO_CHANNEL_FOUND ) {
+				   __loraWanState.joinState = LORAWAN_STATE_JOIN_BUSY;
+				} else {
+				   __loraWanState.joinState = LORAWAN_STATE_JOIN_FAILED;
+				}
 				lorawan_driver_onJoinFailed();
 			} else {
 				__loraWanState.joinState = LORAWAN_STATE_JOINING;
@@ -588,7 +592,11 @@ itsdk_lorawan_join_t lorawan_driver_LORA_Join(
     	if ( __loraWanState.joinState == LORAWAN_STATE_JOIN_SUCCESS ) {
     		return LORAWAN_JOIN_SUCCESS;
     	} else {
-    		return LORAWAN_JOIN_FAILED;
+    		if (__loraWanState.joinState == LORAWAN_STATE_JOIN_BUSY ) {
+    		  return LORAWAN_JOIN_BUSY;
+    		} else {
+    		  return LORAWAN_JOIN_FAILED;
+    		}
     	}
     } else {
     	return LORAWAN_JOIN_PENDING;
@@ -633,10 +641,29 @@ itsdk_lorawan_send_t lorawan_driver_LORA_Send(
     MibRequestConfirm_t set;
     set.Type = MIB_CHANNELS_DATARATE;
     set.Param.ChannelsDatarate = __convertDR(dataRate);
-    LoRaMacMibSetRequestConfirm(&set);
+
+    LoRaMacStatus_t r = LoRaMacMibSetRequestConfirm(&set);
+    if ( r != LORAMAC_STATUS_OK ) {
+    	LOG_ERROR_LORAWAN(("Invalid DR request\r\n"));
+    	// try to fallback to default
+    	set.Type = MIB_CHANNELS_DATARATE;
+    	set.Param.ChannelsDatarate = __convertDR(ITSDK_LORAWAN_DEFAULT_DR);
+    	LoRaMacMibSetRequestConfirm(&set);
+    }
 
     // Verify if a command can be proceed by the MAC Layer
-    if( LoRaMacQueryTxPossible( size, &txInfo ) != LORAMAC_STATUS_OK ) {
+    r = LoRaMacQueryTxPossible( size, &txInfo );
+	if ( r == LORAMAC_STATUS_LENGTH_ERROR ) {
+		// Most of the case US915 with DR0 have a limit of 11Bytes
+		// switch back to next DR
+	    set.Type = MIB_CHANNELS_DATARATE;
+	    dataRate += 1;
+	    set.Param.ChannelsDatarate = __convertDR(dataRate);
+	    LoRaMacMibSetRequestConfirm(&set);
+	    r = LoRaMacQueryTxPossible( size, &txInfo );
+	}
+    if(  r != LORAMAC_STATUS_OK ) {
+		// not fixed or other error
         // Send empty frame in order to flush MAC commands
         mcpsReq.Type = MCPS_UNCONFIRMED;
         mcpsReq.Req.Unconfirmed.fBuffer = NULL;
@@ -644,6 +671,7 @@ itsdk_lorawan_send_t lorawan_driver_LORA_Send(
         mcpsReq.Req.Unconfirmed.Datarate = __convertDR(dataRate);
         // @TODO here we do not send the expected payload so we may have a callback to notice this
 		#warning "Manage the Flush MAC case"
+        LOG_ERROR_LORAWAN(("lorawan_driver_LORA_Send TxNotPossible (%d)\r\n",r));
     } else {
     	__loraWanState.lastRetries = 0;
     	// Ok To proceed
@@ -666,7 +694,7 @@ itsdk_lorawan_send_t lorawan_driver_LORA_Send(
         }
     }
     __loraWanState.sendState = LORAWAN_SEND_STATE_RUNNING;
-    LoRaMacStatus_t r = LoRaMacMcpsRequest( &mcpsReq );
+    r = LoRaMacMcpsRequest( &mcpsReq );
     switch ( r ) {
     	case LORAMAC_STATUS_OK:
     		if ( runMode==LORAWAN_RUN_SYNC ) {
@@ -704,7 +732,7 @@ itsdk_lorawan_send_t lorawan_driver_LORA_Send(
     	    	case LORAWAN_SEND_STATE_NOTACKED:
     	    		return LORAWAN_SEND_SENT;
     	    	default:
-    	    		LOG_INFO_LORAWAN(("Abnormal state : %d\r\n",__loraWanState.sendState));
+    	    		LOG_INFO_LORAWAN(("Invalid state : %d\r\n",__loraWanState.sendState));
     	    		return LORAWAN_SEND_FAILED;
     	    	}
    	    		return LORAWAN_SEND_FAILED;	// Never reached

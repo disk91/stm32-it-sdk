@@ -334,7 +334,11 @@ void SX1276SetRfTxPower( int8_t power )
             paDac = ( paDac & RF_PADAC_20DBM_MASK ) | RF_PADAC_20DBM_OFF;
             paConfig = ( paConfig & RF_PACONFIG_OUTPUTPOWER_MASK ) | ( uint8_t )( ( uint16_t )( power - 2 ) & 0x0F );
         }
-        SX1276Write( REG_OCP, 0x32 ); // 18 = 0x12 = 150mA max
+        SX1276Write( REG_OCP, 0x36 );  // 0x20 + 18 = 0x12 = 150mA max
+                                       // 0x20 + 21 = 0x15 = 180mA max
+                                       // 0x20 + 22 = 0x16 = 190mA max
+                                       // 0x20 + 24 = 0x18 = 210mA max
+                                       // 0x20 + 23 = 0x1B = 240mA max
     } else {
     	// -1 .. 14dBm
     	paConfig = ( paConfig & RF_PACONFIG_PASELECT_MASK ) | RF_PACONFIG_PASELECT_RFO;

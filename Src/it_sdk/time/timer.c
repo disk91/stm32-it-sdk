@@ -160,16 +160,18 @@ itsdk_timer_return_t itsdk_stimer_register(
 /**
  * Stop a running timer
  * identified by function pointer & value
+ * verify the Callback function pointer when checkCbFunc is true
  */
-itsdk_timer_return_t itsdk_stimer_stop(
+itsdk_timer_return_t itsdk_stimer_stop_1(
 		void (*callback_func)(uint32_t value),
-		uint32_t value
+		uint32_t value,
+		bool checkCbFunc
 ) {
 	for (int i=0 ; i < ITSDK_TIMER_SLOTS ; i++) {
 		if (
 				__stimer_slots[i].inUse == true
 			&&  __stimer_slots[i].customValue == value
-			&&  __stimer_slots[i].callback_func == callback_func
+			&&  (__stimer_slots[i].callback_func == callback_func || !checkCbFunc)
 		) {
 			// found
 			__stimer_slots[i].inUse = false;
@@ -180,6 +182,32 @@ itsdk_timer_return_t itsdk_stimer_stop(
 }
 
 /**
+ * Stop a running timer
+ * identified by function pointer & value
+ * Force CbFunc verification (compatibility)
+ */
+itsdk_timer_return_t itsdk_stimer_stop(
+		void (*callback_func)(uint32_t value),
+		uint32_t value
+) {
+	return itsdk_stimer_stop_1(callback_func,value,true);
+}
+
+/**
+ * Return true is the given timer is still running
+ * identified by function pointer & value,
+ * when checkCbFun is true, verify the calback pointer
+ */
+bool itsdk_stimer_isRunning_1(
+		void (*callback_func)(uint32_t value),
+		uint32_t value,
+		bool checkCbFunc
+) {
+	itsdk_stimer_slot_t * t = itsdk_stimer_get_1(callback_func,value,checkCbFunc);
+	return ( t != NULL );
+}
+
+/**
  * Return true is the given timer is still running
  * identified by function pointer & value
  */
@@ -187,9 +215,7 @@ bool itsdk_stimer_isRunning(
 		void (*callback_func)(uint32_t value),
 		uint32_t value
 ) {
-
-	itsdk_stimer_slot_t * t = itsdk_stimer_get(callback_func,value);
-	return ( t != NULL );
+	return itsdk_stimer_isRunning_1(callback_func,value,true);
 }
 
 /**
@@ -212,16 +238,18 @@ bool itsdk_stimer_isLowPowerSwitchAutorized() {
 
 /**
  * Get a timer structure from callback & value
+ * Callback verified when checkCbFunc is true
  */
-itsdk_stimer_slot_t * itsdk_stimer_get(
+itsdk_stimer_slot_t * itsdk_stimer_get_1(
 		void (*callback_func)(uint32_t value),
-		uint32_t value
+		uint32_t value,
+		bool checkCbFunc
 ) {
 	for (int i=0 ; i < ITSDK_TIMER_SLOTS ; i++) {
 		if (
 				__stimer_slots[i].inUse == true
 			&&  __stimer_slots[i].customValue == value
-			&&  __stimer_slots[i].callback_func == callback_func
+			&&  ( __stimer_slots[i].callback_func == callback_func || !checkCbFunc )
 		) {
 			// found
 			return  &__stimer_slots[i];
@@ -229,6 +257,17 @@ itsdk_stimer_slot_t * itsdk_stimer_get(
 	}
 	return NULL;
 
+}
+
+/**
+ * Get a timer structure from callback & value
+ * force check callback, exists for compatibilty
+ */
+itsdk_stimer_slot_t * itsdk_stimer_get(
+		void (*callback_func)(uint32_t value),
+		uint32_t value
+) {
+	return itsdk_stimer_get_1(callback_func,value,true);
 }
 
 

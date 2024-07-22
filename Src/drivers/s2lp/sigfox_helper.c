@@ -25,11 +25,12 @@
  * ==========================================================
  */
 #include <it_sdk/config.h>
-#if ITSDK_WITH_SIGFOX_LIB > 0
+#if ITSDK_WITH_SIGFOX_LIB > 0 && ITSDK_SIGFOX_LIB == __SIGFOX_S2LP
 
 #include <it_sdk/itsdk.h>
 #include <drivers/s2lp/s2lp.h>
 #include <drivers/s2lp/s2lp_spi.h>
+#include <drivers/s2lp/st_lib_api.h>
 #include <drivers/sigfox/sigfox_api.h>
 #include <drivers/s2lp/sigfox_helper.h>
 #include <it_sdk/logger/logger.h>
@@ -37,65 +38,22 @@
 #include <it_sdk/encrypt/encrypt.h>
 #include <string.h>
 
-s2lp_config_t *	_s2lp_sigfox_config;
-void itsdk_sigfox_configInit(s2lp_config_t * cnf) {
-	_s2lp_sigfox_config = cnf;
-}
-
-/**
- * Init the sigfox library according to the configuration
- * passed as parameter.
- * return true when success.
- */
-bool s2lp_sigfox_init(s2lp_config_t * conf) {
-
-	switch ( conf->rcz ) {
-	case 1:
-		SIGFOX_API_open(&(sfx_rc_t)RC1);
-		break;
-	case 2:
-		SIGFOX_API_open(&(sfx_rc_t)RC2);
-		// In FCC we can choose the macro channel to use by a 86 bits bitmask
-	    //  In this case we use the first 9 macro channels
-		sfx_u32 config_words1[3]={1,0,0};
-		SIGFOX_API_set_std_config(config_words1,1);
-		log_error("RCZ2 implementation is actually not working");
-		ITSDK_ERROR_REPORT(ITSDK_ERROR_SIGFOX_RCZ_NOTSUPPORTED,(uint16_t)conf->rcz);
-		break;
-	case 3:
-		SIGFOX_API_open(&(sfx_rc_t)RC3C);
-		sfx_u32 config_words2[3]=RC3C_CONFIG;
-		SIGFOX_API_set_std_config(config_words2,0);
-		break;
-	case 4:
-		SIGFOX_API_open(&(sfx_rc_t)RC4);
-		sfx_u32 config_words3[3]={0,0x40000000,0};
-		SIGFOX_API_set_std_config(config_words3,1);
-		log_error("RCZ4 implementation is actually not working");
-		ITSDK_ERROR_REPORT(ITSDK_ERROR_SIGFOX_RCZ_NOTSUPPORTED,(uint16_t)conf->rcz);
-		break;
-	case 5:
-		log_error("RCZ5 implementation is actually supported");
-		ITSDK_ERROR_REPORT(ITSDK_ERROR_SIGFOX_RCZ_NOTSUPPORTED,(uint16_t)conf->rcz);
-		break;
-
-	}
-
-	return true;
-}
-
 
 
 /**
  * Protect the private key in memory
  *  - basic Xor ... better than nothing
  */
-void s2lp_sigfox_cifferKey(s2lp_config_t * conf) {
-	itsdk_encrypt_cifferKey(&conf->key[0],16);
+#if ITSDK_SIGFOX_NVM_SOURCE	== __SFX_NVM_M95640 || ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_HEADERS
+void s2lp_sigfox_cifferKey() {
+	itsdk_encrypt_cifferKey(s2lp_driver_config.key,16);
 }
-void s2lp_sigfox_unCifferKey(s2lp_config_t * conf) {
-	itsdk_encrypt_unCifferKey(&conf->key[0],16);
+void s2lp_sigfox_unCifferKey() {
+	itsdk_encrypt_unCifferKey(s2lp_driver_config.key,16);
 }
+
+
+
 
 /**
  * Some hack of the ST IDRetriever library to extract and set a better protection to
@@ -152,21 +110,45 @@ bool s2lp_sigfox_retreive_key(int32_t deviceId, uint8_t * pac, uint8_t * key) {
 	 }
 	 return false;
  }
-
+#endif
 
 /**
  * A valid frame has been received, the last Rssi is a valid Rssi
  */
 void s2lp_sigfox_retreive_rssi() {
-	_s2lp_sigfox_config->lastReceptionRssi = _s2lp_sigfox_config->lastReadRssi;
+	s2lp_driver_config.lastReceptionRssi = s2lp_driver_config.lastReadRssi;
 }
 
 /**
  * Get from S2LP the Last RSSI level after frame sync
  */
 int16_t s2lp_sigfox_getLastRssiLevel() {
-	return (int16_t)(_s2lp_sigfox_config->lastReceptionRssi) - 146;
+	return (int16_t)(s2lp_driver_config.lastReceptionRssi) - 146;
 }
+
+
+uint8_t SE_NVM_set(uint8_t *data_to_write) {
+	LOG_DEBUG_S2LP((">> SE_NVM_set\r\n"));
+    return MCU_API_set_nv_mem(data_to_write);
+}
+
+/**
+ * Return the sequence Id
+ */
+s2lp_sigfox_ret_t s2lp_sigfox_getSeqId( uint16_t * seqId ) {
+	LOG_DEBUG_S2LP((">> s2lp_sigfox_getSeqId\r\n"));
+	#if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_M95640
+	  *seqId = s2lp_driver_config.seqId;
+	#elif ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_LOCALEPROM || ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_HEADERS
+	  sfx_u8 read_data[SFX_NVMEM_BLOCK_SIZE];
+	  MCU_API_get_nv_mem(read_data);
+      *seqId = (read_data[SFX_NVMEM_SEQ_NUM]+(read_data[SFX_NVMEM_SEQ_NUM+1] << 8)) & 0xFFF;
+	#else
+	  #error "unsupported configuration"
+    #endif
+    return S2LP_SIGFOX_ERR_NONE;
+}
+
 
 #endif // ITSDK_WITH_SIGFOX_LIB test
 

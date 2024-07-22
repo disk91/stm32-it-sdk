@@ -36,6 +36,7 @@ typedef enum lorawan_driver_joinState_e {
 	LORAWAN_STATE_JOINING,
 	LORAWAN_STATE_JOIN_SUCCESS,
 	LORAWAN_STATE_JOIN_FAILED,
+	LORAWAN_STATE_JOIN_BUSY,
 
 	LORAWAN_STATE_END
 } lorawan_driver_joinState;

@@ -25,7 +25,7 @@
  */
 #include <it_sdk/config.h>
 
-#if ITSDK_WITH_SPI == __SPI_ENABLED
+#if ((ITSDK_WITH_SPI) & __SPI_ENABLED ) > 0 && (ITSDK_PLATFORM == __PLATFORM_STM32L0 || ITSDK_PLATFORM == __PLATFORM_STM32WLE)
 #include <stm32l_sdk/spi/spi.h>
 #include <it_sdk/wrappers.h>
 
@@ -71,6 +71,14 @@ _SPI_Status spi_write_byte(
 ) {
   spi_wait4TransactionEnd(spi);
   return (_SPI_Status)HAL_SPI_Transmit(spi, (uint8_t*) &Value, 1, ITSDK_SPI_TIMEOUT);
+}
+
+_SPI_Status spi_read_byte(
+		SPI_HandleTypeDef * spi,
+		uint8_t * Value
+) {
+  spi_wait4TransactionEnd(spi);
+  return (_SPI_Status)HAL_SPI_Receive(spi, (uint8_t*) Value, 1, ITSDK_SPI_TIMEOUT);
 }
 
 void spi_wait4TransactionEnd(

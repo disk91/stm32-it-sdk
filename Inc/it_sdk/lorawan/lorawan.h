@@ -57,7 +57,8 @@ typedef enum {
 typedef enum {
 	LORAWAN_JOIN_PENDING = 0,
 	LORAWAN_JOIN_SUCCESS,
-	LORAWAN_JOIN_FAILED
+	LORAWAN_JOIN_FAILED,
+	LORAWAN_JOIN_BUSY						  // Busy channels during join procedure (duty cycle/backoff)
 } itsdk_lorawan_join_t;
 
 typedef enum {

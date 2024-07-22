@@ -36,9 +36,6 @@
 
 #if ITSDK_WITH_SIGFOX_LIB > 0
 
-#include <drivers/sigfox/sigfox_api.h>
-#include <drivers/sigfox/se_nvm.h>
-
 #if ITSDK_WITH_SECURESTORE == __ENABLE
   #include <it_sdk/eeprom/securestore.h>
 #endif
@@ -47,23 +44,31 @@
 #include <it_sdk/eeprom/sdk_config.h>
 
 #if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
+	#include <drivers/sigfox/sigfox_api.h>
+	#include <drivers/sigfox/se_nvm.h>
 	#include <drivers/s2lp/s2lp.h>
 	#include <drivers/s2lp/sigfox_helper.h>
 	#include <drivers/s2lp/st_rf_api.h>
 	#include <drivers/eeprom/m95640/m95640.h>
 	#include <drivers/sigfox/sigfox_api.h>
+	#include <drivers/sigfox/mcu_api.h>
 #elif ITSDK_SIGFOX_LIB == __SIGFOX_SX1276
+	#include <drivers/sigfox/sigfox_api.h>
+	#include <drivers/sigfox/se_nvm.h>
 	#include <drivers/sx1276/sigfox_sx1276.h>
+	#include <drivers/sigfox/mcu_api.h>
+#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
+  #ifdef USE_SIGFOX_EP_FLAGS_H
+	#include "sigfox_ep_flags.h"// 3rdParties/sigfox/sigfox-ep-lib/inc/sigfox_ep_flags.h
+  #endif
+	#include "sigfox_ep_api.h"	// 3rdParties/sigfox/sigfox-ep-lib/inc/sigfox_ep_api.h
+	#include "sigfox_types.h"	// 3rdParties/sigfox/sigfox-ep-lib/inc/sigfox_types.h
+	#include <manuf/mcu_api.h>	// 3rdParties/sigfox/sigfox-ep-lib/inc/manuf/mcu_api.h
+	#include <drivers/sx126x/sigfox_sx126x.h>
 #endif
-#include <drivers/sigfox/mcu_api.h>
 
 #if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_LOCALEPROM
 	#include <it_sdk/eeprom/eeprom.h>
-#endif
-
-
-#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
-s2lp_config_t __s2lpConf;
 #endif
 
 /**
@@ -78,26 +83,28 @@ itsdk_sigfox_init_t itsdk_sigfox_setup() {
 	LOG_INFO_SIGFOXSTK(("itsdk_sigfox_setup\r\n"));
 
 	itsdk_sigfox_init_t ret = SIGFOX_INIT_SUCESS;
-#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
-	eeprom_m95640_hwInit();
-	s2lp_hwInit();
-	eeprom_m95640_init(&ITSDK_DRIVERS_M95640_SPI);
-	s2lp_init();
-	s2lp_loadConfiguration(&__s2lpConf);
-	s2lp_sigfox_init(&__s2lpConf);
+	#if ITSDK_WITH_SECURESTORE == __ENABLE
+		itsdk_sigfox_resetFactoryDefaults(false);	// store the default hardcoded key if not yet done
+	#endif
 
-	itsdk_state.sigfox.rcz = __s2lpConf.rcz;
-#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX1276
-	itsdk_sigfox_resetFactoryDefaults(false);		// store the key if not yet done
-	ret = sx1276_sigfox_init();
-#endif
+	#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
+		ret = s2lp_sigfox_init();
+	#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX1276
+		ret = sx1276_sigfox_init();
+	#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
+		ret = sx126x_sigfox_init();
+	#endif
+
 	if (
-#if ITSDK_CONFIGURATION_MODE != __CONFIG_STATIC
+		#if ITSDK_CONFIGURATION_MODE != __CONFIG_STATIC
 		    itsdk_config.sdk.sigfox.txPower == SIGFOX_DEFAULT_POWER ||
-#endif
+		#endif
 		    itsdk_state.sigfox.current_power == SIGFOX_DEFAULT_POWER
-		) {
+	) {
 		switch (itsdk_state.sigfox.rcz) {
+		case SIGFOX_RCNOTYETDEFINED:
+			 itsdk_state.sigfox.current_power = __itsdk_sigfox_getRealTxPower(0);
+			 break;
 		case SIGFOX_RCZ1:
 		case SIGFOX_RCZ5:
 			  itsdk_state.sigfox.current_power = __itsdk_sigfox_getRealTxPower(14);
@@ -107,6 +114,8 @@ itsdk_sigfox_init_t itsdk_sigfox_setup() {
 			  itsdk_state.sigfox.current_power = __itsdk_sigfox_getRealTxPower(24);
 			break;
 		case SIGFOX_RCZ3C:
+		case SIGFOX_RCZ6:
+		case SIGFOX_RCZ7:
 			  itsdk_state.sigfox.current_power = __itsdk_sigfox_getRealTxPower(16);
 			break;
 		default:
@@ -114,11 +123,14 @@ itsdk_sigfox_init_t itsdk_sigfox_setup() {
 		}
 	}
 	if (
-#if ITSDK_CONFIGURATION_MODE != __CONFIG_STATIC
+		#if ITSDK_CONFIGURATION_MODE != __CONFIG_STATIC
 			itsdk_config.sdk.sigfox.speed == SIGFOX_DEFAULT_SPEED ||
-#endif
-			itsdk_state.sigfox.current_speed == SIGFOX_DEFAULT_SPEED ) {
+		#endif
+		itsdk_state.sigfox.current_speed == SIGFOX_DEFAULT_SPEED
+	) {
+
 		switch (itsdk_state.sigfox.rcz) {
+		case SIGFOX_RCNOTYETDEFINED:
 		case SIGFOX_RCZ1:
 		case SIGFOX_RCZ3C:
 		case SIGFOX_RCZ5:
@@ -126,12 +138,17 @@ itsdk_sigfox_init_t itsdk_sigfox_setup() {
 			break;
 		case SIGFOX_RCZ2:
 		case SIGFOX_RCZ4:
+		case SIGFOX_RCZ6:
+		case SIGFOX_RCZ7:
 			itsdk_state.sigfox.current_speed = SIGFOX_SPEED_600;
 			break;
 		default:
 			ITSDK_ERROR_REPORT(ITSDK_ERROR_SIGFOX_RCZ_NOTSUPPORTED,(uint16_t)itsdk_state.sigfox.rcz);
 		}
 	}
+
+	// Set default Rx Rssi
+	itsdk_state.sigfox.lastRssi = 99;
 
 	// Set the default power
 	itsdk_sigfox_setTxPower_ext(itsdk_state.sigfox.current_power,true);
@@ -159,9 +176,11 @@ itsdk_sigfox_init_t itsdk_sigfox_loop() {
  */
 itsdk_sigfox_init_t itsdk_sigfox_deinit() {
 	#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
-		#warning "Not yets implemented"
+	    s2lp_sigfox_deinit();
 	#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX1276
 		sx1276_sigfox_deinit();
+	#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
+		SIGFOX_EP_API_close();
 	#endif
 	itsdk_state.sigfox.initialized = false;
 	return SIGFOX_INIT_SUCESS;
@@ -273,10 +292,37 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendFrame(
 		result = SIGFOX_TXRX_ERROR;
 		break;
 	}
+#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
+	SIGFOX_EP_API_application_message_t m;
 
+	sx126x_sigfox_tx_config(&m, buf, false, len, repeat, speed, power, ack,itsdk_state.sigfox.rcz, itsdk_config.sdk.sigfox.sgfxKey);
+	#if ( (ITSDK_WITH_SPI) & __SPI_SUBGHZ ) > 0 && defined BIDIRECTIONAL && !defined ASYNCHRONOUS
+		if (ack) sx126x_resetDataReceived();
+	#endif
+	SIGFOX_EP_API_status_t ret = SIGFOX_EP_API_send_application_message(&m);
+
+	#ifdef ASYNCHRONOUS
+  	  if ( ret == SIGFOX_EP_API_SUCCESS ) ret = sx126x_sigfox_process_async();
+	#endif
+
+	switch (ret) {
+	case SIGFOX_EP_API_SUCCESS:
+		#if ( (ITSDK_WITH_SPI) & __SPI_SUBGHZ ) > 0 && defined BIDIRECTIONAL && !defined ASYNCHRONOUS
+		  if ( sx126x_hasDataReceived() == BOOL_TRUE ) {
+		#else
+  		  SIGFOX_EP_API_message_status_t message_status = SIGFOX_EP_API_get_message_status();
+		  if ( message_status.field.dl_frame != 0 ) {
+        #endif
+			// downlink received
+			SIGFOX_EP_API_get_dl_payload(dwn,SIGFOX_DL_PAYLOAD_SIZE_BYTES,&itsdk_state.sigfox.lastRssi);
+			result = SIGFOX_TXRX_DOWLINK_RECEIVED;
+		} else result = (ack)?SIGFOX_TXRX_NO_DOWNLINK:SIGFOX_TRANSMIT_SUCESS;
+		break;
+	default:
+		LOG_ERROR_SIGFOXSTK(("itsdk_sigfox_sendFrame failed(%d)\r\n",ret));
+		result = SIGFOX_TXRX_ERROR; break;
+	}
 #endif
-
-
 	return result;
 }
 
@@ -335,8 +381,36 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendBit(
 			break;
 		}
 
+#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
+	SIGFOX_EP_API_application_message_t m;
+	sx126x_sigfox_tx_config(&m, NULL, bitValue, 1, repeat, speed, power, ack,itsdk_state.sigfox.rcz, itsdk_config.sdk.sigfox.sgfxKey);
+
+	#if ( (ITSDK_WITH_SPI) & __SPI_SUBGHZ ) > 0 && defined BIDIRECTIONAL && !defined ASYNCHRONOUS
+		if (ack) sx126x_resetDataReceived();
+	#endif
+	SIGFOX_EP_API_status_t ret = SIGFOX_EP_API_send_application_message(&m);
+	#ifdef ASYNCHRONOUS
+	  if ( ret == SIGFOX_EP_API_SUCCESS ) ret = sx126x_sigfox_process_async();
 	#endif
 
+	switch (ret) {
+	case SIGFOX_EP_API_SUCCESS:
+		#if ( (ITSDK_WITH_SPI) & __SPI_SUBGHZ ) > 0 && defined BIDIRECTIONAL && !defined ASYNCHRONOUS
+		  if ( sx126x_hasDataReceived() == BOOL_TRUE ) {
+		#else
+  		  SIGFOX_EP_API_message_status_t message_status = SIGFOX_EP_API_get_message_status();
+		  if ( message_status.field.dl_frame != 0 ) {
+        #endif
+			// downlink received
+			SIGFOX_EP_API_get_dl_payload(dwn,SIGFOX_DL_PAYLOAD_SIZE_BYTES,&itsdk_state.sigfox.lastRssi);
+			result = SIGFOX_TXRX_DOWLINK_RECEIVED;
+		} else result = (ack)?SIGFOX_TXRX_NO_DOWNLINK:SIGFOX_TRANSMIT_SUCESS;
+		break;
+	default:
+		LOG_ERROR_SIGFOXSTK(("itsdk_sigfox_sendFrame failed(%d)\r\n",ret));
+		result = SIGFOX_TXRX_ERROR; break;
+	}
+#endif
 	return result;
 }
 
@@ -379,8 +453,35 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendOob(
 			result = SIGFOX_TXRX_ERROR;
 			break;
 		}
+	#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
+
+
+		SIGFOX_EP_API_control_message_t	m;
+		sx126x_sigfox_tx_common_config(&m.common_parameters,1,speed,power,false,itsdk_state.sigfox.rcz, itsdk_config.sdk.sigfox.sgfxKey);
+		#warning "TODO - Make sure the message are corresponding and update the doc for getting it more clear"
+		switch (oobType) {
+			case SIGFOX_OOB_SERVICE:
+				m.type = SIGFOX_CONTROL_MESSAGE_TYPE_DL_CONFIRMATION;
+				break;
+			case SIGFOX_OOB_RC_SYNC:
+				m.type = SIGFOX_CONTROL_MESSAGE_TYPE_KEEP_ALIVE;
+				break;
+			default:
+				ITSDK_ERROR_REPORT(ITSDK_ERROR_SIGFOX_OOB_NOTSUPPORTED,(uint16_t)oobType);
+		}
+		#ifdef ASYNCHRONOUS
+		 m.uplink_cplt_cb = sx126x_onTxComplete_cb;
+		 m.message_cplt_cb = sx126x_onMessageComplete_cb;
+		#endif
+		 SIGFOX_EP_API_status_t r = SIGFOX_EP_API_send_control_message(&m);
+		#ifdef ASYNCHRONOUS
+		 if ( r == SIGFOX_EP_API_SUCCESS ) r = sx126x_sigfox_process_async();
+		#endif
+		 if ( r != SIGFOX_EP_API_SUCCESS )	LOG_ERROR_SIGFOXSTK(("Oob send error(%d)\r\n",r));
+		 result =  (r == SIGFOX_EP_API_SUCCESS )?SIGFOX_TRANSMIT_SUCESS:SIGFOX_TXRX_ERROR;
 
 	#endif
+
 
 	return result;
 }
@@ -411,6 +512,8 @@ itsdk_sigfox_init_t itsdk_sigfox_setTxPower_ext(int8_t power, bool force) {
 		ST_RF_API_reduce_output_power(delta);
     #elif ITSDK_SIGFOX_LIB == __SIGFOX_SX1276
 		sx1276_sigfox_setPower( power );
+	#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
+		// power is sent during message transmission, no global setting
 	#endif
 	itsdk_state.sigfox.current_power = power;
 
@@ -418,7 +521,7 @@ itsdk_sigfox_init_t itsdk_sigfox_setTxPower_ext(int8_t power, bool force) {
 }
 
 /**
- * Change the current sigfox network speed
+ * Change the current Sigfox network speed
  */
 itsdk_sigfox_init_t itsdk_sigfox_setTxPower(int8_t power) {
 	LOG_DEBUG_SIGFOXSTK(("itsdk_sigfox_setTxPower\r\n"));
@@ -426,7 +529,7 @@ itsdk_sigfox_init_t itsdk_sigfox_setTxPower(int8_t power) {
 }
 
 /**
- * Get the current sigfox trasnmision power
+ * Get the current Sigfox transmission power
  */
 itsdk_sigfox_init_t itsdk_sigfox_getTxPower(int8_t * power) {
 	LOG_DEBUG_SIGFOXSTK(("itsdk_sigfox_getTxPower\r\n"));
@@ -449,6 +552,8 @@ itsdk_sigfox_init_t itsdk_sigfox_setTxSpeed(itdsk_sigfox_speed_t speed) {
 	#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX1276
 		// not yet supported
 		LOG_WARN_SIGFOXSTK(("Sigfox speed change not yet supported"));
+	#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
+		// direclty applicable on frame transmission
 	#endif
 
 	itsdk_state.sigfox.current_speed = speed;
@@ -470,19 +575,19 @@ itsdk_sigfox_init_t itsdk_sigfox_getTxSpeed(itdsk_sigfox_speed_t * speed) {
 itsdk_sigfox_init_t itsdk_sigfox_getDeviceId(itsdk_sigfox_device_is_t * devId) {
 	LOG_INFO_SIGFOXSTK(("itsdk_sigfox_getDeviceId\r\n"));
 
-	#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
-		if ( itsdk_state.sigfox.initialized ) {
-		  *devId = __s2lpConf.id;
-		} else return SIGFOX_INIT_FAILED;
-    #else
-      #if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_LOCALEPROM
-		 *devId = itsdk_config.sdk.sigfox.deviceId;
-      #elif ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_CONFIG_STATIC
-		 *devId = ITSDK_SIGFOX_ID;
+    #if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_LOCALEPROM
+  	   *devId = itsdk_config.sdk.sigfox.deviceId;
+    #elif ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_CONFIG_STATIC
+	   *devId = ITSDK_SIGFOX_ID;
+	#elif ITSDK_SIGFOX_NVM_SOURCE	== __SFX_NVM_M95640
+      #if ITSDK_SIGFOX_LIB == __SIGFOX_S2LP
+		 *devId = s2lp_driver_config.deviceId
       #else
+         #error "Unsupported configuration"
+	   #endif
+    #else
 		#error UNSUPPORTED ITSDK_SIGFOX_NVM_SOURCE VALUE
-      #endif
-	#endif
+    #endif
 	return SIGFOX_INIT_SUCESS;
 }
 
@@ -493,22 +598,18 @@ itsdk_sigfox_init_t itsdk_sigfox_getDeviceId(itsdk_sigfox_device_is_t * devId) {
 itsdk_sigfox_init_t itsdk_sigfox_getInitialPac(uint8_t * pac) {
 	LOG_INFO_SIGFOXSTK(("itsdk_sigfox_getInitialPac\r\n"));
 
-	#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
-		if ( itsdk_state.sigfox.initialized ) {
-		  for ( int i = 0 ; i < 8 ; i++ ) {
-			  pac[i] = __s2lpConf.pac[i];
-		  }
-		} else return SIGFOX_INIT_FAILED;
-   #else
      #if ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_LOCALEPROM
 		 bcopy(itsdk_config.sdk.sigfox.initialPac,pac,8);
      #elif ITSDK_SIGFOX_NVM_SOURCE == __SFX_NVM_CONFIG_STATIC
 		 uint8_t _pac[8] = ITSDK_SIGFOX_PAC;
 		 bcopy(_pac,pac,8);
-     #else
-		#error UNSUPPORTED ITSDK_SIGFOX_NVM_SOURCE VALUE
+  	 #elif ITSDK_SIGFOX_NVM_SOURCE	== __SFX_NVM_M95640
+	   #if ITSDK_SIGFOX_LIB == __SIGFOX_S2LP
+		 bcopy(s2lp_driver_config.initialPac, pac, 8);
+       #else
+		 #error UNSUPPORTED ITSDK_SIGFOX_NVM_SOURCE VALUE
+       #endif
      #endif
-    #endif
 
 	return SIGFOX_INIT_SUCESS;
 }
@@ -524,6 +625,8 @@ itsdk_sigfox_init_t itsdk_sigfox_getLastRssi(int16_t * rssi) {
 		*rssi = s2lp_sigfox_getLastRssiLevel();
     #elif ITSDK_SIGFOX_LIB == __SIGFOX_SX1276
 		sx1276_sigfox_getRssi(rssi);
+	#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
+		return sx126x_sigfox_getRssi(rssi);
 	#endif
 
 	return SIGFOX_INIT_SUCESS;
@@ -536,9 +639,12 @@ itsdk_sigfox_init_t itsdk_sigfox_getLastSeqId(uint16_t * seqId) {
 	LOG_INFO_SIGFOXSTK(("itsdk_sigfox_getLastSeqId\r\n"));
 
 	#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
-		*seqId = _s2lp_sigfox_config->seqId;
+	    s2lp_sigfox_getSeqId(seqId);
     #elif ITSDK_SIGFOX_LIB == __SIGFOX_SX1276
 		sx1276_sigfox_getSeqId(seqId);
+	#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
+		sx126x_sigfox_getSeqId(seqId);
+#warning "check if current or previous"
 	#endif
 
 	return SIGFOX_INIT_SUCESS;
@@ -551,11 +657,14 @@ itsdk_sigfox_init_t itsdk_sigfox_getNextSeqId(uint16_t * seqId) {
 	LOG_INFO_SIGFOXSTK(("itsdk_sigfox_getNextSeqId\r\n"));
 
 	#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP
-		*seqId = (_s2lp_sigfox_config->seqId+1) & 0x0FFF;
+		s2lp_sigfox_getSeqId(seqId);
     #elif ITSDK_SIGFOX_LIB == __SIGFOX_SX1276
 		sx1276_sigfox_getSeqId(seqId);
-		*seqId = (*seqId+1) & 0x0FFF;
+	#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
+		sx126x_sigfox_getSeqId(seqId);
+#warning "check if current or previous"
 	#endif
+		*seqId = (*seqId+1) & 0x0FFF;
 
 	return SIGFOX_INIT_SUCESS;
 }
@@ -569,6 +678,8 @@ itsdk_sigfox_init_t itsdk_sigfox_switchPublicKey() {
 
 	#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP  || ITSDK_SIGFOX_LIB == __SIGFOX_SX1276
 		SIGFOX_API_switch_public_key(true);
+	#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
+		itsdk_config.sdk.sigfox.sgfxKey = SIGFOX_KEY_PUBLIC;
 	#endif
 	return SIGFOX_INIT_SUCESS;
 }
@@ -581,6 +692,8 @@ itsdk_sigfox_init_t itsdk_sigfox_switchPrivateKey() {
 
 	#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP || ITSDK_SIGFOX_LIB == __SIGFOX_SX1276
 	   SIGFOX_API_switch_public_key(false);
+	#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
+	   itsdk_config.sdk.sigfox.sgfxKey = SIGFOX_EP_KEY_PRIVATE;
 	#endif
 	return SIGFOX_INIT_SUCESS;
 }
@@ -613,6 +726,8 @@ itsdk_sigfox_init_t itsdk_sigfox_continuousModeStart(
 		default:
 			return SIGFOX_INIT_PARAMSERR;
 		}
+	#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
+		#warning "TODO"
 	#endif
 
 	return SIGFOX_INIT_SUCESS;
@@ -626,6 +741,8 @@ itsdk_sigfox_init_t itsdk_sigfox_continuousModeStop() {
 
 	#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP || ITSDK_SIGFOX_LIB == __SIGFOX_SX1276
 		SIGFOX_API_stop_continuous_transmission();
+	#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
+		#warning "TODO"
 	#endif
 
 	return SIGFOX_INIT_SUCESS;
@@ -643,6 +760,8 @@ itsdk_sigfox_init_t itsdk_sigfox_setRcSyncPeriod(uint16_t numOfFrame) {
 	if ( numOfFrame > 4096 ) return SIGFOX_INIT_PARAMSERR;
 	#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP || ITSDK_SIGFOX_LIB == __SIGFOX_SX1276
 		SIGFOX_API_set_rc_sync_period(numOfFrame);
+	#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
+		#warning "TODO"
 	#endif
 
 	return SIGFOX_INIT_SUCESS;
@@ -673,10 +792,18 @@ itsdk_sigfox_init_t itsdk_sigfox_getSigfoxLibVersion(uint8_t ** version){
  * Return the size of the sigfox Nvm memory to reserve
  */
 itsdk_sigfox_init_t itsdk_sigfox_getNvmSize(uint32_t * sz) {
+  #if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP || ITSDK_SIGFOX_LIB == __SIGFOX_SX1276
 	*sz = (   sizeof(itsdk_sigfox_nvm_header_t)
 			+ itdt_align_32b(SFX_NVMEM_BLOCK_SIZE)
 			+ itdt_align_32b(SFX_SE_NVMEM_BLOCK_SIZE)
 		  );
+  #elif ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
+	*sz = (   sizeof(itsdk_sigfox_nvm_header_t)
+				+ itdt_align_32b(SIGFOX_NVM_DATA_SIZE_BYTES)
+		  );
+  #else
+    #error Unsupported ITSDK_SIGFOX_LIB
+  #endif
 	return SIGFOX_INIT_SUCESS;
 }
 
@@ -693,10 +820,20 @@ itsdk_sigfox_init_t itsdk_sigfox_getNvmOffset(uint32_t * offset) {
  * Return the offset of the NVM area for Sigfox Secure Element
  */
 itsdk_sigfox_init_t itsdk_sigfox_getSeNvmOffset(uint32_t * offset) {
+#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP || ITSDK_SIGFOX_LIB == __SIGFOX_SX1276
 	itsdk_sigfox_getNvmOffset(offset);
 	int size = itdt_align_32b(SFX_NVMEM_BLOCK_SIZE);
 	*offset += size;
 	return SIGFOX_INIT_SUCESS;
+#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
+	// This does not exist in SX126X but can still report the same information, it should not be called
+	itsdk_sigfox_getNvmOffset(offset);
+	int size = itdt_align_32b(SIGFOX_NVM_DATA_SIZE_BYTES);
+	*offset += size;
+	return SIGFOX_INIT_SUCESS;
+#else
+  #error Unsupported ITSDK_SIGFOX_LIB
+#endif
 }
 
 /**
@@ -738,11 +875,24 @@ itsdk_sigfox_init_t __itsdk_sigfox_resetNvmToFactory(bool force) {
 		header.reserved = 0;
 		_eeprom_write(ITDT_EEPROM_BANK0, offset, (void *) &header, sizeof(itsdk_sigfox_nvm_header_t));
 		// force to reset the Sigfox NVM structure
-		uint8_t se_nvm_default[SFX_SE_NVMEM_BLOCK_SIZE] = { 0, 0, 0, 0x0F, 0xFF };
-		SE_NVM_set(se_nvm_default);
-		uint8_t se_mcu_default[SFX_NVMEM_BLOCK_SIZE];
-		bzero(se_mcu_default,SFX_NVMEM_BLOCK_SIZE);
-		MCU_API_set_nv_mem(se_mcu_default);
+		#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP || ITSDK_SIGFOX_LIB == __SIGFOX_SX1276
+			uint8_t se_nvm_default[SFX_SE_NVMEM_BLOCK_SIZE] = { 0, 0, 0, 0x0F, 0xFF };
+			SE_NVM_set(se_nvm_default);
+			uint8_t se_mcu_default[SFX_NVMEM_BLOCK_SIZE];
+			bzero(se_mcu_default,SFX_NVMEM_BLOCK_SIZE);
+			MCU_API_set_nv_mem(se_mcu_default);
+		#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
+			if ( SIGFOX_NVM_DATA_SIZE_BYTES != 4 ) {
+			   LOG_ERROR_SIGFOXSTK(("SIGFOX_NVM_DATA_SIZE_BYTES has changed and this must be updated"));
+			}
+			uint8_t nvm[SIGFOX_NVM_DATA_SIZE_BYTES] = { 0x00, 0x00, 0x00, 0x00 };
+			nvm[0] = itsdk_randomByte();
+			nvm[1] = itsdk_randomByte();
+			MCU_API_set_nvm(nvm,SIGFOX_NVM_DATA_SIZE_BYTES);
+		#else
+		  #error Unsupported ITSDK_SIGFOX_LIB
+		#endif
+
 	} else {
 		LOG_INFO_SIGFOXSTK((".. Skiped\r\n"));
 	}

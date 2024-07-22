@@ -171,9 +171,12 @@ static itsdk_console_return_e _itsdk_console_private(char * buffer, uint8_t sz) 
 success:
 	_itsdk_console_printf("OK\r\n");
 	return ITSDK_CONSOLE_SUCCES;
+
+#if ITSDK_RADIO_CERTIF == __ENABLE && (ITSDK_WITH_SIGFOX_LIB == __ENABLE || ITSDK_WITH_LORAWAN_LIB == __ENABLE )
 failed:
 	_itsdk_console_printf("KO\r\n");
 	return ITSDK_CONSOLE_FAILED;
+#endif
 }
 
 static itsdk_console_return_e _itsdk_console_public(char * buffer, uint8_t sz) {
