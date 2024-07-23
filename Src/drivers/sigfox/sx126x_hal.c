@@ -328,7 +328,15 @@ failed:
 //  __attribute__((weak)) sx126x_status_t SX126X_RF_API_get_and_clear_irq_status( const void* context, sx126x_irq_mask_t* irq ) {
 // 	  return sx126x_get_and_clear_irq_status(context,irq);
 //  }
-
+//
+// then replace the call to sx126x_get_and_clear_irq_status to SX126X_RF_API_get_and_clear_irq_status in this file
+//
+//  ...
+//  sx126x_ctx.irq_flag = 0;
+//  sx126x_status = SX126X_RF_API_get_and_clear_irq_status( SFX_NULL, &sx126x_irq_mask );
+//   if (sx126x_status != SX126X_STATUS_OK)
+//      EXIT_ERROR((RF_API_status_t) SX126X_RF_API_ERROR_CHIP_IRQ);
+//
 
 #define __SX126X_IRQ_CLEARED    0
 #define __SX126X_IRQ_TXCOMPLETE	1
