@@ -307,12 +307,17 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendFrame(
 
 	switch (ret) {
 	case SIGFOX_EP_API_SUCCESS:
+
+		SIGFOX_EP_API_message_status_t message_status = SIGFOX_EP_API_get_message_status();
+		if ( message_status.field.dl_frame != 0 ) {
+		/* not sure why I wrote this earlier ...
 		#if ( (ITSDK_WITH_SPI) & __SPI_SUBGHZ ) > 0 && defined BIDIRECTIONAL && !defined ASYNCHRONOUS
 		  if ( sx126x_hasDataReceived() == BOOL_TRUE ) {
 		#else
   		  SIGFOX_EP_API_message_status_t message_status = SIGFOX_EP_API_get_message_status();
 		  if ( message_status.field.dl_frame != 0 ) {
         #endif
+        */
 			// downlink received
 			SIGFOX_EP_API_get_dl_payload(dwn,SIGFOX_DL_PAYLOAD_SIZE_BYTES,&itsdk_state.sigfox.lastRssi);
 			result = SIGFOX_TXRX_DOWLINK_RECEIVED;
@@ -395,12 +400,16 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendBit(
 
 	switch (ret) {
 	case SIGFOX_EP_API_SUCCESS:
+		SIGFOX_EP_API_message_status_t message_status = SIGFOX_EP_API_get_message_status();
+		if ( message_status.field.dl_frame != 0 ) {
+/*
 		#if ( (ITSDK_WITH_SPI) & __SPI_SUBGHZ ) > 0 && defined BIDIRECTIONAL && !defined ASYNCHRONOUS
 		  if ( sx126x_hasDataReceived() == BOOL_TRUE ) {
 		#else
   		  SIGFOX_EP_API_message_status_t message_status = SIGFOX_EP_API_get_message_status();
 		  if ( message_status.field.dl_frame != 0 ) {
         #endif
+        */
 			// downlink received
 			SIGFOX_EP_API_get_dl_payload(dwn,SIGFOX_DL_PAYLOAD_SIZE_BYTES,&itsdk_state.sigfox.lastRssi);
 			result = SIGFOX_TXRX_DOWLINK_RECEIVED;
@@ -458,7 +467,6 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendOob(
 
 		SIGFOX_EP_API_control_message_t	m;
 		sx126x_sigfox_tx_common_config(&m.common_parameters,1,speed,power,false,itsdk_state.sigfox.rcz, itsdk_config.sdk.sigfox.sgfxKey);
-		#warning "TODO - Make sure the message are corresponding and update the doc for getting it more clear"
 		switch (oobType) {
 			case SIGFOX_OOB_SERVICE:
 				m.type = SIGFOX_CONTROL_MESSAGE_TYPE_DL_CONFIRMATION;
@@ -626,7 +634,7 @@ itsdk_sigfox_init_t itsdk_sigfox_getLastRssi(int16_t * rssi) {
     #elif ITSDK_SIGFOX_LIB == __SIGFOX_SX1276
 		sx1276_sigfox_getRssi(rssi);
 	#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
-		return sx126x_sigfox_getRssi(rssi);
+		*rssi = itsdk_state.sigfox.lastRssi;
 	#endif
 
 	return SIGFOX_INIT_SUCESS;
@@ -644,7 +652,6 @@ itsdk_sigfox_init_t itsdk_sigfox_getLastSeqId(uint16_t * seqId) {
 		sx1276_sigfox_getSeqId(seqId);
 	#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
 		sx126x_sigfox_getSeqId(seqId);
-#warning "check if current or previous"
 	#endif
 
 	return SIGFOX_INIT_SUCESS;
@@ -662,9 +669,8 @@ itsdk_sigfox_init_t itsdk_sigfox_getNextSeqId(uint16_t * seqId) {
 		sx1276_sigfox_getSeqId(seqId);
 	#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
 		sx126x_sigfox_getSeqId(seqId);
-#warning "check if current or previous"
 	#endif
-		*seqId = (*seqId+1) & 0x0FFF;
+		*seqId = (*seqId+1) & (ITSDK_SIGFOX_ROLLOVER-1);
 
 	return SIGFOX_INIT_SUCESS;
 }
