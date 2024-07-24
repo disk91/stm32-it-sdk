@@ -196,7 +196,6 @@ MCU_API_status_t MCU_API_timer_start(MCU_API_timer_t *timer) {
     MCU_API_status_t status = MCU_API_SUCCESS;
 	#endif
     itsdk_timer_return_t timerStatus = TIMER_INIT_SUCCESS;
-
 	#ifdef ASYNCHRONOUS
 		_LOG_SFXEPLIB_DEBUG(("[SFX] MCU_API_timer_start(%d,%d,0x%lX)\r\n",timer->instance, timer->duration_ms,timer->cplt_cb));
 	#else
@@ -204,8 +203,16 @@ MCU_API_status_t MCU_API_timer_start(MCU_API_timer_t *timer) {
 	#endif
     switch (timer->instance) {
         case MCU_API_TIMER_1:
+        	// see below why we do this change
+        	if ( timer->duration_ms > 24000 ) timer->duration_ms += ITSDK_SFX_SX126X_RXWINEXT;
 	  #if defined BIDIRECTIONAL
         case MCU_API_TIMER_2:
+        	// this timer is a bit shorter than expected
+        	// measured 18600ms for 20000ms expected
+        	// The only explaination I found is a drift of the RTC clock
+        	// during radio emission
+        	//
+        	// best solution is to extend the reception windows to cover this difference
 	  #endif
 	  #if defined CERTIFICATION
         case MCU_API_TIMER_3:
@@ -294,6 +301,7 @@ MCU_API_status_t MCU_API_timer_status(MCU_API_timer_instance_t timer_instance, s
 	#endif
 
     *timer_has_elapsed = SFX_FALSE;
+	itsdk_stimer_run();
     switch (timer_instance) {
         case MCU_API_TIMER_1:
 	  #if defined BIDIRECTIONAL
@@ -316,8 +324,6 @@ MCU_API_status_t MCU_API_timer_status(MCU_API_timer_instance_t timer_instance, s
     #if ITSDK_WITH_WDG != __WDG_NONE && ITSDK_WDG_MS > 0
 		wdg_refresh();
 	#endif
-	itsdk_stimer_run();
-
 
     return MCU_API_SUCCESS;
 errors:
@@ -347,7 +353,11 @@ MCU_API_status_t MCU_API_timer_wait_cplt(MCU_API_timer_instance_t timer_instance
         case MCU_API_TIMER_3:
 	  #endif
         	while( itsdk_stimer_isRunning_1(NULL,ITSDK_SFX_SX126X_TMBASE+(uint32_t)timer_instance,false) ) {
-        		lowPower_delayMs(1000); // this is a maximum, the delayMs returns on next timer expiration
+				#if ITSDK_SIGFOX_LOWPOWER == 1
+        			lowPower_delayMs(1000); // this is a maximum, the delayMs returns on next timer expiration
+				#else
+        			itsdk_delayMs(10);
+				#endif
 				#if ITSDK_WITH_WDG != __WDG_NONE && ITSDK_WDG_MS > 0
         			wdg_refresh();
 				#endif
