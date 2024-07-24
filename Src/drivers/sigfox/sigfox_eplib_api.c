@@ -184,8 +184,11 @@ MCU_API_status_t MCU_API_get_latency(MCU_API_latency_t latency_type, sfx_u32 *la
 #ifdef ASYNCHRONOUS
 	MCU_API_timer_cplt_cb_t __cplt_cb[MCU_API_TIMER_LAST];
 	void __timer_cb(uint32_t v) {
+		v-=ITSDK_SFX_SX126X_TMBASE;
 	    _LOG_SFXEPLIB_DEBUG(("[SFX] timer callback (%d)\r\n",v));
-	    __cplt_cb[v-ITSDK_SFX_SX126X_TMBASE]();
+	    if ( v < MCU_API_TIMER_LAST) {
+	       __cplt_cb[v-ITSDK_SFX_SX126X_TMBASE]();
+	    }
 	}
 #endif
 MCU_API_status_t MCU_API_timer_start(MCU_API_timer_t *timer) {
@@ -194,7 +197,11 @@ MCU_API_status_t MCU_API_timer_start(MCU_API_timer_t *timer) {
 	#endif
     itsdk_timer_return_t timerStatus = TIMER_INIT_SUCCESS;
 
-    _LOG_SFXEPLIB_DEBUG(("[SFX] MCU_API_timer_start(%d,%d)\r\n",timer->instance, timer->duration_ms));
+	#ifdef ASYNCHRONOUS
+		_LOG_SFXEPLIB_DEBUG(("[SFX] MCU_API_timer_start(%d,%d,0x%lX)\r\n",timer->instance, timer->duration_ms,timer->cplt_cb));
+	#else
+		_LOG_SFXEPLIB_DEBUG(("[SFX] MCU_API_timer_start(%d,%d)\r\n",timer->instance, timer->duration_ms));
+	#endif
     switch (timer->instance) {
         case MCU_API_TIMER_1:
 	  #if defined BIDIRECTIONAL
@@ -204,7 +211,6 @@ MCU_API_status_t MCU_API_timer_start(MCU_API_timer_t *timer) {
         case MCU_API_TIMER_3:
 	  #endif
           #ifdef ASYNCHRONOUS
-        	_LOG_SFXEPLIB_DEBUG(("[SFX] MCU_API_timer_start(%d,0x%lX)\r\n",timer->instance, timer->cplt_cb));
         	__cplt_cb[timer->instance] = timer->cplt_cb;
         	timerStatus = itsdk_stimer_register(
         			timer->duration_ms,									// duration
@@ -299,6 +305,7 @@ MCU_API_status_t MCU_API_timer_status(MCU_API_timer_instance_t timer_instance, s
 
         	if ( ! itsdk_stimer_isRunning_1(NULL,ITSDK_SFX_SX126X_TMBASE+(uint32_t)timer_instance,false) ) {
 				*timer_has_elapsed = SFX_TRUE;
+				_LOG_SFXEPLIB_DEBUG(("[SFX] MCU_API_timer_status elapsed (%d)\r\n", timer_instance));
 			}
 
             break;
@@ -340,7 +347,7 @@ MCU_API_status_t MCU_API_timer_wait_cplt(MCU_API_timer_instance_t timer_instance
         case MCU_API_TIMER_3:
 	  #endif
         	while( itsdk_stimer_isRunning_1(NULL,ITSDK_SFX_SX126X_TMBASE+(uint32_t)timer_instance,false) ) {
-        		lowPower_delayMs(100); // this is a maximum, the delayMs returns on next timer expiration
+        		lowPower_delayMs(1000); // this is a maximum, the delayMs returns on next timer expiration
 				#if ITSDK_WITH_WDG != __WDG_NONE && ITSDK_WDG_MS > 0
         			wdg_refresh();
 				#endif
