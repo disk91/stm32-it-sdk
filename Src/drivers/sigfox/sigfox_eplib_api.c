@@ -496,7 +496,7 @@ MCU_API_status_t MCU_API_set_nvm(sfx_u8 *nvm_data, sfx_u8 nvm_data_size_bytes) {
     _LOG_SFXEPLIB_DEBUG(("[SFX] MCU_API_set_nvm(%d) [%02X,%02X,%02X,%02X]\r\n", nvm_data_size_bytes,nvm_data[0],nvm_data[1],nvm_data[2],nvm_data[3]));
 	#if ITSDK_SFX_SX126X_NVMUPD > 1
     	// Update structure in ram
-    	bcopy(nvm_data,nvm_data,nvm_data_size_bytes);
+    	bcopy(nvm_data,__sx126x_sigfox_nvm,nvm_data_size_bytes);
     	// Update structure in flash
     	if ( __sx126x_sigfox_nvm_acc >=  ITSDK_SFX_SX126X_NVMUPD ) {
     		__sx126x_sigfox_nvm_acc = 0;
