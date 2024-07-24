@@ -58,7 +58,7 @@ itsdk_timer_return_t itsdk_hwtimer_sync_run(
 		uint32_t value
 ) {
 
-	#if ITSDK_PLATFORM == __PLATFORM_STM32L0
+	#if ITSDK_PLATFORM == __PLATFORM_STM32L0 || ITSDK_PLATFORM == __PLATFORM_STM32WLE
 		return stm32l_hwtimer_sync_run(ms,callback_func,value);
 	#else
 		#error "platform not supported"
@@ -73,7 +73,7 @@ itsdk_timer_return_t itsdk_hwtimer_sync_run(
 
 itsdk_timer_return_t itsdk_hwtimer_background_start() {
 
-	#if ITSDK_PLATFORM == __PLATFORM_STM32L0
+	#if ITSDK_PLATFORM == __PLATFORM_STM32L0 || ITSDK_PLATFORM == __PLATFORM_STM32WLE
 		return stm32l_hwtimer_background_start();
 	#else
 		#error "platform not supported"
@@ -83,7 +83,7 @@ itsdk_timer_return_t itsdk_hwtimer_background_start() {
 
 uint64_t itsdk_hwtimer_getRunningDurationUs() {
 
-	#if ITSDK_PLATFORM == __PLATFORM_STM32L0
+	#if ITSDK_PLATFORM == __PLATFORM_STM32L0 || ITSDK_PLATFORM == __PLATFORM_STM32WLE
 		return stm32l_hwtimer_getDurationUs(BOOL_FALSE);
 	#else
 		#error "platform not supported"
@@ -93,7 +93,7 @@ uint64_t itsdk_hwtimer_getRunningDurationUs() {
 
 itsdk_timer_return_t itsdk_hwtimer_background_stop() {
 
-	#if ITSDK_PLATFORM == __PLATFORM_STM32L0
+	#if ITSDK_PLATFORM == __PLATFORM_STM32L0 || ITSDK_PLATFORM == __PLATFORM_STM32WLE
 		stm32l_hwtimer_getDurationUs(BOOL_TRUE);
 		return TIMER_INIT_SUCCESS;
 	#else
