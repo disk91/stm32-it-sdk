@@ -211,25 +211,6 @@ itsdk_sigfox_init_t sx126x_sigfox_init( void ) {
 }
 #endif
 
-// ---------------------------------------------------------
-// Get the last Rssi from downlink, as this is not stored in
-// the sigfox library, let's store it from the last downlink
-// we had.
-//
-// ---------------------------------------------------------
-#ifdef BIDIRECTIONAL
- static int16_t __sx126x_last_rssi = __SX126X_RSSI_NONE;
-#endif
-itsdk_sigfox_init_t sx126x_sigfox_getRssi(int16_t * rssi) {
-	LOG_DEBUG_SFXSX126X(("[SSX] sx126x_sigfox_getRssi\r\n"));
-	#ifdef BIDIRECTIONAL
-	 if ( __sx126x_last_rssi == __SX126X_RSSI_NONE ) return SIGFOX_INIT_FAILED;
-	 else *rssi = __sx126x_last_rssi;
-	 return SIGFOX_INIT_SUCESS;
-	#else
-	 return SIGFOX_INIT_FAILED;
-	#endif
-}
 
 // ----------------------------------------------------------
 // Configure the messages for sigfox lib
