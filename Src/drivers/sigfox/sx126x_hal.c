@@ -138,6 +138,8 @@ sx126x_hal_status_t sx126x_hal_reset( const void* context )
 		}
 	#endif
 
+	  // Clear the SX error register
+	  sx126x_clear_device_errors(NULL);
 
     return status;
 }
@@ -359,7 +361,7 @@ sx126x_status_t SX126X_RF_API_get_and_clear_irq_status( const void* context, sx1
 
 
 void HAL_SUBGHZ_TxCpltCallback(SUBGHZ_HandleTypeDef *hsubghz) {
-	LOG_DEBUG_SFXSX126X(("[SX] HAL_SUBGHZ_TxCpltCallback\r\n"));
+	LOG_DEBUG_SFXSX126X(("[SX] HAL_SUBGHZ_TxCpltCallback (0x%lX)\r\n",__sx1262_irq_cb));
 	__sx126x_irq_status |= __SX126X_IRQ_TXCOMPLETE;
 	if ( __sx1262_irq_cb != NULL ) __sx1262_irq_cb();
 }
@@ -368,8 +370,9 @@ void HAL_SUBGHZ_TxCpltCallback(SUBGHZ_HandleTypeDef *hsubghz) {
 
  static volatile itsdk_bool_e __sx126x_dataReceived = BOOL_FALSE;
  void HAL_SUBGHZ_RxCpltCallback(SUBGHZ_HandleTypeDef *hsubghz) {
-	LOG_DEBUG_SFXSX126X(("[SX] HAL_SUBGHZ_RxCpltCallback\r\n"));
+	LOG_DEBUG_SFXSX126X(("[SX] HAL_SUBGHZ_RxCpltCallback (0x%lX)\r\n",__sx1262_irq_cb));
 	__sx126x_irq_status |= __SX126X_IRQ_RXCOMPLETE;
+	__sx126x_dataReceived = BOOL_TRUE;
 	if ( __sx1262_irq_cb != NULL ) __sx1262_irq_cb();
  }
 
