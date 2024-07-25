@@ -218,6 +218,7 @@ MCU_API_status_t MCU_API_timer_start(MCU_API_timer_t *timer) {
         case MCU_API_TIMER_3:
 	  #endif
           #ifdef ASYNCHRONOUS
+        	itsdk_time_set_ms(rtc_getTimestampMs());					// resync time
         	__cplt_cb[timer->instance] = timer->cplt_cb;
         	timerStatus = itsdk_stimer_register(
         			timer->duration_ms,									// duration
@@ -226,6 +227,7 @@ MCU_API_status_t MCU_API_timer_start(MCU_API_timer_t *timer) {
 					TIMER_ACCEPT_LOWPOWER
         	);
 		  #else
+        	itsdk_time_set_ms(rtc_getTimestampMs());					// resync time
             timerStatus = itsdk_stimer_register(
         			timer->duration_ms,				// duration
 					NULL,							// no call back function, polling
