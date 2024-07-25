@@ -296,9 +296,6 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendFrame(
 	SIGFOX_EP_API_application_message_t m;
 
 	sx126x_sigfox_tx_config(&m, buf, false, len, repeat, speed, power, ack,itsdk_state.sigfox.rcz, itsdk_config.sdk.sigfox.sgfxKey);
-	#if ( (ITSDK_WITH_SPI) & __SPI_SUBGHZ ) > 0 && defined BIDIRECTIONAL && !defined ASYNCHRONOUS
-		if (ack) sx126x_resetDataReceived();
-	#endif
 	SIGFOX_EP_API_status_t ret = SIGFOX_EP_API_send_application_message(&m);
 
 	#ifdef ASYNCHRONOUS
@@ -310,14 +307,6 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendFrame(
 
 		SIGFOX_EP_API_message_status_t message_status = SIGFOX_EP_API_get_message_status();
 		if ( message_status.field.dl_frame != 0 ) {
-		/* not sure why I wrote this earlier ...
-		#if ( (ITSDK_WITH_SPI) & __SPI_SUBGHZ ) > 0 && defined BIDIRECTIONAL && !defined ASYNCHRONOUS
-		  if ( sx126x_hasDataReceived() == BOOL_TRUE ) {
-		#else
-  		  SIGFOX_EP_API_message_status_t message_status = SIGFOX_EP_API_get_message_status();
-		  if ( message_status.field.dl_frame != 0 ) {
-        #endif
-        */
 			// downlink received
 			SIGFOX_EP_API_get_dl_payload(dwn,SIGFOX_DL_PAYLOAD_SIZE_BYTES,&itsdk_state.sigfox.lastRssi);
 			result = SIGFOX_TXRX_DOWLINK_RECEIVED;
@@ -390,9 +379,6 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendBit(
 	SIGFOX_EP_API_application_message_t m;
 	sx126x_sigfox_tx_config(&m, NULL, bitValue, 1, repeat, speed, power, ack,itsdk_state.sigfox.rcz, itsdk_config.sdk.sigfox.sgfxKey);
 
-	#if ( (ITSDK_WITH_SPI) & __SPI_SUBGHZ ) > 0 && defined BIDIRECTIONAL && !defined ASYNCHRONOUS
-		if (ack) sx126x_resetDataReceived();
-	#endif
 	SIGFOX_EP_API_status_t ret = SIGFOX_EP_API_send_application_message(&m);
 	#ifdef ASYNCHRONOUS
 	  if ( ret == SIGFOX_EP_API_SUCCESS ) ret = sx126x_sigfox_process_async();
@@ -402,14 +388,6 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendBit(
 	case SIGFOX_EP_API_SUCCESS:
 		SIGFOX_EP_API_message_status_t message_status = SIGFOX_EP_API_get_message_status();
 		if ( message_status.field.dl_frame != 0 ) {
-/*
-		#if ( (ITSDK_WITH_SPI) & __SPI_SUBGHZ ) > 0 && defined BIDIRECTIONAL && !defined ASYNCHRONOUS
-		  if ( sx126x_hasDataReceived() == BOOL_TRUE ) {
-		#else
-  		  SIGFOX_EP_API_message_status_t message_status = SIGFOX_EP_API_get_message_status();
-		  if ( message_status.field.dl_frame != 0 ) {
-        #endif
-        */
 			// downlink received
 			SIGFOX_EP_API_get_dl_payload(dwn,SIGFOX_DL_PAYLOAD_SIZE_BYTES,&itsdk_state.sigfox.lastRssi);
 			result = SIGFOX_TXRX_DOWLINK_RECEIVED;
