@@ -39,13 +39,14 @@
 #include <it_sdk/eeprom/eeprom.h>
 #include <it_sdk/wrappers.h>
 #include <it_sdk/time/timer.h>
+#include <it_sdk/time/time.h>
 #include <it_sdk/logger/logger.h>
 #include <it_sdk/logger/error.h>
 #include <it_sdk/lowpower/lowpower.h>
 #include <it_sdk/eeprom/sdk_config.h>
+#include <stm32l_sdk/rtc/rtc.h>
 
 #include <drivers/sigfox/sigfox_eplib_api.h>
-
 #include <sigfox_error.h>
 
 
@@ -184,8 +185,11 @@ MCU_API_status_t MCU_API_get_latency(MCU_API_latency_t latency_type, sfx_u32 *la
 #ifdef ASYNCHRONOUS
 	MCU_API_timer_cplt_cb_t __cplt_cb[MCU_API_TIMER_LAST];
 	void __timer_cb(uint32_t v) {
+		v-=ITSDK_SFX_SX126X_TMBASE;
 	    _LOG_SFXEPLIB_DEBUG(("[SFX] timer callback (%d)\r\n",v));
-	    __cplt_cb[v-ITSDK_SFX_SX126X_TMBASE]();
+	    if ( v < MCU_API_TIMER_LAST) {
+	       __cplt_cb[v]();
+	    }
 	}
 #endif
 MCU_API_status_t MCU_API_timer_start(MCU_API_timer_t *timer) {
@@ -193,18 +197,29 @@ MCU_API_status_t MCU_API_timer_start(MCU_API_timer_t *timer) {
     MCU_API_status_t status = MCU_API_SUCCESS;
 	#endif
     itsdk_timer_return_t timerStatus = TIMER_INIT_SUCCESS;
-
-    _LOG_SFXEPLIB_DEBUG(("[SFX] MCU_API_timer_start(%d,%d)\r\n",timer->instance, timer->duration_ms));
-    switch (timer->instance) {
+	#ifdef ASYNCHRONOUS
+		_LOG_SFXEPLIB_DEBUG(("[SFX] MCU_API_timer_start(%d,%d,0x%lX)\r\n",timer->instance, timer->duration_ms,timer->cplt_cb));
+	#else
+		_LOG_SFXEPLIB_DEBUG(("[SFX] MCU_API_timer_start(%d,%d)\r\n",timer->instance, timer->duration_ms));
+	#endif
+	switch (timer->instance) {
         case MCU_API_TIMER_1:
+        	// see below why we do this change
+        	if ( timer->duration_ms > 24000 ) timer->duration_ms += ITSDK_SFX_SX126X_RXWINEXT;
 	  #if defined BIDIRECTIONAL
         case MCU_API_TIMER_2:
+        	// this timer is a bit shorter than expected
+        	// measured 18600ms for 20000ms expected
+        	// The only explaination I found is a drift of the RTC clock
+        	// during radio emission
+        	//
+        	// best solution is to extend the reception windows to cover this difference
 	  #endif
 	  #if defined CERTIFICATION
         case MCU_API_TIMER_3:
 	  #endif
           #ifdef ASYNCHRONOUS
-        	_LOG_SFXEPLIB_DEBUG(("[SFX] MCU_API_timer_start(%d,0x%lX)\r\n",timer->instance, timer->cplt_cb));
+        	itsdk_time_set_ms(rtc_getTimestampMs());					// resync time
         	__cplt_cb[timer->instance] = timer->cplt_cb;
         	timerStatus = itsdk_stimer_register(
         			timer->duration_ms,									// duration
@@ -213,6 +228,7 @@ MCU_API_status_t MCU_API_timer_start(MCU_API_timer_t *timer) {
 					TIMER_ACCEPT_LOWPOWER
         	);
 		  #else
+        	itsdk_time_set_ms(rtc_getTimestampMs());					// resync time
             timerStatus = itsdk_stimer_register(
         			timer->duration_ms,				// duration
 					NULL,							// no call back function, polling
@@ -288,6 +304,7 @@ MCU_API_status_t MCU_API_timer_status(MCU_API_timer_instance_t timer_instance, s
 	#endif
 
     *timer_has_elapsed = SFX_FALSE;
+	itsdk_stimer_run();
     switch (timer_instance) {
         case MCU_API_TIMER_1:
 	  #if defined BIDIRECTIONAL
@@ -299,6 +316,7 @@ MCU_API_status_t MCU_API_timer_status(MCU_API_timer_instance_t timer_instance, s
 
         	if ( ! itsdk_stimer_isRunning_1(NULL,ITSDK_SFX_SX126X_TMBASE+(uint32_t)timer_instance,false) ) {
 				*timer_has_elapsed = SFX_TRUE;
+				_LOG_SFXEPLIB_DEBUG(("[SFX] MCU_API_timer_status elapsed (%d)\r\n", timer_instance));
 			}
 
             break;
@@ -309,8 +327,6 @@ MCU_API_status_t MCU_API_timer_status(MCU_API_timer_instance_t timer_instance, s
     #if ITSDK_WITH_WDG != __WDG_NONE && ITSDK_WDG_MS > 0
 		wdg_refresh();
 	#endif
-	itsdk_stimer_run();
-
 
     return MCU_API_SUCCESS;
 errors:
@@ -340,7 +356,11 @@ MCU_API_status_t MCU_API_timer_wait_cplt(MCU_API_timer_instance_t timer_instance
         case MCU_API_TIMER_3:
 	  #endif
         	while( itsdk_stimer_isRunning_1(NULL,ITSDK_SFX_SX126X_TMBASE+(uint32_t)timer_instance,false) ) {
-        		lowPower_delayMs(100); // this is a maximum, the delayMs returns on next timer expiration
+				#if ITSDK_SIGFOX_LOWPOWER == 1
+        			lowPower_delayMs(1000); // this is a maximum, the delayMs returns on next timer expiration
+				#else
+        			itsdk_delayMs(10);
+				#endif
 				#if ITSDK_WITH_WDG != __WDG_NONE && ITSDK_WDG_MS > 0
         			wdg_refresh();
 				#endif
@@ -479,7 +499,7 @@ MCU_API_status_t MCU_API_set_nvm(sfx_u8 *nvm_data, sfx_u8 nvm_data_size_bytes) {
     _LOG_SFXEPLIB_DEBUG(("[SFX] MCU_API_set_nvm(%d) [%02X,%02X,%02X,%02X]\r\n", nvm_data_size_bytes,nvm_data[0],nvm_data[1],nvm_data[2],nvm_data[3]));
 	#if ITSDK_SFX_SX126X_NVMUPD > 1
     	// Update structure in ram
-    	bcopy(nvm_data,nvm_data,nvm_data_size_bytes);
+    	bcopy(nvm_data,__sx126x_sigfox_nvm,nvm_data_size_bytes);
     	// Update structure in flash
     	if ( __sx126x_sigfox_nvm_acc >=  ITSDK_SFX_SX126X_NVMUPD ) {
     		__sx126x_sigfox_nvm_acc = 0;
@@ -677,8 +697,6 @@ MCU_API_status_t MCU_API_compute_pn7(sfx_u16 min_value, sfx_u16 max_value, sfx_u
 // Returns Voltage and MCU temperature
 // -----------------------------------------------------------
 uint16_t	__sx126x_voltageInTx = 0;
-uint8_t		__sx126x_voltageInTxPending = 0;
-#warning Need to implement cvoltage in TX
 #if (defined CONTROL_KEEP_ALIVE_MESSAGE) || (defined BIDIRECTIONAL)
 MCU_API_status_t MCU_API_get_voltage_temperature(sfx_u16 *voltage_idle_mv, sfx_u16 *voltage_tx_mv, sfx_s16 *temperature_tenth_degrees)
 {
@@ -691,6 +709,9 @@ MCU_API_status_t MCU_API_get_voltage_temperature(sfx_u16 *voltage_idle_mv, sfx_u
     (*voltage_tx_mv)=(__sx126x_voltageInTx!=0)?__sx126x_voltageInTx:adc_getVdd();
     (*temperature_tenth_degrees)=adc_getTemperature()/10;
     RETURN();
+}
+void sx126x_updateTxVoltate() {
+	__sx126x_voltageInTx=adc_getVdd();
 }
 #endif
 

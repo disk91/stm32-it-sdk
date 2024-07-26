@@ -50,13 +50,16 @@ Most is done to preserve code size, the SDK can target small flash MCU from 16KB
   * STM32L052
   * MURATA CMWX1ZZABZ-078 (STM32L082)
   * MURATA CMWX1ZZABZ-091 (STM32L072)
+  * STM32WLE5 (Seeed LoRa E5, ...)
 
 * Supported drivers
   * eeprom
      * m95640
+     * virtual eeprom on flash (STM32WL)
   * sigfox
      * s2lp (tested on RCZ1)
      * murata cmwx1zzabz (sx1276) (tested on RCZ1 & RCZ2)
+     * stm32WL (sx126x) (in test)
   * lorawan
     * murata cmwx1zzabz (sx1276)
   * T / H / P

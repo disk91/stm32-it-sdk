@@ -93,6 +93,7 @@ itsdk_bool_e sx126x_hasDataReceived();
 void sx126x_resetDataReceived();
 itsdk_sigfox_init_t sx126x_sigfox_getSeqId(uint16_t * seq);
 SIGFOX_EP_API_status_t sx126x_sigfox_process_async();
+void sx126x_updateTxVoltate();
 
 #endif
 

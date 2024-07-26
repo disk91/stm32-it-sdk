@@ -59,8 +59,8 @@ typedef enum {
 
 typedef enum
 {
-    SIGFOX_OOB_SERVICE = 0,
-    SIGFOX_OOB_RC_SYNC
+    SIGFOX_OOB_SERVICE = 0,					// Also named DL_CONFIRMATION in new lib
+    SIGFOX_OOB_RC_SYNC						// Also named KEEP_ALIVE in new lib
 } itdsk_sigfox_oob_t;
 
 

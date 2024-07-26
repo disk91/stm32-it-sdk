@@ -296,9 +296,6 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendFrame(
 	SIGFOX_EP_API_application_message_t m;
 
 	sx126x_sigfox_tx_config(&m, buf, false, len, repeat, speed, power, ack,itsdk_state.sigfox.rcz, itsdk_config.sdk.sigfox.sgfxKey);
-	#if ( (ITSDK_WITH_SPI) & __SPI_SUBGHZ ) > 0 && defined BIDIRECTIONAL && !defined ASYNCHRONOUS
-		if (ack) sx126x_resetDataReceived();
-	#endif
 	SIGFOX_EP_API_status_t ret = SIGFOX_EP_API_send_application_message(&m);
 
 	#ifdef ASYNCHRONOUS
@@ -307,12 +304,9 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendFrame(
 
 	switch (ret) {
 	case SIGFOX_EP_API_SUCCESS:
-		#if ( (ITSDK_WITH_SPI) & __SPI_SUBGHZ ) > 0 && defined BIDIRECTIONAL && !defined ASYNCHRONOUS
-		  if ( sx126x_hasDataReceived() == BOOL_TRUE ) {
-		#else
-  		  SIGFOX_EP_API_message_status_t message_status = SIGFOX_EP_API_get_message_status();
-		  if ( message_status.field.dl_frame != 0 ) {
-        #endif
+
+		SIGFOX_EP_API_message_status_t message_status = SIGFOX_EP_API_get_message_status();
+		if ( message_status.field.dl_frame != 0 ) {
 			// downlink received
 			SIGFOX_EP_API_get_dl_payload(dwn,SIGFOX_DL_PAYLOAD_SIZE_BYTES,&itsdk_state.sigfox.lastRssi);
 			result = SIGFOX_TXRX_DOWLINK_RECEIVED;
@@ -385,9 +379,6 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendBit(
 	SIGFOX_EP_API_application_message_t m;
 	sx126x_sigfox_tx_config(&m, NULL, bitValue, 1, repeat, speed, power, ack,itsdk_state.sigfox.rcz, itsdk_config.sdk.sigfox.sgfxKey);
 
-	#if ( (ITSDK_WITH_SPI) & __SPI_SUBGHZ ) > 0 && defined BIDIRECTIONAL && !defined ASYNCHRONOUS
-		if (ack) sx126x_resetDataReceived();
-	#endif
 	SIGFOX_EP_API_status_t ret = SIGFOX_EP_API_send_application_message(&m);
 	#ifdef ASYNCHRONOUS
 	  if ( ret == SIGFOX_EP_API_SUCCESS ) ret = sx126x_sigfox_process_async();
@@ -395,12 +386,8 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendBit(
 
 	switch (ret) {
 	case SIGFOX_EP_API_SUCCESS:
-		#if ( (ITSDK_WITH_SPI) & __SPI_SUBGHZ ) > 0 && defined BIDIRECTIONAL && !defined ASYNCHRONOUS
-		  if ( sx126x_hasDataReceived() == BOOL_TRUE ) {
-		#else
-  		  SIGFOX_EP_API_message_status_t message_status = SIGFOX_EP_API_get_message_status();
-		  if ( message_status.field.dl_frame != 0 ) {
-        #endif
+		SIGFOX_EP_API_message_status_t message_status = SIGFOX_EP_API_get_message_status();
+		if ( message_status.field.dl_frame != 0 ) {
 			// downlink received
 			SIGFOX_EP_API_get_dl_payload(dwn,SIGFOX_DL_PAYLOAD_SIZE_BYTES,&itsdk_state.sigfox.lastRssi);
 			result = SIGFOX_TXRX_DOWLINK_RECEIVED;
@@ -458,13 +445,14 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendOob(
 
 		SIGFOX_EP_API_control_message_t	m;
 		sx126x_sigfox_tx_common_config(&m.common_parameters,1,speed,power,false,itsdk_state.sigfox.rcz, itsdk_config.sdk.sigfox.sgfxKey);
-		#warning "TODO - Make sure the message are corresponding and update the doc for getting it more clear"
 		switch (oobType) {
 			case SIGFOX_OOB_SERVICE:
-				m.type = SIGFOX_CONTROL_MESSAGE_TYPE_DL_CONFIRMATION;
+				m.type = SIGFOX_CONTROL_MESSAGE_TYPE_KEEP_ALIVE;
 				break;
 			case SIGFOX_OOB_RC_SYNC:
-				m.type = SIGFOX_CONTROL_MESSAGE_TYPE_KEEP_ALIVE;
+				// The current sigfox open source library does not support encryption so
+				// RC_SYNC not implemented
+				return SIGFOX_ERROR_PARAMS;
 				break;
 			default:
 				ITSDK_ERROR_REPORT(ITSDK_ERROR_SIGFOX_OOB_NOTSUPPORTED,(uint16_t)oobType);
@@ -626,7 +614,7 @@ itsdk_sigfox_init_t itsdk_sigfox_getLastRssi(int16_t * rssi) {
     #elif ITSDK_SIGFOX_LIB == __SIGFOX_SX1276
 		sx1276_sigfox_getRssi(rssi);
 	#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
-		return sx126x_sigfox_getRssi(rssi);
+		*rssi = itsdk_state.sigfox.lastRssi;
 	#endif
 
 	return SIGFOX_INIT_SUCESS;
@@ -644,7 +632,6 @@ itsdk_sigfox_init_t itsdk_sigfox_getLastSeqId(uint16_t * seqId) {
 		sx1276_sigfox_getSeqId(seqId);
 	#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
 		sx126x_sigfox_getSeqId(seqId);
-#warning "check if current or previous"
 	#endif
 
 	return SIGFOX_INIT_SUCESS;
@@ -662,9 +649,8 @@ itsdk_sigfox_init_t itsdk_sigfox_getNextSeqId(uint16_t * seqId) {
 		sx1276_sigfox_getSeqId(seqId);
 	#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
 		sx126x_sigfox_getSeqId(seqId);
-#warning "check if current or previous"
 	#endif
-		*seqId = (*seqId+1) & 0x0FFF;
+		*seqId = (*seqId+1) & (ITSDK_SIGFOX_ROLLOVER-1);
 
 	return SIGFOX_INIT_SUCESS;
 }
@@ -761,7 +747,7 @@ itsdk_sigfox_init_t itsdk_sigfox_setRcSyncPeriod(uint16_t numOfFrame) {
 	#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP || ITSDK_SIGFOX_LIB == __SIGFOX_SX1276
 		SIGFOX_API_set_rc_sync_period(numOfFrame);
 	#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
-		#warning "TODO"
+		#warning "Payload encryption is not supported on open sigfox lib"
 	#endif
 
 	return SIGFOX_INIT_SUCESS;

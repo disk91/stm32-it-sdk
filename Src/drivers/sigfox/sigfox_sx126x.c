@@ -30,6 +30,8 @@
 #include <drivers/sx126x/sigfox_sx126x.h>
 #include <it_sdk/time/timer.h>
 #include <it_sdk/time/time.h>
+#include <it_sdk/lowpower/lowpower.h>
+#include <stm32l_sdk/rtc/rtc.h>
 #include "sigfox_ep_api.h"
 #include "sigfox_rc.h"
 #include "manuf/mcu_api.h"
@@ -64,7 +66,6 @@
 	__weak void sx126x_onProcess_cb(void) {
 		LOG_DEBUG_SFXSX126X(("[SSX] sx126x_onProcess_cb\r\n"));
 		__sigfox_process_flag = SFX_TRUE;
-
 	}
 
 
@@ -172,7 +173,6 @@ itsdk_sigfox_init_t sx126x_sigfox_init( void ) {
 // here
 // ---------------------------------------------------------
 #ifdef ASYNCHRONOUS
-  #warning "Even if you can use sigfox lib in asynchronous mode, it's more efficent to disable ASYNCHRONOUS flag in sigfox lib configuration"
 
   SIGFOX_EP_API_status_t sx126x_sigfox_process_async() {
 
@@ -181,7 +181,7 @@ itsdk_sigfox_init_t sx126x_sigfox_init( void ) {
 
 	LOG_DEBUG_SFXSX126X(("[SSX] sx126x_sigfox_process_async\r\n"));
 	uint64_t start = itsdk_time_get_ms();
-	while (itsdk_time_get_ms() - start < 60000L ) {	// timeout after 1 minute
+	while ((itsdk_time_get_ms() - start) < 60000L ) {	// timeout after 1 minute
 	   // Check Sigfox process flag.
 	   if (__sigfox_process_flag == SFX_TRUE) {
 	      // Call process handler.
@@ -199,8 +199,19 @@ itsdk_sigfox_init_t sx126x_sigfox_init( void ) {
 	       return SIGFOX_EP_API_SUCCESS;
 	   }
 	   wdg_refresh();
-	   itsdk_stimer_run();
+	   #if ITSDK_SIGFOX_LOWPOWER == 1 && defined BIDIRECTIONAL
+	     SIGFOX_EP_API_state_t state = SIGFOX_EP_API_get_state();
+	     if ( state == SIGFOX_EP_API_STATE_DL_TIMER || state == SIGFOX_EP_API_STATE_DL_CONFIRMATION_TIMER ) {
+	    	 lowPower_delayMs(1000);
+	     }
+   	   #endif
+	   #if ITSDK_SIGFOX_LOWPOWER == 1 && ( !(defined SINGLE_FRAME) && (!(defined T_IFU_MS) || (T_IFU_MS > 0) || (defined BIDIRECTIONAL)) )
+	     if ( state == SIGFOX_EP_API_STATE_UL_INTER_FRAME_TIMER ) {
+	    	 lowPower_delayMs(100);
+	     }
+	   #endif
 
+	   itsdk_stimer_run();
 	}
 	LOG_ERROR_SFXSX126X(("[ERROR] sx126x_sigfox_process_async time out\r\n"));
 	return SIGFOX_EP_API_ERROR_DOWNLINK_TIMEOUT; // timeout
@@ -211,25 +222,6 @@ itsdk_sigfox_init_t sx126x_sigfox_init( void ) {
 }
 #endif
 
-// ---------------------------------------------------------
-// Get the last Rssi from downlink, as this is not stored in
-// the sigfox library, let's store it from the last downlink
-// we had.
-//
-// ---------------------------------------------------------
-#ifdef BIDIRECTIONAL
- static int16_t __sx126x_last_rssi = __SX126X_RSSI_NONE;
-#endif
-itsdk_sigfox_init_t sx126x_sigfox_getRssi(int16_t * rssi) {
-	LOG_DEBUG_SFXSX126X(("[SSX] sx126x_sigfox_getRssi\r\n"));
-	#ifdef BIDIRECTIONAL
-	 if ( __sx126x_last_rssi == __SX126X_RSSI_NONE ) return SIGFOX_INIT_FAILED;
-	 else *rssi = __sx126x_last_rssi;
-	 return SIGFOX_INIT_SUCESS;
-	#else
-	 return SIGFOX_INIT_FAILED;
-	#endif
-}
 
 // ----------------------------------------------------------
 // Configure the messages for sigfox lib
@@ -302,9 +294,9 @@ itsdk_sigfox_init_t sx126x_sigfox_tx_config(
 
   LOG_DEBUG_SFXSX126X(("[SSX] sx126x_sigfox_tx_config\r\n"));
   #ifdef ASYNCHRONOUS		// we don't really do Asynchronous here... let see it later
-	m->uplink_cplt_cb = sx126x_onTxComplete_cb;
+	m->uplink_cplt_cb = SFX_NULL;
 	#ifdef BIDIRECTIONAL
-	m->downlink_cplt_cb = sx126x_onRxComplete_cb;
+	m->downlink_cplt_cb = SFX_NULL;
 	#endif
 	m->message_cplt_cb = sx126x_onMessageComplete_cb;
   #endif

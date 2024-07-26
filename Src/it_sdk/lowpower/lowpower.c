@@ -112,17 +112,19 @@ uint32_t lowPower_delayMs(uint32_t duration) {
 	}
 	if ( itsdk_stimer_isLowPowerSwitchAutorized()  && __lowPowerState == LOWPRW_ENABLE ) {
 		if ( duration > ITSDK_LOWPOWER_MINDUR_MS ) {
-			#if ITSDK_PLATFORM == __PLATFORM_STM32L0 || ITSDK_PLATFORM == __PLATFORM_STM32WLE
 			// sleeping
-			if ( stm32l_lowPowerSetup(duration,STM32L_LOWPOWER_RTCONLY_STOP) == STM32L_LOWPOWER_SUCCESS ) {
-				// waking up
-				#if ITSDK_PLATFORM == __PLATFORM_STM32WLE
-				  // not sure why but, really prefered
+			#if ITSDK_PLATFORM == __PLATFORM_STM32WLE
+				if ( stm32l_lowPowerSetup(duration,STM32L_LOWPOWER_NORMAL_STOP) == STM32L_LOWPOWER_SUCCESS ) {
+				  // waking up
 				  stm32l_lowPowerResume(STM32L_LOWPOWER_NORMAL_STOP);
-				#else
+				}
+			#elif  ITSDK_PLATFORM == __PLATFORM_STM32L0
+				if ( stm32l_lowPowerSetup(duration,STM32L_LOWPOWER_RTCONLY_STOP) == STM32L_LOWPOWER_SUCCESS ) {
+				  // waking up
 				  stm32l_lowPowerResume(STM32L_LOWPOWER_RTCONLY_STOP);
-				#endif
-			}
+				}
+			#else
+				itsdk_delayMs(duration);
 			#endif
 		} else {
 			itsdk_delayMs(duration);
