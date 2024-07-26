@@ -67,6 +67,101 @@ void __sx126x_spi_nss_unselect() {
 }
 #endif
 
+
+// ============================================================
+// Override the IRQ handlers
+// As Subghz driver already decode and split the different
+// interruption we need to regroup them for the sigfox handler
+// this avoid to modify the global irq handler and makes integration
+// easier
+// ============================================================
+
+#if ( (ITSDK_WITH_SPI) & __SPI_SUBGHZ ) > 0
+
+// the SX126X_RF_API_process callback function is bypassed as the subghz handler already
+// split / clear and route the irq to the dedicated handler.
+// the other way is to remove the hal sughz handler but it will be override by the cube mx
+// regeneration and more complex to explain. Make sure this function is updated if SX126X_RF_API_process callback
+// is updated in the future
+
+
+// Approach #2 - should work
+// Override the sx126x_get_and_clear_irq_status to fake the sx registers and return the right status
+// function of the previous IRQ handler seen, so internal process function may work normally
+// You need to add a function in the sx126x_rf_api.c file
+//
+//  __attribute__((weak)) sx126x_status_t SX126X_RF_API_get_and_clear_irq_status( const void* context, sx126x_irq_mask_t* irq ) {
+// 	  return sx126x_get_and_clear_irq_status(context,irq);
+//  }
+//
+// then replace the call to sx126x_get_and_clear_irq_status to SX126X_RF_API_get_and_clear_irq_status in this file
+//
+//  ...
+//  sx126x_ctx.irq_flag = 0;
+//  sx126x_status = SX126X_RF_API_get_and_clear_irq_status( SFX_NULL, &sx126x_irq_mask );
+//   if (sx126x_status != SX126X_STATUS_OK)
+//      EXIT_ERROR((RF_API_status_t) SX126X_RF_API_ERROR_CHIP_IRQ);
+//
+
+#define __SX126X_IRQ_CLEARED    0
+#define __SX126X_IRQ_TXCOMPLETE	1
+#define __SX126X_IRQ_RXCOMPLETE 2
+static volatile uint8_t __sx126x_irq_status;
+static SX126X_HW_irq_cb_t * __sx1262_irq_cb = NULL;
+sx126x_status_t SX126X_RF_API_get_and_clear_irq_status( const void* context, sx126x_irq_mask_t* irq ) {
+
+	itsdk_enterCriticalSection();
+	// override the default function
+	*irq = SX126X_IRQ_NONE;
+	if ( __sx126x_irq_status & __SX126X_IRQ_TXCOMPLETE ) *irq |= SX126X_IRQ_TX_DONE;
+	if ( __sx126x_irq_status & __SX126X_IRQ_RXCOMPLETE ) *irq |= SX126X_IRQ_RX_DONE;
+	__sx126x_irq_status = __SX126X_IRQ_CLEARED;
+	itsdk_leaveCriticalSection();
+
+	#if (ITSDK_LOGGER_MODULE & __LOG_MOD_LOWSIGFOX) > 0
+		if ( *irq != 0 ) LOG_DEBUG_SFXSX126X(("[SX] SX126X_RF_API_get_and_clear_irq_status\r\n"));
+	#endif
+
+	#if (defined CONTROL_KEEP_ALIVE_MESSAGE) || (defined BIDIRECTIONAL)
+		// update the Vdd level during TX phase (right after)
+		if ( *irq & SX126X_IRQ_TX_DONE ) sx126x_updateTxVoltate();
+	#endif
+
+	return SX126X_STATUS_OK;
+}
+
+
+void HAL_SUBGHZ_TxCpltCallback(SUBGHZ_HandleTypeDef *hsubghz) {
+	LOG_DEBUG_SFXSX126X(("[SX] HAL_SUBGHZ_TxCpltCallback (0x%lX)\r\n",__sx1262_irq_cb));
+	__sx126x_irq_status |= __SX126X_IRQ_TXCOMPLETE;
+	if ( __sx1262_irq_cb != NULL ) __sx1262_irq_cb();
+}
+
+#ifdef BIDIRECTIONAL
+
+ void HAL_SUBGHZ_RxCpltCallback(SUBGHZ_HandleTypeDef *hsubghz) {
+	LOG_DEBUG_SFXSX126X(("[SX] HAL_SUBGHZ_RxCpltCallback (0x%lX)\r\n",__sx1262_irq_cb));
+	__sx126x_irq_status |= __SX126X_IRQ_RXCOMPLETE;
+	if ( __sx1262_irq_cb != NULL ) __sx1262_irq_cb();
+ }
+
+#endif	// BIDIRECTIONAL
+
+// Unused irq handlers
+// void HAL_SUBGHZ_PreambleDetectedCallback(SUBGHZ_HandleTypeDef *hsubghz){}
+// void HAL_SUBGHZ_SyncWordValidCallback(SUBGHZ_HandleTypeDef *hsubghz) {}
+// void HAL_SUBGHZ_HeaderValidCallback(SUBGHZ_HandleTypeDef *hsubghz) {}
+// void HAL_SUBGHZ_HeaderErrorCallback(SUBGHZ_HandleTypeDef *hsubghz) {}
+// void HAL_SUBGHZ_CRCErrorCallback(SUBGHZ_HandleTypeDef *hsubghz){}
+// void HAL_SUBGHZ_CADStatusCallback(SUBGHZ_HandleTypeDef *hsubghz,HAL_SUBGHZ_CadStatusTypeDef cadstatus){}
+// void HAL_SUBGHZ_RxTxTimeoutCallback(SUBGHZ_HandleTypeDef *hsubghz){}
+// void HAL_SUBGHZ_LrFhssHopCallback(SUBGHZ_HandleTypeDef *hsubghz) {}
+// void HAL_SUBGHZ_RxTxTimeoutCallback(SUBGHZ_HandleTypeDef *hsubghz)
+#else
+  // integration with external irq
+  static gpio_irq_chain_t __sx1262_irq;
+#endif // (ITSDK_WITH_SPI) & __SPI_SUBGHZ ) > 0
+
 // ============================================================
 // sx126x_eplib_api.c
 // ============================================================
@@ -140,6 +235,10 @@ sx126x_hal_status_t sx126x_hal_reset( const void* context )
 
 	  // Clear the SX error register
 	  sx126x_clear_device_errors(NULL);
+	  #if ( (ITSDK_WITH_SPI) & __SPI_SUBGHZ ) > 0
+	  	  // Clear pending irq if
+	  	  __sx126x_irq_status = __SX126X_IRQ_CLEARED;
+	  #endif
 
     return status;
 }
@@ -304,112 +403,6 @@ failed:
 // ============================================================
 // sx126x_hal.c
 // ============================================================
-
-// ============================================================
-// Override the IRQ handlers
-// As Subghz driver already decode and split the different
-// interruption we need to regroup them for the sigfox handler
-// this avoid to modify the global irq handler and makes integration
-// easier
-// ============================================================
-
-#if ( (ITSDK_WITH_SPI) & __SPI_SUBGHZ ) > 0
-
-// the SX126X_RF_API_process callback function is bypassed as the subghz handler already
-// split / clear and route the irq to the dedicated handler.
-// the other way is to remove the hal sughz handler but it will be override by the cube mx
-// regeneration and more complex to explain. Make sure this function is updated if SX126X_RF_API_process callback
-// is updated in the future
-
-
-// Approach #2 - should work
-// Override the sx126x_get_and_clear_irq_status to fake the sx registers and return the right status
-// function of the previous IRQ handler seen, so internal process function may work normally
-// You need to add a function in the sx126x_rf_api.c file
-//
-//  __attribute__((weak)) sx126x_status_t SX126X_RF_API_get_and_clear_irq_status( const void* context, sx126x_irq_mask_t* irq ) {
-// 	  return sx126x_get_and_clear_irq_status(context,irq);
-//  }
-//
-// then replace the call to sx126x_get_and_clear_irq_status to SX126X_RF_API_get_and_clear_irq_status in this file
-//
-//  ...
-//  sx126x_ctx.irq_flag = 0;
-//  sx126x_status = SX126X_RF_API_get_and_clear_irq_status( SFX_NULL, &sx126x_irq_mask );
-//   if (sx126x_status != SX126X_STATUS_OK)
-//      EXIT_ERROR((RF_API_status_t) SX126X_RF_API_ERROR_CHIP_IRQ);
-//
-
-#define __SX126X_IRQ_CLEARED    0
-#define __SX126X_IRQ_TXCOMPLETE	1
-#define __SX126X_IRQ_RXCOMPLETE 2
-static uint8_t __sx126x_irq_status = __SX126X_IRQ_CLEARED;
-static SX126X_HW_irq_cb_t * __sx1262_irq_cb = NULL;
-sx126x_status_t SX126X_RF_API_get_and_clear_irq_status( const void* context, sx126x_irq_mask_t* irq ) {
-
-	// override the default function
-	if ( __sx126x_irq_status & __SX126X_IRQ_TXCOMPLETE ) *irq |= SX126X_IRQ_TX_DONE;
-	if ( __sx126x_irq_status & __SX126X_IRQ_RXCOMPLETE ) *irq |= SX126X_IRQ_RX_DONE;
-	__sx126x_irq_status = __SX126X_IRQ_CLEARED;
-
-	#if (ITSDK_LOGGER_MODULE & __LOG_MOD_LOWSIGFOX) > 0
-		if ( *irq != 0 ) LOG_DEBUG_SFXSX126X(("[SX] SX126X_RF_API_get_and_clear_irq_status\r\n"));
-	#endif
-
-	return SX126X_STATUS_OK;
-}
-
-
-void HAL_SUBGHZ_TxCpltCallback(SUBGHZ_HandleTypeDef *hsubghz) {
-	LOG_DEBUG_SFXSX126X(("[SX] HAL_SUBGHZ_TxCpltCallback (0x%lX)\r\n",__sx1262_irq_cb));
-	__sx126x_irq_status |= __SX126X_IRQ_TXCOMPLETE;
-	if ( __sx1262_irq_cb != NULL ) __sx1262_irq_cb();
-}
-
-#ifdef BIDIRECTIONAL
-
- static volatile itsdk_bool_e __sx126x_dataReceived = BOOL_FALSE;
- void HAL_SUBGHZ_RxCpltCallback(SUBGHZ_HandleTypeDef *hsubghz) {
-	LOG_DEBUG_SFXSX126X(("[SX] HAL_SUBGHZ_RxCpltCallback (0x%lX)\r\n",__sx1262_irq_cb));
-	__sx126x_irq_status |= __SX126X_IRQ_RXCOMPLETE;
-	__sx126x_dataReceived = BOOL_TRUE;
-	if ( __sx1262_irq_cb != NULL ) __sx1262_irq_cb();
- }
-
- /*
-  * Aparently not used, the timeout seems to be fixed at FFFF and
-  * managed with a timer.
- void HAL_SUBGHZ_RxTxTimeoutCallback(SUBGHZ_HandleTypeDef *hsubghz) {
-	LOG_DEBUG_SFXSX126X(("[SX] HAL_SUBGHZ_RxTxTimeoutCallback\r\n"));
-	if ( __sx1262_irq_cb != NULL ) __sx1262_irq_cb();
- }
- */
-
- #ifndef ASYNCHRONOUS
-  itsdk_bool_e sx126x_hasDataReceived() {
-	return __sx126x_dataReceived;
-  }
-
-  void sx126x_resetDataReceived() {
-	__sx126x_dataReceived = BOOL_FALSE;
-  }
- #endif // ASYNCHRONOUS
-
-#endif	// BIDIRECTIONAL
-
-// Unused irq handlers
-// void HAL_SUBGHZ_PreambleDetectedCallback(SUBGHZ_HandleTypeDef *hsubghz){}
-// void HAL_SUBGHZ_SyncWordValidCallback(SUBGHZ_HandleTypeDef *hsubghz) {}
-// void HAL_SUBGHZ_HeaderValidCallback(SUBGHZ_HandleTypeDef *hsubghz) {}
-// void HAL_SUBGHZ_HeaderErrorCallback(SUBGHZ_HandleTypeDef *hsubghz) {}
-// void HAL_SUBGHZ_CRCErrorCallback(SUBGHZ_HandleTypeDef *hsubghz){}
-// void HAL_SUBGHZ_CADStatusCallback(SUBGHZ_HandleTypeDef *hsubghz,HAL_SUBGHZ_CadStatusTypeDef cadstatus){}
-// void HAL_SUBGHZ_RxTxTimeoutCallback(SUBGHZ_HandleTypeDef *hsubghz){}
-// void HAL_SUBGHZ_LrFhssHopCallback(SUBGHZ_HandleTypeDef *hsubghz) {}
-#else
-  // integration with external irq
-  static gpio_irq_chain_t __sx1262_irq;
-#endif // (ITSDK_WITH_SPI) & __SPI_SUBGHZ ) > 0
 
 
 

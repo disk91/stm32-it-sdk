@@ -745,7 +745,7 @@ itsdk_sigfox_init_t itsdk_sigfox_setRcSyncPeriod(uint16_t numOfFrame) {
 	#if ITSDK_SIGFOX_LIB ==	__SIGFOX_S2LP || ITSDK_SIGFOX_LIB == __SIGFOX_SX1276
 		SIGFOX_API_set_rc_sync_period(numOfFrame);
 	#elif ITSDK_SIGFOX_LIB == __SIGFOX_SX126X
-		#warning "TODO"
+		#warning "Payload encryption is not supported on open sigfox lib"
 	#endif
 
 	return SIGFOX_INIT_SUCESS;

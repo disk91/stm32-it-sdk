@@ -39,13 +39,14 @@
 #include <it_sdk/eeprom/eeprom.h>
 #include <it_sdk/wrappers.h>
 #include <it_sdk/time/timer.h>
+#include <it_sdk/time/time.h>
 #include <it_sdk/logger/logger.h>
 #include <it_sdk/logger/error.h>
 #include <it_sdk/lowpower/lowpower.h>
 #include <it_sdk/eeprom/sdk_config.h>
+#include <stm32l_sdk/rtc/rtc.h>
 
 #include <drivers/sigfox/sigfox_eplib_api.h>
-
 #include <sigfox_error.h>
 
 
@@ -187,7 +188,7 @@ MCU_API_status_t MCU_API_get_latency(MCU_API_latency_t latency_type, sfx_u32 *la
 		v-=ITSDK_SFX_SX126X_TMBASE;
 	    _LOG_SFXEPLIB_DEBUG(("[SFX] timer callback (%d)\r\n",v));
 	    if ( v < MCU_API_TIMER_LAST) {
-	       __cplt_cb[v-ITSDK_SFX_SX126X_TMBASE]();
+	       __cplt_cb[v]();
 	    }
 	}
 #endif
@@ -201,7 +202,7 @@ MCU_API_status_t MCU_API_timer_start(MCU_API_timer_t *timer) {
 	#else
 		_LOG_SFXEPLIB_DEBUG(("[SFX] MCU_API_timer_start(%d,%d)\r\n",timer->instance, timer->duration_ms));
 	#endif
-    switch (timer->instance) {
+	switch (timer->instance) {
         case MCU_API_TIMER_1:
         	// see below why we do this change
         	if ( timer->duration_ms > 24000 ) timer->duration_ms += ITSDK_SFX_SX126X_RXWINEXT;
@@ -696,8 +697,6 @@ MCU_API_status_t MCU_API_compute_pn7(sfx_u16 min_value, sfx_u16 max_value, sfx_u
 // Returns Voltage and MCU temperature
 // -----------------------------------------------------------
 uint16_t	__sx126x_voltageInTx = 0;
-uint8_t		__sx126x_voltageInTxPending = 0;
-#warning Need to implement cvoltage in TX
 #if (defined CONTROL_KEEP_ALIVE_MESSAGE) || (defined BIDIRECTIONAL)
 MCU_API_status_t MCU_API_get_voltage_temperature(sfx_u16 *voltage_idle_mv, sfx_u16 *voltage_tx_mv, sfx_s16 *temperature_tenth_degrees)
 {
@@ -710,6 +709,9 @@ MCU_API_status_t MCU_API_get_voltage_temperature(sfx_u16 *voltage_idle_mv, sfx_u
     (*voltage_tx_mv)=(__sx126x_voltageInTx!=0)?__sx126x_voltageInTx:adc_getVdd();
     (*temperature_tenth_degrees)=adc_getTemperature()/10;
     RETURN();
+}
+void sx126x_updateTxVoltate() {
+	__sx126x_voltageInTx=adc_getVdd();
 }
 #endif
 
