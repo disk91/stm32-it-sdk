@@ -6,11 +6,30 @@ This project is a low level SDK with a harwdare abstraction layer designed to ma
 
 ![itsdk_architecture](Doc/It-sdk-architecture.png) "IT-SDK Architecture"
 
-The SDK is currently implementing STM32L architecture. The abstraction layer allows to quickly add new platforms. 
+The SDK is currently implementing STM32(W)L architecture. The abstraction layer allows to quickly add new platforms. 
 
 It implements different usefull function with (I hope) a cleaner code than the usual ST SDK components. 
 
 Most is done to preserve code size, the SDK can target small flash MCU from 16KB for simple applications.
+
+## Active Versions
+| Version | Date | Link |
+|-----|-----|---|
+| 1.7 | 2024-07 | master |
+| 1.6 | 2020-07-01 | [Release 1.6](https://github.com/disk91/stm32-it-sdk/releases/tag/v1.6.0) |
+
+## Examples (project skeleton)
+
+| Repository | Chipset | Feature |
+| -----------|---------|---------|
+| [itsdk-example-sigfox-seeedE5](https://github.com/disk91/itsdk-example-sigfox-seeedE5) | Seeed E5 (STM32WLE5) | Sigfox Communications |
+| [itsdk-example-murata-lora](https://github.com/disk91/itsdk-example-murata-lora) | Murata ABZ (STM32/SX1276) | LoRaWan Communications |
+| [itsdk-example-sigfox-sx1276](https://github.com/disk91/itsdk-example-sigfox-sx1276) | Murata ABZ (STM32/SX1276) | Sigfox Communications |
+| [itsdk-example-catena-4618](https://github.com/disk91/itsdk-example-catena-4618) | MCCI Catena (Murata ABZ) | Sigfox Communications |
+| [yadom-BRKABZ01-murata ](https://github.com/disk91/yadom-BRKABZ01-murata/tree/master/Core) | Yadom BRKABZ01 (Murata ABZ) | LoRaWan Communications |
+
+
+## Features
 
 * IDE environement
   * open-source environment GCC / AC6 (Eclipse)
