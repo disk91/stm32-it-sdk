@@ -447,10 +447,12 @@ itdsk_sigfox_txrx_t itsdk_sigfox_sendOob(
 		sx126x_sigfox_tx_common_config(&m.common_parameters,1,speed,power,false,itsdk_state.sigfox.rcz, itsdk_config.sdk.sigfox.sgfxKey);
 		switch (oobType) {
 			case SIGFOX_OOB_SERVICE:
-				m.type = SIGFOX_CONTROL_MESSAGE_TYPE_DL_CONFIRMATION;
+				m.type = SIGFOX_CONTROL_MESSAGE_TYPE_KEEP_ALIVE;
 				break;
 			case SIGFOX_OOB_RC_SYNC:
-				m.type = SIGFOX_CONTROL_MESSAGE_TYPE_KEEP_ALIVE;
+				// The current sigfox open source library does not support encryption so
+				// RC_SYNC not implemented
+				return SIGFOX_ERROR_PARAMS;
 				break;
 			default:
 				ITSDK_ERROR_REPORT(ITSDK_ERROR_SIGFOX_OOB_NOTSUPPORTED,(uint16_t)oobType);
