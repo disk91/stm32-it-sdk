@@ -613,7 +613,7 @@ __weak void _sx126x_rfSwitchSet(uint8_t paSelected, uint8_t rxTx) {
 		  #endif
 		}
 	}
-	#if ITSDK_SFX_SX126X_MODULE == __SX126X_MOD_LORAE5
+	#if ITSDK_SFX_SX126X_MODULE == __SX126X_MOD_LORAE5 || ITSDK_SFX_SX126X_MODULE == __SX126X_MOD_RAK3172
 
 		if( rxTx == __SX126X_RXTX_OFF ) {
 			// Radio Off

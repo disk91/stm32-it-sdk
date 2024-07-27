@@ -460,6 +460,6 @@
  */
 #define __SX126X_MOD_NONE		0x00	// no specific module, potentially some customization is required
 #define __SX126X_MOD_LORAE5		0x01	// Seeed LoRa E5 Module
-
+#define __SX126X_MOD_RAK3172	0x02	// RAK3172 Module
 
 #endif /* IT_SDK_CONFIG_DEFINES_H_ */
