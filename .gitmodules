@@ -7,3 +7,6 @@
 [submodule "3rdParties/sigfox/sigfox-ep-lib"]
 	path = 3rdParties/sigfox/sigfox-ep-lib
 	url = https://github.com/sigfox-tech-radio/sigfox-ep-lib
+[submodule "3rdParties/semtech/lbm"]
+	path = 3rdParties/semtech/lbm
+	url = https://github.com/Lora-net/SWL2001.git
