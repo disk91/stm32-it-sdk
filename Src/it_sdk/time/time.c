@@ -51,7 +51,7 @@ uint32_t __time_utc_atreference_S = 0;		// store the UTC time corresponding to t
 void itsdk_time_add_us(uint32_t us) {
 	// apply correction
 	#if ITSDK_CLK_CORRECTION != 0
-	us = us + ( (int64_t)us * ITSDK_CLK_CORRECTION ) / 1000;
+	us = us + ( (int64_t)us * ITSDK_CLK_CORRECTION ) / 1000L;
 	#endif
 	uint64_t n = __timeus + us;
 	if ( n < __timeus  ) {
@@ -77,7 +77,7 @@ void itsdk_time_set_ms(uint64_t ms) {
  * Get current time in ms
  */
 uint64_t itsdk_time_get_ms() {
-	return __timeus / 1000;
+	return __timeus / 1000L;
 }
 
 /**
@@ -103,7 +103,7 @@ void itsdk_time_sync_UTC_s( uint32_t utc_s ){
  */
 uint32_t itsdk_time_get_UTC_s(){
 	if ( __time_utc_atreference_S == 0 ) return 0;
-	uint64_t t = (itsdk_time_get_us() - __time_utc_reference_uS) / 1000000;
+	uint64_t t = (itsdk_time_get_us() - __time_utc_reference_uS) / 1000000L;
 	return __time_utc_atreference_S + t;
 }
 
@@ -112,7 +112,7 @@ uint32_t itsdk_time_get_UTC_s(){
  */
 uint8_t itsdk_time_get_UTC_hour(){
 	if ( __time_utc_atreference_S == 0 ) return 0;
-	uint64_t t = (itsdk_time_get_us() - __time_utc_reference_uS) / 1000000;
+	uint64_t t = (itsdk_time_get_us() - __time_utc_reference_uS) / 1000000L;
 	t = __time_utc_atreference_S + t;
 
 	t /= 3600;
@@ -126,7 +126,7 @@ uint8_t itsdk_time_get_UTC_hour(){
  */
 uint8_t itsdk_time_get_UTC_min(){
 	if ( __time_utc_atreference_S == 0 ) return 0;
-	uint64_t t = (itsdk_time_get_us() - __time_utc_reference_uS) / 1000000;
+	uint64_t t = (itsdk_time_get_us() - __time_utc_reference_uS) / 1000000L;
 	t = __time_utc_atreference_S + t;
 
 	t /= 60;
@@ -140,7 +140,7 @@ uint8_t itsdk_time_get_UTC_min(){
  */
 uint8_t itsdk_time_get_UTC_sec(){
 	if ( __time_utc_atreference_S == 0 ) return 0;
-	uint64_t t = (itsdk_time_get_us() - __time_utc_reference_uS) / 1000000;
+	uint64_t t = (itsdk_time_get_us() - __time_utc_reference_uS) / 1000000L;
 	t = __time_utc_atreference_S + t;
 	t %= 60;
 	return t;
@@ -157,7 +157,7 @@ uint8_t itsdk_time_get_UTC_sec(){
  */
 itsdk_bool_e itsdk_time_is_UTC_s(uint32_t * destTime) {
 	if ( destTime != NULL ) {
-		uint64_t t = (itsdk_time_get_us() - __time_utc_reference_uS) / 1000000;
+		uint64_t t = (itsdk_time_get_us() - __time_utc_reference_uS) / 1000000L;
 		*destTime = (uint32_t)(__time_utc_atreference_S + t);
 	}
 	if ( __time_utc_atreference_S == 0 ) return BOOL_FALSE;
@@ -183,7 +183,7 @@ void itsdk_time_sync_EPOC_s( uint32_t utc_s ){
  */
 uint32_t itsdk_time_get_EPOC_s(){
 	if ( __time_epoc_atreference_S == 0 ) return 0;
-	uint64_t t = (itsdk_time_get_us() - __time_epoc_reference_uS) / 1000000;
+	uint64_t t = (itsdk_time_get_us() - __time_epoc_reference_uS) / 1000000L;
 	return __time_epoc_atreference_S + t;
 }
 
@@ -197,7 +197,7 @@ uint32_t itsdk_time_get_EPOC_s(){
  */
 itsdk_bool_e itsdk_time_is_EPOC_s(uint32_t * destTime) {
 	if ( destTime != NULL ) {
-		uint64_t t = (itsdk_time_get_us() - __time_epoc_reference_uS) / 1000000;
+		uint64_t t = (itsdk_time_get_us() - __time_epoc_reference_uS) / 1000000L;
 		*destTime = (uint32_t)(__time_epoc_atreference_S + t);
 	}
 	if ( __time_epoc_atreference_S == 0 ) return BOOL_FALSE;
