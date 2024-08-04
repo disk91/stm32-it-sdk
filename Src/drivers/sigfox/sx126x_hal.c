@@ -205,6 +205,11 @@ sx126x_hal_status_t sx126x_hal_reset( const void* context )
 		gpio_reset(ITSDK_SFX_SX126X_RFSW2_BANK,ITSDK_SFX_SX126X_RFSW2_PIN);
 	}
 
+	// Configure the pin used for TCXO an dpower on
+	#if ITSDK_SFX_SX126X_TCXO_PIN != __LP_GPIO_NONE
+		gpio_configure_ext(ITSDK_SFX_SX126X_TCXO_BANK,ITSDK_SFX_SX126X_TCXO_PIN,GPIO_OUTPUT_PP, ITSDK_GPIO_SPEED_HIGH, ITSDK_GPIO_ALT_NONE);
+		gpio_set(ITSDK_SFX_SX126X_TCXO_BANK,ITSDK_SFX_SX126X_TCXO_PIN);
+	#endif
 
 	// Configure the interruption handler and SPI
 	#if ( (ITSDK_WITH_SPI) & __SPI_SUBGHZ ) > 0
@@ -224,12 +229,12 @@ sx126x_hal_status_t sx126x_hal_reset( const void* context )
 		HAL_NVIC_EnableIRQ(SUBGHZ_Radio_IRQn);
 
 	#else
-		if ( ITSDK_SFX_IRQ_PIN != __LP_GPIO_NONE ) {
-			gpio_interruptClear(ITSDK_SFX_IRQ_BANK, ITSDK_SFX_IRQ_PIN);
-			gpio_configure(ITSDK_SFX_IRQ_BANK, ITSDK_SFX_IRQ_PIN, GPIO_INTERRUPT_RISING );
-			gpio_interruptPriority(ITSDK_SFX_IRQ_BANK,ITSDK_SFX_IRQ_PIN,0,0);
+		if ( ITSDK_SFX_SX126X_IRQ_PIN != __LP_GPIO_NONE ) {
+			gpio_interruptClear(ITSDK_SFX_SX126X_IRQ_BANK, ITSDK_SFX_SX126X_IRQ_PIN);
+			gpio_configure(ITSDK_SFX_SX126X_IRQ_BANK, ITSDK_SFX_SX126X_IRQ_PIN, GPIO_INTERRUPT_RISING );
+			gpio_interruptPriority(ITSDK_SFX_SX126X_IRQ_BANK,ITSDK_SFX_SX126X_IRQ_PIN,0,0);
 			gpio_registerIrqAction(&__sx1262_irq);
-			gpio_interruptEnable(ITSDK_SFX_IRQ_BANK, ITSDK_SFX_IRQ_PIN);
+			gpio_interruptEnable(ITSDK_SFX_SX126X_IRQ_BANK, ITSDK_SFX_SX126X_IRQ_PIN);
 		}
 	#endif
 
@@ -423,7 +428,7 @@ SX126X_HW_API_status_t SX126X_HW_API_open(SX126X_HW_irq_cb_t callback)
 	    __sx1262_irq_cb = callback;
 	#else
 		__sx1262_irq.irq_func = callback;
-		__sx1262_irq.pinMask = ITSDK_SFX_IRQ_PIN;
+		__sx1262_irq.pinMask = ITSDK_SFX_SX126X_IRQ_PIN;
 	#endif
 
 	// nothing bad calling hardware config before the first sigfox send
@@ -469,9 +474,9 @@ SX126X_HW_API_status_t SX126X_HW_API_close(void)
 		HAL_NVIC_DisableIRQ(SUBGHZ_Radio_IRQn);
 
 	#else
-		if ( ITSDK_SFX_IRQ_PIN != __LP_GPIO_NONE ) {
-			gpio_interruptClear(ITSDK_SFX_IRQ_BANK, ITSDK_SFX_IRQ_PIN);
-			gpio_configure(ITSDK_SFX_IRQ_BANK, ITSDK_SFX_IRQ_PIN, GPIO_STOP );
+		if ( ITSDK_SFX_SX126X_IRQ_PIN != __LP_GPIO_NONE ) {
+			gpio_interruptClear(ITSDK_SFX_SX126X_IRQ_BANK, ITSDK_SFX_SX126X_IRQ_PIN);
+			gpio_configure(ITSDK_SFX_SX126X_IRQ_BANK, ITSDK_SFX_SX126X_IRQ_PIN, GPIO_STOP );
 			gpio_removeIrqAction(&__sx1262_irq);
 		}
 	#endif

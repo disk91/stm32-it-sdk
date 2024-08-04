@@ -221,8 +221,8 @@
 #define ITSDK_SFX_SX126X_RFSW2_BANK	__BANK_A							   // Second Pin
 #define ITSDK_SFX_SX126X_RFSW2_PIN	__LP_GPIO_NONE						   // Seeed LoRa E5 module - GPIOA_5
 
-#define ITSDK_SFX_IRQ_BANK	 		__BANK_A					   		   // TX & RX complete IRQ pin
-#define ITSDK_SFX_IRQ_PIN	 	 	__LP_GPIO_NONE						   // set to None whan the SUBGHZ IRQ is in use with STM32WL
+#define ITSDK_SFX_SX126X_IRQ_BANK	__BANK_A					   		   // TX & RX complete IRQ pin
+#define ITSDK_SFX_SX126X_IRQ_PIN 	__LP_GPIO_NONE						   // set to None whan the SUBGHZ IRQ is in use with STM32WL
 
 
 #endif // __SIGFOX_SX126X
