@@ -645,7 +645,7 @@ void ST_MCU_API_WaitForInterrupt(void)
 		 lowPower_switch();
 	  #endif
 	  itsdk_stimer_run();
-	  #if ITSDK_WDG_MS > 0
+	  #if ITSDK_WITH_WDG != __WDG_NONE && ITSDK_WDG_MS > 0
 	  	wdg_refresh();
 	  #endif
 	}

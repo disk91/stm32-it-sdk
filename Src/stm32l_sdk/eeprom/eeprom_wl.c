@@ -1647,7 +1647,9 @@ void _eeprom_test() {
 	for ( int i = 0 ; i < EEPROM_LINE_PER_PAGE - 8 ; i++ ) {
 		addr = ((5+i) * _EEPROM_BYTE_PER_LINE + 8) & 0xFFFFFFFC; // make sure we have alignment
 		data[0] = 0x5A;
-		wdg_refresh();
+		#if ITSDK_WITH_WDG != __WDG_NONE && ITSDK_WDG_MS > 0
+			wdg_refresh();
+		#endif
 		if( ! _eeprom_write(0, addr, data, sizeof(data) ) ) {
 			log_error("EE-TEST-9 - Failed to fill the first page at %d\r\n",addr);
 			goto failed;
@@ -1729,7 +1731,9 @@ void _eeprom_test() {
 
 	uint32_t baseAddr = ( addr + sizeof(__test_struct) + 14 ) & 0xFFFFFFFC;
 	for ( int i = 0 ; i < 10 ; i++ ) {
-		wdg_refresh();
+		#if ITSDK_WITH_WDG != __WDG_NONE && ITSDK_WDG_MS > 0
+			wdg_refresh();
+		#endif
 		___init_test(&multTest[i],i*16+i);
 		if( ! _eeprom_write(0, baseAddr + i*sizeof(__test_struct), &multTest[i], sizeof(__test_struct) ) ) {
 			log_error("EE-TEST-12 - Failed to write test struct %d at %d\r\n",i,addr);
@@ -1751,7 +1755,9 @@ void _eeprom_test() {
 	for ( int k = 0 ; k < 20 ; k ++ ) {
 		// update the structure content and verify it
 		for ( int i = 0 ; i < 10 ; i++ ) {
-			wdg_refresh();
+			#if ITSDK_WITH_WDG != __WDG_NONE && ITSDK_WDG_MS > 0
+				wdg_refresh();
+			#endif
 			___alter_struct(&multTest[i],i*16+i+k);
 			if( ! _eeprom_write(0, baseAddr + i*sizeof(__test_struct), &multTest[i], sizeof(__test_struct) ) ) {
 				log_error("EE-TEST-12 - Failed to update test struct %d at %d\r\n",i,addr);
@@ -1852,7 +1858,9 @@ void _eeprom_test() {
 
 		// update the structure content and verify it
 		for ( int i = 0 ; i < 10 ; i++ ) {
-			wdg_refresh();
+			#if ITSDK_WITH_WDG != __WDG_NONE && ITSDK_WDG_MS > 0
+				wdg_refresh();
+			#endif
 			___alter_struct(&multTest[i],i*16+i+k);
 			if( ! _eeprom_write(0, baseAddr + i*sizeof(__test_struct), &multTest[i], sizeof(__test_struct) ) ) {
 				log_error("EE-TEST-13 - Failed to update test struct %d at %d\r\n",i,addr);

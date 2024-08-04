@@ -832,7 +832,7 @@ static void _drivers_st25dv_serialFtm_print(char * msg) {
 	drivers_st25dv_ret_e ret;
 	while ( ( ret = drivers_st25dv_ftmFreeForWriting()) != ST25DV_EMPTYFTM && try < (ST25DV_SERIALFTM_MAXRDTRY/50)) {
 		// previously written data pending - need to wait a bit.
-		#if ITSDK_WDG_MS > 0
+		#if ITSDK_WITH_WDG != __WDG_NONE && ITSDK_WDG_MS > 0
 		   wdg_refresh();
 		#endif
 		itsdk_delayMs(50);
@@ -1070,7 +1070,7 @@ static void _drivers_st25dv_serialUz_print(char * msg) {
 	try = 0;
 	while ( head.mcuWriteDone == 1 && head.hostReadDone == 0 && try < (ST25DV_SERIALUZ_MAXRDTRY/50)) {
 		// previously written data pending - need to wait a bit.
-		#if ITSDK_WDG_MS > 0
+		#if ITSDK_WITH_WDG != __WDG_NONE && ITSDK_WDG_MS > 0
 		   wdg_refresh();
 		#endif
 		itsdk_delayMs(50);

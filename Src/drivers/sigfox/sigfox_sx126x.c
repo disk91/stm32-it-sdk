@@ -198,7 +198,9 @@ itsdk_sigfox_init_t sx126x_sigfox_init( void ) {
 	       __sigfox_message_completion_flag = SFX_FALSE;
 	       return SIGFOX_EP_API_SUCCESS;
 	   }
-	   wdg_refresh();
+	   #if ITSDK_WITH_WDG != __WDG_NONE && ITSDK_WDG_MS > 0
+	     wdg_refresh();
+	   #endif
 	   #if ITSDK_SIGFOX_LOWPOWER == 1 && defined BIDIRECTIONAL
 	     SIGFOX_EP_API_state_t state = SIGFOX_EP_API_get_state();
 	     if ( state == SIGFOX_EP_API_STATE_DL_TIMER || state == SIGFOX_EP_API_STATE_DL_CONFIRMATION_TIMER ) {
