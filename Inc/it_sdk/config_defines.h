@@ -330,12 +330,16 @@
  */
 #define __LORAWAN_NONE			0					// LoRaWan disabled
 #define __LORAWAN_SX1276		1					// SX1276 like for Murata or RFM95w
+#define __LORAWAN_SX126X		2					// SX126X like for STM32WL
+
 
 /**
  * Supported LoRaWAN Implementation
  */
 #define __LORAWAN_NONE			0					// No selection, LORAWAN should be disabled
 #define __LORAWAN_SEMTECH		1					// Activate the LoRaWan stack
+#define __LORAWAN_LMN			1					// LoRa Mac Node (St version) - sx1276
+#define __LORAWAN_LBM			2					// LoRa Basic Modem (newest) - sx126x
 
 
 /**

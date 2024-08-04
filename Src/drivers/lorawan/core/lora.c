@@ -17,7 +17,7 @@
   */
 
 #include <it_sdk/itsdk.h>
-#if ITSDK_WITH_LORAWAN_LIB == __ENABLE
+#if ITSDK_WITH_LORAWAN_LIB == __ENABLE && ITSDK_LORAWAN_STACK == __LORAWAN_LMN
 #include <it_sdk/logger/logger.h>
 
 /* Includes ------------------------------------------------------------------*/

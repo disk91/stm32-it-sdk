@@ -31,7 +31,7 @@
 #include <string.h>
 
 #include <it_sdk/config.h>
-#if ITSDK_WITH_LORAWAN_LIB == __ENABLE && ITSDK_LORAWAN_STACK == __LORAWAN_SEMTECH
+#if ITSDK_WITH_LORAWAN_LIB == __ENABLE && ITSDK_LORAWAN_STACK == __LORAWAN_LMN
 
 #include <it_sdk/itsdk.h>
 #include <it_sdk/wrappers.h>
