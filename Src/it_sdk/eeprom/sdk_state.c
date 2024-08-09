@@ -32,6 +32,7 @@
 #include <it_sdk/console/console.h>
 #endif
 #include <it_sdk/lorawan/lorawan.h>
+#include <it_sdk/sigfox/sigfox.h>
 
 itsdk_state_t itsdk_state;
 
