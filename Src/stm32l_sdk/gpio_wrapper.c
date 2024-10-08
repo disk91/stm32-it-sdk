@@ -29,7 +29,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <it_sdk/config.h>
-#if ITSDK_PLATFORM == __PLATFORM_STM32L0 || ITSDK_PLATFORM == __PLATFORM_STM32WLE
+#if ITSDK_PLATFORM == __PLATFORM_STM32L0 || ITSDK_PLATFORM == __PLATFORM_STM32L4 || ITSDK_PLATFORM == __PLATFORM_STM32WLE
 
 #include <it_sdk/itsdk.h>
 #include <it_sdk/wrappers.h>
@@ -37,6 +37,8 @@
 #include <it_sdk/logger/logger.h>
 #if ITSDK_PLATFORM == __PLATFORM_STM32L0
 	#include "stm32l0xx_hal.h"
+#elif ITSDK_PLATFORM == __PLATFORM_STM32L4
+	#include "stm32l4xx_hal.h"
 #elif ITSDK_PLATFORM == __PLATFORM_STM32WLE
 	#include "stm32wlxx_hal.h"
 #endif
@@ -53,14 +55,18 @@ GPIO_TypeDef * getPortFromBankId(uint8_t bankId) {
 	case __BANK_A: return GPIOA;
 	case __BANK_B: return GPIOB;
 	case __BANK_C: return GPIOC;
-#if ITSDK_DEVICE == __DEVICE_STM32L072XX || ITSDK_DEVICE == __DEVICE_STM32L053R8
+#if ITSDK_DEVICE == __DEVICE_STM32L072XX || ITSDK_DEVICE == __DEVICE_STM32L053R8 || ITSDK_DEVICE == __DEVICE_STM32L476RG
 	case __BANK_D: return GPIOD;
 #endif
-#if ITSDK_DEVICE == __DEVICE_STM32L072XX
+#if ITSDK_DEVICE == __DEVICE_STM32L072XX || ITSDK_DEVICE == __DEVICE_STM32L476RG
 	case __BANK_E: return GPIOE;
 #endif
-#if ITSDK_DEVICE == __DEVICE_STM32L072XX || ITSDK_DEVICE == __DEVICE_STM32L082XX || ITSDK_DEVICE == __DEVICE_STM32WLE5JC
+#if ITSDK_DEVICE == __DEVICE_STM32L072XX || ITSDK_DEVICE == __DEVICE_STM32L082XX || ITSDK_DEVICE == __DEVICE_STM32WLE5JC || ITSDK_DEVICE == __DEVICE_STM32L476RG
 	case __BANK_H: return GPIOH;
+#endif
+#if ITSDK_DEVICE == __DEVICE_STM32L476RG
+	case __BANK_F: return GPIOF;
+	case __BANK_G: return GPIOG;
 #endif
 	default:
 		ITSDK_ERROR_REPORT(ITSDK_ERROR_GPIO_UNSUPPORTED_BANK,(uint16_t)bankId);
@@ -95,7 +101,7 @@ IRQn_Type getIrqFromBankPin(uint8_t bankId, uint16_t id) {
 		} else {
 			return EXTI4_15_IRQn;
 		}
-	#elif ITSDK_PLATFORM == __PLATFORM_STM32WLE
+	#elif ITSDK_PLATFORM == __PLATFORM_STM32WLE ||  ITSDK_PLATFORM == __PLATFORM_STM32L4
 		if ( pinPos == 0 ) {
 			return EXTI0_IRQn;
 		} else if ( pinPos == 1 ) {
@@ -134,20 +140,28 @@ void gpio_configure_ext(uint8_t bank, uint16_t id, itsdk_gpio_type_t type, itsdk
 	case __BANK_C:
 		  __GPIOC_CLK_ENABLE();
 		  break;
-    #if ITSDK_DEVICE == __DEVICE_STM32L072XX || ITSDK_DEVICE == __DEVICE_STM32L053R8
+    #if ITSDK_DEVICE == __DEVICE_STM32L072XX || ITSDK_DEVICE == __DEVICE_STM32L053R8 || ITSDK_DEVICE == __DEVICE_STM32L476RG
 	case __BANK_D:
 		  __GPIOD_CLK_ENABLE();
 		  break;
 	#endif
-	#if ITSDK_DEVICE == __DEVICE_STM32L072XX
+	#if ITSDK_DEVICE == __DEVICE_STM32L072XX || ITSDK_DEVICE == __DEVICE_STM32L476RG
 	case __BANK_E:
 		  __GPIOE_CLK_ENABLE();
 		  break;
-  #endif
-	#if ITSDK_DEVICE == __DEVICE_STM32L072XX || ITSDK_DEVICE == __DEVICE_STM32L082XX || ITSDK_DEVICE == __DEVICE_STM32WLE5JC
+  	#endif
+	#if ITSDK_DEVICE == __DEVICE_STM32L072XX || ITSDK_DEVICE == __DEVICE_STM32L082XX || ITSDK_DEVICE == __DEVICE_STM32WLE5JC || ITSDK_DEVICE == __DEVICE_STM32L476RG
 	case __BANK_H:
 		  __GPIOH_CLK_ENABLE();
 		  break;
+	#endif
+	#if ITSDK_DEVICE == __DEVICE_STM32L476RG
+	case __BANK_F:
+		__GPIOF_CLK_ENABLE();
+		break;
+	case __BANK_G:
+		__GPIOG_CLK_ENABLE();
+		break;
 	#endif
 	}
 
@@ -288,8 +302,11 @@ void gpio_configure_ext(uint8_t bank, uint16_t id, itsdk_gpio_type_t type, itsdk
 			else if ( bank == __BANK_A && id == __LP_GPIO_5 ) GPIO_InitStruct.Alternate = GPIO_AF5_TIM2;
 			else if ( bank == __BANK_A && id == __LP_GPIO_0 ) GPIO_InitStruct.Alternate = GPIO_AF2_TIM2;
 			else err=1;
+		#elif ITSDK_DEVICE == __DEVICE_STM32L476RG
+			err=1;
 		#endif
 			break;
+#if ITSDK_WITH_SPI	== __SPI_ENABLED
 		case ITSDK_GPIO_ALT_SPI1_SCLK:
 			#if ITSDK_DEVICE == __DEVICE_STM32L072XX || ITSDK_DEVICE == __DEVICE_STM32L082XX
 				if ( bank == __BANK_A && id == __LP_GPIO_5 ) GPIO_InitStruct.Alternate = GPIO_AF0_SPI1;
@@ -297,6 +314,12 @@ void gpio_configure_ext(uint8_t bank, uint16_t id, itsdk_gpio_type_t type, itsdk
 			#elif ITSDK_DEVICE == __DEVICE_STM32L052T8
 				if ( bank == __BANK_A && id == __LP_GPIO_5 ) GPIO_InitStruct.Alternate = GPIO_AF0_SPI1;
 				else if ( bank == __BANK_B && id == __LP_GPIO_3 ) GPIO_InitStruct.Alternate = GPIO_AF0_SPI1;
+				else err=1;
+			#elif ITSDK_DEVICE == __DEVICE_STM32L476RG
+				if ( bank == __BANK_B && id == __LP_GPIO_3 ) GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
+				else if ( bank == __BANK_A && id == __LP_GPIO_5 ) GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
+				else if ( bank == __BANK_E && id == __LP_GPIO_13 ) GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
+				else if ( bank == __BANK_G && id == __LP_GPIO_2 ) GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
 				else err=1;
 			#endif
 			break;
@@ -309,6 +332,12 @@ void gpio_configure_ext(uint8_t bank, uint16_t id, itsdk_gpio_type_t type, itsdk
 				else if ( bank == __BANK_A && id == __LP_GPIO_12 ) GPIO_InitStruct.Alternate = GPIO_AF0_SPI1;
 				else if ( bank == __BANK_B && id == __LP_GPIO_5 ) GPIO_InitStruct.Alternate = GPIO_AF0_SPI1;
 				else err=1;
+			#elif ITSDK_DEVICE == __DEVICE_STM32L476RG
+				if ( bank == __BANK_B && id == __LP_GPIO_5 ) GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
+				else if ( bank == __BANK_A && id == __LP_GPIO_7 ) GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
+				else if ( bank == __BANK_E && id == __LP_GPIO_15 ) GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
+				else if ( bank == __BANK_G && id == __LP_GPIO_4 ) GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
+				else err=1;
 			#endif
 			break;
 		case ITSDK_GPIO_ALT_SPI1_MISO:
@@ -319,6 +348,12 @@ void gpio_configure_ext(uint8_t bank, uint16_t id, itsdk_gpio_type_t type, itsdk
 				else if( bank == __BANK_A && id == __LP_GPIO_6 ) GPIO_InitStruct.Alternate = GPIO_AF0_SPI1;
 				else if( bank == __BANK_B && id == __LP_GPIO_4 ) GPIO_InitStruct.Alternate = GPIO_AF0_SPI1;
 				else err=1;
+			#elif ITSDK_DEVICE == __DEVICE_STM32L476RG
+				if ( bank == __BANK_B && id == __LP_GPIO_4 ) GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
+				else if ( bank == __BANK_A && id == __LP_GPIO_6 ) GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
+				else if ( bank == __BANK_E && id == __LP_GPIO_14 ) GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
+				else if ( bank == __BANK_G && id == __LP_GPIO_3 ) GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
+				else err=1;
 			#endif
 			break;
 		case ITSDK_GPIO_ALT_SPI1_NSS:
@@ -328,8 +363,63 @@ void gpio_configure_ext(uint8_t bank, uint16_t id, itsdk_gpio_type_t type, itsdk
 				if ( bank == __BANK_A && id == __LP_GPIO_4 ) GPIO_InitStruct.Alternate = GPIO_AF0_SPI1;
 				else if( bank == __BANK_A && id == __LP_GPIO_15 ) GPIO_InitStruct.Alternate = GPIO_AF0_SPI1;
 				else err=1;
+			#elif ITSDK_DEVICE == __DEVICE_STM32L476RG
+				if ( bank == __BANK_A && id == __LP_GPIO_15 ) GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
+				else if ( bank == __BANK_A && id == __LP_GPIO_4 ) GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
+				else if ( bank == __BANK_E && id == __LP_GPIO_12 ) GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
+				else if ( bank == __BANK_G && id == __LP_GPIO_5 ) GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
+				else err=1;
 			#endif
 			break;
+		case ITSDK_GPIO_ALT_SPI2_SCLK:
+			#if ITSDK_DEVICE == __DEVICE_STM32L072XX || ITSDK_DEVICE == __DEVICE_STM32L082XX
+				err=1;
+			#elif ITSDK_DEVICE == __DEVICE_STM32L052T8
+				err=1;
+			#elif ITSDK_DEVICE == __DEVICE_STM32L476RG
+				if ( bank == __BANK_B && id == __LP_GPIO_10 ) GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
+				else if ( bank == __BANK_B && id == __LP_GPIO_13 ) GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
+				else if ( bank == __BANK_D && id == __LP_GPIO_1 ) GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
+				else err=1;
+			#endif
+			break;
+		case ITSDK_GPIO_ALT_SPI2_NSS:
+			#if ITSDK_DEVICE == __DEVICE_STM32L072XX || ITSDK_DEVICE == __DEVICE_STM32L082XX
+				err=1;
+			#elif ITSDK_DEVICE == __DEVICE_STM32L052T8
+				err=1;
+			#elif ITSDK_DEVICE == __DEVICE_STM32L476RG
+				if ( bank == __BANK_B && id == __LP_GPIO_9 ) GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
+				else if ( bank == __BANK_B && id == __LP_GPIO_12 ) GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
+				else if ( bank == __BANK_D && id == __LP_GPIO_0 ) GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
+				else err=1;
+			#endif
+			break;
+		case ITSDK_GPIO_ALT_SPI2_MOSI:
+			#if ITSDK_DEVICE == __DEVICE_STM32L072XX || ITSDK_DEVICE == __DEVICE_STM32L082XX
+				err=1;
+			#elif ITSDK_DEVICE == __DEVICE_STM32L052T8
+				err=1;
+			#elif ITSDK_DEVICE == __DEVICE_STM32L476RG
+				if ( bank == __BANK_B && id == __LP_GPIO_15 ) GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
+				else if ( bank == __BANK_C && id == __LP_GPIO_3 ) GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
+				else if ( bank == __BANK_D && id == __LP_GPIO_4 ) GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
+				else err=1;
+			#endif
+			break;
+		case ITSDK_GPIO_ALT_SPI2_MISO:
+			#if ITSDK_DEVICE == __DEVICE_STM32L072XX || ITSDK_DEVICE == __DEVICE_STM32L082XX
+				err=1;
+			#elif ITSDK_DEVICE == __DEVICE_STM32L052T8
+				err=1;
+			#elif ITSDK_DEVICE == __DEVICE_STM32L476RG
+				if ( bank == __BANK_B && id == __LP_GPIO_14 ) GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
+				else if ( bank == __BANK_C && id == __LP_GPIO_2 ) GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
+				else if ( bank == __BANK_D && id == __LP_GPIO_3 ) GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
+				else err=1;
+			#endif
+			break;
+#endif // WITH_SPI
 		default:
 		case ITSDK_GPIO_ALT_NONE:
 			break;
@@ -380,7 +470,7 @@ void gpio_interruptDisableAll() {
 	#if ITSDK_PLATFORM == __PLATFORM_STM32L0
 	  HAL_NVIC_DisableIRQ(EXTI0_1_IRQn);
 	  HAL_NVIC_DisableIRQ(EXTI4_15_IRQn);
-	#elif ITSDK_PLATFORM == __PLATFORM_STM32WLE
+	#elif ITSDK_PLATFORM == __PLATFORM_STM32WLE || ITSDK_PLATFORM == __PLATFORM_STM32L4
 	  HAL_NVIC_DisableIRQ(EXTI0_IRQn);
 	  HAL_NVIC_DisableIRQ(EXTI1_IRQn);
 	  HAL_NVIC_DisableIRQ(EXTI2_IRQn);

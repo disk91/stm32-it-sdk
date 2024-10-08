@@ -27,7 +27,7 @@
  * ==========================================================
  */
 #include <it_sdk/config.h>
-#if ITSDK_PLATFORM == __PLATFORM_STM32L0 || ITSDK_PLATFORM == __PLATFORM_STM32WLE
+#if ITSDK_PLATFORM == __PLATFORM_STM32L0 || ITSDK_PLATFORM == __PLATFORM_STM32L4 || ITSDK_PLATFORM == __PLATFORM_STM32WLE
 #include <it_sdk/itsdk.h>
 #include <it_sdk/eeprom/sdk_state.h>
 #include <it_sdk/logger/error.h>
@@ -35,6 +35,8 @@
 #include <it_sdk/time/time.h>
 #if ITSDK_PLATFORM == __PLATFORM_STM32L0
 	#include "stm32l0xx_hal.h"
+#elif ITSDK_PLATFORM == __PLATFORM_STM32L4
+	#include "stm32l4xx_hal.h"
 #elif ITSDK_PLATFORM == __PLATFORM_STM32WLE
 	#include "stm32wlxx_hal.h"
 #endif
@@ -63,6 +65,12 @@ static ADC_HandleTypeDef hadc;
 #define VREFINT_CAL         VREFINT_CAL_ADDR
 #define TEMPSENSOR_TYP_AVGSLOPE ((int32_t) 2500)
 #define TEMPSENSOR_TYP_CAL1_V   ((int32_t)  760)
+#elif ITSDK_DEVICE == __DEVICE_STM32L476RG
+#define CAL2_TEMP			110
+#define CAL2_VALUE          ((uint16_t*)((uint32_t)0x1FFF75CA))
+#define CAL1_TEMP			30
+#define CAL1_VALUE          ((uint16_t*)((uint32_t)0x1FFFF75A8))
+#define VREFINT_CAL         ((uint16_t*) ((uint32_t) 0x1FFF75AA))
 #else
 #warning DEVICE IS NOT DEFINED FOR CALIBRATION
 #define CAL2_TEMP			130
@@ -233,6 +241,80 @@ uint32_t __getAdcValue(uint32_t channel, uint8_t oversampling) {
 	  HAL_ADC_Stop(&hadc);
 	  __HAL_RCC_ADC1_CLK_DISABLE();
 	  return v;
+#elif ITSDK_PLATFORM == __PLATFORM_STM32L4
+
+	  ADC_MultiModeTypeDef multimode = {0};
+	  ADC_ChannelConfTypeDef sConfig = {0};
+	  __HAL_RCC_ADC_CLK_ENABLE();
+
+	  __HAL_RCC_ADC_FORCE_RESET();			// without reset the values were not correct
+	  __NOP();
+	  __NOP();
+	  __HAL_RCC_ADC_RELEASE_RESET();
+
+
+	  hadc.Instance = ADC1;
+	  hadc.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV1;
+	  hadc.Init.Resolution = ADC_RESOLUTION_12B;
+	  hadc.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+	  hadc.Init.ScanConvMode = ADC_SCAN_DISABLE;
+	  hadc.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+	  hadc.Init.LowPowerAutoWait = DISABLE;
+	  hadc.Init.ContinuousConvMode = DISABLE;
+	  hadc.Init.NbrOfConversion = 1;
+	  hadc.Init.DiscontinuousConvMode = DISABLE;
+	  hadc.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+	  hadc.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+	  hadc.Init.DMAContinuousRequests = DISABLE;
+	  hadc.Init.Overrun = ADC_OVR_DATA_PRESERVED;
+	  hadc.Init.OversamplingMode = DISABLE;
+	  if (HAL_ADC_Init(&hadc) != HAL_OK)
+	  {
+	    Error_Handler();
+	  }
+
+	  /** Configure the ADC multi-mode
+	  */
+	  multimode.Mode = ADC_MODE_INDEPENDENT;
+	  if (HAL_ADCEx_MultiModeConfigChannel(&hadc, &multimode) != HAL_OK)
+	  {
+	    Error_Handler();
+	  }
+
+	  if ( HAL_ADCEx_Calibration_Start(&hadc,ADC_SINGLE_ENDED) != HAL_OK) {
+		  ITSDK_ERROR_REPORT(ITSDK_ERROR_ADC_CALIBRATION_FAILED,0);
+	  }
+
+
+	  /** Configure Regular Channel
+	  */
+	  sConfig.Channel = ADC_CHANNEL_TEMPSENSOR;
+	  sConfig.Rank = ADC_REGULAR_RANK_1;
+	  sConfig.SamplingTime = ADC_SAMPLETIME_2CYCLES_5;
+	  sConfig.SingleDiff = ADC_SINGLE_ENDED;
+	  sConfig.OffsetNumber = ADC_OFFSET_NONE;
+	  sConfig.Offset = 0;
+	  if (HAL_ADC_ConfigChannel(&hadc, &sConfig) != HAL_OK)
+	  {
+	    Error_Handler();
+	  }
+	  uint32_t v = 0;
+	  for( int i = 0; i < oversampling ; i++ ) {
+		  HAL_ADC_Start(&hadc);
+		  if (HAL_ADC_PollForConversion(&hadc, 100) != HAL_OK) {
+			  HAL_ADC_Stop(&hadc);
+	  		  __HAL_RCC_ADC_CLK_DISABLE();
+	  		  return ADC_CONVERSION_ERROR;
+		  }
+		  HAL_ADC_Stop(&hadc);
+		  v += HAL_ADC_GetValue(&hadc);
+	  }
+	  v = v / oversampling;
+
+	  __HAL_RCC_ADC_CLK_DISABLE();
+	  return v;
+
+
   #elif ITSDK_PLATFORM == __PLATFORM_STM32WLE
 	  __HAL_RCC_ADC_CLK_ENABLE();
 
@@ -245,13 +327,17 @@ uint32_t __getAdcValue(uint32_t channel, uint8_t oversampling) {
 
 	  // Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
 	  hadc.Instance = ADC;
+	  hadc.Init.LowPowerAutoPowerOff = DISABLE;
+	  hadc.Init.SamplingTimeCommon1 = ADC_SAMPLETIME_160CYCLES_5;
+	  hadc.Init.SamplingTimeCommon2 = ADC_SAMPLETIME_160CYCLES_5;
+	  hadc.Init.TriggerFrequencyMode = ADC_TRIGGER_FREQ_HIGH;
+	  sConfig.SamplingTime = ADC_SAMPLINGTIME_COMMON_1;
 	  hadc.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
 	  hadc.Init.Resolution = ADC_RESOLUTION_12B;
 	  hadc.Init.DataAlign = ADC_DATAALIGN_RIGHT;
 	  hadc.Init.ScanConvMode = ADC_SCAN_DISABLE;
 	  hadc.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
 	  hadc.Init.LowPowerAutoWait = DISABLE;
-	  hadc.Init.LowPowerAutoPowerOff = DISABLE;
 	  hadc.Init.ContinuousConvMode = DISABLE;
 	  hadc.Init.NbrOfConversion = 1;
 	  hadc.Init.DiscontinuousConvMode = DISABLE;
@@ -259,10 +345,7 @@ uint32_t __getAdcValue(uint32_t channel, uint8_t oversampling) {
 	  hadc.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
 	  hadc.Init.DMAContinuousRequests = DISABLE;
 	  hadc.Init.Overrun = ADC_OVR_DATA_OVERWRITTEN;
-	  hadc.Init.SamplingTimeCommon1 = ADC_SAMPLETIME_160CYCLES_5;
-	  hadc.Init.SamplingTimeCommon2 = ADC_SAMPLETIME_160CYCLES_5;
 	  hadc.Init.OversamplingMode = DISABLE;
-	  hadc.Init.TriggerFrequencyMode = ADC_TRIGGER_FREQ_HIGH;
 
 	  if (HAL_ADC_Init(&hadc) != HAL_OK) {
 		  ITSDK_ERROR_REPORT(ITSDK_ERROR_ADC_INIT_FAILED,0);
@@ -275,7 +358,6 @@ uint32_t __getAdcValue(uint32_t channel, uint8_t oversampling) {
 	  // Configure for the selected ADC regular channel to be converted.
 	  sConfig.Channel = channel;
 	  sConfig.Rank = ADC_REGULAR_RANK_1;
-	  sConfig.SamplingTime = ADC_SAMPLINGTIME_COMMON_1;
 	  if (HAL_ADC_ConfigChannel(&hadc, &sConfig) != HAL_OK) {
 		  ITSDK_ERROR_REPORT(ITSDK_ERROR_ADC_CONFCHANNEL_FAILED,0);
 	  }
@@ -313,7 +395,7 @@ int16_t adc_getTemperature() {
 	uint16_t vdd = adc_getVdd();
 	uint32_t v = __getAdcValue(ADC_CHANNEL_TEMPSENSOR,ITSDK_ADC_OVERSAMPLING);
 
-#if ITSDK_DEVICE != __DEVICE_STM32WLE5JC
+#if ITSDK_DEVICE != __DEVICE_STM32WLE5JC && ITSDK_DEVICE != __PLATFORM_STM32L4
 
 	// adapt the calibration values to the current VDD reference
 	int32_t cal1_vdd = (*CAL1_VALUE * VDD_CALIB) / vdd;
@@ -392,6 +474,62 @@ uint16_t adc_getValue(uint32_t pin) {
 		break;
 	default:
   	    ITSDK_ERROR_REPORT(ITSDK_ERROR_ADC_INVALID_PIN,(uint16_t)pin);
+	}
+#elif ITSDK_DEVICE == __DEVICE_STM32L476RG
+	switch (pin) {
+		case 0:
+			channel = ADC_CHANNEL_VREFINT; 	// VDD
+			break;
+		case 27:
+			channel = ADC_CHANNEL_16;
+			break;
+		case 26:
+			channel = ADC_CHANNEL_15;
+			break;
+		case 25:
+			channel = ADC_CHANNEL_14;
+			break;
+		case 24:
+			channel = ADC_CHANNEL_13;
+			break;
+		case 23:
+			channel = ADC_CHANNEL_12;
+			break;
+		case 22:
+			channel = ADC_CHANNEL_11;
+			break;
+		case 21:
+			channel = ADC_CHANNEL_10;
+			break;
+		case 20:
+			channel = ADC_CHANNEL_9;
+			break;
+		case 17:
+			channel = ADC_CHANNEL_8;
+			break;
+		case 16:
+			channel = ADC_CHANNEL_7;
+			break;
+		case 15:
+			channel = ADC_CHANNEL_6;
+			break;
+		case 14:
+			channel = ADC_CHANNEL_5;
+			break;
+		case 11:
+			channel = ADC_CHANNEL_4;
+			break;
+		case 10:
+			channel = ADC_CHANNEL_3;
+			break;
+		case 9:
+			channel = ADC_CHANNEL_2;
+			break;
+		case 8:
+			channel = ADC_CHANNEL_1;
+			break;
+		default:
+	  	    ITSDK_ERROR_REPORT(ITSDK_ERROR_ADC_INVALID_PIN,(uint16_t)pin);
 	}
 #elif ITSDK_DEVICE == __DEVICE_STM32L053R8
 	switch (pin) {
@@ -630,7 +768,7 @@ uint16_t adc_getValue(uint32_t pin) {
 	if (pin == 0) {
 		// VDD case
 		if ( v == 0 ) return 0; // securing
-		#if ITSDK_DEVICE == __DEVICE_STM32WLE5JC
+		#if ITSDK_DEVICE == __DEVICE_STM32WLE5JC || ITSDK_DEVICE == __DEVICE_STM32L476RG
 			if ( (uint32_t)*VREFINT_CAL != (uint32_t)0xFFFFU) {
 				// calibration exists
 				vdd = __LL_ADC_CALC_VREFANALOG_VOLTAGE(v,ADC_RESOLUTION_12B);

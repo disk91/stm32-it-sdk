@@ -29,7 +29,7 @@
 #include <it_sdk/time/time.h>
 #include <it_sdk/wrappers.h>
 #include <it_sdk/eeprom/sdk_state.h>
-#if ITSDK_PLATFORM == __PLATFORM_STM32L0 || ITSDK_PLATFORM == __PLATFORM_STM32WLE
+#if ITSDK_PLATFORM == __PLATFORM_STM32L0 || ITSDK_PLATFORM == __PLATFORM_STM32L4 ||ITSDK_PLATFORM == __PLATFORM_STM32WLE
 	#include <stm32l_sdk/lowpower/lowpower.h>
 	#include <stm32l_sdk/rtc/rtc.h>
 #else
@@ -71,7 +71,7 @@ void __attribute__((optimize("O3"))) lowPower_switch() {
 			}
 		#endif
 		if ( duration > ITSDK_LOWPOWER_MINDUR_MS ) {
-			#if ITSDK_PLATFORM == __PLATFORM_STM32L0 || ITSDK_PLATFORM == __PLATFORM_STM32WLE
+			#if ITSDK_PLATFORM == __PLATFORM_STM32L0 || ITSDK_PLATFORM == __PLATFORM_STM32WLE || ITSDK_PLATFORM == __PLATFORM_STM32L4
 			// sleeping
 			if ( stm32l_lowPowerSetup(duration,STM32L_LOWPOWER_NORMAL_STOP) == STM32L_LOWPOWER_SUCCESS ) {
 				// waking up
@@ -113,7 +113,7 @@ uint32_t lowPower_delayMs(uint32_t duration) {
 	if ( itsdk_stimer_isLowPowerSwitchAutorized()  && __lowPowerState == LOWPRW_ENABLE ) {
 		if ( duration > ITSDK_LOWPOWER_MINDUR_MS ) {
 			// sleeping
-			#if ITSDK_PLATFORM == __PLATFORM_STM32WLE
+			#if ITSDK_PLATFORM == __PLATFORM_STM32WLE || ITSDK_PLATFORM == __PLATFORM_STM32L4
 				if ( stm32l_lowPowerSetup(duration,STM32L_LOWPOWER_NORMAL_STOP) == STM32L_LOWPOWER_SUCCESS ) {
 				  // waking up
 				  stm32l_lowPowerResume(STM32L_LOWPOWER_NORMAL_STOP);

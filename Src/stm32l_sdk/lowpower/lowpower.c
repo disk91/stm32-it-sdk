@@ -125,7 +125,7 @@ stm32l_lowPowerReturn_e __attribute__((optimize("O3"))) stm32l_lowPowerSetup(uin
 
 				#if ITSDK_PLATFORM == __PLATFORM_STM32L0
 					__HAL_UART_ENABLE_IT(&hlpuart1, UART_IT_WUF);			// This is not existing on STM32WL HAL
-				#elif ITSDK_PLATFORM == __PLATFORM_STM32WLE
+				#elif ITSDK_PLATFORM == __PLATFORM_STM32WLE || ITSDK_PLATFORM == __PLATFORM_STM32L4
 					__HAL_UART_CLEAR_IT(&hlpuart1,UART_CLEAR_WUF);
 					__HAL_UART_ENABLE_IT(&hlpuart1,UART_CLEAR_WUF);
 					LL_EXTI_EnableIT_0_31(LL_EXTI_LINE_28);
@@ -206,7 +206,7 @@ stm32l_lowPowerReturn_e __attribute__((optimize("O3"))) stm32l_lowPowerSetup(uin
 		#if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_GPIO ) > 0
 			__lowPower_wakeup_pin=0xFFFF;
 		#endif
-		#if ITSDK_PLATFORM == __PLATFORM_STM32WLE
+		#if ITSDK_PLATFORM == __PLATFORM_STM32WLE || ITSDK_PLATFORM == __PLATFORM_STM32L4
 		  #if ((ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_UART1) > 0)  || ((ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_UART2) > 0)
 			HAL_PWREx_EnterSTOP1Mode(PWR_STOPENTRY_WFI);
 		  #else
@@ -340,6 +340,18 @@ void __GpioAnalog(GPIO_TypeDef  *GPIOx, uint16_t pins)
     position++;
   }
 }
+
+#if ITSDK_PLATFORM == __PLATFORM_STM32L4
+// All GPIO banks available
+#define GPIOA_PIN_AVAILABLE 1
+#define GPIOB_PIN_AVAILABLE 1
+#define GPIOC_PIN_AVAILABLE 1
+#define GPIOD_PIN_AVAILABLE 1
+#define GPIOE_PIN_AVAILABLE 1
+#define GPIOF_PIN_AVAILABLE 1
+#define GPIOG_PIN_AVAILABLE 1
+#define GPIOH_PIN_AVAILABLE 1
+#endif
 
 /**
  * Disable GPIOS for Low Power switching

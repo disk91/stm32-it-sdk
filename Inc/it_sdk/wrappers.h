@@ -147,8 +147,13 @@ typedef enum {
 	ITSDK_GPIO_ALT_SPI1_SCLK,
 	ITSDK_GPIO_ALT_SPI1_MOSI,
 	ITSDK_GPIO_ALT_SPI1_MISO,
-	ITSDK_GPIO_ALT_SPI1_NSS
-
+	ITSDK_GPIO_ALT_SPI1_NSS,
+	// ---
+	ITSDK_GPIO_ALT_SPI2_SCLK,		// currently specific to __DEVICE_STM32L476RG
+	ITSDK_GPIO_ALT_SPI2_MOSI,
+	ITSDK_GPIO_ALT_SPI2_MISO,
+	ITSDK_GPIO_ALT_SPI2_NSS,
+	// ---
 } itsdk_gpio_alternate_t;
 
 typedef struct s_gpio_irq_chain {

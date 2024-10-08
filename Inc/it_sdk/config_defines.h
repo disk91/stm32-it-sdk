@@ -42,16 +42,18 @@
 #define __PLATFORM_STM32L0			1
 #define __PLAFTORM_ESP8266			2
 #define __PLATFORM_STM32WLE			3
+#define __PLATFORM_STM32L4			4
 
 /**
  * Devices
  */
 #define __DEVICE_STM32L011D4		1
 #define __DEVICE_STM32L072XX		2
-#define __DEVICE_STM32L082XX    3
+#define __DEVICE_STM32L082XX    	3
 #define __DEVICE_STM32L053R8		4
 #define __DEVICE_STM32L031K6		5
 #define __DEVICE_STM32L052T8		6
+#define __DEVICE_STM32L476RG		7				// 1024K Flash & 128K Ram
 #define __DEVICE_STM32WLE5JC		21				// 256K Flash & 64K Ram
 
 /**
@@ -194,6 +196,7 @@
 #define __BANK_D				3
 #define __BANK_E				4
 #define __BANK_F				5
+#define __BANK_G				6
 #define __BANK_H				7
 
 /**

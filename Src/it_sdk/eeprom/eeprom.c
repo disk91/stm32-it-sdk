@@ -274,6 +274,8 @@ itsdk_bool_e eeprom_getPostConfigOffset(uint32_t * _offset) {
  * Clear (write 0 or anything else) into the whole BANK0
  */
 void eeprom_clearAllEprom() {
-	_eeprom_clear(ITDT_EEPROM_BANK0);
+	#if ITSDK_EPROM_SIZE > 0
+		_eeprom_clear(ITDT_EEPROM_BANK0);
+	#endif
 }
 

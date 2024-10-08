@@ -28,11 +28,13 @@
  */
 #include <string.h>
 #include <it_sdk/config.h>
-#if ITSDK_PLATFORM == __PLATFORM_STM32L0 || ITSDK_PLATFORM == __PLATFORM_STM32WLE
+#if ITSDK_PLATFORM == __PLATFORM_STM32L0 || ITSDK_PLATFORM == __PLATFORM_STM32L4 || ITSDK_PLATFORM == __PLATFORM_STM32WLE
 #include <it_sdk/logger/logger.h>
 #include <it_sdk/wrappers.h>
 #if ITSDK_PLATFORM == __PLATFORM_STM32L0
 	#include "stm32l0xx_hal.h"
+#elif ITSDK_PLATFORM == __PLATFORM_STM32L4
+	#include "stm32l4xx_hal.h"
 #elif ITSDK_PLATFORM == __PLATFORM_STM32WLE
 	#include "stm32wlxx_hal.h"
 #endif
