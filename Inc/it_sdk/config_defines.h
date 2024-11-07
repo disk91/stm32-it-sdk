@@ -90,6 +90,8 @@
 #define __UART_LPUART2				0x0002			// Use of LPUART2 peripheral
 #define __UART_USART1				0x0004			// Use of UART1 peripheral
 #define __UART_USART2				0x0008			// Use of UART2 peripheral
+#define __UART_USART3				0x0010			// Use of UART3 peripheral
+#define __UART_USART4				0x0020			// Use of UART4 peripheral
 #define __UART_CUSTOM				0x0080			// Use of custom defined UART (the print & read function will be overide in the user pgm)
 
 /**

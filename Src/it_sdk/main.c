@@ -107,6 +107,8 @@ void itsdk_setup() {
 	#endif
 	serial1_init();
 	serial2_init();
+	serial3_init();
+	serial4_init();
 	#if ITSDK_WITH_CONSOLE == __ENABLE
 		itsdk_console_setup();
 	#endif

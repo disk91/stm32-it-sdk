@@ -50,6 +50,21 @@ void serial2_print(char * msg);
 void serial2_println(char * msg);
 void serial2_write(uint8_t * bytes,uint16_t len);
 
+void serial3_init();
+void serial3_connect();
+void serial3_disconnect();
+void serial3_flush();
+void serial3_print(char * msg);
+void serial3_println(char * msg);
+void serial3_write(uint8_t * bytes,uint16_t len);
+
+void serial4_init();
+void serial4_connect();
+void serial4_disconnect();
+void serial4_flush();
+void serial4_print(char * msg);
+void serial4_println(char * msg);
+void serial4_write(uint8_t * bytes,uint16_t len);
 
 typedef enum {
 	DEBUG_PRINT_DEBUG = 0,
@@ -71,6 +86,8 @@ typedef enum {
 } serial_read_response_e;
 serial_read_response_e serial1_read(char * c);
 serial_read_response_e serial2_read(char * c);
+serial_read_response_e serial3_read(char * c);
+serial_read_response_e serial4_read(char * c);
 
 typedef enum {
 	SERIAL_SPEED_300 = 0,
@@ -84,10 +101,10 @@ typedef enum {
 	SERIAL_SPEED_57600,
 	SERIAL_SPEED_115200
 } serial_baudrate_e;
-
 itsdk_bool_e serial1_changeBaudRate(serial_baudrate_e bd);
 itsdk_bool_e serial2_changeBaudRate(serial_baudrate_e bd);
-
+itsdk_bool_e serial3_changeBaudRate(serial_baudrate_e bd);
+itsdk_bool_e serial4_changeBaudRate(serial_baudrate_e bd);
 
 
 // ================================================

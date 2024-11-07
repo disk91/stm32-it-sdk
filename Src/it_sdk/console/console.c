@@ -269,6 +269,22 @@ void itsdk_console_loop() {
 		 }
 	} while ( r == SERIAL_READ_PENDING_CHAR );
   #endif
+	#if ( ITSDK_CONSOLE_SERIAL & __UART_USART3 ) > 0
+		do {
+			 r = serial3_read(&c);
+			 if ( r == SERIAL_READ_SUCCESS || r == SERIAL_READ_PENDING_CHAR) {
+				 _itsdk_console_processChar(c);
+			 }
+		} while ( r == SERIAL_READ_PENDING_CHAR );
+	#endif
+	#if ( ITSDK_CONSOLE_SERIAL & __UART_USART4 ) > 0
+		do {
+			 r = serial4_read(&c);
+			 if ( r == SERIAL_READ_SUCCESS || r == SERIAL_READ_PENDING_CHAR) {
+				 _itsdk_console_processChar(c);
+			 }
+		} while ( r == SERIAL_READ_PENDING_CHAR );
+	#endif
   #if ( ITSDK_CONSOLE_SERIAL & __UART_CUSTOM ) > 0
 	do {
 		 r = itsdk_console_customSerial_read(&c);
@@ -307,6 +323,12 @@ void _itsdk_console_printf(char *format, ...) {
 #endif
 #if ( ITSDK_CONSOLE_SERIAL & __UART_USART2 ) > 0
 	serial2_print(fmtBuffer);
+#endif
+#if ( ITSDK_CONSOLE_SERIAL & __UART_USART3 ) > 0
+	serial3_print(fmtBuffer);
+#endif
+#if ( ITSDK_CONSOLE_SERIAL & __UART_USART4 ) > 0
+	serial4_print(fmtBuffer);
 #endif
 #if ( ITSDK_CONSOLE_SERIAL & __UART_CUSTOM ) > 0
 	itsdk_console_customSerial_print(fmtBuffer);
