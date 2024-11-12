@@ -772,40 +772,36 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 			}
 			HAL_UART_Receive_IT(huart, &__serial1_buffer[__serial1_bufferWr], 1);
 			#endif
-		} else {
-			#if ( ITSDK_WITH_UART & __UART_USART2 ) > 0
-			if ( huart->Instance == USART2 ) {
-				#if ( ITSDK_WITH_UART_RXIRQ & __UART_USART2 ) > 0
+		#if ( ITSDK_WITH_UART & __UART_USART2 ) > 0
+		} else if ( huart->Instance == USART2 ) {
+			#if ( ITSDK_WITH_UART_RXIRQ & __UART_USART2 ) > 0
 				// at this point the data is in __serial2_buffer[__serial2_bufferWr]
 				if ( ((__serial2_bufferWr+1) & (ITSDK_WITH_UART_RXIRQ_BUFSZ-1)) != __serial2_bufferRd  ) {
 					__serial2_bufferWr = ((__serial2_bufferWr+1) & (ITSDK_WITH_UART_RXIRQ_BUFSZ-1));
 				}
 				HAL_UART_Receive_IT(huart, &__serial2_buffer[__serial2_bufferWr], 1);
-				#endif
-			}
 			#endif
-			#if ( ITSDK_WITH_UART & __UART_USART3 ) > 0
-			if ( huart->Instance == USART3 ) {
-				#if ( ITSDK_WITH_UART_RXIRQ & __UART_USART3 ) > 0
+		#endif
+		#if ( ITSDK_WITH_UART & __UART_USART3 ) > 0
+		} else if ( huart->Instance == USART3 ) {
+			#if ( ITSDK_WITH_UART_RXIRQ & __UART_USART3 ) > 0
 				// at this point the data is in __serial3_buffer[__serial3_bufferWr]
 				if ( ((__serial3_bufferWr+1) & (ITSDK_WITH_UART_RXIRQ_BUFSZ-1)) != __serial3_bufferRd  ) {
 					__serial3_bufferWr = ((__serial3_bufferWr+1) & (ITSDK_WITH_UART_RXIRQ_BUFSZ-1));
 				}
 				HAL_UART_Receive_IT(huart, &__serial3_buffer[__serial3_bufferWr], 1);
-				#endif
-			}
 			#endif
-			#if ( ITSDK_WITH_UART & __UART_USART4 ) > 0
-			if ( huart->Instance == UART4 ) {
-				#if ( ITSDK_WITH_UART_RXIRQ & __UART_USART4 ) > 0
+		#endif
+		#if ( ITSDK_WITH_UART & __UART_USART4 ) > 0
+		} else if ( huart->Instance == UART4 ) {
+			#if ( ITSDK_WITH_UART_RXIRQ & __UART_USART4 ) > 0
 				// at this point the data is in __serial4_buffer[__serial4_bufferWr]
 				if ( ((__serial4_bufferWr+1) & (ITSDK_WITH_UART_RXIRQ_BUFSZ-1)) != __serial4_bufferRd  ) {
 					__serial4_bufferWr = ((__serial4_bufferWr+1) & (ITSDK_WITH_UART_RXIRQ_BUFSZ-1));
 				}
 				HAL_UART_Receive_IT(huart, &__serial4_buffer[__serial4_bufferWr], 1);
-				#endif
-			}
 			#endif
+		#endif
 		}
 	} while ( __HAL_UART_GET_FLAG(huart, UART_FLAG_RXNE) );
 
