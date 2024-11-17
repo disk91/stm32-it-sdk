@@ -79,7 +79,13 @@ volatile uint8_t __serial4_bufferWr = 0;
  */
 void serial1_init() {
 #if ( ITSDK_WITH_UART_RXIRQ & __UART_USART1 ) > 0 || ( ITSDK_WITH_UART_RXIRQ & __UART_LPUART1 ) > 0
-    __HAL_UART_DISABLE_IT(_uart,UART_IT_ERR);
+	#if ( ITSDK_WITH_UART_RXIRQ & __UART_LPUART1 ) > 0
+		UART_HandleTypeDef * _uart = &hlpuart1;
+	#elif  ( ITSDK_WITH_UART_RXIRQ & __UART_USART1 ) > 0
+		UART_HandleTypeDef * _uart = &huart1;
+	#endif
+
+	__HAL_UART_DISABLE_IT(_uart,UART_IT_ERR);
     __HAL_UART_DISABLE_IT(_uart,UART_IT_RXNE);
     __HAL_UART_DISABLE_IT(_uart,UART_IT_TC);
     __HAL_UART_DISABLE_IT(_uart,UART_IT_TXE);
@@ -89,12 +95,8 @@ void serial1_init() {
     __serial1_bufferRd = 0;
     __serial1_bufferWr = 0;
 	itsdk_leaveCriticalSection();
-	#if ( ITSDK_WITH_UART_RXIRQ & __UART_LPUART1 ) > 0
-		UART_HandleTypeDef * _uart = &hlpuart1;
-	#elif  ( ITSDK_WITH_UART_RXIRQ & __UART_USART1 ) > 0
-		UART_HandleTypeDef * _uart = &huart1;
-	#endif
-    __HAL_UART_ENABLE_IT(_uart,UART_IT_ERR);
+
+	__HAL_UART_ENABLE_IT(_uart,UART_IT_ERR);
     __HAL_UART_ENABLE_IT(_uart,UART_IT_RXNE);
     // Clear pending interrupt & co
     HAL_UART_Receive_IT(_uart, __serial1_buffer, 1);
