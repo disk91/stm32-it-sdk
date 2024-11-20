@@ -128,7 +128,9 @@ stm32l_lowPowerReturn_e __attribute__((optimize("O3"))) stm32l_lowPowerSetup(uin
 				#elif ITSDK_PLATFORM == __PLATFORM_STM32WLE || ITSDK_PLATFORM == __PLATFORM_STM32L4
 					__HAL_UART_CLEAR_IT(&hlpuart1,UART_CLEAR_WUF);
 					__HAL_UART_ENABLE_IT(&hlpuart1,UART_CLEAR_WUF);
-					LL_EXTI_EnableIT_0_31(LL_EXTI_LINE_28);
+					#if ITSDK_PLATFORM == __PLATFORM_STM32WLE
+					  LL_EXTI_EnableIT_0_31(LL_EXTI_LINE_28);
+					#endif
 				#endif
 				HAL_UARTEx_EnableStopMode(&hlpuart1);
 

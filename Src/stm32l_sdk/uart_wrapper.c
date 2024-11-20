@@ -605,6 +605,7 @@ void serial4_init() {
     __HAL_UART_ENABLE_IT(&huart4,UART_IT_ERR);
     __HAL_UART_ENABLE_IT(&huart4,UART_IT_RXNE);
     // Unclear why we have this, was blocking for STM32L4 device at least
+    // to be investigated, without this is blocking when a char is pending and blocking when no char pending...
     //HAL_UART_Receive_IT(&huart4, __serial4_buffer, 1);
     huart4.Instance->RDR;
     huart4.Instance->ISR;
