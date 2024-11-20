@@ -58,8 +58,8 @@ volatile uint8_t __serial1_bufferWr = 0;
 #endif
 #if ( ITSDK_WITH_UART_RXIRQ & __UART_USART2 ) > 0
 uint8_t __serial2_buffer[ITSDK_WITH_UART_RXIRQ_BUFSZ];
-volatile uint8_t __serial2_bufferRd;
-volatile uint8_t __serial2_bufferWr;
+volatile uint8_t __serial2_bufferRd = 0;
+volatile uint8_t __serial2_bufferWr = 0;
 #endif
 #if ( ITSDK_WITH_UART_RXIRQ & __UART_USART3 ) > 0
 uint8_t __serial3_buffer[ITSDK_WITH_UART_RXIRQ_BUFSZ];
@@ -99,7 +99,8 @@ void serial1_init() {
 	__HAL_UART_ENABLE_IT(_uart,UART_IT_ERR);
     __HAL_UART_ENABLE_IT(_uart,UART_IT_RXNE);
     // Clear pending interrupt & co
-    HAL_UART_Receive_IT(_uart, __serial1_buffer, 1);
+    // Unclear why we have this, was blocking for STM32L4 device at least
+    //HAL_UART_Receive_IT(_uart, __serial1_buffer, 1);
     _uart->Instance->RDR;
     _uart->Instance->ISR;
     _uart->Instance->ICR;
@@ -245,7 +246,7 @@ serial_read_response_e serial1_read(char * ch) {
  * Return BOOL_TRUE on success
  */
 itsdk_bool_e serial1_changeBaudRate(serial_baudrate_e bd) {
-  #if ( ITSDK_WITH_UART & ( __UART_USART1 | __UART_USART1 ) ) > 0
+  #if ( ITSDK_WITH_UART & ( __UART_USART1 | __UART_LPUART1 ) ) > 0
 	UART_HandleTypeDef * lhuart;
 	#if ( ITSDK_WITH_UART & __UART_LPUART1 ) > 0
 		lhuart = &hlpuart1;
@@ -297,7 +298,8 @@ void serial2_init() {
 	itsdk_leaveCriticalSection();
     __HAL_UART_ENABLE_IT(&huart2,UART_IT_ERR);
     __HAL_UART_ENABLE_IT(&huart2,UART_IT_RXNE);
-    HAL_UART_Receive_IT(&huart2, __serial2_buffer, 1);
+    // Unclear why we have this, was blocking for STM32L4 device at least
+    //HAL_UART_Receive_IT(&huart2, __serial2_buffer, 1);
     huart2.Instance->RDR;
     huart2.Instance->ISR;
     huart2.Instance->ICR;
@@ -449,7 +451,8 @@ void serial3_init() {
 	itsdk_leaveCriticalSection();
     __HAL_UART_ENABLE_IT(&huart3,UART_IT_ERR);
     __HAL_UART_ENABLE_IT(&huart3,UART_IT_RXNE);
-    HAL_UART_Receive_IT(&huart3, __serial3_buffer, 1);
+    // Unclear why we have this, was blocking for STM32L4 device at least
+    //HAL_UART_Receive_IT(&huart3, __serial3_buffer, 1);
     huart3.Instance->RDR;
     huart3.Instance->ISR;
     huart3.Instance->ICR;
@@ -601,7 +604,8 @@ void serial4_init() {
 	itsdk_leaveCriticalSection();
     __HAL_UART_ENABLE_IT(&huart4,UART_IT_ERR);
     __HAL_UART_ENABLE_IT(&huart4,UART_IT_RXNE);
-    HAL_UART_Receive_IT(&huart4, __serial4_buffer, 1);
+    // Unclear why we have this, was blocking for STM32L4 device at least
+    //HAL_UART_Receive_IT(&huart4, __serial4_buffer, 1);
     huart4.Instance->RDR;
     huart4.Instance->ISR;
     huart4.Instance->ICR;
@@ -804,6 +808,10 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 				HAL_UART_Receive_IT(huart, &__serial4_buffer[__serial4_bufferWr], 1);
 			#endif
 		#endif
+		} else {
+			// default case, get it and drop it
+			uint8_t c;
+			HAL_UART_Receive_IT(huart, &c, 1);
 		}
 	} while ( __HAL_UART_GET_FLAG(huart, UART_FLAG_RXNE) );
 
