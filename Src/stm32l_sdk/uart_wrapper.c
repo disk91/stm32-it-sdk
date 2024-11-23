@@ -73,6 +73,26 @@ volatile uint8_t __serial4_bufferWr = 0;
 #endif
 
 
+void __serial_disable_it(UART_HandleTypeDef * h) {
+    __HAL_UART_DISABLE_IT(h,UART_IT_ERR);
+    __HAL_UART_DISABLE_IT(h,UART_IT_RXNE);
+    __HAL_UART_DISABLE_IT(h,UART_IT_TC);
+    __HAL_UART_DISABLE_IT(h,UART_IT_TXE);
+
+    __HAL_UART_DISABLE_IT(h,UART_IT_PE);
+    __HAL_UART_DISABLE_IT(h,UART_IT_IDLE);
+    __HAL_UART_DISABLE_IT(h,UART_IT_LBD);
+    __HAL_UART_DISABLE_IT(h,UART_IT_CTS);
+    __HAL_UART_DISABLE_IT(h,UART_IT_CM);
+    __HAL_UART_DISABLE_IT(h,UART_IT_WUF);
+    __HAL_UART_DISABLE_IT(h,UART_IT_RTO);
+    __HAL_UART_DISABLE_IT(h,UART_IT_ERR);
+    __HAL_UART_DISABLE_IT(h,UART_IT_ORE);
+    __HAL_UART_DISABLE_IT(h,UART_IT_NE);
+    __HAL_UART_DISABLE_IT(h,UART_IT_FE);
+}
+
+
 
 /**
  * Init the Serial 1 extra configurations
@@ -85,10 +105,7 @@ void serial1_init() {
 		UART_HandleTypeDef * _uart = &huart1;
 	#endif
 
-	__HAL_UART_DISABLE_IT(_uart,UART_IT_ERR);
-    __HAL_UART_DISABLE_IT(_uart,UART_IT_RXNE);
-    __HAL_UART_DISABLE_IT(_uart,UART_IT_TC);
-    __HAL_UART_DISABLE_IT(_uart,UART_IT_TXE);
+	__serial_disable_it(_uart);
 
     // Reset circular buffer
 	itsdk_enterCriticalSection();
@@ -99,11 +116,13 @@ void serial1_init() {
 	__HAL_UART_ENABLE_IT(_uart,UART_IT_ERR);
     __HAL_UART_ENABLE_IT(_uart,UART_IT_RXNE);
     // Clear pending interrupt & co
-    // Unclear why we have this, was blocking for STM32L4 device at least
-    //HAL_UART_Receive_IT(_uart, __serial1_buffer, 1);
     _uart->Instance->RDR;
     _uart->Instance->ISR;
     _uart->Instance->ICR;
+    // start IT reception
+    __HAL_UART_CLEAR_FLAG(_uart, UART_CLEAR_OREF);
+    HAL_UART_Receive_IT(_uart, __serial2_buffer, 1);
+
 #endif
 }
 
@@ -283,27 +302,27 @@ itsdk_bool_e serial1_changeBaudRate(serial_baudrate_e bd) {
 // serial 2 - is mapped to USART2
 // ---------------------------------------------------------------------------
 
+
 /**
  * Init the Serial 2 extra configurations
  */
 void serial2_init() {
 #if  ( ITSDK_WITH_UART_RXIRQ & __UART_USART2 ) > 0
-    __HAL_UART_DISABLE_IT(&huart2,UART_IT_ERR);
-    __HAL_UART_DISABLE_IT(&huart2,UART_IT_RXNE);
-    __HAL_UART_DISABLE_IT(&huart2,UART_IT_TC);
-    __HAL_UART_DISABLE_IT(&huart2,UART_IT_TXE);
+	__serial_disable_it(&huart2);
 	itsdk_enterCriticalSection();
     __serial2_bufferRd = 0;
     __serial2_bufferWr = 0;
 	itsdk_leaveCriticalSection();
     __HAL_UART_ENABLE_IT(&huart2,UART_IT_ERR);
     __HAL_UART_ENABLE_IT(&huart2,UART_IT_RXNE);
-    // Unclear why we have this, was blocking for STM32L4 device at least
-    //HAL_UART_Receive_IT(&huart2, __serial2_buffer, 1);
     huart2.Instance->RDR;
     huart2.Instance->ISR;
     huart2.Instance->ICR;
-#endif
+    // start IT reception
+    __HAL_UART_CLEAR_FLAG(&huart2, UART_CLEAR_OREF);
+    HAL_UART_Receive_IT(&huart2, __serial2_buffer, 1);
+
+    #endif
 }
 
 /**
@@ -441,21 +460,19 @@ itsdk_bool_e serial2_changeBaudRate(serial_baudrate_e bd) {
  */
 void serial3_init() {
 #if  ( ITSDK_WITH_UART_RXIRQ & __UART_USART3 ) > 0
-    __HAL_UART_DISABLE_IT(&huart3,UART_IT_ERR);
-    __HAL_UART_DISABLE_IT(&huart3,UART_IT_RXNE);
-    __HAL_UART_DISABLE_IT(&huart3,UART_IT_TC);
-    __HAL_UART_DISABLE_IT(&huart3,UART_IT_TXE);
+	__serial_disable_it(&huart3);
 	itsdk_enterCriticalSection();
     __serial3_bufferRd = 0;
     __serial3_bufferWr = 0;
 	itsdk_leaveCriticalSection();
     __HAL_UART_ENABLE_IT(&huart3,UART_IT_ERR);
     __HAL_UART_ENABLE_IT(&huart3,UART_IT_RXNE);
-    // Unclear why we have this, was blocking for STM32L4 device at least
-    //HAL_UART_Receive_IT(&huart3, __serial3_buffer, 1);
     huart3.Instance->RDR;
     huart3.Instance->ISR;
     huart3.Instance->ICR;
+    // start IT reception
+    __HAL_UART_CLEAR_FLAG(&huart3, UART_CLEAR_OREF);
+    HAL_UART_Receive_IT(&huart3, __serial2_buffer, 1);
 #endif
 }
 
@@ -594,22 +611,19 @@ itsdk_bool_e serial3_changeBaudRate(serial_baudrate_e bd) {
  */
 void serial4_init() {
 #if  ( ITSDK_WITH_UART_RXIRQ & __UART_USART4 ) > 0
-    __HAL_UART_DISABLE_IT(&huart4,UART_IT_ERR);
-    __HAL_UART_DISABLE_IT(&huart4,UART_IT_RXNE);
-    __HAL_UART_DISABLE_IT(&huart4,UART_IT_TC);
-    __HAL_UART_DISABLE_IT(&huart4,UART_IT_TXE);
+	__serial_disable_it(&huart4);
 	itsdk_enterCriticalSection();
     __serial4_bufferRd = 0;
     __serial4_bufferWr = 0;
 	itsdk_leaveCriticalSection();
     __HAL_UART_ENABLE_IT(&huart4,UART_IT_ERR);
     __HAL_UART_ENABLE_IT(&huart4,UART_IT_RXNE);
-    // Unclear why we have this, was blocking for STM32L4 device at least
-    // to be investigated, without this is blocking when a char is pending and blocking when no char pending...
-    //HAL_UART_Receive_IT(&huart4, __serial4_buffer, 1);
     huart4.Instance->RDR;
     huart4.Instance->ISR;
     huart4.Instance->ICR;
+    // start IT reception
+    __HAL_UART_CLEAR_FLAG(&huart4, UART_CLEAR_OREF);
+    HAL_UART_Receive_IT(&huart4, __serial2_buffer, 1);
 #endif
 }
 
