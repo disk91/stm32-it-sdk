@@ -768,7 +768,9 @@ static gnss_ret_e __quectelNMEA(gnss_data_t * data, uint8_t * line, uint16_t sz,
 				// avoid to spam the log with this message too fast
 				__quectel_status.nmeaProcessed = 0;
 				__quectel_status.nmeaErrors = 0;
+				#if (ITSDK_LOGGER_MODULE & __LOG_MOD_GNSS) > 0
 				log_error("G#");
+				#endif
 			}
 			break;
 	}

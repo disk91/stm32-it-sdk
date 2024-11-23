@@ -43,7 +43,7 @@
 // ---------------------------------------------------------
 // Some local functions
 static gnss_config_t __gnss_config = {0};
-static void __gnss_processChar(char c);
+static itsdk_bool_e __gnss_processChar(char c);
 static void __gnss_process_serialLine(void);
 static gnss_ret_e __gnss_onDataRefreshed(void);
 static void __gnss_resetStructForNextCycle(void);
@@ -516,10 +516,11 @@ void __gnss_process_serialLine(void) {
 	serial_read_response_e r;
 
 	// We want to limit the deep-sleep between char transmission
-	// at 9600bps we have about 1ms betwwen each transmitted char
+	// at 9600bps we have about 1ms between each transmitted char
 	// so we are going to take a look to the buffer state after 2ms
 	// and quit if that one is still empty
 	itsdk_bool_e empty;
+	itsdk_bool_e processed;
 	do  {
 		empty = BOOL_TRUE;
 		do {
@@ -532,12 +533,12 @@ void __gnss_process_serialLine(void) {
 			 r = gnss_customSerial_read(&c);
 			#endif
 			 if ( r == SERIAL_READ_SUCCESS || r == SERIAL_READ_PENDING_CHAR) {
-				 __gnss_processChar(c);
+				processed = __gnss_processChar(c);
 				empty = BOOL_FALSE;
 			 }
 
 		} while ( r == SERIAL_READ_PENDING_CHAR );
-		if( empty == BOOL_FALSE) itsdk_delayMs(2);
+		if( empty == BOOL_FALSE && !processed ) itsdk_delayMs(2);
 	} while (empty == BOOL_FALSE);
 
 }
@@ -569,14 +570,18 @@ __weak void gnss_customSerialConnect() {
 
 /**
  * Process 1 char read
+ * return true when this conducted to a nema line processing
  */
-static void __gnss_processChar(char c) {
+static itsdk_bool_e __gnss_processChar(char c) {
+
+	itsdk_bool_e ret = BOOL_FALSE;
 
 	if ( c == '\n' || c == '\r' || c == '\0' ) {
 		if ( __gnss_config.pBuffer > 0 ) {
 			__gnss_config.lineBuffer[__gnss_config.pBuffer] = '\0';
 			if ( __gnss_config.withNmeaDecodeur && __gnss_config.driver.nmea.nmeaParser != NULL ) {
 				__gnss_config.driver.nmea.nmeaParser(&__gnss_config.data,__gnss_config.lineBuffer,__gnss_config.pBuffer, &__gnss_config.driver.nmea);
+				ret = BOOL_TRUE;
 			}
 		   __gnss_config.pBuffer = 0;
 		}
@@ -588,6 +593,8 @@ static void __gnss_processChar(char c) {
 			}
 		}
 	}
+
+	return ret;
 
 }
 
