@@ -82,6 +82,16 @@ The configuration takes place in __configDrivers.h__
 
 ## Usage
 
+You setup de gnss with de following function:
+```C
+/**
+ * Returns
+ *  GNSS_SUCCESS - setup success
+ *  OTHER return code depends on sublayer driver 
+ */
+gnss_ret_e gnss_setup()
+```
+
 You start the gnss with the following function:
 ```C
 /**
@@ -159,6 +169,11 @@ void myCallback(gnss_triggers_e triggers,gnss_data_t * data,uint32_t duration) {
 	    );
 	}
 }
+
+associate the callback structure / fonction with:
+
+gnss_addTriggerCallBack(&gnssEventCallback);
+
 ```
 It is really important to have short processing inside the callback as it have to finished before the next GPS NMEA storm to reduce the risk of loosing NMEA frames. If you need a long processing (over 600ms) it is recommanded to reduce the positionning rate or stop the gnss.
 
