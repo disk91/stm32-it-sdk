@@ -73,6 +73,12 @@ gnss_ret_e gnss_setup() {
 	return ret;
 }
 
+/**
+ * This function return true when the GPS is acquiring a position, false otherwise
+ */
+itsdk_bool_e gnss_isRunning() {
+	return (__gnss_config.setupDone == 1 && __gnss_config.isRunning == 1 )? BOOL_TRUE:BOOL_FALSE;
+}
 
 /**
  * This function is call on every wake-up to proceed the pending characters on the serial

@@ -229,6 +229,7 @@ void gnss_process_loop(itsdk_bool_e force);		// Loop process automatically inclu
 
 gnss_ret_e gnss_start(gnss_run_mode_e mode, uint16_t fixFreq,  uint32_t timeoutS);
 gnss_ret_e gnss_stop(gnss_run_mode_e mode);
+itsdk_bool_e gnss_isRunning();
 gnss_ret_e gnss_encodePosition48b(gnss_data_t * data, uint64_t * output);
 
 void gnss_customSerial_print(char * msg);
