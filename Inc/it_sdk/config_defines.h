@@ -68,7 +68,9 @@
 #define __LOWPWR_MODE_WAKE_RTC		0x0004
 #define __LOWPWR_MODE_WAKE_UART2	0x0008
 #define __LOWPWR_MODE_WAKE_UART1	0x0010
-#define __LOWPWR_MODE_WAKE_ALLUART  0x0019
+#define __LOWPWR_MODE_WAKE_UART3	0x0020
+#define __LOWPWR_MODE_WAKE_UART4	0x0040
+#define __LOWPWR_MODE_WAKE_ALLUART  0x0079
 
 /**
  * Module to keep activated during sleep
@@ -223,6 +225,8 @@
 #define __LOG_MOD_ACCEL			0x00000200			// Accelerometer & underlaying drivers
 #define __LOG_MOD_LOWPOWER		0x00000400			// Print the wakeup reason - see lowpower.c
 #define __LOG_MOD_EEPROM		0x00000800			// Trace the EEprom (for virtual EEPROM) critical operations
+#define __LOG_MOD_CONSOLE		0x00001000			// Trace the console operation
+#define __LOG_MOD_ECHOSTAR		0x00002000			// Trace the EchoStar driver
 
 #define __LOG_MOD_CUSTOM1		0x00010000			// User level logging
 #define __LOG_MOD_CUSTOM2		0x00020000			// User level logging

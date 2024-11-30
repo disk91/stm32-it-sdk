@@ -366,13 +366,13 @@ static void _itsdk_console_processLine() {
 				uint8_t passwd[16];
 				itsdk_secstore_readBlock(ITSDK_SS_CONSOLEKEY, passwd);
 			#endif
-				for ( int i = 0 ; i < 16 ; i++) {
+				for ( int i = 0 ; i < 16 && passwd[i] != '\0'; i++) {
 					if (__console.serialBuffer[i] != passwd[i] && __console.loginState == 1) __console.loginState=0;
 				}
 				bzero(passwd,16);
 		}
 		if ( __console.loginState == 1 ) {
-			// Login sucess
+			// Login success
 			uint64_t s = itsdk_time_get_ms()/1000;
 			__console.expire = (uint32_t)s + ITSDK_CONSOLE_EXPIRE_S;
 			_itsdk_console_printf("OK\r\n");
@@ -451,18 +451,19 @@ static void _itsdk_console_processChar(char c) {
 
 	if ( c == '\n' || c == '\r' || c == '\0' ) {
 		if ( __console.pBuffer > 0 ) {
-//			log_info("RET");
+			_LOG_CONSOLE_DEBUG(("RET"));
 			_itsdk_console_processLine();
 			__console.pBuffer = 0;
 		}
-//		log_info("ESC");
+		_LOG_CONSOLE_DEBUG(("ESC"));
 	} else {
 		if ( __console.pBuffer < ITSDK_CONSOLE_LINEBUFFER ) {
 
-//			if ( c > 32 ) {
-//			  log_info("[%c]",c);
-//			} else log_info("(%02X)",c);
-
+		  #if (ITSDK_LOGGER_MODULE & __LOG_MOD_CONSOLE) > 0
+			if ( c > ' ' && c < '~') {
+			  log_info("[%c]",c);
+			} else log_info("(%02X)",c);
+		  #endif
 			__console.serialBuffer[__console.pBuffer] = c;
 			__console.pBuffer++;
 		}

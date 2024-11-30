@@ -42,6 +42,9 @@
 #if ( ITSDK_LOWPOWER_MISC_HALT & __LP_HALT_I2C2 ) > 0 || ( ITSDK_LOWPOWER_MISC_HALT & __LP_HALT_I2C1 )
 #include "i2c.h"
 #endif
+#if ( ITSDK_LOWPOWER_MISC_HALT & __LP_HALT_SPI1 ) > 0 || ( ITSDK_LOWPOWER_MISC_HALT & __LP_HALT_SPI2 ) > 0
+#include "spi.h"
+#endif
 
 
 #ifndef ITSDK_LOWPOWER_MISC_HALT
@@ -112,6 +115,16 @@ stm32l_lowPowerReturn_e __attribute__((optimize("O3"))) stm32l_lowPowerSetup(uin
 				while(__HAL_UART_GET_FLAG(&huart2, USART_ISR_BUSY) == SET){};
 			#endif
 
+			#if ( ITSDK_WITH_UART & __UART_USART3 ) > 0
+				// make sure that no UART transfer is on-going
+				while(__HAL_UART_GET_FLAG(&huart3, USART_ISR_BUSY) == SET){};
+			#endif
+
+			#if ( ITSDK_WITH_UART & __UART_USART4 ) > 0
+				// make sure that no UART transfer is on-going
+				while(__HAL_UART_GET_FLAG(&huart4, USART_ISR_BUSY) == SET){};
+			#endif
+
 			#if  ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_ALLUART ) > 0
 				UART_WakeUpTypeDef wakeup;
 			#endif
@@ -135,24 +148,9 @@ stm32l_lowPowerReturn_e __attribute__((optimize("O3"))) stm32l_lowPowerSetup(uin
 				HAL_UARTEx_EnableStopMode(&hlpuart1);
 
 			#else
-			  #if (ITSDK_WITH_UART & __UART_LPUART1) > 0
-				__HAL_RCC_LPUART1_CLK_DISABLE();
-			  #endif
-			#endif
-
-
-			#if  ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_UART2 ) > 0
-				// make sure that UART is ready to receive
-				while(__HAL_UART_GET_FLAG(&huart2, USART_ISR_REACK) == RESET){}
-
-				wakeup.WakeUpEvent=UART_WAKEUP_ON_READDATA_NONEMPTY; // UART_WAKEUP_ON_STARTBIT
-				HAL_UARTEx_StopModeWakeUpSourceConfig(&huart2,wakeup);
-				__HAL_UART_ENABLE_IT(&huart2, UART_IT_WUF);
-				HAL_UARTEx_EnableStopMode(&huart2);
-			#else
-			  #if (ITSDK_WITH_UART & __UART_USART2) > 0
-				__HAL_RCC_USART2_CLK_DISABLE();
-			  #endif
+				#if (ITSDK_WITH_UART & __UART_LPUART1) > 0
+					__HAL_RCC_LPUART1_CLK_DISABLE();
+				#endif
 			#endif
 
 			#if  ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_UART1 ) > 0
@@ -161,13 +159,95 @@ stm32l_lowPowerReturn_e __attribute__((optimize("O3"))) stm32l_lowPowerSetup(uin
 
 				wakeup.WakeUpEvent=UART_WAKEUP_ON_READDATA_NONEMPTY; // UART_WAKEUP_ON_STARTBIT
 				HAL_UARTEx_StopModeWakeUpSourceConfig(&huart1,wakeup);
-				__HAL_UART_ENABLE_IT(&huart1, UART_IT_WUF);
+
+				#if ITSDK_PLATFORM == __PLATFORM_STM32L0
+					__HAL_UART_ENABLE_IT(&huart1, UART_IT_WUF);
+				#elif ITSDK_PLATFORM == __PLATFORM_STM32WLE || ITSDK_PLATFORM == __PLATFORM_STM32L4
+					__HAL_UART_CLEAR_IT(&huart1,UART_CLEAR_WUF);
+					__HAL_UART_ENABLE_IT(&huart1,UART_CLEAR_WUF);
+					#if ITSDK_PLATFORM == __PLATFORM_STM32WLE
+					  LL_EXTI_EnableIT_0_31(LL_EXTI_LINE_28);	// TBC
+					#endif
+				#endif
 				HAL_UARTEx_EnableStopMode(&huart1);
 			#else
 				#if (ITSDK_WITH_UART & __UART_USART1) > 0
 					__HAL_RCC_USART1_CLK_DISABLE();
 				#endif
 			#endif
+
+			#if  ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_UART2 ) > 0
+				// make sure that UART is ready to receive
+				while(__HAL_UART_GET_FLAG(&huart2, USART_ISR_REACK) == RESET){}
+
+				wakeup.WakeUpEvent=UART_WAKEUP_ON_READDATA_NONEMPTY; // UART_WAKEUP_ON_STARTBIT
+				HAL_UARTEx_StopModeWakeUpSourceConfig(&huart2,wakeup);
+
+				#if ITSDK_PLATFORM == __PLATFORM_STM32L0
+					__HAL_UART_ENABLE_IT(&huart2, UART_IT_WUF);
+				#elif ITSDK_PLATFORM == __PLATFORM_STM32WLE || ITSDK_PLATFORM == __PLATFORM_STM32L4
+					__HAL_UART_CLEAR_IT(&huart2,UART_CLEAR_WUF);
+					__HAL_UART_ENABLE_IT(&huart2,UART_CLEAR_WUF);
+					#if ITSDK_PLATFORM == __PLATFORM_STM32WLE
+					  LL_EXTI_EnableIT_0_31(LL_EXTI_LINE_28);	// TbC
+					#endif
+				#endif
+				HAL_UARTEx_EnableStopMode(&huart2);
+			#else
+			  #if (ITSDK_WITH_UART & __UART_USART2) > 0
+				__HAL_RCC_USART2_CLK_DISABLE();
+			  #endif
+			#endif
+
+
+
+			#if  ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_UART3 ) > 0
+				// make sure that UART is ready to receive
+				while(__HAL_UART_GET_FLAG(&huart3, USART_ISR_REACK) == RESET){}
+
+				wakeup.WakeUpEvent=UART_WAKEUP_ON_READDATA_NONEMPTY; // UART_WAKEUP_ON_STARTBIT
+				HAL_UARTEx_StopModeWakeUpSourceConfig(&huart3,wakeup);
+
+				#if ITSDK_PLATFORM == __PLATFORM_STM32L0
+					__HAL_UART_ENABLE_IT(&huart3, UART_IT_WUF);
+				#elif ITSDK_PLATFORM == __PLATFORM_STM32WLE || ITSDK_PLATFORM == __PLATFORM_STM32L4
+					__HAL_UART_CLEAR_IT(&huart3,UART_CLEAR_WUF);
+					__HAL_UART_ENABLE_IT(&huart3,UART_CLEAR_WUF);
+					#if ITSDK_PLATFORM == __PLATFORM_STM32WLE
+					  LL_EXTI_EnableIT_0_31(LL_EXTI_LINE_28);	// TbC
+					#endif
+				#endif
+				HAL_UARTEx_EnableStopMode(&huart3);
+			#else
+			  #if (ITSDK_WITH_UART & __UART_USART3) > 0
+				__HAL_RCC_USART3_CLK_DISABLE();
+			  #endif
+			#endif
+
+			#if  ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_UART4 ) > 0
+				// make sure that UART is ready to receive
+				while(__HAL_UART_GET_FLAG(&huart4, USART_ISR_REACK) == RESET){}
+
+				wakeup.WakeUpEvent=UART_WAKEUP_ON_READDATA_NONEMPTY; // UART_WAKEUP_ON_STARTBIT
+				HAL_UARTEx_StopModeWakeUpSourceConfig(&huart4,wakeup);
+
+				#if ITSDK_PLATFORM == __PLATFORM_STM32L0
+					__HAL_UART_ENABLE_IT(&huart4, UART_IT_WUF);
+				#elif ITSDK_PLATFORM == __PLATFORM_STM32WLE || ITSDK_PLATFORM == __PLATFORM_STM32L4
+					__HAL_UART_CLEAR_IT(&huart4,UART_CLEAR_WUF);
+					__HAL_UART_ENABLE_IT(&huart4,UART_CLEAR_WUF);
+					#if ITSDK_PLATFORM == __PLATFORM_STM32WLE
+					  LL_EXTI_EnableIT_0_31(LL_EXTI_LINE_28);	// TbC
+					#endif
+				#endif
+				HAL_UARTEx_EnableStopMode(&huart4);
+			#else
+			  #if (ITSDK_WITH_UART & __UART_USART4) > 0
+				__HAL_RCC_UART4_CLK_DISABLE();
+			  #endif
+			#endif
+
+
 
 			_stm32l_disableGpios();					// Disable GPIOs based on configuration
 
@@ -270,6 +350,14 @@ stm32l_lowPowerReturn_e __attribute__((optimize("O3"))) stm32l_lowPowerResume(st
 			#if (( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_UART2 ) == 0) && (( ITSDK_WITH_UART & __UART_USART2 ) > 0 )
 				HAL_UART_MspInit(&huart2);
 				MX_USART2_UART_Init();
+			#endif
+			#if (( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_UART3 ) == 0) && (( ITSDK_WITH_UART & __UART_USART3 ) > 0 )
+				HAL_UART_MspInit(&huart3);
+				MX_USART3_UART_Init();
+			#endif
+			#if (( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_UART4 ) == 0) && (( ITSDK_WITH_UART & __UART_USART4 ) > 0 )
+				HAL_UART_MspInit(&huart4);
+				MX_UART4_Init();
 			#endif
 
 			#if ( ITSDK_LOWPOWER_MOD & __LOWPWR_MODE_WAKE_GPIO ) > 0
@@ -430,7 +518,7 @@ void __LP_GPIO_IRQHandler(uint16_t GPIO_Pin) {
 
 #endif
 
-#if  ( ITSDK_LOWPOWER_MOD & ( __LOWPWR_MODE_WAKE_LPUART | __LOWPWR_MODE_WAKE_UART2 | __LOWPWR_MODE_WAKE_UART1 )  ) > 0
+#if  ( ITSDK_LOWPOWER_MOD & ( __LOWPWR_MODE_WAKE_LPUART | __LOWPWR_MODE_WAKE_UART1 | __LOWPWR_MODE_WAKE_UART2 | __LOWPWR_MODE_WAKE_UART3 | __LOWPWR_MODE_WAKE_UART4  )  ) > 0
 void HAL_UARTEx_WakeupCallback(UART_HandleTypeDef *huart) {
    __lowPower_wakeup_reason=LOWPWR_WAKEUP_UART;
 }

@@ -134,6 +134,8 @@ typedef enum {
 	GPIO_OUTPUT_PULLUP,
 	GPIO_OUTPUT_PULLDOWN,
 	GPIO_OUTPUT_OD,
+	GPIO_OUTPUT_OD_PULLUP,
+	GPIO_OUTPUT_OD_PULLDOWN,
 	GPIO_INPUT,
 	GPIO_INPUT_PULLUP,
 	GPIO_INPUT_PULLDOWN,
@@ -360,6 +362,7 @@ itsdk_reset_cause_t itsdk_getResetCause();
 // misc_wrapper
 void itsdk_reset();
 void itsdk_delayMs(uint32_t ms);
+void itsdk_delayUs(uint32_t us); // not a target specific implementation
 
 uint32_t itsdk_getIrqMask();
 void itsdk_setIrqMask(uint32_t mask);

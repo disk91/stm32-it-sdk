@@ -237,3 +237,18 @@ void itsdk_time_init() {
 	#error "platform not supported"
 #endif
 }
+
+
+/**
+ * Delay in us
+ */
+void itsdk_delayUs(uint32_t us) {
+	uint64_t start = __timeus;
+	uint64_t target = start + us;
+	if ( target < start ) {
+		// overlow
+		while ( __timeus > target );
+	} else {
+		while ( __timeus < target );
+	}
+}

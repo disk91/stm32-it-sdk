@@ -80,6 +80,18 @@ void itsdk_console_customProcess_char(char c);						// for async char reception
 // INTERNAL
 // ==============================================================================
 
+#if (ITSDK_LOGGER_MODULE & __LOG_MOD_CONSOLE) > 0
+	#define _LOG_CONSOLE_DEBUG(x)	log_debug x
+	#define _LOG_CONSOLE_INFO(x)	log_info x
+	#define _LOG_CONSOLE_WARN(x)	log_warn x
+	#define _LOG_CONSOLE_ERROR(x)	log_error x
+#else
+	#define _LOG_CONSOLE_DEBUG(x)
+	#define _LOG_CONSOLE_INFO(x)
+	#define _LOG_CONSOLE_WARN(x)
+	#define _LOG_CONSOLE_ERROR(x)
+#endif
+
 
 #endif // ITSDK_WITH_CONSOLE
 #endif /* IT_SDK_CONSOLE_CONSOLE_H_ */

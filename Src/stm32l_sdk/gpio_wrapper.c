@@ -198,6 +198,16 @@ void gpio_configure_ext(uint8_t bank, uint16_t id, itsdk_gpio_type_t type, itsdk
 		GPIO_InitStruct.Pull = GPIO_NOPULL;
 		break;
 
+	case GPIO_OUTPUT_OD_PULLUP:
+		GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+		GPIO_InitStruct.Pull = GPIO_PULLUP;
+		break;
+
+	case GPIO_OUTPUT_OD_PULLDOWN:
+		GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+		GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+		break;
+
 	case GPIO_INPUT:
 		GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
 		GPIO_InitStruct.Pull = GPIO_NOPULL;
