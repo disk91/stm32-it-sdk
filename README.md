@@ -42,6 +42,7 @@ Most is done to preserve code size, the SDK can target small flash MCU from 16KB
 * Communication protocols interface
   * Sigfox ( clear-text, AES128-CTR, SPECK32, Sigfox-EAS128-CTR-Encryption )
   * LoRaWan ( LoRaWan-Encryption, EAS128-CTR, SPECK32 ) - join / uplink / downlink / ack
+  * EchoStar (em2050 driver)
 
 * Supported / tested platforms
   * STM32L011
@@ -51,6 +52,7 @@ Most is done to preserve code size, the SDK can target small flash MCU from 16KB
   * MURATA CMWX1ZZABZ-078 (STM32L082)
   * MURATA CMWX1ZZABZ-091 (STM32L072)
   * STM32WLE5 (Seeed LoRa E5, ...)
+  * STM32L476RG
 
 * Supported drivers
   * eeprom

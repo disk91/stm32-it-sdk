@@ -98,6 +98,7 @@
 								/*	| __LOG_MOD_LOWLORAINF */ \
 								/*  | __LOG_MOD_GNSS       */ \
 								/*	| __LOG_MOD_ACCEL	   */ \
+								/*  | __LOG_MOD_CONSOLE    */ \
 									)										// list the module to be activated in log see config_defines.h
 #define ITSDK_WITH_ERROR_RPT		__ENABLE								// Enable the Error reporting code. The allow to store error code in the EEPROM
 #define ITSDK_ERROR_USE_EPROM		__ENABLE								//  Error reports are stored in the EEPROM
@@ -110,6 +111,9 @@
 								/*	| __LOWPWR_MODE_WAKE_GPIO  */\
 								/*	| __LOWPWR_MODE_WAKE_LPUART */\
 								/*  | __LOWPWR_MODE_WAKE_UART1 */ \
+								/*  | __LOWPWR_MODE_WAKE_UART2 */ \
+								/*  | __LOWPWR_MODE_WAKE_UART3 */ \
+								/*  | __LOWPWR_MODE_WAKE_UART4 */ \
 									)										// Mode Stop + wakeup RTC + GPIO
 																			// UART WakeUp - Requires clk HSE/LSE and WakeInt Activated - low speed recommanded
 

@@ -301,4 +301,30 @@
 #define ITSDK_DRIVERS_SL353_INT_PIN			__LP_GPIO_0						//   __LP_GPIO_NONE if not used
 
 
+// *************************************** ECHOSTAR *****************************************************************
+
+// ------------------------------------------------------------------------
+// EM2050 Module
+
+#define ITSDK_DRIVERS_EM2050					__DISABLE
+#if ITSDK_DRIVERS_EM2050 == __ENABLE
+	#include <drivers/echostar/em2050.h>
+#endif
+
+#define ITSDK_DRIVERS_EM2050_GNSS_LNA_ON_PORT 	__BANK_A					// Input - indicate when GNSS can be on (not mandatory)
+#define ITSDK_DRIVERS_EM2050_GNSS_LNA_ON_PIN	__LP_GPIO_NONE
+
+#define ITSDK_DRIVERS_EM2050_RESET_PORT			__BANK_A					// EM2050 Reset pin (active low)
+#define ITSDK_DRIVERS_EM2050_RESET_PIN			__LP_GPIO_NONE				// Output
+
+#define ITSDK_DRIVERS_EM2050_RTS_PORT			__BANK_A					// RTS signal - tells Modem the CPU is active
+#define ITSDK_DRIVERS_EM2050_RTS_PIN			__LP_GPIO_NONE				// Output
+
+#define ITSDK_DRIVERS_EM2050_CTS_PORT			__BANK_A					// CTS signal - tells the MCU the Modem is active
+#define	ITSDK_DRIVERS_EM2050_CTS_PIN			__LP_GPIO_NONE
+
+#define ITSDK_DRIVERS_EM2050_SERIAL 			__UART_USART1				// Select the Serial port used for the communication
+#define ITSDK_DRIVERS_EM2050_LINEBUFFER			256							// Buffer to store the serial chars until we get a full line																															//  select __UART_NONE if none
+
+
 #endif /* INC_IT_SDK_CONFIGDRIVERS_H_ */
