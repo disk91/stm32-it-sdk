@@ -252,7 +252,7 @@ void es_println(char * msg) {
 // ===========================================
 
 
-void es_init() {
+void echoStarInit() {
 
 	es_initGpio();
 
