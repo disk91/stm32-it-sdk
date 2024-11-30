@@ -78,7 +78,7 @@ __weak void em2050_customSerialConnect() {
 // keep current modem state, 0 for sleep / 1 for active
 static uint8_t __echostar_sleep_state;
 
-void es_initGpio() {
+static void __es_initGpio() {
 
 	#if (ITSDK_DRIVERS_EM2050_SERIAL == __UART_USART1 || ITSDK_DRIVERS_EM2050_SERIAL == __UART_LPUART1 )
 		#if ITSDK_DRIVERS_EM2050_SERIAL == __UART_USART1
@@ -211,7 +211,7 @@ itsdk_bool_e echoStarWakeUpModem() {
 //
 // read pending char on UART
 //
-serial_read_response_e es_read(char * ch)  {
+static serial_read_response_e __es_read(char * ch)  {
 	#if (ITSDK_DRIVERS_EM2050_SERIAL == __UART_USART1 || ITSDK_DRIVERS_EM2050_SERIAL == __UART_LPUART1 )
 		return serial1_read(ch);
 	#elif ITSDK_DRIVERS_EM2050_SERIAL == __UART_USART2
@@ -228,12 +228,12 @@ serial_read_response_e es_read(char * ch)  {
 //
 // Clear pending reception line buffer
 //
-void es_clear() {
+static void __es_clear() {
 	char c;
-	while ( es_read(&c ) != SERIAL_READ_NOCHAR );
+	while ( __es_read(&c ) != SERIAL_READ_NOCHAR );
 }
 
-void es_println(char * msg) {
+static void __es_println(char * msg) {
 	#if (ITSDK_DRIVERS_EM2050_SERIAL == __UART_USART1 || ITSDK_DRIVERS_EM2050_SERIAL == __UART_LPUART1 )
 		serial1_println(msg);
 	#elif ITSDK_DRIVERS_EM2050_SERIAL == __UART_USART2
@@ -254,7 +254,7 @@ void es_println(char * msg) {
 
 void echoStarInit() {
 
-	es_initGpio();
+	__es_initGpio();
 
 	#if (ITSDK_DRIVERS_EM2050_SERIAL == __UART_USART1 || ITSDK_DRIVERS_EM2050_SERIAL == __UART_LPUART1 )
 		serial1_connect();
@@ -298,13 +298,13 @@ itsdk_bool_e sendAtCommand(char * cmd, uint64_t initTmout, uint64_t endTmout, e_
 	uint16_t __es_bufferWr = 0;
 	char __es_buffer[ITSDK_DRIVERS_EM2050_LINEBUFFER];
 
-	if ( clear ) es_clear();
-	if ( cmd != NULL ) es_println(cmd);
+	if ( clear ) __es_clear();
+	if ( cmd != NULL ) __es_println(cmd);
 	itsdk_bool_e end = BOOL_FALSE;
 	itsdk_bool_e init = BOOL_TRUE;
 	uint64_t start = itsdk_time_get_ms();
 	while ( ! end ) {
-		serial_read_response_e r = es_read(&c);
+		serial_read_response_e r = __es_read(&c);
 		if (r == SERIAL_READ_NOCHAR ) {
 			uint64_t t = itsdk_time_get_ms();
 			// exit after like 1_000ms until something returned
@@ -432,7 +432,7 @@ void echoStarshowMessages() {
 	serial_read_response_e r;
 	uint8_t empty=1;
 	do {
-		r = es_read(&c);
+		r = __es_read(&c);
 		if ( r != SERIAL_READ_NOCHAR ) {
 			// filter what to print
 			if ( c >= ' ' && c <= '~'  ) {
@@ -612,7 +612,7 @@ itsdk_bool_e echoStarSetNetworkKey(uint8_t * ntwKey) {
 	if ( sendAtCommand(cmd,_EM2050_INITTMOUT_DEFAULT,_EM2050_TMOUT_DEFAULT,processNtwKeyLine, BOOL_TRUE) == BOOL_TRUE ) {
 		if ( sendAtCommand("AT&W",_EM2050_INITTMOUT_DEFAULT,_EM2050_TMOUT_DEFAULT,processAtLineExpectOk,BOOL_TRUE) == BOOL_TRUE ) {
 			// apparently a reset is required when the appKey is changed
-			es_init();
+			echoStarInit();
 			return BOOL_TRUE;
 		} else return BOOL_FALSE;
 	} else return BOOL_FALSE;
@@ -713,7 +713,7 @@ itsdk_bool_e echoStarSetJoinEui(uint8_t * joinEui) {
 		// apparently it needs to be saved with AT&W
 		if ( sendAtCommand("AT&W",_EM2050_INITTMOUT_DEFAULT,_EM2050_TMOUT_DEFAULT,processAtLineExpectOk,BOOL_TRUE) == BOOL_TRUE ) {
 			// apparently a reset is required when the joinEui is changed
-			es_init();
+			echoStarInit();
 			return BOOL_TRUE;
 		} else return BOOL_FALSE;
 	} else return BOOL_FALSE;
@@ -1029,7 +1029,7 @@ itsdk_bool_e echoStarSetKeepAliveTimeMs(uint32_t kaTimeMs) {
 		// apparently it needs to be saved with AT&W
 		if ( sendAtCommand("AT&W",_EM2050_INITTMOUT_DEFAULT,_EM2050_TMOUT_DEFAULT,processAtLineExpectOk,BOOL_TRUE) == BOOL_TRUE ) {
 			// apparently a reset is required when the joinEui is changed
-			es_init();
+			echoStarInit();
 			return BOOL_TRUE;
 		} else return BOOL_FALSE;
 	} else return BOOL_FALSE;
