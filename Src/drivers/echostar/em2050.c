@@ -1174,21 +1174,21 @@ e_lineFuncRet processDeviceClassLine(char * r) {
 
 	if ( strlen(r) >= 4 && strncmp(r,"DC:",3) == 0) {
 		// DC:C
-		if ( r[3] == 'A') _es_config.class = CLASS_A;
-		else if ( r[3] == 'B' ) _es_config.class = CLASS_B;
-		else if ( r[3] == 'C' ) _es_config.class = CLASS_C;
-		else _es_config.class = CLASS_UNKNOWN;
+		if ( r[3] == 'A') _es_config.class = EM_CLASS_A;
+		else if ( r[3] == 'B' ) _es_config.class = EM_CLASS_B;
+		else if ( r[3] == 'C' ) _es_config.class = EM_CLASS_C;
+		else _es_config.class = EM_CLASS_UNKNOWN;
 	}
 	return R_CONTINUE;
 }
 
 // Return the Region as a value
 es_class_t echoStarGetDeviceClass() {
-	if ( ! echoStarWakeUpModem() ) return CLASS_UNKNOWN;
-	_es_config.class = CLASS_UNKNOWN;
+	if ( ! echoStarWakeUpModem() ) return EM_CLASS_UNKNOWN;
+	_es_config.class = EM_CLASS_UNKNOWN;
 	if ( sendAtCommand("AT+DC?",_EM2050_INITTMOUT_DEFAULT,_EM2050_TMOUT_DEFAULT,processDeviceClassLine,BOOL_TRUE) == BOOL_TRUE ) {
 		return _es_config.class;
-	} else return CLASS_UNKNOWN; // apparently we get an error with fw 1.15 but the ADR value is returned
+	} else return EM_CLASS_UNKNOWN; // apparently we get an error with fw 1.15 but the ADR value is returned
 }
 
 // Set the Sub GHz Tx power
@@ -1196,12 +1196,12 @@ itsdk_bool_e echoStarSetDeviceClass(es_class_t devClass) {
 	if ( ! echoStarWakeUpModem() ) return BOOL_FALSE;
 
 	char cmd[64];
-	if ( devClass == CLASS_A ) {
+	if ( devClass == EM_CLASS_A ) {
 		sprintf(cmd,"AT+DC=A");
-	} else if ( devClass == CLASS_B ) {
+	} else if ( devClass == EM_CLASS_B ) {
 		// not supported
 		return BOOL_FALSE;
-	} else if ( devClass == CLASS_C ) {
+	} else if ( devClass == EM_CLASS_C ) {
 		sprintf(cmd,"AT+DC=C");
 	} else return BOOL_FALSE;
 

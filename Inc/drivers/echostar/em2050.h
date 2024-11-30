@@ -63,11 +63,11 @@ typedef enum {
 } es_adr_t;
 
 typedef enum {
-	CLASS_A = 0,
-	CLASS_B = 1,
-	CLASS_C = 2,
+	EM_CLASS_A = 0,
+	EM_CLASS_B = 1,
+	EM_CLASS_C = 2,
 
-	CLASS_UNKNOWN = 0xFF
+	EM_CLASS_UNKNOWN = 0xFF
 } es_class_t;
 
 typedef enum {
