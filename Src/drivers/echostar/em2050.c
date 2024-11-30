@@ -209,38 +209,29 @@ itsdk_bool_e echoStarWakeUpModem() {
 
 
 //
+// read pending char on UART
+//
+serial_read_response_e es_read(char * ch)  {
+	#if (ITSDK_DRIVERS_EM2050_SERIAL == __UART_USART1 || ITSDK_DRIVERS_EM2050_SERIAL == __UART_LPUART1 )
+		return serial1_read(ch);
+	#elif ITSDK_DRIVERS_EM2050_SERIAL == __UART_USART2
+		return serial2_read(ch);
+	#elif ITSDK_DRIVERS_EM2050_SERIAL == __UART_USART3
+		return serial3_read(ch);
+	#elif ITSDK_DRIVERS_EM2050_SERIAL == __UART_USART4
+		return serial4_read(ch);
+	#elif ITSDK_DRIVERS_EM2050_SERIAL == __UART_CUSTOM
+		return em2050_customSerial_read(ch);
+	#endif
+}
+
+//
 // Clear pending reception line buffer
 //
 void es_clear() {
 	char c;
-	#if (ITSDK_DRIVERS_EM2050_SERIAL == __UART_USART1 || ITSDK_DRIVERS_EM2050_SERIAL == __UART_LPUART1 )
-		while( serial1_read(&c) != SERIAL_READ_NOCHAR );
-	#elif ITSDK_DRIVERS_EM2050_SERIAL == __UART_USART2
-		while( serial2_read(&c) != SERIAL_READ_NOCHAR );
-	#elif ITSDK_DRIVERS_EM2050_SERIAL == __UART_USART3
-		while( serial3_read(&c) != SERIAL_READ_NOCHAR );
-	#elif ITSDK_DRIVERS_EM2050_SERIAL == __UART_USART4
-		while( serial4_read(&c) != SERIAL_READ_NOCHAR );
-	#elif ITSDK_DRIVERS_EM2050_SERIAL == __UART_CUSTOM
-		while( em2050_customSerial_read(&c) != SERIAL_READ_NOCHAR );
-	#endif
+	while ( es_read(&c ) != SERIAL_READ_NOCHAR );
 }
-
-serial_read_response_e es_read(char * ch)  {
-	char c;
-	#if (ITSDK_DRIVERS_EM2050_SERIAL == __UART_USART1 || ITSDK_DRIVERS_EM2050_SERIAL == __UART_LPUART1 )
-		return serial1_read(&c);
-	#elif ITSDK_DRIVERS_EM2050_SERIAL == __UART_USART2
-		return serial2_read(&c);
-	#elif ITSDK_DRIVERS_EM2050_SERIAL == __UART_USART3
-		return serial3_read(&c);
-	#elif ITSDK_DRIVERS_EM2050_SERIAL == __UART_USART4
-		return serial4_read(&c);
-	#elif ITSDK_DRIVERS_EM2050_SERIAL == __UART_CUSTOM
-		return em2050_customSerial_read(&c);
-	#endif
-}
-
 
 void es_println(char * msg) {
 	#if (ITSDK_DRIVERS_EM2050_SERIAL == __UART_USART1 || ITSDK_DRIVERS_EM2050_SERIAL == __UART_LPUART1 )
