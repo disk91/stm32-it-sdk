@@ -54,9 +54,7 @@ itsdk_reset_cause_t itsdk_getResetCause() {
 	if ( RCC->CSR & RCC_CSR_SFTRSTF ) return RESET_CAUSE_SOFTWARE;
 #if ITSDK_PLATFORM == __PLATFORM_STM32L0
 	if ( RCC->CSR & RCC_CSR_PORRSTF ) return RESET_CAUSE_POWER_ON;
-#elif ITSDK_PLATFORM == __PLATFORM_STM32L4
-	#warning "TODO - Check this"
-#elif ITSDK_PLATFORM == __PLATFORM_STM32WLE
+#elif ITSDK_PLATFORM == __PLATFORM_STM32WLE || ITSDK_PLATFORM == __PLATFORM_STM32L4
 	if ( RCC->CSR & RCC_CSR_BORRSTF ) return RESET_CAUSE_POWER_ON;
 #endif
 	if ( RCC->CSR & RCC_CSR_PINRSTF ) return RESET_CAUSE_RESET_PIN;
@@ -125,14 +123,11 @@ void itsdk_enableIrq() {
  * Generate a seed. This seed is different for any of the objects
  *
  */
-#if ITSDK_PLATFORM == __PLATFORM_STM32L0 || ITSDK_PLATFORM == __PLATFORM_STM32L4
+#if ITSDK_PLATFORM == __PLATFORM_STM32L0
 	#define  STM32_ID1    ( 0x1FF80050 )
 	#define  STM32_ID2    ( 0x1FF80054 )
 	#define  STM32_ID3    ( 0x1FF80064 )
-#if ITSDK_PLATFORM == __PLATFORM_STM32L4
-#warning "TODO verify this"
-#endif
-#elif ITSDK_PLATFORM == __PLATFORM_STM32WLE
+#elif ITSDK_PLATFORM == __PLATFORM_STM32WLE || ITSDK_PLATFORM == __PLATFORM_STM32L4
 	#define  STM32_ID1    ( 0x1FFF7590 ) 	// 7580 for UID 64 bit IEEE ; this address is 96bits uid
 	#define  STM32_ID2    ( 0x1FFF7594 )
 	#define  STM32_ID3    ( 0x1FFF7598 )
