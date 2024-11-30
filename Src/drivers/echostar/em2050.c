@@ -322,7 +322,7 @@ itsdk_bool_e sendAtCommand(char * cmd, uint64_t initTmout, uint64_t endTmout, e_
 				__es_bufferWr++;
 				if ( __es_bufferWr >= (ITSDK_DRIVERS_EM2050_LINEBUFFER-1) ) {
 					// out of memory
-					log_error("Serial buffer overflow\r\n");
+					_LOG_ECHOSTAR_ERROR(("Serial buffer overflow\r\n"));
 					__es_buffer[ITSDK_DRIVERS_EM2050_LINEBUFFER-1] = '\0';
 					switch ( lineProcess(__es_buffer) )  {
 					  case R_EXIT_SUCCESS:
@@ -401,7 +401,7 @@ e_lineFuncRet processDefaultCases(char * r) {
  *
  */
 e_lineFuncRet processEsModemBoot(char * r) {
-	//log_error(r);log_error("\r\n");
+	//_LOG_ECHOSTAR_INFO((r));_LOG_ECHOSTAR_INFO(("\r\n"));
 	if ( strlen(r) > 2 ) {
 		__es_boot_line++;
 		if ( __es_boot_line < 6 ) return R_CONTINUE;
@@ -438,13 +438,11 @@ void echoStarshowMessages() {
 			if ( c >= ' ' && c <= '~'  ) {
 				empty = 0;
 				_LOG_ECHOSTAR_INFO(("%c",c));
-log_debug("%c",c);
 			}
 			// only print new line when we had text before
 			if ( c == '\n' && !empty ) {
 				empty = 1;
 				_LOG_ECHOSTAR_INFO(("\r\n"));
-log_debug("\r\n");
 			}
 		}
 	} while ( r == SERIAL_READ_PENDING_CHAR );
@@ -502,8 +500,8 @@ e_lineFuncRet processVersionLine(char * r) {
 		} else if ( strlen(r) > 21 ) {
 			_es_config.fw_version = (r[18]-'0') * 256 + (r[20]-'0')*10 + (r[21]-'0');
 		} else {
-			log_error("ES - invalid version response\r\n");
-			log_error(r);log_error("\r\n");
+			_LOG_ECHOSTAR_ERROR(("ES - invalid version response\r\n"));
+			_LOG_ECHOSTAR_ERROR((r));_LOG_ECHOSTAR_ERROR(("\r\n"));
 		}
 	}
 	return R_CONTINUE;
