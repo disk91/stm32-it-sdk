@@ -25,7 +25,7 @@
  * ==========================================================
  */
 #include <it_sdk/config.h>
-#if ITSDK_PLATFORM == __PLATFORM_STM32WLE
+#if ITSDK_PLATFORM == __PLATFORM_STM32WLE ||  ITSDK_PLATFORM == __PLATFORM_STM32L4
 #include <string.h>
 
 #include <it_sdk/wrappers.h>
@@ -62,7 +62,7 @@ typedef struct {
 
 	uint64_t state_h;		// State High Word
 	uint64_t state_l;		// State Low Word
-	uint64_t reserved_3;	// alignement to 4x 64b
+	uint64_t reserved_3;	// Alignment to 4x 64b
 
 } __eeprom_page_header_t;	// Total Size => 32B 4x64b
 
@@ -103,9 +103,23 @@ bool __eeprom_page_clear(int page) {
 	FLASH_EraseInitTypeDef s_eraseinit;
 	uint32_t page_error = 0U;
 
-	s_eraseinit.TypeErase   = FLASH_TYPEERASE_PAGES;
-	s_eraseinit.NbPages     = 1;
-	s_eraseinit.Page        = EEPROM_START_PAGE+page;
+	#if ITSDK_PLATFORM == __PLATFORM_STM32L4
+	    // STM32L4 has 2 banks of 256 pages so we need to compute the right page number
+		s_eraseinit.TypeErase   = FLASH_TYPEERASE_PAGES;
+		s_eraseinit.NbPages     = 1;
+		s_eraseinit.Page        = EEPROM_START_PAGE+page;
+		if ( s_eraseinit.Page > 255 ) {
+			s_eraseinit.Page -= 256;
+			s_eraseinit.Banks	= FLASH_BANK_2;
+		} else {
+			s_eraseinit.Banks	= FLASH_BANK_1;
+		}
+	#else
+		s_eraseinit.TypeErase   = FLASH_TYPEERASE_PAGES;
+		s_eraseinit.NbPages     = 1;
+		s_eraseinit.Page        = EEPROM_START_PAGE+page;
+	#endif
+
 	uint32_t r = HAL_FLASHEx_Erase(&s_eraseinit, &page_error);
 	if ( r != HAL_OK) {
 		_LOG_EEPROM_ERROR(("[NVM] Failed to clear page %d eq %d \r\n",page,EEPROM_START_PAGE+page));

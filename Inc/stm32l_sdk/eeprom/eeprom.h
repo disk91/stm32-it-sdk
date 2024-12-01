@@ -51,6 +51,8 @@
 	#define EEPROM_SIZE				2048
 #elif ITSDK_DEVICE == __DEVICE_STM32WLE5JC
 	#define EEPROM_END_ADDR 		0x0803F800						// Max memory to store eeprom at the end of the memory zone (0x803F8 to 0x803E0 seems potentially used)
+#elif ITSDK_DEVICE == __DEVICE_STM32L476RG
+	#define EEPROM_END_ADDR 		0x080FE000						// 1MB Flash from 0x08000000 to 0x8100000, keep 8KB at end
 #endif
 
 #ifndef EEPROM_END_ADDR

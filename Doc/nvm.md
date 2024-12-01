@@ -228,6 +228,17 @@ Also, the end-user level can trigger a specific function on garbage collection e
 void __eeprom_onGarbageCallback();
 ```
 
+## EEPROM with STM32L4
+
+STM32L4 does not have internal EEPROM and the NVM storage rely on FLASH, it has some impact, part of it the number of cycles limited to 10K per memory zone.
+This is equivalent to STM32WL seen above.
+
+### STM32L4 - Flash access constraints
+
+STM32L4 have 1MB flash in page of 2KB each in two banks of 512KB. Each block is organized into 256 words of 64 bits.
+The Flash banks are sequentials so the page are numbered 0..255 bank1 and 0.255 bank 2.
+
+
 
 
  
