@@ -647,7 +647,10 @@ bool _eeprom_stats(__eeprom_stat_t * s) {
 bool __eeprom_transfer_to_terminate() {
 
 	#ifdef __EEPROM_WITH_TEST
-		if ( injectCrash == 100 ) return false;
+		if ( injectCrash == 100 ) {
+			_LOG_EEPROM_ERROR(("[NVM] Inject TEST failure\r\n"));
+			return false;
+		}
 	#endif
 
 	// The first step is to commit MOVE_IN page into READY page
@@ -665,7 +668,10 @@ bool __eeprom_transfer_to_terminate() {
 	}
 
 	#ifdef __EEPROM_WITH_TEST
-		if ( injectCrash == 101 ) return false;
+		if ( injectCrash == 101 ) {
+			_LOG_EEPROM_ERROR(("[NVM] Inject TEST failure\r\n"));
+			return false;
+		}
 	#endif
 
 	// The second step is to commit MOVE_OUT page into INIT_EMPTY stage for being available for reusing
@@ -747,7 +753,10 @@ bool __eeprom_move_page(int psrc, int pdst, int * q_src, int * q_dst) {
 	}
 
 	#ifdef __EEPROM_WITH_TEST
-    	if ( injectCrash == 1 ) return false;
+    	if ( injectCrash == 1 ) {
+			_LOG_EEPROM_ERROR(("[NVM] Inject TEST failure\r\n"));
+    		return false;
+    	}
 	#endif
 
 	// Then make sure the destination state is EEPROM_PAGE_STATE_MOVE_IN or switch it from INIT only
@@ -757,7 +766,10 @@ bool __eeprom_move_page(int psrc, int pdst, int * q_src, int * q_dst) {
 	}
 
 	#ifdef __EEPROM_WITH_TEST
-		if ( injectCrash == 2 ) return false;
+		if ( injectCrash == 2 ) {
+			_LOG_EEPROM_ERROR(("[NVM] Inject TEST failure\r\n"));
+			return false;
+		}
 		if ( injectCrash == 3 ) injectCrash--; // will crash the next time
 	#endif
 
@@ -795,7 +807,10 @@ bool __eeprom_move_page(int psrc, int pdst, int * q_src, int * q_dst) {
 		if ( l.addr != 0x3FF && l.addr != 0x000 ) {
 
 			#ifdef __EEPROM_WITH_TEST
-				if ( injectCrash == 10 ) return false;
+				if ( injectCrash == 10 ) {
+					_LOG_EEPROM_ERROR(("[NVM] Inject TEST failure\r\n"));
+					return false;
+				}
 				if ( injectCrash > 10 && injectCrash < 100 ) injectCrash--; // will crash later
 			#endif
 
@@ -815,6 +830,9 @@ bool __eeprom_move_page(int psrc, int pdst, int * q_src, int * q_dst) {
 		}
 	}
 	// page is transfered
+	if ( moved != toMove ) {
+		_LOG_EEPROM_ERROR(("[NVM] Garbage line failure\r\n"));
+	}
 	return ( moved == toMove );
 }
 
@@ -1418,6 +1436,7 @@ void ___alter_struct(__test_struct * s, uint8_t v) {
  * #define ITSDK_WITH_SECURESTORE 	__DISABLE
  * #define ITSDK_WITH_CONSOLE	  	__DISABLE
  * #define ITSDK_CONFIGURATION_MODE	__CONFIG_MEMORY
+ * #define ITSDK_EPROM_SIZE			(6*1024)
  */
 void _eeprom_test() {
 
