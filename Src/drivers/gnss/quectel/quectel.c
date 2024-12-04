@@ -111,6 +111,12 @@ static gnss_ret_e __quectelSwitchToFullColdStart();
 static gnss_ret_e __quectelStop();
 static quectel_status_t __quectel_status;
 
+// ---------------------------------------------------------------------------------
+// Retro compatibility
+#ifndef ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_POL
+	#define ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_POL 	__LOW
+#endif
+
 
 /**
  * Init the quectel device then setup it stopped to avoid consuming energy
@@ -158,7 +164,7 @@ gnss_ret_e quectel_lxx_initLowPower(gnss_config_t * config) {
 	#endif
 
 	// Ensure all the conditions are ok for powering
-	#if ITSDK_DRIVERS_GNSS_QUECTEL_MODEL == DRIVER_GNSS_QUECTEL_MODEL_L86
+	#if ITSDK_DRIVERS_GNSS_QUECTEL_MODEL == DRIVER_GNSS_QUECTEL_MODEL_L86 || ITSDK_DRIVERS_GNSS_QUECTEL_MODEL == DRIVER_GNSS_QUECTEL_MODEL_LG77
 	if (   ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_PIN != __LP_GPIO_NONE
 		|| ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_PIN != __LP_GPIO_NONE
 	) {
@@ -183,9 +189,15 @@ gnss_ret_e quectel_lxx_initLowPower(gnss_config_t * config) {
 	// Configure the Reset pin and use it
 	if  ( ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN != __LP_GPIO_NONE ) {
 		gpio_configure(ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN,GPIO_OUTPUT_PP);
-		gpio_reset(ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN);
-		itsdk_delayMs(30); // 10 ms min according to doc
-		gpio_set(ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN);
+		#if ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_POL == __LOW
+			gpio_reset(ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN);
+			itsdk_delayMs(30); // 10 ms min according to doc
+			gpio_set(ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN);
+		#else
+			gpio_set(ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN);
+			itsdk_delayMs(30); // 10 ms min according to doc
+			gpio_reset(ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN);
+		#endif
 	}
 
 	// check Quectel presence and wait for boot
@@ -219,7 +231,7 @@ gnss_ret_e quectel_lxx_initLowPower(gnss_config_t * config) {
 
 	// Setup the desired GNSS constellation
 	// This makes the device to restart
-    #if ITSDK_DRIVERS_GNSS_QUECTEL_MODEL == DRIVER_GNSS_QUECTEL_MODEL_L86
+    #if ITSDK_DRIVERS_GNSS_QUECTEL_MODEL == DRIVER_GNSS_QUECTEL_MODEL_L86 || ITSDK_DRIVERS_GNSS_QUECTEL_MODEL == DRIVER_GNSS_QUECTEL_MODEL_LG77
 		sprintf(cmd,"$PMTK353,%d,%d,%d,%d,0*",
 				((ITSDK_DRIVERS_GNSS_WITHGPSSAT == __ENABLE)?1:0),
 				((ITSDK_DRIVERS_GNSS_WITHGLOSAT == __ENABLE)?1:0),
@@ -268,9 +280,15 @@ static gnss_ret_e __quectelSetRunMode(gnss_run_mode_e mode) {
 			// Sometime the stop command is not correctly proceeded when we do not have an external circuit to power it on/off
 			// So in a such case, reseting the device will allow to be back is a known mode to stop it properly.
 			__quectel_status.isInStopMode = 1;
-			gpio_reset(ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN);
-			itsdk_delayMs(20);
-			gpio_set(ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN);
+			#if ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_POL == __LOW
+				gpio_reset(ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN);
+				itsdk_delayMs(20);
+				gpio_set(ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN);
+			#else
+				gpio_set(ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN);
+				itsdk_delayMs(20);
+				gpio_reset(ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN);
+			#endif
 			__gnss_connectSerial();
 	  		__gnss_initSerial();
 	  	    __quectelWaitForAck(DRIVER_GNSS_QUECTEL_CMD_RESTART);
@@ -355,7 +373,7 @@ static gnss_ret_e __quectelSwitchToStopWithMemoryRetention() {
 			#endif
 		} else {
 			// we have no VCC stop we can try the official method
-			#if ITSDK_DRIVERS_GNSS_QUECTEL_MODEL == DRIVER_GNSS_QUECTEL_MODEL_L86
+			#if ITSDK_DRIVERS_GNSS_QUECTEL_MODEL == DRIVER_GNSS_QUECTEL_MODEL_L86 || ITSDK_DRIVERS_GNSS_QUECTEL_MODEL == DRIVER_GNSS_QUECTEL_MODEL_LG77
 			  if ( ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_PIN != __LP_GPIO_NONE ) {
 				 gpio_reset(ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_PIN);
 			  }
@@ -387,7 +405,7 @@ static gnss_ret_e __quectelSwitchBackfromStopMode() {
 	if (__quectel_status.isInBackupMode == 1) {
 		// wake up if needed
 
-   	    #if ITSDK_DRIVERS_GNSS_QUECTEL_MODEL == DRIVER_GNSS_QUECTEL_MODEL_L86
+   	    #if ITSDK_DRIVERS_GNSS_QUECTEL_MODEL == DRIVER_GNSS_QUECTEL_MODEL_L86 || ITSDK_DRIVERS_GNSS_QUECTEL_MODEL == DRIVER_GNSS_QUECTEL_MODEL_LG77
 		 if ( ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_PIN != __LP_GPIO_NONE ) {
 		     gpio_set(ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_L86_FORCEON_PIN);
 		 }
@@ -402,10 +420,15 @@ static gnss_ret_e __quectelSwitchBackfromStopMode() {
 		}
 
   		// A reset should not be needed but it seems it is not working w/o it.
-		gpio_reset(ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN);
-		itsdk_delayMs(30); // 10 ms min according to doc
-		gpio_set(ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN);
-
+		#if ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_POL == __LOW
+			gpio_reset(ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN);
+			itsdk_delayMs(30); // 10 ms min according to doc
+			gpio_set(ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN);
+		#else
+			gpio_set(ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN);
+			itsdk_delayMs(30); // 10 ms min according to doc
+			gpio_reset(ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN);
+		#endif
 		__gnss_connectSerial();
   		__gnss_initSerial();
   	    if ( __quectelWaitForAck(DRIVER_GNSS_QUECTEL_CMD_RESTART) == GNSS_TIMEOUT) {
@@ -413,7 +436,11 @@ static gnss_ret_e __quectelSwitchBackfromStopMode() {
   	    	// We failed to wake up - reset !
   	    	__quectelStop(); // Power Off then retry
   	    	itsdk_delayMs(100);
-  	    	gpio_reset(ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN);
+			#if ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_POL == __LOW
+  	    	   gpio_reset(ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN);
+			#else
+  	    	   gpio_set(ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN);
+			#endif
   	    	if ( ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_PIN != __LP_GPIO_NONE ) {
   	    		// Power VCC on from external circuitery
 				#if ITSDK_DRIVERS_GNSS_QUECTEL_L8X_POWERON_POL == __HIGH
@@ -423,8 +450,11 @@ static gnss_ret_e __quectelSwitchBackfromStopMode() {
 				#endif
   	    	}
   			itsdk_delayMs(20); // 10 ms min according to doc
-  			gpio_set(ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN);
-
+			#if ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_POL == __LOW
+  				gpio_set(ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN);
+			#else
+  				gpio_reset(ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_BANK,ITSDK_DRIVERS_GNSS_QUECTEL_NRESET_PIN);
+			#endif
   			__gnss_connectSerial();
   			__gnss_initSerial();
   			// Retrying

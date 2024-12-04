@@ -30,6 +30,7 @@
 
 #define DRIVER_GNSS_QUECTEL_MODEL_L86	0				// Support GPS & GLONASS + wakeup with FORCE_ON pin
 #define DRIVER_GNSS_QUECTEL_MODEL_L80	1				// Supports GPS, backup mode by cutting VCC
+#define DRIVER_GNSS_QUECTEL_MODEL_LG77	2
 
 gnss_ret_e quectel_lxx_initLowPower();
 
