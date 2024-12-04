@@ -65,7 +65,7 @@ drivers_lis2dh12_conf_t __lis2dh_conf;
 
 
 /**
- * Interrupt handler - we can have a new interrupt rising during the preivous
+ * Interrupt handler - we can have a new interrupt rising during the previous
  * interrupt processing. for this reason we have a loop inside the interrupt.
  * It's really important to have this interrupt processing as fast as possible
  * to avoid infinite loop here (and wdg restart)

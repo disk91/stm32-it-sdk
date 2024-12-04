@@ -25,7 +25,7 @@ Tune the settings according to your needs to preserve memory footprint
 
 ## Make the Accelerometer working
 At first you need to call _itsdk_accel_ret_e accel_initPowerDown()_ from your **project_setup** function.
-Then you need to call the _void accel_process_loop(void)_ in your **project_loop** function. This last function is already added in the _itsdk_loop()_ so you don't need to add it in the application layer. 
+Then the system calls the _void accel_process_loop(void)_ in the **project_loop** function. This last function is already added in the _itsdk_loop()_ so you don't need to add it in the application layer. 
 
 
 ## Tilt / position / click detection
@@ -38,7 +38,7 @@ accel_configMovementDetection(
 			200,		// Minimal duration of the event in ms
 			30000,		// after >=30 seconds w/o movement a ACCEL_TRIGGER_ON_NOMOVEMENT is fired (latency related to RTC wakeup period)
 						//   0 when not used.
-			BOOL_TRUE,	// Enable the HP filter
+			ACCEL_WISH_HPF_MODE_MEDIUM,	// Enable the HP filter
 			ACCEL_TRIGGER_ON_XYZ_HIGH | ACCEL_TRIGGER_ON_ANYPOS | ACCEL_TRIGGER_ON_DBLCLICK_XYZ | ACCEL_TRIGGER_ON_NOMOVEMENT // List of expected triger to respond to
 		)
 ``` 
