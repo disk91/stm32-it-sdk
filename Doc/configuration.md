@@ -58,7 +58,7 @@ The console allows to print and change the configuration. When the console is ac
 To print the configuration of the application specific part you need to override the following procedure
 
 ```C
-void itsdk_config_app_printConfig();
+void itsdk_config_app_printConfig(itsdk_configuration_nvm_t * c);
 ```
 
 You can extend the console operation to add configuration like any console extension. See *console.md* file.
