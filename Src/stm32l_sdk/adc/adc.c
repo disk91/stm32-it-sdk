@@ -252,7 +252,6 @@ uint32_t __getAdcValue(uint32_t channel, uint8_t oversampling) {
 	  __NOP();
 	  __HAL_RCC_ADC_RELEASE_RESET();
 
-
 	  hadc.Instance = ADC1;
 	  hadc.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV1;
 	  hadc.Init.Resolution = ADC_RESOLUTION_12B;
@@ -268,9 +267,12 @@ uint32_t __getAdcValue(uint32_t channel, uint8_t oversampling) {
 	  hadc.Init.DMAContinuousRequests = DISABLE;
 	  hadc.Init.Overrun = ADC_OVR_DATA_PRESERVED;
 	  hadc.Init.OversamplingMode = DISABLE;
-	  if (HAL_ADC_Init(&hadc) != HAL_OK)
+
+	  HAL_ADC_DeInit(&hadc);
+	  HAL_StatusTypeDef r = HAL_ADC_Init(&hadc);
+	  if ( r != HAL_OK)
 	  {
-	    Error_Handler();
+		  ITSDK_ERROR_REPORT(ITSDK_ERROR_ADC_INIT_FAILED,0);
 	  }
 
 	  /** Configure the ADC multi-mode
@@ -278,17 +280,12 @@ uint32_t __getAdcValue(uint32_t channel, uint8_t oversampling) {
 	  multimode.Mode = ADC_MODE_INDEPENDENT;
 	  if (HAL_ADCEx_MultiModeConfigChannel(&hadc, &multimode) != HAL_OK)
 	  {
-	    Error_Handler();
+		  ITSDK_ERROR_REPORT(ITSDK_ERROR_ADC_INIT_FAILED,1);
 	  }
-
-	  if ( HAL_ADCEx_Calibration_Start(&hadc,ADC_SINGLE_ENDED) != HAL_OK) {
-		  ITSDK_ERROR_REPORT(ITSDK_ERROR_ADC_CALIBRATION_FAILED,0);
-	  }
-
 
 	  /** Configure Regular Channel
 	  */
-	  sConfig.Channel = ADC_CHANNEL_TEMPSENSOR;
+	  sConfig.Channel = channel;
 	  sConfig.Rank = ADC_REGULAR_RANK_1;
 	  sConfig.SamplingTime = ADC_SAMPLETIME_2CYCLES_5;
 	  sConfig.SingleDiff = ADC_SINGLE_ENDED;
@@ -296,8 +293,9 @@ uint32_t __getAdcValue(uint32_t channel, uint8_t oversampling) {
 	  sConfig.Offset = 0;
 	  if (HAL_ADC_ConfigChannel(&hadc, &sConfig) != HAL_OK)
 	  {
-	    Error_Handler();
+		  ITSDK_ERROR_REPORT(ITSDK_ERROR_ADC_INIT_FAILED,2);
 	  }
+
 	  uint32_t v = 0;
 	  for( int i = 0; i < oversampling ; i++ ) {
 		  HAL_ADC_Start(&hadc);
@@ -480,52 +478,84 @@ uint16_t adc_getValue(uint32_t pin) {
 		case 0:
 			channel = ADC_CHANNEL_VREFINT; 	// VDD
 			break;
-		case 27:
+		case 27: // PB1
+			GPIO_TypeDefStruct = GPIOB;
+			GPIO_InitStruct.Pin = 1;
 			channel = ADC_CHANNEL_16;
 			break;
-		case 26:
+		case 26: // PB0
+			GPIO_TypeDefStruct = GPIOB;
+			GPIO_InitStruct.Pin = 0;
 			channel = ADC_CHANNEL_15;
 			break;
-		case 25:
+		case 25: // PC5
+			GPIO_TypeDefStruct = GPIOC;
+			GPIO_InitStruct.Pin = 5;
 			channel = ADC_CHANNEL_14;
 			break;
-		case 24:
+		case 24: // PC4
+			GPIO_TypeDefStruct = GPIOC;
+			GPIO_InitStruct.Pin = 4;
 			channel = ADC_CHANNEL_13;
 			break;
-		case 23:
+		case 23: // PA7
+			GPIO_TypeDefStruct = GPIOA;
+			GPIO_InitStruct.Pin = 7;
 			channel = ADC_CHANNEL_12;
 			break;
-		case 22:
+		case 22: // PA6
+			GPIO_TypeDefStruct = GPIOA;
+			GPIO_InitStruct.Pin = 6;
 			channel = ADC_CHANNEL_11;
 			break;
-		case 21:
+		case 21: // PA5
+			GPIO_TypeDefStruct = GPIOA;
+			GPIO_InitStruct.Pin = 5;
 			channel = ADC_CHANNEL_10;
 			break;
-		case 20:
+		case 20: // PA4
+			GPIO_TypeDefStruct = GPIOA;
+			GPIO_InitStruct.Pin = 4;
 			channel = ADC_CHANNEL_9;
 			break;
-		case 17:
+		case 17: // PA3
+			GPIO_TypeDefStruct = GPIOA;
+			GPIO_InitStruct.Pin = 3;
 			channel = ADC_CHANNEL_8;
 			break;
-		case 16:
+		case 16: // PA2
+			GPIO_TypeDefStruct = GPIOA;
+			GPIO_InitStruct.Pin = 2;
 			channel = ADC_CHANNEL_7;
 			break;
-		case 15:
+		case 15: // PA1
+			GPIO_TypeDefStruct = GPIOA;
+			GPIO_InitStruct.Pin = 1;
 			channel = ADC_CHANNEL_6;
 			break;
-		case 14:
+		case 14: // PA0
+			GPIO_TypeDefStruct = GPIOA;
+			GPIO_InitStruct.Pin = 0;
 			channel = ADC_CHANNEL_5;
 			break;
-		case 11:
+		case 11: // PC3
+			GPIO_TypeDefStruct = GPIOC;
+			GPIO_InitStruct.Pin = 3;
 			channel = ADC_CHANNEL_4;
 			break;
-		case 10:
+		case 10: // PC2
+			GPIO_TypeDefStruct = GPIOC;
+			GPIO_InitStruct.Pin = 2;
 			channel = ADC_CHANNEL_3;
 			break;
-		case 9:
+		case 9: // PC1
+			GPIO_TypeDefStruct = GPIOC;
+			GPIO_InitStruct.Pin = 1;
 			channel = ADC_CHANNEL_2;
 			break;
-		case 8:
+		case 8: // PC0
+			GPIO_TypeDefStruct = GPIOC;
+			GPIO_InitStruct.Pin = 0;
 			channel = ADC_CHANNEL_1;
 			break;
 		default:
@@ -762,7 +792,6 @@ uint16_t adc_getValue(uint32_t pin) {
 	if(pin!= 0) {
 		HAL_GPIO_Init(GPIO_TypeDefStruct, &GPIO_InitStruct);
 	}
-
 	uint32_t v = __getAdcValue(channel,ITSDK_ADC_OVERSAMPLING);
 	int32_t vdd;
 	if (pin == 0) {
