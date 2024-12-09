@@ -151,7 +151,8 @@ typedef enum {
 	GPIO_ALTERNATE_PP_NOPULL,
 	GPIO_ALTERNATE_PP_PULLUP,
 	GPIO_ALTERNATE_PP_PULLDOWN,
-	GPIO_ALTERNATE_OPENDRAIN
+	GPIO_ALTERNATE_OPENDRAIN,
+	GPIO_ALTERNATE_TIMER
 } itsdk_gpio_type_t;
 
 typedef enum {
@@ -163,6 +164,10 @@ typedef enum {
 	ITSDK_GPIO_ALT_NONE = 0,
 	ITSDK_GPIO_ALT_TIMER2_TR,
 	ITSDK_GPIO_ALT_TIMER2_C1,
+	ITSDK_GPIO_ALT_TIMER3_C1,
+	ITSDK_GPIO_ALT_TIMER3_C2,
+	ITSDK_GPIO_ALT_TIMER3_C3,
+	ITSDK_GPIO_ALT_TIMER3_C4,
 	ITSDK_GPIO_ALT_SPI1_SCLK,
 	ITSDK_GPIO_ALT_SPI1_MOSI,
 	ITSDK_GPIO_ALT_SPI1_MISO,
@@ -198,6 +203,11 @@ void gpio_removeIrqAction(gpio_irq_chain_t * chain);
 bool gpio_existAction(gpio_irq_chain_t * chain);
 void gpio_registerWakeUpAction(gpio_irq_chain_t * chain);
 void gpio_removeWakeUpAction();
+
+void pwm_init(uint8_t bank, uint16_t id);
+void pwm_setPercent(uint8_t bank, uint16_t id, uint8_t value);
+void pwm_set(uint8_t bank, uint16_t id, uint32_t value);
+void pwm_deinit(uint8_t bank, uint16_t id);
 
 #if ITSDK_WITH_GPIO_HANDLER == __DISABLE
 void gpio_Callback(uint16_t GPIO_Pin);

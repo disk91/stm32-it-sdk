@@ -43,6 +43,10 @@
 	#include "stm32wlxx_hal.h"
 #endif
 
+#if ITSDK_WITH_PWM == __ENABLE
+	#include "tim.h"
+#endif
+
 #ifndef ITSDK_DEVICE
 #error ITSDK_DEVICE is not defined
 #endif
@@ -167,6 +171,7 @@ void gpio_configure_ext(uint8_t bank, uint16_t id, itsdk_gpio_type_t type, itsdk
 
 	GPIO_InitStruct.Pin = id;
 	switch ( speed ) {
+	default:
 	case ITSDK_GPIO_SPEED_LOW:
 		GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
 		break;
@@ -288,6 +293,11 @@ void gpio_configure_ext(uint8_t bank, uint16_t id, itsdk_gpio_type_t type, itsdk
 	    GPIO_InitStruct.Pull = GPIO_NOPULL;
 	    break;
 
+	case GPIO_ALTERNATE_TIMER:
+		GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+	    GPIO_InitStruct.Pull = GPIO_NOPULL;
+	    break;
+
 	}
 	int err=0;
 	switch (type) {
@@ -295,6 +305,7 @@ void gpio_configure_ext(uint8_t bank, uint16_t id, itsdk_gpio_type_t type, itsdk
 	case GPIO_ALTERNATE_PP_PULLUP:
 	case GPIO_ALTERNATE_PP_PULLDOWN:
 	case GPIO_ALTERNATE_OPENDRAIN:
+	case GPIO_ALTERNATE_TIMER:
 		switch (alternate) {
 		case ITSDK_GPIO_ALT_TIMER2_TR:
 		#if ITSDK_DEVICE == __DEVICE_STM32L072XX || ITSDK_DEVICE == __DEVICE_STM32L082XX || ITSDK_DEVICE == __DEVICE_STM32L052T8
@@ -313,6 +324,47 @@ void gpio_configure_ext(uint8_t bank, uint16_t id, itsdk_gpio_type_t type, itsdk
 			else if ( bank == __BANK_A && id == __LP_GPIO_0 ) GPIO_InitStruct.Alternate = GPIO_AF2_TIM2;
 			else err=1;
 		#elif ITSDK_DEVICE == __DEVICE_STM32L476RG
+			if ( bank == __BANK_A && id == __LP_GPIO_0 ) GPIO_InitStruct.Alternate = GPIO_AF1_TIM2;
+			else if ( bank == __BANK_A && id == __LP_GPIO_5 ) GPIO_InitStruct.Alternate = GPIO_AF1_TIM2;
+			else if ( bank == __BANK_A && id == __LP_GPIO_15 ) GPIO_InitStruct.Alternate = GPIO_AF1_TIM2;
+			else err=1;
+		#endif
+			break;
+		case ITSDK_GPIO_ALT_TIMER3_C1:
+		#if ITSDK_DEVICE == __DEVICE_STM32L476RG
+			if ( bank == __BANK_A && id == __LP_GPIO_6 ) GPIO_InitStruct.Alternate = GPIO_AF2_TIM3;
+			else if ( bank == __BANK_B && id == __LP_GPIO_4 ) GPIO_InitStruct.Alternate = GPIO_AF2_TIM3;
+			else if ( bank == __BANK_C && id == __LP_GPIO_6 ) GPIO_InitStruct.Alternate = GPIO_AF2_TIM3;
+			else err=1;
+		#elif
+			err=1;
+		#endif
+			break;
+		case ITSDK_GPIO_ALT_TIMER3_C2:
+		#if ITSDK_DEVICE == __DEVICE_STM32L476RG
+			if ( bank == __BANK_A && id == __LP_GPIO_7 ) GPIO_InitStruct.Alternate = GPIO_AF2_TIM3;
+			else if ( bank == __BANK_B && id == __LP_GPIO_5 ) GPIO_InitStruct.Alternate = GPIO_AF2_TIM3;
+			else if ( bank == __BANK_C && id == __LP_GPIO_7 ) GPIO_InitStruct.Alternate = GPIO_AF2_TIM3;
+			else err=1;
+		#elif
+			err=1;
+		#endif
+			break;
+		case ITSDK_GPIO_ALT_TIMER3_C3:
+		#if ITSDK_DEVICE == __DEVICE_STM32L476RG
+			if ( bank == __BANK_B && id == __LP_GPIO_0 ) GPIO_InitStruct.Alternate = GPIO_AF2_TIM3;
+			else if ( bank == __BANK_C && id == __LP_GPIO_8 ) GPIO_InitStruct.Alternate = GPIO_AF2_TIM3;
+			else err=1;
+		#elif
+			err=1;
+		#endif
+			break;
+		case ITSDK_GPIO_ALT_TIMER3_C4:
+		#if ITSDK_DEVICE == __DEVICE_STM32L476RG
+			if ( bank == __BANK_B && id == __LP_GPIO_1 ) GPIO_InitStruct.Alternate = GPIO_AF2_TIM3;
+			else if ( bank == __BANK_C && id == __LP_GPIO_9 ) GPIO_InitStruct.Alternate = GPIO_AF2_TIM3;
+			else err=1;
+		#elif
 			err=1;
 		#endif
 			break;
@@ -596,5 +648,265 @@ bool gpio_existAction(gpio_irq_chain_t * chain) {
 	return false;
 }
 
+
+// ==============================================================
+// PWM FUNCTIONS
+// ==============================================================
+
+#if defined ITSDK_WITH_PWM && ITSDK_WITH_PWM == __ENABLE
+
+#define __PWM_INVALID	0xFFFFFFFF
+struct __pwm_channel_s {
+	uint32_t channel;
+	TIM_HandleTypeDef * handler;
+
+};
+
+struct __pwm_channel_s __pwm_getChannelFromBankAndPin(uint8_t bank, uint16_t pin) {
+
+	struct __pwm_channel_s ret;
+	ret.channel = __PWM_INVALID;
+
+#if ITSDK_DEVICE == __DEVICE_STM32L476RG
+
+	switch ( bank ) {
+	case __BANK_A:
+		#if ITSDK_WITH_PWM_TIMER == __TIMER_2
+		ret.handler = &htim2;
+		switch (pin) {
+		case __LP_GPIO_0:
+			ret.channel = TIM_CHANNEL_1;
+			break;
+		case __LP_GPIO_1:
+			ret.channel = TIM_CHANNEL_2;
+			break;
+		case __LP_GPIO_2:
+			ret.channel = TIM_CHANNEL_3;
+			break;
+		case __LP_GPIO_3:
+			ret.channel = TIM_CHANNEL_4;
+			break;
+		case __LP_GPIO_15:
+			ret.channel = TIM_CHANNEL_1;
+			break;
+		default:
+			break;
+		}
+		#elif ITSDK_WITH_PWM_TIMER == __TIMER_1
+		ret.handler = &htim1;
+		switch (pin) {
+		case __LP_GPIO_8:
+			ret.channel = TIM_CHANNEL_1;
+			break;
+		case __LP_GPIO_9:
+			ret.channel = TIM_CHANNEL_2;
+			break;
+		case __LP_GPIO_10:
+			ret.channel = TIM_CHANNEL_3;
+			break;
+		case __LP_GPIO_11:
+			ret.channel = TIM_CHANNEL_4;
+			break;
+		default:
+			break;
+		}
+		#elif ITSDK_WITH_PWM_TIMER == __TIMER_5
+		ret.handler = &htim5;
+		switch (pin) {
+		case __LP_GPIO_0:
+			ret.channel = TIM_CHANNEL_1;
+			break;
+		case __LP_GPIO_1:
+			ret.channel = TIM_CHANNEL_2;
+			break;
+		case __LP_GPIO_2:
+			ret.channel = TIM_CHANNEL_3;
+			break;
+		case __LP_GPIO_3:
+			ret.channel = TIM_CHANNEL_4;
+			break;
+		default:
+			break;
+		}
+		#elif ITSDK_WITH_PWM_TIMER == __TIMER_3
+		ret.handler = &htim3;
+		switch (pin) {
+		case __LP_GPIO_6:
+			ret.channel = TIM_CHANNEL_1;
+			break;
+		case __LP_GPIO_7:
+			ret.channel = TIM_CHANNEL_2;
+			break;
+		default:
+			break;
+		}
+
+		#elif ITSDK_WITH_PWM_TIMER == __TIMER_8
+		ret.handler = &htim8;
+		switch (pin) {
+		case __LP_GPIO_5:
+			ret.channel = TIM_CHANNEL_1;
+			break;
+		default:
+			break;
+		}
+
+		#endif
+
+		break;
+	case __BANK_B:
+		#if ITSDK_WITH_PWM_TIMER == __TIMER_3
+		ret.handler = &htim3;
+		switch (pin) {
+		case __LP_GPIO_0:
+			ret.channel = TIM_CHANNEL_3;
+			break;
+		case __LP_GPIO_1:
+			ret.channel = TIM_CHANNEL_4;
+			break;
+		case __LP_GPIO_4:
+			ret.channel = TIM_CHANNEL_1;
+			break;
+		case __LP_GPIO_5:
+			ret.channel = TIM_CHANNEL_2;
+			break;
+		default:
+			break;
+		}
+		#elif ITSDK_WITH_PWM_TIMER == __TIMER_2
+		ret.handler = &htim2;
+		switch (pin) {
+		case __LP_GPIO_3:
+			ret.channel = TIM_CHANNEL_2;
+			break;
+		case __LP_GPIO_10:
+			ret.channel = TIM_CHANNEL_3;
+			break;
+		case __LP_GPIO_11:
+			ret.channel = TIM_CHANNEL_4;
+			break;
+		default:
+			break;
+		}
+		#elif ITSDK_WITH_PWM_TIMER == __TIMER_4
+		ret.handler = &htim4;
+		switch (pin) {
+		case __LP_GPIO_6:
+			ret.channel = TIM_CHANNEL_1;
+			break;
+		case __LP_GPIO_7:
+			ret.channel = TIM_CHANNEL_2;
+			break;
+		case __LP_GPIO_8:
+			ret.channel = TIM_CHANNEL_3;
+			break;
+		case __LP_GPIO_9:
+			ret.channel = TIM_CHANNEL_4;
+			break;
+		default:
+			break;
+		}
+		#endif
+		break;
+	case __BANK_C:
+		#if ITSDK_WITH_PWM_TIMER == __TIMER_3
+		ret.handler = &htim3;
+		switch (pin) {
+		case __LP_GPIO_6:
+			ret.channel = TIM_CHANNEL_1;
+			break;
+		case __LP_GPIO_7:
+			ret.channel = TIM_CHANNEL_2;
+			break;
+		case __LP_GPIO_8:
+			ret.channel = TIM_CHANNEL_3;
+			break;
+		case __LP_GPIO_9:
+			ret.channel = TIM_CHANNEL_4;
+			break;
+		default:
+			break;
+		}
+		#elif ITSDK_WITH_PWM_TIMER == __TIMER_8
+		ret.handler = &htim8;
+		switch (pin) {
+		case __LP_GPIO_6:
+			ret.channel = TIM_CHANNEL_1;
+			break;
+		case __LP_GPIO_7:
+			ret.channel = TIM_CHANNEL_2;
+			break;
+		case __LP_GPIO_8:
+			ret.channel = TIM_CHANNEL_3;
+			break;
+		case __LP_GPIO_9:
+			ret.channel = TIM_CHANNEL_4;
+			break;
+		default:
+			break;
+		}
+		#endif
+		break;
+	default:
+		break;
+	}
+	return ret;
+
+#else
+	#error "Unsupported PWM target, pwm matching need to be defined"
+#endif
+}
+
+
+// Init PWM engine base on pin used
+void pwm_init(uint8_t bank, uint16_t id) {
+	struct __pwm_channel_s config = __pwm_getChannelFromBankAndPin(bank,id);
+	if ( config.channel != __PWM_INVALID ) {
+		HAL_TIM_PWM_Start(config.handler, config.channel);
+	} else {
+		log_error("Pwm - invalid channel\r\n");
+	}
+}
+
+// Set the PWM to a given value in percent of the maximum
+void pwm_setPercent(uint8_t bank, uint16_t id, uint8_t value) {
+	pwm_set(bank,id,(0xFFFFFFFF/100)*value);
+}
+
+// Set the PWM to a given 32b value for max precision scale, adapt to the timer capability
+void pwm_set(uint8_t bank, uint16_t id, uint32_t value) {
+	struct __pwm_channel_s config = __pwm_getChannelFromBankAndPin(bank,id);
+	if ( config.channel != __PWM_INVALID ) {
+		value = value >> 16; // CCR1 is 16b register
+		switch (config.channel) {
+		case TIM_CHANNEL_1:
+			config.handler->Instance->CCR1 = value;
+			break;
+		case TIM_CHANNEL_2:
+			config.handler->Instance->CCR2 = value;
+			break;
+		case TIM_CHANNEL_3:
+			config.handler->Instance->CCR3 = value;
+			break;
+		case TIM_CHANNEL_4:
+			config.handler->Instance->CCR4 = value;
+			break;
+		}
+	} else {
+		log_error("Pwm - invalid channel\r\n");
+	}
+}
+
+// Stop the PWM engine
+void pwm_deinit(uint8_t bank, uint16_t id) {
+	struct __pwm_channel_s config = __pwm_getChannelFromBankAndPin(bank,id);
+	if ( config.channel != __PWM_INVALID ) {
+		HAL_TIM_PWM_Stop(config.handler, config.channel);
+	} else {
+		log_error("Pwm - invalid channel\r\n");
+	}
+}
+
+#endif // ITSDK_WITH_PWM_TIMER
 
 #endif

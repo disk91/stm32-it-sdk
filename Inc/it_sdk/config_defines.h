@@ -142,6 +142,16 @@
 #define __TIMER_NONE				0x00			// No hw timer code
 #define __TIMER_ENABLED				0x01			// with hw timer code
 
+#define __TIMER_0					0x00			// Select a Timer
+#define __TIMER_1					0x10
+#define __TIMER_2					0x20
+#define __TIMER_3					0x30
+#define __TIMER_4					0x40
+#define __TIMER_5					0x50
+#define __TIMER_6					0x60
+#define __TIMER_7					0x70
+#define __TIMER_8					0x80
+
 /**
  * Basic enable / disable
  */
