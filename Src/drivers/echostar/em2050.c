@@ -78,7 +78,7 @@ __weak void em2050_customSerialConnect() {
 // keep current modem state, 0 for sleep / 1 for active
 static uint8_t __echostar_sleep_state;
 
-static void __es_initGpio() {
+static void __es_initGpio(itsdk_bool_e on) {
 
 	#if (ITSDK_DRIVERS_EM2050_SERIAL == __UART_USART1 || ITSDK_DRIVERS_EM2050_SERIAL == __UART_LPUART1 )
 		#if ITSDK_DRIVERS_EM2050_SERIAL == __UART_USART1
@@ -111,9 +111,14 @@ static void __es_initGpio() {
 		gpio_set(ITSDK_DRIVERS_EM2050_RESET_PORT,ITSDK_DRIVERS_EM2050_RESET_PIN);
 	}
 
-	__echostar_sleep_state = 0; // make sure we activate it
-	echoStarSwitchActive();
-	echoStarWakeUpModem();
+	if ( on ) {
+		__echostar_sleep_state = 0; // make sure we activate it
+		echoStarSwitchActive();
+		echoStarWakeUpModem();
+	} else {
+		__echostar_sleep_state = 1; // make sure we deactivate it
+		echoStarSwitchSleep();
+	}
 
 }
 
@@ -254,7 +259,7 @@ static void __es_println(char * msg) {
 
 void echoStarInit() {
 
-	__es_initGpio();
+	__es_initGpio(BOOL_TRUE);
 
 	#if (ITSDK_DRIVERS_EM2050_SERIAL == __UART_USART1 || ITSDK_DRIVERS_EM2050_SERIAL == __UART_LPUART1 )
 		serial1_connect();
@@ -282,7 +287,10 @@ void echoStarInit() {
 
 }
 
-
+// Init GPIO for running Off
+void echoStarInitOff() {
+	__es_initGpio(BOOL_FALSE);
+}
 
 
 // ===========================================

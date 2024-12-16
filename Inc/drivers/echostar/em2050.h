@@ -114,6 +114,7 @@ typedef enum {
 
 // Init / reinit the GPIO & dediacted Uart
 void echoStarInit();
+void echoStarInitOff();
 itsdk_bool_e echoStarSoftReset();
 
 // wake modem up
