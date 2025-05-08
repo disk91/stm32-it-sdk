@@ -138,7 +138,7 @@ uint32_t itsdk_pgcd(uint32_t a, uint32_t b) {
  */
 char itdt_convertHalfInt2HexChar(uint8_t v,itsdk_bool_e upper) {
   if ( v >= 0 && v <= 9 ) return '0'+v;
-  if ( v >= 10 && v <= 15 ) return (upper==BOOL_TRUE)?'A'+(v-10):'a'+(v+10);
+  if ( v >= 10 && v <= 15 ) return (upper==BOOL_TRUE)?'A'+(v-10):'a'+(v-10);
   return 0;
 }
 
